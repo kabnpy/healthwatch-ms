@@ -2,7 +2,6 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import col, delete, func, select
 
 from app import crud
 from app.api.deps import (
@@ -13,10 +12,8 @@ from app.api.deps import (
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.models import (
-    Item,
     Message,
     UpdatePassword,
-    User,
     UserCreate,
     UserPublic,
     UserRegister,
@@ -38,13 +35,7 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
     """
     Retrieve users.
     """
-
-    count_statement = select(func.count()).select_from(User)
-    count = session.exec(count_statement).one()
-
-    statement = select(User).order_by(User.created_at.desc()).offset(skip).limit(limit)
-    users = session.exec(statement).all()
-
+    users, count = crud.get_users(session=session, skip=skip, limit=limit)
     return UsersPublic(data=users, count=count)
 
 
@@ -82,7 +73,6 @@ def update_user_me(
     """
     Update own user.
     """
-
     if user_in.email:
         existing_user = crud.get_user_by_email(session=session, email=user_in.email)
         if existing_user and existing_user.id != current_user.id:
@@ -163,7 +153,7 @@ def read_user_by_id(
     """
     Get a specific user by id.
     """
-    user = session.get(User, user_id)
+    user = crud.get_user(session=session, id=user_id)
     if user == current_user:
         return user
     if not current_user.is_superuser:
@@ -190,8 +180,7 @@ def update_user(
     """
     Update a user.
     """
-
-    db_user = session.get(User, user_id)
+    db_user = crud.get_user(session=session, id=user_id)
     if not db_user:
         raise HTTPException(
             status_code=404,
@@ -215,15 +204,13 @@ def delete_user(
     """
     Delete a user.
     """
-    user = session.get(User, user_id)
+    user = crud.get_user(session=session, id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if user == current_user:
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
-    statement = delete(Item).where(col(Item.owner_id) == user_id)
-    session.exec(statement)  # type: ignore
     session.delete(user)
     session.commit()
     return Message(message="User deleted successfully")
