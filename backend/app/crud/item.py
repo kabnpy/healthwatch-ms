@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlmodel import Session, func, select
+from sqlmodel import Session, col, func, select
 
 from app.models import Item, ItemCreate, ItemUpdate
 
@@ -30,7 +30,9 @@ def get_items(
         count_statement = count_statement.where(Item.owner_id == owner_id)
     count = session.exec(count_statement).one()
 
-    statement = select(Item).order_by(Item.created_at.desc()).offset(skip).limit(limit)
+    statement = (
+        select(Item).order_by(col(Item.created_at).desc()).offset(skip).limit(limit)
+    )
     if owner_id:
         statement = statement.where(Item.owner_id == owner_id)
     items = session.exec(statement).all()

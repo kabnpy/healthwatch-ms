@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlmodel import Session, func, select
+from sqlmodel import Session, col, func, select
 
 from app.core.security import get_password_hash, verify_password
 from app.models import User, UserCreate, UserUpdate
@@ -64,7 +64,9 @@ def get_users(*, session: Session, skip: int = 0, limit: int = 100) -> Any:
     count_statement = select(func.count()).select_from(User)
     count = session.exec(count_statement).one()
 
-    statement = select(User).offset(skip).limit(limit)
+    statement = (
+        select(User).order_by(col(User.created_at).desc()).offset(skip).limit(limit)
+    )
     users = session.exec(statement).all()
 
     return users, count
