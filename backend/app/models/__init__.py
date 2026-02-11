@@ -1,3 +1,5 @@
+from sqlmodel import SQLModel
+
 from .token import NewPassword, Token, TokenPayload
 from .user import (
     UpdatePassword,
@@ -12,6 +14,7 @@ from .user import (
 )
 
 __all__ = [
+    "SQLModel",
     "NewPassword",
     "Token",
     "TokenPayload",
