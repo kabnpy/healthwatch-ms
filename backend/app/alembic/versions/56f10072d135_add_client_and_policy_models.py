@@ -1,8 +1,8 @@
 """Add Client and Policy models
 
-Revision ID: bda579dec3f1
+Revision ID: 56f10072d135
 Revises: 146c0046e57d
-Create Date: 2026-02-12 09:43:47.712504
+Create Date: 2026-02-12 10:28:24.995614
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import sqlmodel.sql.sqltypes
 
 
 # revision identifiers, used by Alembic.
-revision = 'bda579dec3f1'
+revision = '56f10072d135'
 down_revision = '146c0046e57d'
 branch_labels = None
 depends_on = None
@@ -23,8 +23,9 @@ def upgrade():
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('email', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('phone', sqlmodel.sql.sqltypes.AutoString(length=20), nullable=True),
-    sa.Column('address', sqlmodel.sql.sqltypes.AutoString(length=500), nullable=True),
-    sa.Column('date_of_birth', sa.Date(), nullable=True),
+    sa.Column('postal_address', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('postal_code', sqlmodel.sql.sqltypes.AutoString(length=20), nullable=True),
+    sa.Column('town', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
@@ -35,7 +36,6 @@ def upgrade():
     sa.Column('provider', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('start_date', sa.Date(), nullable=False),
     sa.Column('end_date', sa.Date(), nullable=True),
-    sa.Column('premium_amount', sa.Float(), nullable=False),
     sa.Column('status', sa.Enum('ACTIVE', 'EXPIRED', 'CANCELLED', name='policystatus'), nullable=False),
     sa.Column('client_id', sa.Uuid(), nullable=False),
     sa.Column('id', sa.Uuid(), nullable=False),

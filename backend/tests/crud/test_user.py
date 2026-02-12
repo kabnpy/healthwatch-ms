@@ -22,7 +22,9 @@ def test_authenticate_user(db: Session) -> None:
     password = random_lower_string()
     user_in = UserCreate(email=email, password=password)
     user = crud.user.create_user(session=db, user_create=user_in)
-    authenticated_user = crud.user.authenticate(session=db, email=email, password=password)
+    authenticated_user = crud.user.authenticate(
+        session=db, email=email, password=password
+    )
     assert authenticated_user
     assert user.email == authenticated_user.email
 
@@ -113,7 +115,9 @@ def test_authenticate_user_with_bcrypt_upgrades_to_argon2(db: Session) -> None:
     assert user.hashed_password.startswith("$2")
 
     # Authenticate - this should upgrade the hash to argon2
-    authenticated_user = crud.user.authenticate(session=db, email=email, password=password)
+    authenticated_user = crud.user.authenticate(
+        session=db, email=email, password=password
+    )
     assert authenticated_user
     assert authenticated_user.email == email
 

@@ -7,11 +7,15 @@ def test_client_create_valid() -> None:
         name="John Doe",
         email="john@example.com",
         phone="1234567890",
-        address="123 Main St",
-        date_of_birth="1990-01-01"
+        postal_address="P.O. Box 1003",
+        postal_code="00560",
+        town="Nairobi"
     )
     assert client_in.name == "John Doe"
     assert client_in.email == "john@example.com"
+    assert client_in.postal_address == "P.O. Box 1003"
+    assert client_in.postal_code == "00560"
+    assert client_in.town == "Nairobi"
 
 def test_client_create_invalid_email() -> None:
     with pytest.raises(ValidationError):
@@ -19,6 +23,5 @@ def test_client_create_invalid_email() -> None:
             name="John Doe",
             email="not-an-email",
             phone="1234567890",
-            address="123 Main St",
-            date_of_birth="1990-01-01"
+            postal_address="P.O. Box 1003"
         )
