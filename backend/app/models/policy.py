@@ -1,0 +1,55 @@
+import uuid
+from datetime import date
+from enum import Enum
+from pydantic import field_validator
+from sqlmodel import Field, SQLModel, Relationship
+
+class PolicyType(str, Enum):
+    HEALTH = "Health"
+    LIFE = "Life"
+    AUTO = "Auto"
+    HOME = "Home"
+
+class PolicyStatus(str, Enum):
+    ACTIVE = "Active"
+    EXPIRED = "Expired"
+    CANCELLED = "Cancelled"
+
+# Shared properties
+class PolicyBase(SQLModel):
+    policy_number: str = Field(max_length=100, index=True)
+    type: PolicyType
+    provider: str = Field(max_length=255)
+    start_date: date
+    end_date: date | None = Field(default=None)
+    premium_amount: float = Field(ge=0)
+    status: PolicyStatus = Field(default=PolicyStatus.ACTIVE)
+    client_id: uuid.UUID = Field(foreign_key="client.id", ondelete="CASCADE")
+
+# Properties to receive via API on creation
+class PolicyCreate(PolicyBase):
+    pass
+
+# Properties to receive via API on update, all are optional
+class PolicyUpdate(PolicyBase):
+    policy_number: str | None = Field(default=None, max_length=100)
+    type: PolicyType | None = None
+    provider: str | None = Field(default=None, max_length=255)
+    start_date: date | None = None
+    premium_amount: float | None = Field(default=None, ge=0)
+    status: PolicyStatus | None = None
+    client_id: uuid.UUID | None = None
+
+# Database model, database table inferred from class name
+class Policy(PolicyBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    
+    client: "Client" = Relationship(back_populates="policies")
+
+# Properties to return via API, id is always required
+class PolicyPublic(PolicyBase):
+    id: uuid.UUID
+
+class PoliciesPublic(SQLModel):
+    data: list[PolicyPublic]
+    count: int

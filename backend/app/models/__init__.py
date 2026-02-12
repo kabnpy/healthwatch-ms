@@ -12,6 +12,24 @@ from .user import (
     UserUpdate,
     UserUpdateMe,
 )
+from .client import (
+    Client,
+    ClientBase,
+    ClientCreate,
+    ClientPublic,
+    ClientsPublic,
+    ClientUpdate,
+)
+from .policy import (
+    Policy,
+    PolicyBase,
+    PolicyCreate,
+    PolicyPublic,
+    PoliciesPublic,
+    PolicyUpdate,
+    PolicyStatus,
+    PolicyType,
+)
 
 __all__ = [
     "SQLModel",
@@ -27,4 +45,18 @@ __all__ = [
     "UsersPublic",
     "UserUpdate",
     "UserUpdateMe",
+    "Client",
+    "ClientBase",
+    "ClientCreate",
+    "ClientPublic",
+    "ClientsPublic",
+    "ClientUpdate",
+    "Policy",
+    "PolicyBase",
+    "PolicyCreate",
+    "PolicyPublic",
+    "PoliciesPublic",
+    "PolicyUpdate",
+    "PolicyStatus",
+    "PolicyType",
 ]
