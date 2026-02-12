@@ -4,9 +4,9 @@ This plan outlines the steps to implement the core client and policy management 
 
 ## Phase 1: Backend Foundation (Models & Migrations)
 
-- [ ] Task: Define SQLModel models for Client and Policy
-    - [ ] Write unit tests for model validation in `backend/app/tests/models/test_client.py` and `backend/app/tests/models/test_policy.py`
-    - [ ] Implement `Client` and `Policy` models in `backend/app/models/`
+- [x] Task: Define SQLModel models for Client and Policy d3f7d16
+    - [x] Write unit tests for model validation in `backend/app/tests/models/test_client.py` and `backend/app/tests/models/test_policy.py`
+    - [x] Implement `Client` and `Policy` models in `backend/app/models/`
 - [ ] Task: Create and run Alembic migrations for new tables
     - [ ] Generate migration script: `docker compose watch backend exec backend alembic revision --autogenerate -m "Add Client and Policy models"`
     - [ ] Apply migration: `docker compose watch backend exec backend alembic upgrade head`
