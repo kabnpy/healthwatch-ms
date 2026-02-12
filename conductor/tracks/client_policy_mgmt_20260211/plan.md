@@ -24,7 +24,7 @@ This plan outlines the steps to implement the core client and policy management 
     - [x] Register routes in `backend/app/api/main.py`
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Backend API' (Protocol in workflow.md) 11d60fa
 
-## Phase 3: Frontend Foundation (SDK & Basic UI)
+## Phase 3: Frontend Foundation (SDK & Basic UI) [checkpoint: 554ab77]
 
 - [x] Task: Generate updated frontend SDK f5e2111
     - [x] Run `scripts/generate-client.sh`
@@ -32,7 +32,7 @@ This plan outlines the steps to implement the core client and policy management 
     - [x] Write Playwright tests in `frontend/tests/clients.spec.ts`
     - [x] Create route `frontend/src/routes/_layout/clients/index.tsx`
     - [x] Implement client list component with search functionality
-- [~] Task: Conductor - User Manual Verification 'Phase 3: Frontend Foundation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Frontend Foundation' (Protocol in workflow.md) 554ab77
 
 ## Phase 4: Full Client & Policy UI
 
