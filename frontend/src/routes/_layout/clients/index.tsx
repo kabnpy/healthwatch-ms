@@ -1,13 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { Search, UserPlus } from "lucide-react"
+import { Search } from "lucide-react"
 import { Suspense } from "react"
 
 import { ClientsService } from "@/client"
+import AddClient from "@/components/Clients/AddClient"
 import { columns } from "@/components/Clients/columns"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingUsers from "@/components/Pending/PendingUsers"
-import { Button } from "@/components/ui/button"
 
 function getClientsQueryOptions() {
   return {
@@ -37,7 +37,10 @@ function ClientsTableContent() {
           <Search className="h-8 w-8 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-semibold">No clients found</h3>
-        <p className="text-muted-foreground">Add a new client to get started</p>
+        <p className="text-muted-foreground mb-4">
+          Add a new client to get started
+        </p>
+        <AddClient />
       </div>
     )
   }
@@ -61,9 +64,7 @@ function Clients() {
           <h1 className="text-2xl font-bold tracking-tight">Clients</h1>
           <p className="text-muted-foreground">Manage your client database</p>
         </div>
-        <Button>
-          <UserPlus className="mr-2 h-4 w-4" /> Add Client
-        </Button>
+        <AddClient />
       </div>
       <ClientsTable />
     </div>

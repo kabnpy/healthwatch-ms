@@ -36,7 +36,7 @@ This plan outlines the steps to implement the core client and policy management 
 
 ## Phase 4: Full Client & Policy UI
 
-- [ ] Task: Implement Client Detail and Policy Management UI
+- [~] Task: Implement Client Detail and Policy Management UI
     - [ ] Write Playwright tests for client details and policy CRUD
     - [ ] Create route `frontend/src/routes/_layout/clients/$clientId.tsx`
     - [ ] Implement components for viewing/editing client details and managing their policies
