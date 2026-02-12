@@ -1,0 +1,8 @@
+{
+  "track_id": "client_policy_mgmt_20260211",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-02-11T12:00:00Z",
+  "updated_at": "2026-02-11T12:00:00Z",
+  "description": "Build the core Client and Policy management functionality, including the database models, API endpoints, and frontend views for managing client records and their insurance policies."
+}
