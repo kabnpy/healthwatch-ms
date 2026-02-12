@@ -14,15 +14,15 @@ This plan outlines the steps to implement the core client and policy management 
 
 ## Phase 2: Backend API (CRUD Routes)
 
-- [ ] Task: Implement CRUD routes for Clients
-    - [ ] Write integration tests in `backend/app/tests/api/routes/test_clients.py`
-    - [ ] Implement API routes in `backend/app/api/routes/clients.py`
-    - [ ] Register routes in `backend/app/api/main.py`
-- [ ] Task: Implement CRUD routes for Policies
-    - [ ] Write integration tests in `backend/app/tests/api/routes/test_policies.py`
-    - [ ] Implement API routes in `backend/app/api/routes/policies.py`
-    - [ ] Register routes in `backend/app/api/main.py`
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Backend API' (Protocol in workflow.md)
+- [x] Task: Implement CRUD routes for Clients e3caaa2
+    - [x] Write integration tests in `backend/app/tests/api/routes/test_clients.py`
+    - [x] Implement API routes in `backend/app/api/routes/clients.py`
+    - [x] Register routes in `backend/app/api/main.py`
+- [x] Task: Implement CRUD routes for Policies e3caaa2
+    - [x] Write integration tests in `backend/app/tests/api/routes/test_policies.py`
+    - [x] Implement API routes in `backend/app/api/routes/policies.py`
+    - [x] Register routes in `backend/app/api/main.py`
+- [~] Task: Conductor - User Manual Verification 'Phase 2: Backend API' (Protocol in workflow.md)
 
 ## Phase 3: Frontend Foundation (SDK & Basic UI)
 
