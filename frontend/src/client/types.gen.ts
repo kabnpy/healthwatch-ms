@@ -9,31 +9,41 @@ export type Body_login_login_access_token = {
     client_secret?: (string | null);
 };
 
-export type HTTPValidationError = {
-    detail?: Array<ValidationError>;
+export type ClientCreate = {
+    name: string;
+    email: string;
+    phone?: (string | null);
+    postal_address?: (string | null);
+    postal_code?: (string | null);
+    town?: (string | null);
 };
 
-export type ItemCreate = {
-    title: string;
-    description?: (string | null);
-};
-
-export type ItemPublic = {
-    title: string;
-    description?: (string | null);
+export type ClientPublic = {
+    name: string;
+    email: string;
+    phone?: (string | null);
+    postal_address?: (string | null);
+    postal_code?: (string | null);
+    town?: (string | null);
     id: string;
-    owner_id: string;
-    created_at?: (string | null);
 };
 
-export type ItemsPublic = {
-    data: Array<ItemPublic>;
+export type ClientsPublic = {
+    data: Array<ClientPublic>;
     count: number;
 };
 
-export type ItemUpdate = {
-    title?: (string | null);
-    description?: (string | null);
+export type ClientUpdate = {
+    name?: (string | null);
+    email?: (string | null);
+    phone?: (string | null);
+    postal_address?: (string | null);
+    postal_code?: (string | null);
+    town?: (string | null);
+};
+
+export type HTTPValidationError = {
+    detail?: Array<ValidationError>;
 };
 
 export type Message = {
@@ -43,6 +53,46 @@ export type Message = {
 export type NewPassword = {
     token: string;
     new_password: string;
+};
+
+export type PoliciesPublic = {
+    data: Array<PolicyPublic>;
+    count: number;
+};
+
+export type PolicyCreate = {
+    policy_number: string;
+    type: PolicyType;
+    provider: string;
+    start_date: string;
+    end_date?: (string | null);
+    status?: PolicyStatus;
+    client_id: string;
+};
+
+export type PolicyPublic = {
+    policy_number: string;
+    type: PolicyType;
+    provider: string;
+    start_date: string;
+    end_date?: (string | null);
+    status?: PolicyStatus;
+    client_id: string;
+    id: string;
+};
+
+export type PolicyStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
+
+export type PolicyType = 'HEALTH' | 'LIFE' | 'AUTO' | 'HOME';
+
+export type PolicyUpdate = {
+    policy_number?: (string | null);
+    type?: (PolicyType | null);
+    provider?: (string | null);
+    start_date?: (string | null);
+    end_date?: (string | null);
+    status?: (PolicyStatus | null);
+    client_id?: (string | null);
 };
 
 export type PrivateUserCreate = {
@@ -109,37 +159,37 @@ export type ValidationError = {
     type: string;
 };
 
-export type ItemsReadItemsData = {
+export type ClientsReadClientsData = {
     limit?: number;
     skip?: number;
 };
 
-export type ItemsReadItemsResponse = (ItemsPublic);
+export type ClientsReadClientsResponse = (ClientsPublic);
 
-export type ItemsCreateItemData = {
-    requestBody: ItemCreate;
+export type ClientsCreateClientData = {
+    requestBody: ClientCreate;
 };
 
-export type ItemsCreateItemResponse = (ItemPublic);
+export type ClientsCreateClientResponse = (ClientPublic);
 
-export type ItemsReadItemData = {
+export type ClientsReadClientData = {
     id: string;
 };
 
-export type ItemsReadItemResponse = (ItemPublic);
+export type ClientsReadClientResponse = (ClientPublic);
 
-export type ItemsUpdateItemData = {
+export type ClientsUpdateClientData = {
     id: string;
-    requestBody: ItemUpdate;
+    requestBody: ClientUpdate;
 };
 
-export type ItemsUpdateItemResponse = (ItemPublic);
+export type ClientsUpdateClientResponse = (ClientPublic);
 
-export type ItemsDeleteItemData = {
+export type ClientsDeleteClientData = {
     id: string;
 };
 
-export type ItemsDeleteItemResponse = (Message);
+export type ClientsDeleteClientResponse = (void);
 
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;
@@ -167,6 +217,38 @@ export type LoginRecoverPasswordHtmlContentData = {
 
 export type LoginRecoverPasswordHtmlContentResponse = (string);
 
+export type PoliciesReadPoliciesData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type PoliciesReadPoliciesResponse = (PoliciesPublic);
+
+export type PoliciesCreatePolicyData = {
+    requestBody: PolicyCreate;
+};
+
+export type PoliciesCreatePolicyResponse = (PolicyPublic);
+
+export type PoliciesReadPolicyData = {
+    id: string;
+};
+
+export type PoliciesReadPolicyResponse = (PolicyPublic);
+
+export type PoliciesUpdatePolicyData = {
+    id: string;
+    requestBody: PolicyUpdate;
+};
+
+export type PoliciesUpdatePolicyResponse = (PolicyPublic);
+
+export type PoliciesDeletePolicyData = {
+    id: string;
+};
+
+export type PoliciesDeletePolicyResponse = (void);
+
 export type PrivateCreateUserData = {
     requestBody: PrivateUserCreate;
 };
@@ -188,7 +270,7 @@ export type UsersCreateUserResponse = (UserPublic);
 
 export type UsersReadUserMeResponse = (UserPublic);
 
-export type UsersDeleteUserMeResponse = (Message);
+export type UsersDeleteUserMeResponse = (void);
 
 export type UsersUpdateUserMeData = {
     requestBody: UserUpdateMe;
@@ -225,7 +307,7 @@ export type UsersDeleteUserData = {
     userId: string;
 };
 
-export type UsersDeleteUserResponse = (Message);
+export type UsersDeleteUserResponse = (void);
 
 export type UtilsTestEmailData = {
     emailTo: string;
