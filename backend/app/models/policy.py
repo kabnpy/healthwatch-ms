@@ -10,16 +10,16 @@ if TYPE_CHECKING:
 
 
 class PolicyType(str, Enum):
-    HEALTH = "Health"
-    LIFE = "Life"
-    AUTO = "Auto"
-    HOME = "Home"
+    HEALTH = "HEALTH"
+    LIFE = "LIFE"
+    AUTO = "AUTO"
+    HOME = "HOME"
 
 
 class PolicyStatus(str, Enum):
-    ACTIVE = "Active"
-    EXPIRED = "Expired"
-    CANCELLED = "Cancelled"
+    ACTIVE = "ACTIVE"
+    EXPIRED = "EXPIRED"
+    CANCELLED = "CANCELLED"
 
 
 # Shared properties

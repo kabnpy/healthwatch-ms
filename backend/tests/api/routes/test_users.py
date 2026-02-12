@@ -236,7 +236,7 @@ def test_update_password_me(
     )
     assert r.status_code == 200
     updated_user = r.json()
-    assert updated_user["detail"] == "Password updated successfully"
+    assert updated_user["message"] == "Password updated successfully"
 
     user_query = select(User).where(User.email == settings.FIRST_SUPERUSER)
     user_db = db.exec(user_query).first()

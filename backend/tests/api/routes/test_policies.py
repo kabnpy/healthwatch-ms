@@ -157,7 +157,7 @@ def test_delete_policy(
         f"{settings.API_V1_STR}/policies/{policy_id}",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 200
+    assert response.status_code == 204
 
     response = client.get(
         f"{settings.API_V1_STR}/policies/{policy_id}",

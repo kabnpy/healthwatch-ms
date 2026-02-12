@@ -60,7 +60,7 @@ def test_recovery_password(
         )
         assert r.status_code == 200
         assert r.json() == {
-            "detail": "If that email is registered, we sent a password recovery link"
+            "message": "If that email is registered, we sent a password recovery link"
         }
 
 
@@ -75,7 +75,7 @@ def test_recovery_password_user_not_exits(
     # Should return 200 with generic message to prevent email enumeration attacks
     assert r.status_code == 200
     assert r.json() == {
-        "detail": "If that email is registered, we sent a password recovery link"
+        "message": "If that email is registered, we sent a password recovery link"
     }
 
 
@@ -103,7 +103,7 @@ def test_reset_password(client: TestClient, db: Session) -> None:
     )
 
     assert r.status_code == 200
-    assert r.json() == {"detail": "Password updated successfully"}
+    assert r.json() == {"message": "Password updated successfully"}
 
     db.refresh(user)
     verified, _ = verify_password(new_password, user.hashed_password)

@@ -31,15 +31,14 @@ def get_clients(*, session: Session, skip: int = 0, limit: int = 100) -> Any:
     statement = select(Client).offset(skip).limit(limit)
     clients = session.exec(statement).all()
 
-    return {"data": clients, "count": count}
+    return clients, count
 
 
 def update_client(
     *, session: Session, db_client: Client, client_in: ClientUpdate
 ) -> Any:
     client_data = client_in.model_dump(exclude_unset=True)
-    for field, value in client_data.items():
-        setattr(db_client, field, value)
+    db_client.sqlmodel_update(client_data)
     session.add(db_client)
     session.commit()
     session.refresh(db_client)

@@ -12,6 +12,7 @@ from app.api.deps import (
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.models import (
+    Message,
     UpdatePassword,
     User,
     UserCreate,
@@ -91,10 +92,10 @@ def update_user_me(
     return current_user
 
 
-@router.patch("/me/password", response_model=None)
+@router.patch("/me/password", response_model=Message)
 def update_password_me(
     *, session: SessionDep, body: UpdatePassword, current_user: CurrentUser
-) -> dict[str, str]:
+) -> Any:
     """
     Update own password.
     """
@@ -109,7 +110,7 @@ def update_password_me(
     current_user.hashed_password = hashed_password
     session.add(current_user)
     session.commit()
-    return {"detail": "Password updated successfully"}
+    return Message(message="Password updated successfully")
 
 
 @router.get("/me", response_model=UserPublic)

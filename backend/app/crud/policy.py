@@ -25,15 +25,14 @@ def get_policies(*, session: Session, skip: int = 0, limit: int = 100) -> Any:
     statement = select(Policy).offset(skip).limit(limit)
     policies = session.exec(statement).all()
 
-    return {"data": policies, "count": count}
+    return policies, count
 
 
 def update_policy(
     *, session: Session, db_policy: Policy, policy_in: PolicyUpdate
 ) -> Any:
     policy_data = policy_in.model_dump(exclude_unset=True)
-    for field, value in policy_data.items():
-        setattr(db_policy, field, value)
+    db_policy.sqlmodel_update(policy_data)
     session.add(db_policy)
     session.commit()
     session.refresh(db_policy)

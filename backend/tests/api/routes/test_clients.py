@@ -110,7 +110,7 @@ def test_delete_client(
         f"{settings.API_V1_STR}/clients/{client_id}",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 200
+    assert response.status_code == 204
 
     response = client.get(
         f"{settings.API_V1_STR}/clients/{client_id}",

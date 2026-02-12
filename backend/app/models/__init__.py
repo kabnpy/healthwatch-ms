@@ -8,6 +8,7 @@ from .client import (
     ClientsPublic,
     ClientUpdate,
 )
+from .message import Message
 from .policy import (
     PoliciesPublic,
     Policy,
@@ -51,6 +52,7 @@ __all__ = [
     "ClientPublic",
     "ClientsPublic",
     "ClientUpdate",
+    "Message",
     "Policy",
     "PolicyBase",
     "PolicyCreate",
