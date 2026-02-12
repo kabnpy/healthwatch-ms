@@ -62,3 +62,6 @@ __all__ = [
     "PolicyStatus",
     "PolicyType",
 ]
+
+ClientPublic.model_rebuild()
+ClientsPublic.model_rebuild()

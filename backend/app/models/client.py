@@ -5,7 +5,7 @@ from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
-    from .policy import Policy
+    from .policy import Policy, PolicyPublic
 
 
 # Shared properties
@@ -48,8 +48,16 @@ class Client(ClientBase, table=True):
 # Properties to return via API, id is always required
 class ClientPublic(ClientBase):
     id: uuid.UUID
+    policies: list["PolicyPublic"] = []
 
 
 class ClientsPublic(SQLModel):
+
+
     data: list[ClientPublic]
+
+
     count: int
+
+
+

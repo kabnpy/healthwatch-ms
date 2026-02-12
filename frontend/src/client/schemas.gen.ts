@@ -189,6 +189,14 @@ export const ClientPublicSchema = {
             type: 'string',
             format: 'uuid',
             title: 'Id'
+        },
+        policies: {
+            items: {
+                '$ref': '#/components/schemas/PolicyPublic'
+            },
+            type: 'array',
+            title: 'Policies',
+            default: []
         }
     },
     type: 'object',

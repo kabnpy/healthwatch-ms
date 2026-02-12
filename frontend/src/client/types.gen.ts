@@ -26,6 +26,7 @@ export type ClientPublic = {
     postal_code?: (string | null);
     town?: (string | null);
     id: string;
+    policies?: Array<PolicyPublic>;
 };
 
 export type ClientsPublic = {
