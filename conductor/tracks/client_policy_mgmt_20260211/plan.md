@@ -26,8 +26,8 @@ This plan outlines the steps to implement the core client and policy management 
 
 ## Phase 3: Frontend Foundation (SDK & Basic UI)
 
-- [ ] Task: Generate updated frontend SDK
-    - [ ] Run `scripts/generate-client.sh`
+- [x] Task: Generate updated frontend SDK f5e2111
+    - [x] Run `scripts/generate-client.sh`
 - [ ] Task: Create basic Client listing page
     - [ ] Write Playwright tests in `frontend/tests/clients.spec.ts`
     - [ ] Create route `frontend/src/routes/_layout/clients/index.tsx`
