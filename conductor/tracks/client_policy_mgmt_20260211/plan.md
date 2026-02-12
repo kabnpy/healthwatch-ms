@@ -34,10 +34,10 @@ This plan outlines the steps to implement the core client and policy management 
     - [x] Implement client list component with search functionality
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Frontend Foundation' (Protocol in workflow.md) 554ab77
 
-## Phase 4: Full Client & Policy UI
+## Phase 4: Full Client & Policy UI [checkpoint: 52282d2]
 
 - [x] Task: Implement Client Detail and Policy Management UI 34e33ef
     - [x] Write Playwright tests for client details and policy CRUD
     - [x] Create route `frontend/src/routes/_layout/clients/$clientId.tsx`
     - [x] Implement components for viewing/editing client details and managing their policies
-- [~] Task: Conductor - User Manual Verification 'Phase 4: Full Client & Policy UI' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Full Client & Policy UI' (Protocol in workflow.md) 52282d2
