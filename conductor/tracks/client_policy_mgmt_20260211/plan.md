@@ -28,11 +28,11 @@ This plan outlines the steps to implement the core client and policy management 
 
 - [x] Task: Generate updated frontend SDK f5e2111
     - [x] Run `scripts/generate-client.sh`
-- [ ] Task: Create basic Client listing page
-    - [ ] Write Playwright tests in `frontend/tests/clients.spec.ts`
-    - [ ] Create route `frontend/src/routes/_layout/clients/index.tsx`
-    - [ ] Implement client list component with search functionality
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Frontend Foundation' (Protocol in workflow.md)
+- [x] Task: Create basic Client listing page 35fa996
+    - [x] Write Playwright tests in `frontend/tests/clients.spec.ts`
+    - [x] Create route `frontend/src/routes/_layout/clients/index.tsx`
+    - [x] Implement client list component with search functionality
+- [~] Task: Conductor - User Manual Verification 'Phase 3: Frontend Foundation' (Protocol in workflow.md)
 
 ## Phase 4: Full Client & Policy UI
 
