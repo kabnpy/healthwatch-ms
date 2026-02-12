@@ -12,7 +12,7 @@ This plan outlines the steps to implement the core client and policy management 
     - [x] Apply migration: `docker compose watch backend exec backend alembic upgrade head`
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Backend Foundation' (Protocol in workflow.md) 2c91d9a
 
-## Phase 2: Backend API (CRUD Routes)
+## Phase 2: Backend API (CRUD Routes) [checkpoint: 11d60fa]
 
 - [x] Task: Implement CRUD routes for Clients e3caaa2
     - [x] Write integration tests in `backend/app/tests/api/routes/test_clients.py`
@@ -22,7 +22,7 @@ This plan outlines the steps to implement the core client and policy management 
     - [x] Write integration tests in `backend/app/tests/api/routes/test_policies.py`
     - [x] Implement API routes in `backend/app/api/routes/policies.py`
     - [x] Register routes in `backend/app/api/main.py`
-- [~] Task: Conductor - User Manual Verification 'Phase 2: Backend API' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Backend API' (Protocol in workflow.md) 11d60fa
 
 ## Phase 3: Frontend Foundation (SDK & Basic UI)
 
