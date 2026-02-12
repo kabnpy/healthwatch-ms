@@ -4,8 +4,8 @@ import { Search, UserPlus } from "lucide-react"
 import { Suspense } from "react"
 
 import { ClientsService } from "@/client"
-import { DataTable } from "@/components/Common/DataTable"
 import { columns } from "@/components/Clients/columns"
+import { DataTable } from "@/components/Common/DataTable"
 import PendingUsers from "@/components/Pending/PendingUsers"
 import { Button } from "@/components/ui/button"
 
