@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends
 from pydantic.networks import EmailStr
 
@@ -11,6 +13,7 @@ router = APIRouter(prefix="/utils", tags=["utils"])
 @router.post(
     "/test-email/",
     dependencies=[Depends(get_current_active_superuser)],
+    response_model=Message,
     status_code=201,
 )
 def test_email(email_to: EmailStr) -> Message:
