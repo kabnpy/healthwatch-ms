@@ -31,7 +31,8 @@ def upgrade():
     """)
     op.execute("UPDATE risknote SET cover_snapshot = '{}'::jsonb WHERE cover_snapshot IS NULL")
     
-    # 3. Populate null inception dates and alter to NOT NULL
+    # 3. Add inception_date to policy and populate it
+    op.add_column('policy', sa.Column('inception_date', sa.Date(), nullable=True))
     op.execute("UPDATE policy SET inception_date = COALESCE(created_at::date, CURRENT_DATE) WHERE inception_date IS NULL")
     op.alter_column('policy', 'inception_date',
                existing_type=sa.DATE(),
@@ -55,10 +56,8 @@ def downgrade():
     """)
     op.execute("UPDATE risknote SET policy_snapshot = '{}'::jsonb WHERE policy_snapshot IS NULL")
     
-    # 3. Alter inception_date to be nullable
-    op.alter_column('policy', 'inception_date',
-               existing_type=sa.DATE(),
-               nullable=True)
+    # 3. Drop inception_date from policy
+    op.drop_column('policy', 'inception_date')
     
     # 4. Drop cover_snapshot from risknote
     op.drop_column('risknote', 'cover_snapshot')
