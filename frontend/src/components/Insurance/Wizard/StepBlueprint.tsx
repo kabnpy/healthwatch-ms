@@ -39,14 +39,18 @@ export function StepBlueprint({
   const wizardFields = useMemo(() => {
     if (!selectedProduct) return []
     const allFields = extractWizardFields(selectedProduct.product_details)
-    
-    // Essential details filter
-    const isMotor = selectedProduct.class_of_insurance.toLowerCase().includes("motor")
-    const essentialKeys = isMotor 
-      ? ["registration_number", "make", "year_of_manufacture"]
-      : allFields.map(f => f.path[f.path.length - 1])
 
-    return allFields.filter(f => essentialKeys.includes(f.path[f.path.length - 1]))
+    // Essential details filter
+    const isMotor = selectedProduct.class_of_insurance
+      .toLowerCase()
+      .includes("motor")
+    const essentialKeys = isMotor
+      ? ["registration_number", "make", "year_of_manufacture"]
+      : allFields.map((f) => f.path[f.path.length - 1])
+
+    return allFields.filter((f) =>
+      essentialKeys.includes(f.path[f.path.length - 1]),
+    )
   }, [selectedProduct])
 
   const form = useForm({
@@ -73,11 +77,13 @@ export function StepBlueprint({
               name={field.path.join(".")}
               render={({ field: inputField }) => (
                 <FormItem>
-                  <FormLabel className="capitalize">{field.label.replace(/_/g, ' ')}</FormLabel>
+                  <FormLabel className="capitalize">
+                    {field.label.replace(/_/g, " ")}
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type={field.type === "number" ? "number" : "text"}
-                      placeholder={`Enter ${field.label.replace(/_/g, ' ').toLowerCase()}...`}
+                      placeholder={`Enter ${field.label.replace(/_/g, " ").toLowerCase()}...`}
                       {...inputField}
                       value={inputField.value || ""}
                       className="h-11"

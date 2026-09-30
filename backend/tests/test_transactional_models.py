@@ -23,13 +23,14 @@ def test_policy_risk_details_storage(db: Session) -> None:
         client_id=client.id,
         product_id=product.id,
         status=PolicyStatus.ACTIVE,
-        risk_details=risk_details
+        risk_details=risk_details,
     )
     db.add(policy)
     db.commit()
     db.refresh(policy)
 
     assert policy.risk_details == risk_details
+
 
 def test_risknote_chain_and_changelog(db: Session) -> None:
     """
@@ -45,7 +46,7 @@ def test_risknote_chain_and_changelog(db: Session) -> None:
         client_id=client.id,
         product_id=product.id,
         status=PolicyStatus.ACTIVE,
-        risk_details={"vehicle": {"value": 1000000}}
+        risk_details={"vehicle": {"value": 1000000}},
     )
     db.add(policy)
     db.commit()
@@ -85,11 +86,11 @@ def test_risknote_chain_and_changelog(db: Session) -> None:
         total_amount=Decimal("2100.00"),
     )
     db.add(rn_new)
-    
+
     # Update Policy in-place
     policy.risk_details = {"vehicle": {"value": 1200000}}
     db.add(policy)
-    
+
     db.commit()
     db.refresh(rn_new)
     db.refresh(policy)
@@ -98,6 +99,7 @@ def test_risknote_chain_and_changelog(db: Session) -> None:
     assert rn_new.previous_risk_note_id == rn_old.id
     assert rn_new.change_log == change_log
     assert policy.risk_details["vehicle"]["value"] == 1200000
+
 
 def test_policy_has_no_duplicated_data(db: Session) -> None:
     """

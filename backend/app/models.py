@@ -2,9 +2,9 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
-from pydantic import ConfigDict, EmailStr, computed_field
+from pydantic import ConfigDict, EmailStr
 from sqlalchemy import JSON, Column, Numeric
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -263,10 +263,11 @@ class Product(ProductBase, table=True):
             from app.schemas import MotorPrivateRiskDetails
 
             validated = MotorPrivateRiskDetails(**risk_details)
-            
+
             # Return a clean, semantic structure that is JSON-serializable
             return validated.model_dump(mode="python")
         return risk_details
+
     def calculate_premium(self, risk_details: dict[str, Any]) -> Decimal:
         from app.services.rating import RatingService
 

@@ -189,7 +189,7 @@ pythondef validate_risk_details(self, risk_details: dict) -> dict:
     Validate that risk_details conform to this product's schema.
     Returns validated/cleaned dict or raises ValidationError.
     """
-    
+
 def calculate_premium(self, risk_details: dict) -> Decimal:
     """
     Calculate premium based on product pricing rules and risk details.
@@ -225,9 +225,9 @@ Computed Properties (read from latest RiskNote):
 python@property
 def current_risk_note(self) -> RiskNote | None:
     """Get the most recent risk note (current state)"""
-    # SELECT * FROM risknote 
-    # WHERE policy_id = self.id 
-    # ORDER BY effective_date DESC 
+    # SELECT * FROM risknote
+    # WHERE policy_id = self.id
+    # ORDER BY effective_date DESC
     # LIMIT 1
     return self.risk_notes[0] if self.risk_notes else None
 
@@ -360,7 +360,7 @@ Historical State: Query RiskNotes WHERE effective_date <= target_date.
 Chaining: Set previous_risk_note_id to maintain audit trail.
 
 Required Index:
-sqlCREATE INDEX ix_risknote_policy_effective 
+sqlCREATE INDEX ix_risknote_policy_effective
   ON risknote(policy_id, effective_date DESC)
   WHERE status NOT IN ('CANCELLED', 'REPLACED');
 
@@ -376,12 +376,12 @@ pythondef create_new_business(
     end_date: date,
     current_user: User,
 ) -> tuple[Policy, RiskNote]:
-    
+
     # 1. Validate and price
     product = session.get(Product, product_id)
     validated_risk = product.validate_risk_details(risk_details)
     net_premium = product.calculate_premium(validated_risk)
-    
+
     # 2. Create Policy (just container, NO coverage data)
     policy = Policy(
         policy_number=policy_number,
@@ -392,7 +392,7 @@ pythondef create_new_business(
     )
     session.add(policy)
     session.flush()
-    
+
     # 3. Create RiskNote (ALL the data goes here)
     risk_note = RiskNote(
         risk_note_number=generate_risk_note_number(),
@@ -401,14 +401,14 @@ pythondef create_new_business(
         effective_date=start_date,
         coverage_start=start_date,
         coverage_end=end_date,
-        
+
         # Complete snapshot
         policy_snapshot={
             "policy_number": policy.policy_number,
             "risk_details": validated_risk,  # Coverage details
             "product": product.model_dump(mode="json"),
         },
-        
+
         net_premium=net_premium,
         levies=calculate_levies(net_premium),
         commission_amount=calculate_commission(net_premium, product),
@@ -418,10 +418,10 @@ pythondef create_new_business(
     )
     session.add(risk_note)
     session.commit()
-    
+
     # Now policy.current_risk_details automatically returns validated_risk
     # via computed property reading from risk_note!
-    
+
     return policy, risk_note
 Creating Endorsement
 pythondef create_endorsement(
@@ -431,18 +431,18 @@ pythondef create_endorsement(
     change_description: str,
     current_user: User,
 ) -> RiskNote:
-    
+
     policy = session.get(Policy, policy_id)
     product = policy.product
-    
+
     # 1. Get CURRENT state from latest risk note
     current_rn = policy.current_risk_note
     old_risk_details = current_rn.policy_snapshot["risk_details"]
-    
+
     # 2. Calculate premiums
     new_total_premium = product.calculate_premium(updated_risk_details)
     additional_premium = new_total_premium - current_rn.net_premium
-    
+
     # 3. Create NEW risk note (NO policy update needed!)
     risk_note = RiskNote(
         risk_note_number=generate_risk_note_number(),
@@ -452,7 +452,7 @@ pythondef create_endorsement(
         effective_date=date.today(),
         coverage_start=current_rn.coverage_start,
         coverage_end=current_rn.coverage_end,
-        
+
         # NEW state snapshot
         policy_snapshot={
             "policy_number": policy.policy_number,
@@ -464,7 +464,7 @@ pythondef create_endorsement(
                 "to": updated_risk_details,
             }
         },
-        
+
         net_premium=additional_premium,
         levies=calculate_levies(additional_premium),
         commission_amount=calculate_commission(additional_premium, product),
@@ -474,16 +474,16 @@ pythondef create_endorsement(
         created_by_id=current_user.id,
     )
     session.add(risk_note)
-    
+
     # Mark previous as replaced
     current_rn.status = RiskNoteStatus.REPLACED
     session.add(current_rn)
-    
+
     session.commit()
-    
+
     # Now policy.current_risk_details automatically returns updated_risk_details!
     # No manual policy update needed!
-    
+
     return risk_note
 Querying Current vs Historical State
 python# Get current state (easy!)
@@ -643,7 +643,7 @@ class Policy(SQLModel, table=True):
     risk_details: dict  # ← Coverage details HERE
     current_premium: Decimal  # ← Premium HERE
     current_term_start: date  # ← Term HERE
-    
+
 class RiskNote(SQLModel, table=True):
     policy_snapshot: dict  # ← ALSO HERE (duplication!)
     total_premium: Decimal  # ← ALSO HERE (duplication!)
@@ -662,12 +662,12 @@ class Policy(SQLModel, table=True):
     client_id: UUID
     status: PolicyStatus
     inception_date: date
-    
+
     # Computed properties (read from latest RiskNote)
     @property
     def current_risk_details(self) -> dict:
         return self.current_risk_note.policy_snapshot["risk_details"]
-    
+
     @property
     def current_premium(self) -> Decimal:
         return self.current_risk_note.total_premium
@@ -768,10 +768,10 @@ CREATE INDEX ix_risknote_effective_date ON risknote(effective_date);
 CREATE INDEX ix_risknote_created_at ON risknote(created_at);
 
 -- CRITICAL: Composite index for "get latest risk note" query
-CREATE INDEX ix_risknote_policy_effective 
+CREATE INDEX ix_risknote_policy_effective
   ON risknote(policy_id, effective_date DESC)
   WHERE status IN ('ISSUED', 'REPLACED');
-  
+
 -- This makes policy.current_risk_note very fast
 
 7. Sample Data Examples
@@ -818,7 +818,7 @@ json{
   "effective_date": "2025-08-02",
   "coverage_start": "2025-08-02",
   "coverage_end": "2026-08-01",
-  
+
   "policy_snapshot": {
     "policy_number": "010/070/1/012473/2025",
     "risk_details": {
@@ -835,7 +835,7 @@ json{
       "commission_rate": 10.0
     }
   },
-  
+
   "net_premium": "152750.00",
   "levies": {
     "training_levy": "305.50",
@@ -859,7 +859,7 @@ json{
   "effective_date": "2025-12-15",
   "coverage_start": "2025-08-02",
   "coverage_end": "2026-08-01",
-  
+
   "policy_snapshot": {
     "policy_number": "010/070/1/012473/2025",
     "risk_details": {
@@ -881,7 +881,7 @@ json{
       "to": {"value": "5000000"}
     }
   },
-  
+
   "net_premium": "5250.00",
   "levies": {
     "training_levy": "10.50",
@@ -1031,7 +1031,7 @@ class Policy(PolicyBase, table=True):
     """
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.now)
-    
+
     # Relationships (eager load risk_notes for computed properties)
     client: "Client" = Relationship(back_populates="policies")
     product: "Product" = Relationship(back_populates="policies")
@@ -1043,35 +1043,35 @@ class Policy(PolicyBase, table=True):
         }
     )
     claims: list["Claim"] = Relationship(back_populates="policy")
-    
+
     # Computed properties (read from latest RiskNote)
     @property
     def current_risk_note(self) -> "RiskNote | None":
         """Get most recent risk note (current state)"""
         active_notes = [
-            rn for rn in self.risk_notes 
+            rn for rn in self.risk_notes
             if rn.status in [RiskNoteStatus.ISSUED, RiskNoteStatus.REPLACED]
         ]
         return active_notes[0] if active_notes else None
-    
+
     @property
     def current_risk_details(self) -> dict:
         """Get current coverage details from latest risk note"""
         rn = self.current_risk_note
         return rn.policy_snapshot.get("risk_details", {}) if rn else {}
-    
+
     @property
     def current_premium(self) -> Decimal:
         """Get current total premium from latest risk note"""
         rn = self.current_risk_note
         return rn.total_premium if rn else Decimal("0")
-    
+
     @property
     def current_term_start(self) -> date | None:
         """Get current coverage period start"""
         rn = self.current_risk_note
         return rn.coverage_start if rn else None
-    
+
     @property
     def current_term_end(self) -> date | None:
         """Get current coverage period end"""
@@ -1108,16 +1108,16 @@ class RiskNoteBase(SQLModel):
     effective_date: date = Field(index=True)
     coverage_start: date
     coverage_end: date
-    
+
     # THE DATA (all in policy_snapshot)
     policy_snapshot: dict = Field(sa_type=JSON)
-    
+
     # Financial
     net_premium: Decimal = Field(sa_type=Numeric(15, 2))
     levies: dict = Field(sa_type=JSON)
     commission_amount: Decimal = Field(sa_type=Numeric(15, 2))
     total_premium: Decimal = Field(sa_type=Numeric(15, 2))
-    
+
     special_clauses: list[str] = Field(default_factory=list, sa_type=JSON)
 
 
@@ -1133,19 +1133,19 @@ class RiskNote(RiskNoteBase, table=True):
     """
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     risk_note_number: str = Field(unique=True, index=True)
-    
+
     status: RiskNoteStatus = Field(default=RiskNoteStatus.DRAFT)
     payment_status: PaymentStatus = Field(default=PaymentStatus.UNPAID)
-    
+
     previous_risk_note_id: UUID | None = Field(
         default=None,
         foreign_key="risknote.id"
     )
-    
+
     invoice_number: str | None = None
     created_at: datetime = Field(default_factory=datetime.now, index=True)
     created_by_id: UUID | None = Field(default=None, foreign_key="user.id")
-    
+
     # Relationships
     policy: "Policy" = Relationship(back_populates="risk_notes")
     previous_risk_note: "RiskNote | None" = Relationship(

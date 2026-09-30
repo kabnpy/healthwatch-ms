@@ -25,6 +25,7 @@ def test_read_invoices(
     content = response.json()
     assert len(content["data"]) >= 1
 
+
 def test_create_invoice(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
@@ -34,7 +35,7 @@ def test_create_invoice(
         "client_id": str(db_client.id),
         "total_amount": 1000.0,
         "balance_due": 1000.0,
-        "status": "Unpaid"
+        "status": "Unpaid",
     }
     response = client.post(
         f"{settings.API_V1_STR}/financials/invoices/",
@@ -45,6 +46,7 @@ def test_create_invoice(
     content = response.json()
     assert content["invoice_number"] == data["invoice_number"]
     assert content["client_id"] == str(db_client.id)
+
 
 def test_read_receipts(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
@@ -58,6 +60,7 @@ def test_read_receipts(
     content = response.json()
     assert len(content["data"]) >= 1
 
+
 def test_create_receipt(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
@@ -68,7 +71,7 @@ def test_create_receipt(
         "date_received": "2024-01-01",
         "amount": 500.0,
         "mode": "Cheque",
-        "reference": "CHQ999"
+        "reference": "CHQ999",
     }
     response = client.post(
         f"{settings.API_V1_STR}/financials/receipts/",
@@ -79,6 +82,8 @@ def test_create_receipt(
     content = response.json()
     assert content["receipt_number"] == data["receipt_number"]
     assert Decimal(content["amount"]) == Decimal("500.0")
+
+
 def test_allocate_receipt(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
@@ -87,7 +92,7 @@ def test_allocate_receipt(
     data = {
         "receipt_id": str(receipt.id),
         "invoice_id": str(invoice.id),
-        "amount_allocated": 500.0
+        "amount_allocated": 500.0,
     }
     response = client.post(
         f"{settings.API_V1_STR}/financials/receipts/{receipt.id}/allocations",

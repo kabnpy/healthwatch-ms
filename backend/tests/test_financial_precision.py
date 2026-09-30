@@ -50,6 +50,7 @@ def test_floating_point_precision_error(db: Session) -> None:
     # It should remain precise after DB roundtrip
     assert risk_note.total_amount == Decimal("0.3")
 
+
 def test_money_should_be_precise(db: Session) -> None:
     client_in = ClientCreate(
         name=random_lower_string(),

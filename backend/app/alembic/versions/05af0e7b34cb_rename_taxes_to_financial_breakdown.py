@@ -23,19 +23,19 @@ def upgrade():
     conn = op.get_bind()
     inspector = sa.inspect(conn)
     columns = [c['name'] for c in inspector.get_columns('risknote')]
-    
+
     # 1. Rename the column if it exists
     if 'taxes' in columns:
         op.alter_column('risknote', 'taxes', new_column_name='financial_breakdown')
-    
+
     # 2. Transform existing data to new structure
     # Old structure: {"training_levy": 10.0, ...}
     # New structure: {"type": "base", "taxes": {"training_levy": 10.0, ...}, "net_premium": ..., "total_amount": ..., "commission_amount": ...}
-    
+
     # We'll do a best-effort migration for existing records
     op.execute(
         """
-        UPDATE risknote 
+        UPDATE risknote
         SET financial_breakdown = json_build_object(
             'type', 'base',
             'taxes', financial_breakdown,
@@ -57,12 +57,12 @@ def downgrade():
     # 1. Revert structure (extract taxes field)
     op.execute(
         """
-        UPDATE risknote 
+        UPDATE risknote
         SET financial_breakdown = financial_breakdown->'taxes'
         WHERE financial_breakdown IS NOT NULL AND (financial_breakdown->>'type') IS NOT NULL
         """
     )
-    
+
     # 2. Rename back if it exists
     if 'financial_breakdown' in columns:
         op.alter_column('risknote', 'financial_breakdown', new_column_name='taxes')

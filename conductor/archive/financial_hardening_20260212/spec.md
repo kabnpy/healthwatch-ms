@@ -12,7 +12,7 @@ This track implements the critical and high-priority recommendations from the Pr
 
 ### 2.2 Security & Type Safety (P1)
 - **Status Enums:** Replace string literals for statuses (Policy, Invoice, Risk Note, etc.) with strict Python `Enum` types.
-- **Role-Based Access Control (RBAC):** 
+- **Role-Based Access Control (RBAC):**
   - Create a `@require_role` decorator.
   - Enforce role checks on all mutation routes (POST, PUT, DELETE).
 - **Database Indexing:** Add indexes to all foreign key columns (`client_id`, `policy_id`, `product_id`, etc.) to optimize query performance.
@@ -20,7 +20,7 @@ This track implements the critical and high-priority recommendations from the Pr
 ### 2.3 Architectural Refinement (P2)
 - **Soft Delete Pattern:** Implement a `deleted_at` and `deleted_by_id` audit mixin for all primary models. Update CRUD methods to respect soft deletes by default.
 - **Document Model Refactor:** Implement a polymorphic document structure using PostgreSQL inheritance to handle various external attachments (IDs, Receipts, etc.) with referential integrity.
-- **Service Layer Implementation:** 
+- **Service Layer Implementation:**
   - Create `backend/app/services/` directory.
   - Extract high-level business logic from CRUD into services, starting with Policy and Risk Note flows.
 - **Motor Private Schema Validation:** Implement a nested Pydantic model for the `risk_details` JSON field specifically for "Motor Private" products.

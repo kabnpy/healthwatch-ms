@@ -67,10 +67,10 @@ export function NewPolicyWizard({
 
   const handleNext = (data: any) => {
     if (step === 0) {
-      setState((prev) => ({ 
-        ...prev, 
+      setState((prev) => ({
+        ...prev,
         product_id: data.product_id,
-        policy_number: data.policy_number 
+        policy_number: data.policy_number,
       }))
     } else if (step === 1) {
       // Sync logic: Extract "Value" or "Sum Insured" from details (recursive search)
@@ -79,7 +79,10 @@ export function NewPolicyWizard({
         if (!obj || typeof obj !== "object") return 0
         for (const [k, v] of Object.entries(obj)) {
           // Look for sum_insured, value, or display aliases
-          if (/sum_insured|value|sum insured/i.test(k) && typeof v !== "object") {
+          if (
+            /sum_insured|value|sum insured/i.test(k) &&
+            typeof v !== "object"
+          ) {
             const cleanVal =
               typeof v === "string" ? v.replace(/[^0-9.]/g, "") : v
             return Number(cleanVal) || 0
@@ -128,11 +131,11 @@ export function NewPolicyWizard({
 
       const startDate =
         state.financials?.startDate || new Date().toISOString().split("T")[0]
-      
+
       const durationMonths = state.financials?.duration || 12
       const endDateDate = new Date(startDate)
-      
-      // For standard 12-month terms, we use setFullYear to maintain day consistency 
+
+      // For standard 12-month terms, we use setFullYear to maintain day consistency
       // (e.g., Feb 29 logic). For other durations, we use the month-based offset.
       if (durationMonths === 12) {
         endDateDate.setFullYear(endDateDate.getFullYear() + 1)
@@ -144,7 +147,7 @@ export function NewPolicyWizard({
           endDateDate.setDate(0)
         }
       }
-      
+
       const endDate = endDateDate.toISOString().split("T")[0]
 
       // Structure the risk details using the product blueprint
@@ -156,8 +159,14 @@ export function NewPolicyWizard({
       // Align with Atomic Snapshot Schema: Sensible Nesting
       // We merge the structured details from the blueprint with the explicit state from the wizard.
       // Note: The blueprint uses "vehicle_details", but the backend expects "vehicle"
-      const vehicleData = structuredRiskDetails["vehicle_details"] || structuredRiskDetails["vehicle"] || {}
-      const extensionData = structuredRiskDetails["added_benefits"] || structuredRiskDetails["extensions"] || {}
+      const vehicleData =
+        structuredRiskDetails.vehicle_details ||
+        structuredRiskDetails.vehicle ||
+        {}
+      const extensionData =
+        structuredRiskDetails.added_benefits ||
+        structuredRiskDetails.extensions ||
+        {}
 
       const coverSnapshot = {
         vehicle: {
@@ -238,9 +247,9 @@ export function NewPolicyWizard({
 
           {step === 0 && (
             <StepAsset
-              defaultValues={{ 
+              defaultValues={{
                 product_id: state.product_id,
-                policy_number: state.policy_number 
+                policy_number: state.policy_number,
               }}
               onNext={handleNext}
             />
@@ -257,7 +266,9 @@ export function NewPolicyWizard({
             <StepFinancials
               productId={state.product_id || ""}
               sum_insured={state.sum_insured}
-              onSumInsuredChange={(val) => setState(prev => ({ ...prev, sum_insured: val }))}
+              onSumInsuredChange={(val) =>
+                setState((prev) => ({ ...prev, sum_insured: val }))
+              }
               defaultValues={{
                 financials: state.financials,
                 extensions: state.extensions,

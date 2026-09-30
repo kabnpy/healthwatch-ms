@@ -31,7 +31,7 @@
 ## 6. Action Plan
 1. **Refactor**: Rename `DocumentViewer` to `DocumentViewer` and simplify imports.
 2. **Backend Storage**: Implement a basic `/api/v1/utils/upload` endpoint and a `LocalFileSystemProvider`.
-3. **Receipt Workflow**: 
+3. **Receipt Workflow**:
     - Update `AddReceiptForm` to require a file upload.
     - The `DocumentViewer` will fetch and display this file when "View Receipt" is clicked.
 4. **Metadata**: Add `metadata` field to the `Document` model to store details extracted during upload.

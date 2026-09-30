@@ -6,7 +6,7 @@ As the volume of data grows, "browse-only" navigation is insufficient.
 ### Tier 1: Global Discovery (Command Palette)
 - **Component:** `frontend/src/components/Common/CommandMenu.tsx` (using Shadcn `Command` component).
 - **Triggers:** `Ctrl + K` or a search button in the `Header`.
-- **Sources:** 
+- **Sources:**
     - **Clients:** Search by Name or KRA PIN.
     - **Policies:** Search by Policy Number.
 - **Navigation:** Selecting a result jumps directly to the Hub (`/clients/$id/overview` or `/policies/$id`).
@@ -21,7 +21,7 @@ Ensuring "Risk Notes" and "Invoices" follow the established UI standards.
 
 ### Table Standardization
 - **Action:** Refactor `frontend/src/components/RiskNotes/columns.tsx`.
-- **Change:** 
+- **Change:**
     - Make `Risk Note #` a clickable link (triggers the viewer).
     - Remove "View" button.
     - Add "Three-dot" menu for "Download PDF", "Copy ID", "Email to Client".

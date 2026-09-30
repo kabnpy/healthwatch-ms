@@ -14,15 +14,15 @@
     ```python
     class RiskNote(SQLModel, table=True):
         # ... existing fields ...
-        
+
         # 1. The Financials (The Invoice)
         # Stores: { "basic": 45000, "pvt": 1125, "levies": [...], "total": 47000 }
         premium_breakdown: Dict = Field(default={}, sa_column=Column(JSON))
-        
+
         # 2. The Promises (The Certificate)
         # Stores: { "towing": 100000, "windscreen": 50000 } - Can differ from Product defaults
         benefits_snapshot: Dict = Field(default={}, sa_column=Column(JSON))
-        
+
         # 3. The Asset Snapshot
         # Stores: "Toyota Harrier, KCA 123B" (So we know what was covered even if RiskItem changes)
         risk_item_snapshot: Dict = Field(default={}, sa_column=Column(JSON))
@@ -47,21 +47,21 @@ interface CalculationInput {
 
 export function calculatePremium(input: CalculationInput) {
   const basic = input.sumInsured * (input.rate / 100);
-  
+
   // Extensions
   const extensions = [];
   if (input.hasPVT) extensions.push({ name: "PVT", amount: basic * 0.0025 });
   if (input.hasExcessProtector) extensions.push({ name: "Excess Protector", amount: basic * 0.0025 });
-  
+
   const extensionsTotal = extensions.reduce((acc, curr) => acc + curr.amount, 0);
-  
+
   // Levies (Standard Kenyan Insurance Taxes)
   const trainingLevy = basic * 0.002; // 0.2%
   const phcf = basic * 0.0025;        // 0.25%
   const stampDuty = 40;               // Fixed
-  
+
   const total = basic + extensionsTotal + trainingLevy + phcf + stampDuty;
-  
+
   return {
     breakdown: { basic, extensions, levies: { trainingLevy, phcf, stampDuty }, total }
   };

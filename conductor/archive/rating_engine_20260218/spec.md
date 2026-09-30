@@ -13,7 +13,7 @@ This track centralizes all insurance premium calculations into a dedicated backe
 
 ### 2.2 Data Persistence & Validation
 - **Schema Update:** Rename the `taxes` JSON field in the `RiskNote` model to `financial_breakdown`.
-- **Polymorphic Validation:** 
+- **Polymorphic Validation:**
     - Create a `BaseFinancialBreakdown` Pydantic model for universal fields (totals, standard Kenyan levies).
     - Create specialized sub-models (e.g., `MotorFinancialBreakdown`) that extend the base with specific benefit line-items.
     - Use Pydantic's `RootModel` or `Annotated[Union[...], Discriminator(...)]` to ensure the correct validation logic is applied based on the product class.
