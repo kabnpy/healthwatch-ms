@@ -30,7 +30,7 @@ def create_random_insurer(db: Session) -> Insurer:
     return crud.create_insurer(session=db, insurer_in=insurer_in)
 
 def create_random_product(
-    db: Session, 
+    db: Session,
     insurer_id: uuid.UUID | None = None,
     class_of_insurance: str = "Generic"
 ) -> Product:

@@ -1,9 +1,20 @@
-import uuid
 from datetime import date
 from decimal import Decimal
+
 import pytest
 from sqlmodel import Session
-from app.models import Policy, RiskNote, PolicyStatus, RiskNoteStatus, TransactionType, Client, Product, Insurer
+
+from app.models import (
+    Client,
+    Insurer,
+    Policy,
+    PolicyStatus,
+    Product,
+    RiskNote,
+    RiskNoteStatus,
+    TransactionType,
+)
+
 
 def test_policy_no_longer_has_risk_details(db: Session) -> None:
     """
@@ -25,7 +36,7 @@ def test_risknote_has_cover_snapshot(db: Session) -> None:
     insurer = Insurer(name="Test Insurer")
     db.add(insurer)
     db.commit()
-    
+
     product = Product(
         name="Motor Private",
         class_of_insurance="Motor Private",
@@ -79,7 +90,7 @@ def test_risknote_has_cover_snapshot(db: Session) -> None:
     db.add(rn)
     db.commit()
     db.refresh(rn)
-    
+
     assert rn.cover_snapshot == snapshot
 
 def test_product_has_default_templates(db: Session) -> None:
@@ -89,7 +100,7 @@ def test_product_has_default_templates(db: Session) -> None:
     insurer = Insurer(name="Template Insurer")
     db.add(insurer)
     db.commit()
-    
+
     product = Product(
         name="Template Product",
         class_of_insurance="Motor Private",
@@ -101,7 +112,7 @@ def test_product_has_default_templates(db: Session) -> None:
     db.add(product)
     db.commit()
     db.refresh(product)
-    
+
     assert product.default_benefits_and_limits == "Default Benefits"
     assert product.default_excesses == "Default Excesses"
     assert product.default_special_clauses == "Default Clauses"

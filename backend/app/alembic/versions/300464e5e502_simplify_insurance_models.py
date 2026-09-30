@@ -22,29 +22,29 @@ def upgrade():
     op.drop_constraint(op.f('claim_risk_item_id_fkey'), 'claim', type_='foreignkey')
     op.drop_column('claim', 'risk_item_id')
     op.drop_table('riskitem')
-    
+
     op.add_column('policy', sa.Column('start_date', sa.Date(), nullable=True))
     op.add_column('policy', sa.Column('end_date', sa.Date(), nullable=True))
     op.add_column('policy', sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=True))
-    
+
     # Add as nullable first
     op.add_column('policy', sa.Column('total_premium', sa.Float(), nullable=True))
     op.add_column('policy', sa.Column('premium_breakdown', sa.JSON(), nullable=True))
     op.add_column('policy', sa.Column('risk_details', sa.JSON(), nullable=True))
     op.add_column('risknote', sa.Column('policy_snapshot', sa.JSON(), nullable=True))
-    
+
     # Set default values for existing rows
     op.execute("UPDATE policy SET total_premium = 0 WHERE total_premium IS NULL")
     op.execute("UPDATE policy SET premium_breakdown = '{}' WHERE premium_breakdown IS NULL")
     op.execute("UPDATE policy SET risk_details = '{}' WHERE risk_details IS NULL")
     op.execute("UPDATE risknote SET policy_snapshot = '{}' WHERE policy_snapshot IS NULL")
-    
+
     # Now set NOT NULL
     op.alter_column('policy', 'total_premium', nullable=False)
     op.alter_column('policy', 'premium_breakdown', nullable=False)
     op.alter_column('policy', 'risk_details', nullable=False)
     op.alter_column('risknote', 'policy_snapshot', nullable=False)
-    
+
     op.drop_column('risknote', 'items_snapshot')
     # ### end Alembic commands ###
 

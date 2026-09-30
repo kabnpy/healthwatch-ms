@@ -85,11 +85,11 @@ def test_risknote_chain_and_changelog(db: Session) -> None:
         total_amount=Decimal("2100.00"),
     )
     db.add(rn_new)
-    
+
     # Update Policy in-place
     policy.risk_details = {"vehicle": {"value": 1200000}}
     db.add(policy)
-    
+
     db.commit()
     db.refresh(rn_new)
     db.refresh(policy)

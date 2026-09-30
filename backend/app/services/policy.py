@@ -9,9 +9,6 @@ from sqlmodel import Session
 
 from app import crud
 from app.models import (
-    InvoiceCreate,
-    InvoiceLineItemCreate,
-    InvoiceStatus,
     Policy,
     PolicyCreate,
     Product,
@@ -128,7 +125,7 @@ class PolicyService:
 
         delta_net = ((full_breakdown.net_premium - old_full_breakdown.net_premium) * prorata_factor).quantize(Decimal("0.01"))
         delta_comm = ((full_breakdown.commission_amount - old_full_breakdown.commission_amount) * prorata_factor).quantize(Decimal("0.01"))
-        
+
         new_levies = full_breakdown.taxes
         old_levies = old_full_breakdown.taxes
         all_levy_keys = set(new_levies.keys()) | set(old_levies.keys())
@@ -136,12 +133,12 @@ class PolicyService:
             k: ((new_levies.get(k, Decimal("0")) - old_levies.get(k, Decimal("0"))) * prorata_factor).quantize(Decimal("0.01"))
             for k in all_levy_keys
         }
-        
+
         # Calculate delta for post-levy benefits (e.g., OM Rescue Plus)
         old_post_levy = old_full_breakdown.total_amount - old_full_breakdown.net_premium - sum(old_levies.values())
         new_post_levy = full_breakdown.total_amount - full_breakdown.net_premium - sum(new_levies.values())
         delta_post_levy = ((new_post_levy - old_post_levy) * prorata_factor).quantize(Decimal("0.01"))
-        
+
         delta_total = delta_net + sum(delta_levies.values()) + delta_post_levy
 
         financial_breakdown = PolicyService.to_numeric_dict({

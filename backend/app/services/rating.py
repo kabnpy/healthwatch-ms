@@ -1,6 +1,5 @@
-import re
 from abc import ABC, abstractmethod
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from typing import Any
 
 from app.models import Product
@@ -40,7 +39,7 @@ class MotorPrivateRatingStrategy(RatingStrategy):
     ) -> MotorFinancialBreakdown:
         vehicle = risk_details.get("vehicle") or risk_details.get("vehicle_details", {})
         value = RatingStrategy.parse_decimal(vehicle.get("sum_insured", 0))
-        
+
         if value <= 0:
             raise ValueError("Sum insured must be greater than zero for Motor Private insurance.")
 

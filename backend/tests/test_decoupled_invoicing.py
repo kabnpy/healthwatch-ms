@@ -1,14 +1,23 @@
-import uuid
 from datetime import date
 from decimal import Decimal
-import pytest
+
 from sqlmodel import Session, select
+
 from app.models import (
-    Policy, RiskNote, PolicyStatus, RiskNoteStatus, 
-    TransactionType, Client, Product, Insurer, 
-    PolicyCreate, Invoice, InvoiceLineItem
+    Client,
+    Insurer,
+    Invoice,
+    InvoiceLineItem,
+    Policy,
+    PolicyCreate,
+    PolicyStatus,
+    Product,
+    RiskNote,
+    RiskNoteStatus,
+    TransactionType,
 )
 from app.services.policy import policy_service
+
 
 def test_create_policy_no_automatic_invoice(db: Session) -> None:
     """
@@ -17,7 +26,7 @@ def test_create_policy_no_automatic_invoice(db: Session) -> None:
     insurer = Insurer(name="No Invoice Insurer")
     db.add(insurer)
     db.commit()
-    
+
     product = Product(
         name="No Invoice Product",
         class_of_insurance="Motor Private",
@@ -63,17 +72,17 @@ def test_create_policy_no_automatic_invoice(db: Session) -> None:
 
     assert len(policy.risk_notes) == 1
     rn = policy.risk_notes[0]
-    
+
     # Verify Risk Note is created
     assert rn.status == RiskNoteStatus.ISSUED
-    
+
     # Verify NO invoice is created or linked
     # (Based on current implementation, it might still have invoice_number if we haven't refactored yet)
     # This test is EXPECTED TO FAIL during the Red phase because current logic creates an invoice.
-    
+
     invoices = db.exec(select(Invoice).where(Invoice.client_id == client.id)).all()
     assert len(invoices) == 0, "Invoice was automatically created but should not have been"
-    
+
     line_items = db.exec(select(InvoiceLineItem).where(InvoiceLineItem.risk_note_id == rn.id)).all()
     assert len(line_items) == 0, "Invoice line item was automatically created but should not have been"
 
@@ -85,7 +94,7 @@ def test_create_endorsement_no_automatic_invoice(db: Session) -> None:
     insurer = Insurer(name="Endorsement No Invoice Insurer")
     db.add(insurer)
     db.commit()
-    
+
     product = Product(
         name="Endorsement No Invoice Product",
         class_of_insurance="Motor Private",
@@ -123,11 +132,11 @@ def test_create_endorsement_no_automatic_invoice(db: Session) -> None:
         coverage_end=date.today()
     )
     db.commit()
-    
+
     # Clear any invoices created by the first step to isolate the endorsement test
     # (In the final state, none will be created)
     db.exec(select(Invoice).where(Invoice.client_id == client.id)).all() # Flush
-    
+
     # Create endorsement
     updated_cover = initial_cover.copy()
     updated_cover["vehicle"]["sum_insured"] = 900000
@@ -146,7 +155,7 @@ def test_create_endorsement_no_automatic_invoice(db: Session) -> None:
 
     # Verify 2 risk notes exist
     assert len(policy.risk_notes) == 2
-    
+
     # Verify NO NEW invoice was created
     final_invoices = db.exec(select(Invoice).where(Invoice.client_id == client.id)).all()
     assert len(final_invoices) == initial_invoice_count, "New invoice was automatically created for endorsement"
@@ -157,11 +166,11 @@ def test_get_risk_notes_uninvoiced_filter(db: Session) -> None:
     """
     from app import crud
     from app.models import InvoiceCreate, InvoiceLineItemCreate, InvoiceStatus
-    
+
     insurer = Insurer(name="Filter Insurer")
     db.add(insurer)
     db.commit()
-    
+
     product = Product(
         name="Filter Product",
         class_of_insurance="Motor Private",

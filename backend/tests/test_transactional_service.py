@@ -41,11 +41,11 @@ def test_atomic_policy_creation(db: Session) -> None:
     assert len(policy.risk_notes) == 1
     rn = policy.risk_notes[0]
     assert rn.transaction_type == TransactionType.NEW_BUSINESS
-    
+
     # Verify authoritative state on Policy
     assert float(policy.risk_details["sum_insured"]) == 5000000.0
     assert policy.risk_details["registration_number"] == "KCM 123"
-    
+
     # Verify RiskNote financials
     assert rn.financial_breakdown["type"] == "motor"
     assert "net_premium" in rn.financial_breakdown
@@ -53,7 +53,7 @@ def test_atomic_policy_creation(db: Session) -> None:
     assert "total_amount" in rn.financial_breakdown
     assert "commission_amount" in rn.financial_breakdown
     assert "benefits" in rn.financial_breakdown
-    
+
     # Verify exact math for 5M Motor Private
     # 5M Tier: 3.0% (since it's not < 5M), min 0
     # 5,000,000 * 0.03 = 150,000
@@ -98,7 +98,7 @@ def test_endorsement_creation(db: Session) -> None:
 
     # Verify updated state on Policy
     assert float(policy.risk_details["sum_insured"]) == 6000000.0
-    
+
     assert endorsement_rn.transaction_type == TransactionType.ENDORSEMENT
     # Verify change_log on RiskNote
     assert float(endorsement_rn.change_log["sum_insured"]["from"]) == 5000000.0
@@ -107,7 +107,7 @@ def test_endorsement_creation(db: Session) -> None:
     # Delta logic verification
     assert "new_state" in endorsement_rn.financial_breakdown
     assert "delta" in endorsement_rn.financial_breakdown
-    
+
     # Verify summary fields match deltas
     delta = endorsement_rn.financial_breakdown["delta"]
     assert float(endorsement_rn.net_premium) == float(delta["net_premium"])

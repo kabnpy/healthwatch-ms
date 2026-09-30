@@ -14,7 +14,7 @@ Implement the refined data models as defined in `docs/03_backend_data_models.md`
 
 ### 1.3 Policy Engine
 - **Policy:** Add `created_at` (Timestamp).
-- **RiskItem:** 
+- **RiskItem:**
     - Implement Temporal Versioning: `version_number`, `valid_from`, `valid_to`, `is_active`.
     - Retain: `description`, `cover_description`, `total_premium`, `premium_breakdown`, `risk_details`.
 - **RiskNote:**

@@ -1,7 +1,11 @@
-import pytest
 from decimal import Decimal
-from pydantic import ValidationError
-from app.schemas import BaseFinancialBreakdown, MotorFinancialBreakdown, FinancialBreakdown
+
+from app.schemas import (
+    BaseFinancialBreakdown,
+    FinancialBreakdown,
+    MotorFinancialBreakdown,
+)
+
 
 def test_base_financial_breakdown_valid():
     data = {
@@ -68,4 +72,3 @@ def test_polymorphic_financial_breakdown():
     fb_base = FinancialBreakdown(**base_data)
     assert isinstance(fb_base.breakdown, BaseFinancialBreakdown)
     assert fb_base.breakdown.type == "base"
-

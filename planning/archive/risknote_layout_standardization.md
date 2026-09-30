@@ -19,7 +19,7 @@ The current Risk Note layout has several visual and structural inconsistencies:
 
 ### Step 1: Styling & Font Cleanup (Completed)
 - **Target**: `RiskNoteTable.tsx` and `RiskNoteTemplate.tsx`.
-- **Action**: 
+- **Action**:
     - Removed `bg-slate-50` from `<th>` and `bg-white` from `<td>`.
     - Unified font sizes to `text-[11px]` for all labels and values.
     - Set consistent `font-medium` for data values.
@@ -30,7 +30,7 @@ The current Risk Note layout has several visual and structural inconsistencies:
 
 ### Step 3: Structured Data Consolidation (Vehicle Details) (Completed)
 - **Target**: `RiskNoteTemplate.tsx` (Data Consolidation Logic).
-- **Action**: 
+- **Action**:
     - Refined the logic that merges `template` and `instance` data.
     - Ensured that if a key in `risk_details` exists in the `template`, it updates the template's value.
     - Verified "VEHICLE DETAILS" section is correctly identified and populated.

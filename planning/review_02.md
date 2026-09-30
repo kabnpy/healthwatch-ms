@@ -24,21 +24,21 @@ You avoided that trap. Good instincts.
 What it is: Track two timelines—when something was valid in reality vs. when it was recorded in the system.
 pythonclass Policy(SQLModel, table=True):
     id: uuid.UUID = Field(primary_key=True)
-    
+
     # Business data
     policy_number: str
     client_id: uuid.UUID
     premium: Decimal
-    
+
     # TEMPORAL TRACKING
     # When was this version of data VALID in the real world?
     valid_from: datetime  # Policy effective date
     valid_to: datetime    # Policy expiry date
-    
+
     # When was this version RECORDED in our system?
     system_from: datetime = Field(default_factory=datetime.now)
     system_to: datetime | None = None  # NULL = current version
-    
+
     # Every change creates a new row instead of UPDATE
     previous_version_id: uuid.UUID | None = Field(foreign_key="policy.id")
 
@@ -85,7 +85,7 @@ sqlCREATE TABLE policy (
     policy_number TEXT,
     premium NUMERIC,
     -- ... other fields
-    
+
     -- Temporal columns
     valid_period tstzrange,
     system_period tstzrange GENERATED ALWAYS AS ROW START
@@ -102,7 +102,7 @@ pythonclass PolicyEvent(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.now, index=True)
     created_by: uuid.UUID
     sequence: int  # Order within policy (prevents race conditions)
-    
+
     class Config:
         # Events are IMMUTABLE - never UPDATE or DELETE
         pass
@@ -135,7 +135,7 @@ def change_premium(policy_id, new_premium, reason):
         .where(PolicyEvent.policy_id == policy_id)
         .order_by(PolicyEvent.sequence.desc())
     ).first()
-    
+
     event = PolicyEvent(
         policy_id=policy_id,
         event_type="PremiumChanged",
@@ -158,21 +158,21 @@ def get_policy_state(policy_id):
         .where(PolicyEvent.policy_id == policy_id)
         .order_by(PolicyEvent.sequence)
     ).all()
-    
+
     state = PolicyState()  # Empty state
-    
+
     for event in events:
         if event.event_type == "PolicyCreated":
             state.policy_id = event.policy_id
             state.client_id = uuid.UUID(event.event_data["client_id"])
             state.premium = Decimal(event.event_data["premium"])
             # ... apply all fields
-        
+
         elif event.event_type == "PremiumChanged":
             state.premium = Decimal(event.event_data["new_premium"])
-        
+
         # ... handle other event types
-    
+
     return state
 
 
@@ -183,7 +183,7 @@ class PolicyReadModel(SQLModel, table=True):
     policy_number: str
     premium: Decimal
     # ... all queryable fields
-    
+
     # Updated by event handlers
     last_event_sequence: int
 ```
@@ -261,7 +261,7 @@ class Quote(SQLModel, table=True):
     quoted_premium: Decimal
     status: Literal["Draft", "Quoted", "Accepted", "Declined", "Expired"]
     valid_until: date
-    
+
     # When quote is accepted, it becomes a policy
 
 
@@ -359,7 +359,7 @@ def accept_quote(id: uuid.UUID, session: SessionDep):
     quote = session.get(Quote, id)
     quote.status = "Accepted"
     session.commit()
-    
+
     # Create policy in Policy context
     policy_service = PolicyService()
     policy = policy_service.create_from_quote(
@@ -368,14 +368,14 @@ def accept_quote(id: uuid.UUID, session: SessionDep):
         product_id=quote.product_id,
         risk_details=quote.risk_details
     )
-    
+
     # Create invoice in Financial context
     financial_service = FinancialService()
     invoice = financial_service.create_invoice_for_policy(
         policy_id=policy.id,
         amount=policy.total_premium
     )
-    
+
     return {"policy_id": policy.id, "invoice_id": invoice.id}
 Pros:
 
@@ -402,14 +402,14 @@ python# ============================================
 
 class Product(ProductBase, table=True):
     id: uuid.UUID = Field(primary_key=True)
-    
+
     # Version tracking
     version: int = Field(default=1)
     is_active: bool = Field(default=True, index=True)
     superseded_by_id: uuid.UUID | None = Field(default=None, foreign_key="product.id")
     valid_from: date = Field(default_factory=date.today)
     valid_to: date | None = None
-    
+
     # When you change pricing:
     # 1. Create new product with version=2
     # 2. Link old.superseded_by_id = new.id
@@ -425,16 +425,16 @@ class PolicyVersion(SQLModel, table=True):
     id: uuid.UUID = Field(primary_key=True)
     policy_id: uuid.UUID = Field(foreign_key="policy.id", index=True)
     version: int
-    
+
     # Full snapshot
     risk_details: dict = Field(sa_type=JSON)
     premium: Decimal
     product_snapshot: dict = Field(sa_type=JSON)
-    
+
     # Temporal
     effective_from: date
     effective_to: date | None
-    
+
     # Metadata
     created_at: datetime = Field(default_factory=datetime.now)
     created_by_id: uuid.UUID
@@ -444,15 +444,15 @@ class PolicyTransaction(SQLModel, table=True):
     """Financial transactions related to policies"""
     id: uuid.UUID = Field(primary_key=True)
     policy_version_id: uuid.UUID = Field(foreign_key="policyversion.id")
-    
+
     transaction_type: Literal["NewBusiness", "Renewal", "Endorsement", "Cancellation"]
-    
+
     # Financial details
     net_premium: Decimal
     levies: dict = Field(sa_type=JSON)
     commission: Decimal
     total_amount: Decimal
-    
+
     # Links to financial system
     invoice_id: uuid.UUID | None
 
@@ -471,19 +471,19 @@ class PolicyTransaction(SQLModel, table=True):
 class Client(ClientBase, table=True):
     id: uuid.UUID = Field(primary_key=True)
     # Core client data
-    
+
 
 class ClientContact(SQLModel, table=True):
     """Separate table for multiple contacts"""
     id: uuid.UUID = Field(primary_key=True)
     client_id: uuid.UUID = Field(foreign_key="client.id", index=True)
-    
+
     contact_type: Literal["Primary", "Billing", "Emergency", "Authorized"]
     name: str
     role: str | None
     phone: str
     email: str | None
-    
+
     is_active: bool = Field(default=True)
 
 
@@ -495,7 +495,7 @@ class ProductBenefit(SQLModel, table=True):
     """Product benefits as proper entities"""
     id: uuid.UUID = Field(primary_key=True)
     product_id: uuid.UUID = Field(foreign_key="product.id", index=True)
-    
+
     benefit_name: str  # "Third Party Liability"
     benefit_type: Literal["Limit", "Cover", "Excess"]
     value: str  # "10,000,000" or "Covered" or "5%"
@@ -506,7 +506,7 @@ class ProductClause(SQLModel, table=True):
     """Product clauses as proper entities"""
     id: uuid.UUID = Field(primary_key=True)
     product_id: uuid.UUID = Field(foreign_key="product.id", index=True)
-    
+
     clause_type: Literal["Inclusion", "Exclusion", "Condition"]
     text: str
     is_mandatory: bool = Field(default=True)

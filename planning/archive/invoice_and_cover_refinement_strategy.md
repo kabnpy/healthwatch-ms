@@ -17,7 +17,7 @@ Additionally, the display name for covers (specifically Motor Private) is generi
 Automatic invoice generation (even 1:1) removes user control. Users often need to group specific policies together or split them based on internal accounting requirements.
 
 ### The Solution
-Implement an **Invoice Generation Wizard**. 
+Implement an **Invoice Generation Wizard**.
 - Stop automatic creation of Invoices when a Risk Note is created.
 - Risk Notes remain in a "Pending Invoicing" state until a user explicitly selects them for an invoice.
 - The Wizard allows selecting multiple Risk Notes for a single invoice and setting an explicit "Invoice Date".
@@ -32,7 +32,7 @@ Implement an **Invoice Generation Wizard**.
 2.  **Frontend Changes**:
     *   **New Component**: `InvoiceWizard.tsx`.
     *   **UI Integration**: Add a "Generate Invoice" button in the Client's Invoice tab.
-    *   **Workflow**: 
+    *   **Workflow**:
         1. Open Wizard -> Show list of "Pending Risk Notes".
         2. User selects one or more -> Reviews totals.
         3. User clicks "Generate" -> Backend creates Invoice + Line Items.

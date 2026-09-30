@@ -20,7 +20,7 @@ We will move away from the "One-size-fits-all" Documents tab.
 
 ### Policy View (`/policies/$policyId`)
 - **Focus:** Coverage and Risk.
-- **Content:** 
+- **Content:**
     - **Risk Notes:** Historically linked transactions for this specific policy.
     - **Certificates:** Current valid proof of insurance.
     - **Policy-Specific Docs:** E.g., Logbooks for Motor, Valuation reports.
@@ -43,7 +43,7 @@ We will move away from the "One-size-fits-all" Documents tab.
 2. Ensure the `Policies` tab in Client Hub links deeply into the specific Policy's coverage documents.
 
 ### Phase 3: Smart Linking (Data Level)
-1. Implement a "Related Views" sidebar in the Document Viewer. 
+1. Implement a "Related Views" sidebar in the Document Viewer.
    - *Example:* When viewing an Invoice, show a link to the "Policy Details" and "Client Statement".
 
 ## 5. File Structure Changes

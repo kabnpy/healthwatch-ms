@@ -16,7 +16,9 @@ export function VersionHistory({ riskNotes, onView }: VersionHistoryProps) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/10 border-2 border-dashed rounded-xl">
         <Clock className="size-8 text-muted-foreground mb-4 opacity-50" />
-        <p className="text-muted-foreground italic">No transaction history found.</p>
+        <p className="text-muted-foreground italic">
+          No transaction history found.
+        </p>
       </div>
     )
   }
@@ -33,10 +35,15 @@ export function VersionHistory({ riskNotes, onView }: VersionHistoryProps) {
       {sortedNotes.map((note, index) => {
         const isLatest = index === 0
         const isDraft = note.status === "Draft"
-        const noteDate = note.effective_date ? parseISO(note.effective_date) : new Date(note.created_at || 0)
+        const noteDate = note.effective_date
+          ? parseISO(note.effective_date)
+          : new Date(note.created_at || 0)
 
         return (
-          <div key={note.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+          <div
+            key={note.id}
+            className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active"
+          >
             {/* Dot */}
             <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-200 group-[.is-active]:bg-primary text-slate-500 group-[.is-active]:text-primary-foreground shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
               <Clock className="size-4" />
@@ -57,7 +64,10 @@ export function VersionHistory({ riskNotes, onView }: VersionHistoryProps) {
                         </Badge>
                       )}
                       {isDraft && (
-                        <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 h-5 px-1.5 text-[10px] uppercase font-black">
+                        <Badge
+                          variant="outline"
+                          className="text-amber-600 border-amber-200 bg-amber-50 h-5 px-1.5 text-[10px] uppercase font-black"
+                        >
                           Draft
                         </Badge>
                       )}
@@ -78,13 +88,17 @@ export function VersionHistory({ riskNotes, onView }: VersionHistoryProps) {
 
                   <div className="grid grid-cols-2 gap-4 py-3 border-y border-slate-50 bg-slate-50/50 rounded-sm px-2">
                     <div>
-                      <p className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Net Premium</p>
+                      <p className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">
+                        Net Premium
+                      </p>
                       <p className="text-xs font-mono font-bold text-slate-700">
                         {formatCurrency(note.net_premium)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Total Amount</p>
+                      <p className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">
+                        Total Amount
+                      </p>
                       <p className="text-xs font-mono font-bold text-primary">
                         {formatCurrency(note.total_amount)}
                       </p>
@@ -96,9 +110,9 @@ export function VersionHistory({ riskNotes, onView }: VersionHistoryProps) {
                       <Info className="size-3" />
                       <span>{note.status}</span>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="h-8 gap-2 text-xs font-bold text-primary hover:text-primary hover:bg-primary/5"
                       onClick={() => onView(note)}
                     >

@@ -1,7 +1,8 @@
-import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
+
 from app.core.config import settings
+
 
 def test_policy_creation_with_invalid_token(
     client: TestClient, db: Session
@@ -16,7 +17,7 @@ def test_policy_creation_with_invalid_token(
         "risk_details": {},
         "coverage_end": "2027-01-01"
     }
-    
+
     # Send request with invalid token
     headers = {"Authorization": "Bearer invalid-token-here"}
     response = client.post(
@@ -24,7 +25,7 @@ def test_policy_creation_with_invalid_token(
         json=data,
         headers=headers
     )
-    
+
     # Should return 401 (not 403)
     assert response.status_code == 401
     assert response.json()["detail"] == "Could not validate credentials"

@@ -157,17 +157,17 @@ Action: handleSubmit() logic.
     [ ] Step 2: Build the Form + Live Sidebar integration.
 
     [ ] Wiring: Connect the "Issue Policy" button to the API.
-    
+
     ## 🟢 STEP 5: SCALABILITY (The "Universal" Modes)
-    
+
     **Goal:** Reuse this UI for Renewals and Endorsements.
-    
+
     **Implementation:**
     The `<NewBusinessWizard />` should accept a `mode` prop.
-    
+
     ```typescript
     type WizardMode = "NEW" | "RENEWAL" | "ENDORSEMENT";
-    
+
     interface WizardProps {
       mode: WizardMode;
       initialData?: WizardState; // Pass existing policy data here

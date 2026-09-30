@@ -20,11 +20,11 @@ depends_on = None
 def upgrade():
     # 1. Add the column as nullable first
     op.add_column('risknote', sa.Column('risk_note_number', sqlmodel.sql.sqltypes.AutoString(), nullable=True))
-    
+
     # 2. Populate existing rows with unique identifiers
     # We use a simple concatenation of ID to ensure uniqueness for existing data
     op.execute("UPDATE risknote SET risk_note_number = 'RSK-' || substr(id::text, 1, 8)")
-    
+
     # 3. Make it non-nullable and unique
     op.alter_column('risknote', 'risk_note_number', nullable=False)
     op.create_index(op.f('ix_risknote_risk_note_number'), 'risknote', ['risk_note_number'], unique=True)

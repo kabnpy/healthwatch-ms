@@ -1,9 +1,9 @@
-from typing import Any
-from unittest.mock import MagicMock
 
 from fastapi import FastAPI
-from app.api.deps import get_current_user, require_role
+
+from app.api.deps import get_current_user
 from app.models import User, UserRole
+
 
 class MockAuth:
     """
@@ -19,7 +19,7 @@ class MockAuth:
         """
         async def override_get_current_user():
             return user
-        
+
         self.app.dependency_overrides[get_current_user] = override_get_current_user
         return self
 
@@ -31,7 +31,7 @@ class MockAuth:
             self.app.dependency_overrides[get_current_user] = self._original_get_original_get_current_user
         else:
             self.app.dependency_overrides.pop(get_current_user, None)
-        
+
         # We might also need to clear require_role overrides if we add any
         # But since require_role depends on CurrentUser, overriding CurrentUser is usually enough.
 

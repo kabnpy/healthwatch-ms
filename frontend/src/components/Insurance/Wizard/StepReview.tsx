@@ -1,5 +1,6 @@
-import React, { useMemo } from "react"
 import { ArrowLeft } from "lucide-react"
+import type React from "react"
+import { useMemo } from "react"
 import type { MotorFinancialBreakdown } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -48,12 +49,7 @@ export function StepReview({
         },
       },
     }
-  }, [
-    state.product_id,
-    state.sum_insured,
-    state.extensions,
-    isMotorPrivate,
-  ])
+  }, [state.product_id, state.sum_insured, state.extensions, isMotorPrivate])
 
   const { data: quoteData } = useQuoteQuery(quoteRequest as any)
 
@@ -78,12 +74,20 @@ export function StepReview({
           </CardHeader>
           <CardContent className="pt-4 space-y-3">
             <div className="flex justify-between items-baseline">
-              <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">Policy Number:</span>
-              <span className="font-mono font-bold text-sm">{state.policy_number}</span>
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">
+                Policy Number:
+              </span>
+              <span className="font-mono font-bold text-sm">
+                {state.policy_number}
+              </span>
             </div>
             <div className="flex justify-between items-baseline">
-              <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">Insurance Product:</span>
-              <span className="font-bold text-sm text-right">{selectedProduct?.name}</span>
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">
+                Insurance Product:
+              </span>
+              <span className="font-bold text-sm text-right">
+                {selectedProduct?.name}
+              </span>
             </div>
             <div className="border-t pt-3 mt-3 space-y-2">
               {(() => {
@@ -94,13 +98,20 @@ export function StepReview({
                   return Object.entries(obj || {}).map(([key, value]) => {
                     const label = prefix ? `${prefix} > ${key}` : key
                     // Filter for only the essential keys we show in the wizard
-                    const essentialKeys = ["registration_number", "make", "year_of_manufacture"]
+                    const essentialKeys = [
+                      "registration_number",
+                      "make",
+                      "year_of_manufacture",
+                    ]
                     const lastKey = key.toLowerCase()
-                    
+
                     if (!essentialKeys.includes(lastKey)) return null
 
                     return (
-                      <div key={label} className="flex justify-between text-[11px]">
+                      <div
+                        key={label}
+                        className="flex justify-between text-[11px]"
+                      >
                         <span className="text-muted-foreground font-semibold uppercase tracking-tighter">
                           {key.replace(/_/g, " ")}:
                         </span>
@@ -137,7 +148,9 @@ export function StepReview({
           <CardContent className="pt-4 space-y-3">
             {!isPA && (
               <div className="flex justify-between text-sm items-baseline">
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">Sum Insured:</span>
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">
+                  Sum Insured:
+                </span>
                 <span className="font-mono font-bold">
                   KES {(Number(state.sum_insured) || 0).toLocaleString()}
                 </span>
@@ -147,7 +160,9 @@ export function StepReview({
             {breakdown ? (
               <div className="space-y-2 border-y py-3 my-2 bg-muted/5 rounded px-2">
                 <div className="flex justify-between text-xs items-baseline">
-                  <span className="text-muted-foreground uppercase tracking-tighter font-semibold">Net Premium:</span>
+                  <span className="text-muted-foreground uppercase tracking-tighter font-semibold">
+                    Net Premium:
+                  </span>
                   <span className="font-mono font-bold">
                     {Number(breakdown.net_premium).toLocaleString(undefined, {
                       minimumFractionDigits: 2,
@@ -169,23 +184,29 @@ export function StepReview({
                     </span>
                   </div>
                 ))}
-                {breakdown.taxes && Object.entries(breakdown.taxes).map(([name, amount]) => (
-                  <div key={name} className="flex justify-between text-[10px]">
-                    <span className="text-muted-foreground uppercase tracking-tighter">
-                      {name.replace(/_/g, " ")}:
-                    </span>
-                    <span className="font-mono text-slate-600">
-                      {Number(amount).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
-                    </span>
-                  </div>
-                ))}
+                {breakdown.taxes &&
+                  Object.entries(breakdown.taxes).map(([name, amount]) => (
+                    <div
+                      key={name}
+                      className="flex justify-between text-[10px]"
+                    >
+                      <span className="text-muted-foreground uppercase tracking-tighter">
+                        {name.replace(/_/g, " ")}:
+                      </span>
+                      <span className="font-mono text-slate-600">
+                        {Number(amount).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
+                      </span>
+                    </div>
+                  ))}
               </div>
             ) : null}
 
             <div className="flex justify-between pt-1 items-baseline">
-              <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">Total Payable:</span>
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">
+                Total Payable:
+              </span>
               <span className="font-black text-xl text-emerald-600 font-mono tracking-tighter">
                 KES{" "}
                 {(breakdown
@@ -197,8 +218,12 @@ export function StepReview({
               </span>
             </div>
             <div className="flex justify-between border-t pt-2 text-xs items-baseline">
-              <span className="text-muted-foreground uppercase tracking-tight font-medium">Coverage Start Date:</span>
-              <span className="font-bold font-mono">{state.financials?.startDate}</span>
+              <span className="text-muted-foreground uppercase tracking-tight font-medium">
+                Coverage Start Date:
+              </span>
+              <span className="font-bold font-mono">
+                {state.financials?.startDate}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -206,7 +231,8 @@ export function StepReview({
 
       <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg text-[11px] text-slate-600 leading-relaxed italic">
         Confirmation: The final Risk Note document will be generated by
-        combining the above data with standard product terms and regulatory requirements.
+        combining the above data with standard product terms and regulatory
+        requirements.
       </div>
 
       <div className="flex justify-between pt-4 border-t gap-4">

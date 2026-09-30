@@ -11,7 +11,7 @@ This track focuses on stabilizing the backend security layer, simplifying the in
 
 ## 3. Scope
 - **Backend Auth:** Audit `backend/app/api/v1/endpoints/` for correct dependency injection. Update `backend/tests/` to use a centralized authenticated client helper.
-- **Backend Refactor:** 
+- **Backend Refactor:**
     - Flatten `backend/app/models/`, `backend/app/schemas/`, and `backend/app/crud/`.
     - Delete `Item` database model, Alembic migration references, and API routers.
 - **Frontend Refactor:**

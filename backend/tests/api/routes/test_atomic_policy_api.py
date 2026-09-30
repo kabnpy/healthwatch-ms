@@ -1,12 +1,21 @@
-import uuid
 from datetime import date
 from decimal import Decimal
-import pytest
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session
-from app.main import app
-from app.models import Policy, RiskNote, PolicyStatus, RiskNoteStatus, TransactionType, Client, Product, Insurer
+
 from app.core.config import settings
+from app.main import app
+from app.models import (
+    Client,
+    Insurer,
+    Policy,
+    PolicyStatus,
+    Product,
+    RiskNote,
+    RiskNoteStatus,
+    TransactionType,
+)
 
 client = TestClient(app)
 
@@ -18,7 +27,7 @@ def test_read_policy_returns_active_note(db: Session, superuser_token_headers: d
     insurer = Insurer(name="Integration Insurer")
     db.add(insurer)
     db.commit()
-    
+
     product = Product(
         name="Integration Product",
         class_of_insurance="Motor Private",
@@ -67,7 +76,7 @@ def test_read_policy_returns_active_note(db: Session, superuser_token_headers: d
         f"{settings.API_V1_STR}/policies/{policy.id}",
         headers=superuser_token_headers,
     )
-    
+
     assert response.status_code == 200
     content = response.json()
     assert "active_note" in content

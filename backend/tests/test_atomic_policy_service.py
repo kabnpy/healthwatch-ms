@@ -1,10 +1,19 @@
-import uuid
 from datetime import date
 from decimal import Decimal
-import pytest
+
 from sqlmodel import Session
-from app.models import Policy, RiskNote, PolicyStatus, RiskNoteStatus, TransactionType, Client, Product, Insurer, PolicyCreate
+
+from app.models import (
+    Client,
+    Insurer,
+    PolicyCreate,
+    PolicyStatus,
+    Product,
+    RiskNoteStatus,
+    TransactionType,
+)
 from app.services.policy import policy_service
+
 
 def test_create_policy_atomic_snapshot(db: Session) -> None:
     """
@@ -13,7 +22,7 @@ def test_create_policy_atomic_snapshot(db: Session) -> None:
     insurer = Insurer(name="Service Insurer")
     db.add(insurer)
     db.commit()
-    
+
     product = Product(
         name="Service Product",
         class_of_insurance="Motor Private",
@@ -79,7 +88,7 @@ def test_create_endorsement_atomic_snapshot(db: Session) -> None:
     insurer = Insurer(name="Endorsement Insurer")
     db.add(insurer)
     db.commit()
-    
+
     product = Product(
         name="Endorsement Product",
         class_of_insurance="Motor Private",
@@ -143,7 +152,7 @@ def test_create_endorsement_atomic_snapshot(db: Session) -> None:
     assert snapshot["vehicle"]["sum_insured"] in [900000, "900000", Decimal("900000")]
     assert snapshot["extensions"]["pvt"] is True
     assert latest_rn.status == RiskNoteStatus.ISSUED
-    
+
     # Verify the old note was replaced
     old_rn = next(rn for rn in policy.risk_notes if rn.transaction_type == TransactionType.NEW_BUSINESS)
     assert old_rn.status == RiskNoteStatus.REPLACED
