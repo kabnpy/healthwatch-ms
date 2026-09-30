@@ -114,9 +114,7 @@ function RiskNotePrintContent({ id }: { id: string }) {
         </div>
         <div className="text-right">
           <p className="font-mono text-xl font-bold">
-            {isInvoice
-              ? riskNote.invoice_number || "Draft"
-              : riskNote.risk_note_number || "Draft"}
+            {riskNote.risk_note_number || "Draft"}
           </p>
           <p className="text-sm mt-1">
             Date: {new Date().toLocaleDateString()}
@@ -277,9 +275,7 @@ function RiskNotePrintContent({ id }: { id: string }) {
             <p>
               Please pay via MPESA Paybill: <strong>555000</strong>, Account:{" "}
               <strong>
-                {isInvoice
-                  ? riskNote.invoice_number || "Draft"
-                  : riskNote.risk_note_number || "Draft"}
+                {riskNote.risk_note_number || "Draft"}
               </strong>
             </p>
             <p>
