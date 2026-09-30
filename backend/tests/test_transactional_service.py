@@ -22,7 +22,12 @@ def test_atomic_policy_creation(db: Session) -> None:
     )
 
     # Singular Semantic Input
-    risk_details = {"sum_insured": 5000000, "registration_number": "KCM 123", "make": "Toyota", "year_of_manufacture": 2020}
+    risk_details = {
+        "sum_insured": 5000000,
+        "registration_number": "KCM 123",
+        "make": "Toyota",
+        "year_of_manufacture": 2020,
+    }
     start_date = date.today()
     end_date = start_date + timedelta(days=365)
 
@@ -32,7 +37,7 @@ def test_atomic_policy_creation(db: Session) -> None:
         policy_in=policy_in,
         risk_details=risk_details,
         coverage_start=start_date,
-        coverage_end=end_date
+        coverage_end=end_date,
     )
 
     # Verify
@@ -62,6 +67,7 @@ def test_atomic_policy_creation(db: Session) -> None:
     assert rn.coverage_start == start_date
     assert rn.coverage_end == end_date
 
+
 def test_endorsement_creation(db: Session) -> None:
     # 1. Setup a policy with one RiskNote
     client = create_random_client(db)
@@ -73,23 +79,33 @@ def test_endorsement_creation(db: Session) -> None:
     )
     start_date = date.today()
     end_date = start_date + timedelta(days=365)
-    risk_details = {"sum_insured": 5000000, "registration_number": "KCM 123", "make": "Toyota", "year_of_manufacture": 2020}
+    risk_details = {
+        "sum_insured": 5000000,
+        "registration_number": "KCM 123",
+        "make": "Toyota",
+        "year_of_manufacture": 2020,
+    }
 
     policy = policy_service.create_policy(
         session=db,
         policy_in=policy_in,
         risk_details=risk_details,
         coverage_start=start_date,
-        coverage_end=end_date
+        coverage_end=end_date,
     )
 
     # 2. Create Endorsement
-    new_risk_details = {"sum_insured": 6000000, "registration_number": "KCM 123", "make": "Toyota", "year_of_manufacture": 2020}
+    new_risk_details = {
+        "sum_insured": 6000000,
+        "registration_number": "KCM 123",
+        "make": "Toyota",
+        "year_of_manufacture": 2020,
+    }
     endorsement_rn = policy_service.create_endorsement(
         session=db,
         policy_id=policy.id,
         updated_risk_details=new_risk_details,
-        change_description="Increased vehicle value"
+        change_description="Increased vehicle value",
     )
 
     # 3. Verify

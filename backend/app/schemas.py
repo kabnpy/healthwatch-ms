@@ -54,6 +54,7 @@ class MotorVehicleDetails(BaseModel):
     @classmethod
     def parse_sum_insured(cls, v: Any) -> Decimal:
         from app.utils import parse_decimal
+
         return parse_decimal(v)
 
 
@@ -65,10 +66,7 @@ class MotorExtensions(BaseModel):
 
 
 class MotorPrivateRiskDetails(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-        extra="ignore"
-    )
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     vehicle: MotorVehicleDetails
     extensions: MotorExtensions = Field(default_factory=MotorExtensions)

@@ -4,9 +4,7 @@ from sqlmodel import Session
 from app.core.config import settings
 
 
-def test_policy_creation_with_invalid_token(
-    client: TestClient, db: Session
-) -> None:
+def test_policy_creation_with_invalid_token(client: TestClient, db: Session) -> None:
     """
     Reproduce/Verify 401 for invalid token.
     """
@@ -15,15 +13,13 @@ def test_policy_creation_with_invalid_token(
         "client_id": "00000000-0000-0000-0000-000000000000",
         "product_id": "00000000-0000-0000-0000-000000000000",
         "risk_details": {},
-        "coverage_end": "2027-01-01"
+        "coverage_end": "2027-01-01",
     }
 
     # Send request with invalid token
     headers = {"Authorization": "Bearer invalid-token-here"}
     response = client.post(
-        f"{settings.API_V1_STR}/policies/",
-        json=data,
-        headers=headers
+        f"{settings.API_V1_STR}/policies/", json=data, headers=headers
     )
 
     # Should return 401 (not 403)

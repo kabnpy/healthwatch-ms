@@ -19,11 +19,8 @@ def test_get_policy_quote_motor_private(
             "registration_number": "KCM 123",
             "make": "Toyota",
             "year_of_manufacture": 2020,
-            "EXTENSIONS": {
-                "pvt": True,
-                "excess_protector": True
-            }
-        }
+            "EXTENSIONS": {"pvt": True, "excess_protector": True},
+        },
     }
     response = client.post(
         f"{settings.API_V1_STR}/policies/quote",
@@ -46,14 +43,13 @@ def test_get_policy_quote_motor_private(
     assert "stamp_duty" in breakdown["taxes"]
     assert len(breakdown["benefits"]) == 2
 
+
 def test_get_policy_quote_not_found(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     import uuid
-    data = {
-        "product_id": str(uuid.uuid4()),
-        "risk_details": {}
-    }
+
+    data = {"product_id": str(uuid.uuid4()), "risk_details": {}}
     response = client.post(
         f"{settings.API_V1_STR}/policies/quote",
         headers=superuser_token_headers,
@@ -83,8 +79,8 @@ def test_create_policy_with_breakdown(
             "sum_insured": 1000000,
             "registration_number": "KAA 001A",
             "make": "Toyota",
-            "year_of_manufacture": 2020
-        }
+            "year_of_manufacture": 2020,
+        },
     }
 
     response = client.post(
@@ -118,6 +114,7 @@ def test_read_policies(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     from tests.utils.insurance import create_random_policy
+
     create_random_policy(db)
 
     response = client.get(
@@ -133,6 +130,7 @@ def test_read_policy(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     from tests.utils.insurance import create_random_policy
+
     policy = create_random_policy(db)
 
     response = client.get(
@@ -148,6 +146,7 @@ def test_update_policy(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     from tests.utils.insurance import create_random_policy
+
     policy = create_random_policy(db)
     new_policy_number = f"UPDATED-{uuid.uuid4().hex[:6].upper()}"
 
@@ -166,6 +165,7 @@ def test_delete_policy(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     from tests.utils.insurance import create_random_policy
+
     policy = create_random_policy(db)
 
     response = client.delete(

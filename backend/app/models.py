@@ -267,6 +267,7 @@ class Product(ProductBase, table=True):
             # Return a clean, semantic structure that is JSON-serializable
             return validated.model_dump(mode="python")
         return risk_details
+
     def calculate_premium(self, risk_details: dict[str, Any]) -> Decimal:
         from app.services.rating import RatingService
 

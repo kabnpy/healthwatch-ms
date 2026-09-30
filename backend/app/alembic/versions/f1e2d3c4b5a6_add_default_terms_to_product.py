@@ -38,7 +38,7 @@ def upgrade():
     risknote_columns = [c['name'] for c in inspector.get_columns('risknote')]
     if 'effective_date' not in risknote_columns:
         op.add_column('risknote', sa.Column('effective_date', sa.Date(), nullable=True))
-        op.execute("UPDATE risknote SET effective_date = COALESCE(coverage_start, created_at::date, CURRENT_DATE) WHERE effective_date IS NULL")
+        op.execute("UPDATE risknote SET effective_date = COALESCE(created_at::date, CURRENT_DATE) WHERE effective_date IS NULL")
         op.alter_column('risknote', 'effective_date', nullable=False)
 
 

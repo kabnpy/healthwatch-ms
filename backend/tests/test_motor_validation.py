@@ -17,9 +17,7 @@ def test_motor_private_validation_fails_with_missing_fields(
     insurer_in = {"name": random_lower_string()}
     insurer = crud.create_insurer(session=db, insurer_in=insurer_in)
     product = Product(
-        insurer_id=insurer.id,
-        name="Motor Private",
-        class_of_insurance="Motor Private"
+        insurer_id=insurer.id, name="Motor Private", class_of_insurance="Motor Private"
     )
     db.add(product)
     db.commit()
@@ -33,7 +31,9 @@ def test_motor_private_validation_fails_with_missing_fields(
         "client_id": str(db_client.id),
         "product_id": str(product.id),
         "coverage_end": str(date.today() + timedelta(days=365)),
-        "risk_details": {"something": "irrelevant"} # Missing registration_number, make, etc.
+        "risk_details": {
+            "something": "irrelevant"
+        },  # Missing registration_number, make, etc.
     }
 
     response = client.post(
@@ -45,6 +45,7 @@ def test_motor_private_validation_fails_with_missing_fields(
     assert response.status_code == 400
     assert "Invalid risk details for Motor Private" in response.json()["detail"]
 
+
 def test_motor_private_validation_passes_with_correct_fields(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
@@ -52,9 +53,7 @@ def test_motor_private_validation_passes_with_correct_fields(
     insurer_in = {"name": random_lower_string()}
     insurer = crud.create_insurer(session=db, insurer_in=insurer_in)
     product = Product(
-        insurer_id=insurer.id,
-        name="Motor Private",
-        class_of_insurance="Motor Private"
+        insurer_id=insurer.id, name="Motor Private", class_of_insurance="Motor Private"
     )
     db.add(product)
     db.commit()
@@ -72,8 +71,8 @@ def test_motor_private_validation_passes_with_correct_fields(
             "registration_number": "KCM 123X",
             "make": "Toyota",
             "year_of_manufacture": 2020,
-            "sum_insured": 5000000.0
-        }
+            "sum_insured": 5000000.0,
+        },
     }
 
     response = client.post(

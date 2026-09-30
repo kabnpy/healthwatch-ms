@@ -15,8 +15,9 @@ def test_policy_status_raises_error_on_invalid_string(db: Session) -> None:
         PolicyCreate(
             policy_number=random_lower_string(),
             client_id=client.id,
-            status="INVALID_STATUS_STRING"
+            status="INVALID_STATUS_STRING",
         )
+
 
 def test_invoice_status_raises_error_on_invalid_string(db: Session) -> None:
     client = create_random_client(db)
@@ -34,5 +35,5 @@ def test_invoice_status_raises_error_on_invalid_string(db: Session) -> None:
             client_id=client.id,
             status="GARBAGE",
             total_amount=Decimal("100.00"),
-            balance_due=Decimal("100.00")
+            balance_due=Decimal("100.00"),
         )

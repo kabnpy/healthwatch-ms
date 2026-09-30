@@ -27,6 +27,7 @@ def test_create_insurer(
     assert content["name"] == data["name"]
     assert "id" in content
 
+
 def test_create_product(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
@@ -34,7 +35,7 @@ def test_create_product(
     data = {
         "name": random_lower_string(),
         "insurer_id": str(insurer.id),
-        "class_of_insurance": "Motor Private"
+        "class_of_insurance": "Motor Private",
     }
     response = client.post(
         f"{settings.API_V1_STR}/products/",
@@ -46,6 +47,7 @@ def test_create_product(
     assert content["name"] == data["name"]
     assert content["insurer_id"] == str(insurer.id)
 
+
 def test_create_policy(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
@@ -56,7 +58,7 @@ def test_create_policy(
         "client_id": str(db_client.id),
         "product_id": str(product.id),
         "coverage_end": str(date.today() + timedelta(days=365)),
-        "risk_details": {"info": "some generic info"}
+        "risk_details": {"info": "some generic info"},
     }
     response = client.post(
         f"{settings.API_V1_STR}/policies/",
@@ -68,6 +70,7 @@ def test_create_policy(
     assert content["policy_number"] == data["policy_number"]
     assert content["client_id"] == str(db_client.id)
 
+
 def test_create_claim(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
@@ -76,7 +79,7 @@ def test_create_claim(
         "claim_number": random_lower_string(),
         "policy_id": str(policy.id),
         "date_of_loss": "2024-02-01",
-        "description": "Accident on highway"
+        "description": "Accident on highway",
     }
     response = client.post(
         f"{settings.API_V1_STR}/claims/",
