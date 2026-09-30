@@ -1,233 +1,227 @@
-# Full Stack FastAPI Template
+# Insurance Management System Workspace
 
-<a href="https://github.com/fastapi/full-stack-fastapi-template/actions?query=workflow%3A%22Test+Docker+Compose%22" target="_blank"><img src="https://github.com/fastapi/full-stack-fastapi-template/workflows/Test%20Docker%20Compose/badge.svg" alt="Test Docker Compose"></a>
-<a href="https://github.com/fastapi/full-stack-fastapi-template/actions?query=workflow%3A%22Test+Backend%22" target="_blank"><img src="https://github.com/fastapi/full-stack-fastapi-template/workflows/Test%20Backend/badge.svg" alt="Test Backend"></a>
-<a href="https://coverage-badge.samuelcolvin.workers.dev/redirect/fastapi/full-stack-fastapi-template" target="_blank"><img src="https://coverage-badge.samuelcolvin.workers.dev/fastapi/full-stack-fastapi-template.svg" alt="Coverage"></a>
+A minimalist, high-performance insurance management workspace inspired by "Linear / Papermark" aesthetics. It unifies Client Portfolio Management, Policy Administration, Rating Engine, and Invoicing into a single streamlined workflow with context isolation and deep-nesting views.
 
-## Technology Stack and Features
+---
 
-- ⚡ [**FastAPI**](https://fastapi.tiangolo.com) for the Python backend API.
-  - 🧰 [SQLModel](https://sqlmodel.tiangolo.com) for the Python SQL database interactions (ORM).
-  - 🔍 [Pydantic](https://docs.pydantic.dev), used by FastAPI, for the data validation and settings management.
-  - 💾 [PostgreSQL](https://www.postgresql.org) as the SQL database.
-- 🚀 [React](https://react.dev) for the frontend.
-  - 💃 Using TypeScript, hooks, [Vite](https://vitejs.dev), and other parts of a modern frontend stack.
-  - 🎨 [Tailwind CSS](https://tailwindcss.com) and [shadcn/ui](https://ui.shadcn.com) for the frontend components.
-  - 🤖 An automatically generated frontend client.
-  - 🧪 [Playwright](https://playwright.dev) for End-to-End testing.
-  - 🦇 Dark mode support.
-- 🐋 [Docker Compose](https://www.docker.com) for development and production.
-- 🔒 Secure password hashing by default.
-- 🔑 JWT (JSON Web Token) authentication.
-- 📫 Email based password recovery.
-- 📬 [Mailcatcher](https://mailcatcher.me) for local email testing during development.
-- ✅ Tests with [Pytest](https://pytest.org).
-- 📞 [Traefik](https://traefik.io) as a reverse proxy / load balancer.
-- 🚢 Deployment instructions using Docker Compose, including how to set up a frontend Traefik proxy to handle automatic HTTPS certificates.
-- 🏭 CI (continuous integration) and CD (continuous deployment) based on GitHub Actions.
+## 🚀 Product Vision & Core Concepts
 
-### Dashboard Login
+The **Insurance Management System** replaces cluttered, flat spreadsheet-like table views with a structured, folder-based context hierarchy. Key design principles and domain terms include:
 
-[![API docs](img/login.png)](https://github.com/fastapi/full-stack-fastapi-template)
+- **Client Hub (`/clients/$id`)**: "Papermark" style card grid providing an at-a-glance portfolio view for active covers.
+- **Insurance Dashboard (`/insurance/$id`)**: Deep-dive 3-column tabbed interface (Overview, History, Documents) for a specific insurance policy container.
+- **Risk Note (Transaction Core)**: The dual-purpose document serving as both the transaction record (policy issuance/renewal/endorsement) and the official Debit Note (Invoice).
+- **Risk Item (Asset & Versioning)**: Represents the insured asset (e.g. Vehicle, Property) with temporal history tracking.
+- **Sum Insured**: The authoritative single source of truth for calculations across rating tiers, levies, taxes, and premiums.
 
-### Dashboard - Admin
+---
 
-[![API docs](img/dashboard.png)](https://github.com/fastapi/full-stack-fastapi-template)
+## 🛠️ Key Features
 
-### Dashboard - Items
+### 1. Client & Portfolio Management
+- Multi-contact support for corporate and individual clients.
+- Visual card grid ("Papermark" style) with real-time coverage status indicators.
 
-[![API docs](img/dashboard-items.png)](https://github.com/fastapi/full-stack-fastapi-template)
+### 2. Insurance Policy Administration
+- Tabbed dashboard for every cover:
+  - **Overview ("The Face")**: Live state derived from the active `RiskNote` snapshot (dates, premiums, sums insured, clauses).
+  - **History ("The Log")**: Immutable audit trail of transaction snapshots.
+  - **Documents ("The Vault")**: Storage for policy schedules, valuation reports, and KYC documents.
 
-### Dashboard - Dark Mode
+### 3. Rating & Transaction Engine
+- **Dynamic Rating Engine**: Supports percentage-based, tiered, and manual rating strategies based on vehicle value or asset sum insured.
+- **Levy & Tax Auto-Calculation**: Standardized calculation of Training Levy, PHCF Levy, Stamp Duty, and Net Premium.
+- **New Business & Renewal Wizards**: Wizard-driven policy issuance with dynamic coverage period calculations.
+- **Mid-Term Endorsements & Pro-Rata**: Pro-rata premium adjustments on policy adjustments without losing historical state.
 
-[![API docs](img/dashboard-dark.png)](https://github.com/fastapi/full-stack-fastapi-template)
+### 4. Printable Invoicing & Debit Notes
+- Print-ready HTML layouts (`@media print`) for **Risk Notes** (coverage details) and **Debit Notes** (tax invoices and payment breakdowns).
 
-### Interactive API Documentation
+---
 
-[![API docs](img/docs.png)](https://github.com/fastapi/full-stack-fastapi-template)
+## 🏗️ Architecture & Key Technical Decisions
 
-## How To Use It
+- **Atomic Snapshot Strategy**: Every issued `RiskNote` stores a frozen snapshot (`cover_snapshot`) of the policy state, sum insured, and tax calculations at transaction time. This guarantees strict financial integrity and auditability.
+- **Policy as Container**: The `Policy` table serves as the long-lived contract container, while all temporal details are derived from the active `RiskNote`.
+- **Temporal Versioning**: Risk items are versioned rather than mutated in-place (`valid_from` / `valid_to`), enabling historical time-travel and accurate endorsements.
+- **Feature Flagging (`frontend/src/config/features.ts`)**: Modular flags to toggle features such as Endorsements, Renewals, and Claims.
 
-You can **just fork or clone** this repository and use it as is.
+---
 
-✨ It just works. ✨
+## ⚡ Technology Stack
 
-### How to Use a Private Repository
+### Backend
+- **Framework**: [FastAPI](https://fastapi.tiangolo.com) (Python 3.10+)
+- **ORM / Validation**: [SQLModel](https://sqlmodel.tiangolo.com) (SQLAlchemy + [Pydantic v2](https://docs.pydantic.dev))
+- **Database & Migrations**: PostgreSQL & [Alembic](https://alembic.sqlalchemy.org/)
+- **Package & Runtime Manager**: [`uv`](https://github.com/astral-sh/uv)
+- **Testing & Code Quality**: Pytest, Ruff, Mypy
 
-If you want to have a private repository, GitHub won't allow you to simply fork it as it doesn't allow changing the visibility of forks.
+### Frontend
+- **Framework**: [React 19](https://react.dev) + [Vite](https://vitejs.dev)
+- **Language**: TypeScript
+- **State & Data Fetching**: [TanStack Query v5](https://tanstack.com/query)
+- **Routing**: [TanStack Router](https://tanstack.com/router)
+- **UI & Styling**: [Tailwind CSS v4](https://tailwindcss.com), [Shadcn UI](https://ui.shadcn.com), Lucide Icons
+- **API Client Generation**: `@hey-api/openapi-ts`
+- **Linting & Formatting**: [Biome](https://biomejs.dev)
 
-But you can do the following:
+### Infrastructure & Operations
+- **Containerization**: Docker & Docker Compose
+- **Reverse Proxy**: Traefik
+- **Testing**: Playwright (E2E), Vitest (Unit)
 
-- Create a new GitHub repo, for example `my-full-stack`.
-- Clone this repository manually, set the name with the name of the project you want to use, for example `my-full-stack`:
+---
 
-```bash
-git clone git@github.com:fastapi/full-stack-fastapi-template.git my-full-stack
+## 📁 Repository Structure
+
+```
+├── backend/
+│   ├── app/
+│   │   ├── api/v1/         # FastAPI endpoints / routers
+│   │   ├── crud/           # Database CRUD logic
+│   │   ├── models/         # SQLModel database models
+│   │   ├── schemas/        # Pydantic validation schemas
+│   │   ├── services/       # Rating, Policy & Financial business logic
+│   │   └── main.py         # App entry point
+│   └── alembic/            # Database migrations
+├── frontend/
+│   ├── src/
+│   │   ├── client/         # Auto-generated OpenAPI TypeScript client
+│   │   ├── components/     # UI components & Shadcn primitives
+│   │   ├── hooks/          # TanStack Query & custom React hooks
+│   │   ├── routes/         # TanStack file-based routes / pages
+│   │   └── config/         # Feature flags (`features.ts`)
+├── docs/                   # Product & Technical Specifications
+│   ├── 01_product_specs.md
+│   ├── 02_tech_architecture.md
+│   ├── 03_backend_data_models.md
+│   └── 04_development_roadmap.md
+└── planning/               # Architectural decisions and sprint tracking
+    ├── status.md
+    └── architecture_decision_records.md
 ```
 
-- Enter into the new directory:
+---
 
+## 🚀 Quick Start & Local Development
+
+### Option 1: Docker Compose (Recommended)
+
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd full-stack-fastapi-template
+   ```
+
+2. **Configure Environment Variables**:
+   Copy the example `.env` file and adjust secrets if needed:
+   ```bash
+   cp .env .env.local
+   ```
+
+3. **Start the Stack**:
+   ```bash
+   docker compose up -d --build
+   ```
+
+   The services will be available at:
+   - **Frontend**: http://localhost:5173
+   - **Backend API Docs (Swagger)**: http://localhost:8000/docs
+   - **Traefik Dashboard**: http://localhost:8090
+   - **Mailcatcher**: http://localhost:1080
+
+---
+
+### Option 2: Local Native Development
+
+#### Backend Setup
+
+1. **Install `uv`** (if not already installed):
+   ```bash
+   pip install uv
+   ```
+
+2. **Navigate to backend and install dependencies**:
+   ```bash
+   cd backend
+   uv sync
+   ```
+
+3. **Run Database Migrations & Seed Mock Data**:
+   ```bash
+   uv run alembic upgrade head
+   uv run python app/initial_data.py
+   ```
+
+4. **Start Backend Server**:
+   ```bash
+   uv run fastapi dev app/main.py
+   ```
+
+#### Frontend Setup
+
+1. **Navigate to frontend and install dependencies**:
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+2. **Generate OpenAPI Client**:
+   ```bash
+   npm run generate-client
+   ```
+
+3. **Start Frontend Development Server**:
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## 🧪 Testing & Quality Assurance
+
+### Backend
+Run backend test suite with Pytest:
 ```bash
-cd my-full-stack
+cd backend
+uv run pytest
 ```
 
-- Set the new origin to your new repository, copy it from the GitHub interface, for example:
-
+Check linting and types:
 ```bash
-git remote set-url origin git@github.com:octocat/my-full-stack.git
+cd backend
+uv run ruff check .
+uv run mypy app
 ```
 
-- Add this repo as another "remote" to allow you to get updates later:
-
+### Frontend
+Run unit tests and typecheck:
 ```bash
-git remote add upstream git@github.com:fastapi/full-stack-fastapi-template.git
+cd frontend
+npm run test
+npm run build
 ```
 
-- Push the code to your new repository:
-
+Run Biome linter:
 ```bash
-git push -u origin master
+cd frontend
+npm run lint
 ```
 
-### Update From the Original Template
+---
 
-After cloning the repository, and after doing changes, you might want to get the latest changes from this original template.
+## 🗺️ Roadmap & Phase Status
 
-- Make sure you added the original repository as a remote, you can check it with:
+- [x] **Phase 1: MVP "Happy Path"** - New Business Wizard, Client Hub, Cover Dashboard, Printable Risk/Debit Notes, Atomic Snapshots.
+- [ ] **Phase 2: Temporal Endorsements** - Pro-rata calculations, asset versioning history views, mid-term cover adjustments.
+- [ ] **Phase 3: Financial Invoicing & Cashiering** - Receipting, allocation, knock-off status, multi-invoice payments.
+- [ ] **Phase 4: Claims Management** - Loss reporting, claim lifecycle tracker, loss adjuster document attachments.
 
-```bash
-git remote -v
+For full architectural details and status updates, refer to [docs/](./docs/) and [planning/status.md](./planning/status.md).
 
-origin    git@github.com:octocat/my-full-stack.git (fetch)
-origin    git@github.com:octocat/my-full-stack.git (push)
-upstream    git@github.com:fastapi/full-stack-fastapi-template.git (fetch)
-upstream    git@github.com:fastapi/full-stack-fastapi-template.git (push)
-```
+---
 
-- Pull the latest changes without merging:
+## 📄 License
 
-```bash
-git pull --no-commit upstream master
-```
-
-This will download the latest changes from this template without committing them, that way you can check everything is right before committing.
-
-- If there are conflicts, solve them in your editor.
-
-- Once you are done, commit the changes:
-
-```bash
-git merge --continue
-```
-
-### Configure
-
-You can then update configs in the `.env` files to customize your configurations.
-
-Before deploying it, make sure you change at least the values for:
-
-- `SECRET_KEY`
-- `FIRST_SUPERUSER_PASSWORD`
-- `POSTGRES_PASSWORD`
-
-You can (and should) pass these as environment variables from secrets.
-
-Read the [deployment.md](./deployment.md) docs for more details.
-
-### Generate Secret Keys
-
-Some environment variables in the `.env` file have a default value of `changethis`.
-
-You have to change them with a secret key, to generate secret keys you can run the following command:
-
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-```
-
-Copy the content and use that as password / secret key. And run that again to generate another secure key.
-
-## How To Use It - Alternative With Copier
-
-This repository also supports generating a new project using [Copier](https://copier.readthedocs.io).
-
-It will copy all the files, ask you configuration questions, and update the `.env` files with your answers.
-
-### Install Copier
-
-You can install Copier with:
-
-```bash
-pip install copier
-```
-
-Or better, if you have [`pipx`](https://pipx.pypa.io/), you can run it with:
-
-```bash
-pipx install copier
-```
-
-**Note**: If you have `pipx`, installing copier is optional, you could run it directly.
-
-### Generate a Project With Copier
-
-Decide a name for your new project's directory, you will use it below. For example, `my-awesome-project`.
-
-Go to the directory that will be the parent of your project, and run the command with your project's name:
-
-```bash
-copier copy https://github.com/fastapi/full-stack-fastapi-template my-awesome-project --trust
-```
-
-If you have `pipx` and you didn't install `copier`, you can run it directly:
-
-```bash
-pipx run copier copy https://github.com/fastapi/full-stack-fastapi-template my-awesome-project --trust
-```
-
-**Note** the `--trust` option is necessary to be able to execute a [post-creation script](https://github.com/fastapi/full-stack-fastapi-template/blob/master/.copier/update_dotenv.py) that updates your `.env` files.
-
-### Input Variables
-
-Copier will ask you for some data, you might want to have at hand before generating the project.
-
-But don't worry, you can just update any of that in the `.env` files afterwards.
-
-The input variables, with their default values (some auto generated) are:
-
-- `project_name`: (default: `"FastAPI Project"`) The name of the project, shown to API users (in .env).
-- `stack_name`: (default: `"fastapi-project"`) The name of the stack used for Docker Compose labels and project name (no spaces, no periods) (in .env).
-- `secret_key`: (default: `"changethis"`) The secret key for the project, used for security, stored in .env, you can generate one with the method above.
-- `first_superuser`: (default: `"admin@example.com"`) The email of the first superuser (in .env).
-- `first_superuser_password`: (default: `"changethis"`) The password of the first superuser (in .env).
-- `smtp_host`: (default: "") The SMTP server host to send emails, you can set it later in .env.
-- `smtp_user`: (default: "") The SMTP server user to send emails, you can set it later in .env.
-- `smtp_password`: (default: "") The SMTP server password to send emails, you can set it later in .env.
-- `emails_from_email`: (default: `"info@example.com"`) The email account to send emails from, you can set it later in .env.
-- `postgres_password`: (default: `"changethis"`) The password for the PostgreSQL database, stored in .env, you can generate one with the method above.
-- `sentry_dsn`: (default: "") The DSN for Sentry, if you are using it, you can set it later in .env.
-
-## Backend Development
-
-Backend docs: [backend/README.md](./backend/README.md).
-
-## Frontend Development
-
-Frontend docs: [frontend/README.md](./frontend/README.md).
-
-## Deployment
-
-Deployment docs: [deployment.md](./deployment.md).
-
-## Development
-
-General development docs: [development.md](./development.md).
-
-This includes using Docker Compose, custom local domains, `.env` configurations, etc.
-
-## Release Notes
-
-Check the file [release-notes.md](./release-notes.md).
-
-## License
-
-The Full Stack FastAPI Template is licensed under the terms of the MIT license.
+This project is licensed under the MIT License.
