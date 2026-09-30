@@ -1,4 +1,4 @@
-"""Add default terms to product and clean obsolete policy columns
+"""Add default terms to product, add effective_date to risknote, and clean obsolete policy columns
 
 Revision ID: f1e2d3c4b5a6
 Revises: d9b04e9ef8d5
@@ -35,6 +35,12 @@ def upgrade():
     if 'risk_details' in policy_columns:
         op.drop_column('policy', 'risk_details')
 
+    risknote_columns = [c['name'] for c in inspector.get_columns('risknote')]
+    if 'effective_date' not in risknote_columns:
+        op.add_column('risknote', sa.Column('effective_date', sa.Date(), nullable=True))
+        op.execute("UPDATE risknote SET effective_date = COALESCE(coverage_start, created_at::date, CURRENT_DATE) WHERE effective_date IS NULL")
+        op.alter_column('risknote', 'effective_date', nullable=False)
+
 
 def downgrade():
     conn = op.get_bind()
@@ -51,3 +57,7 @@ def downgrade():
     policy_columns = [c['name'] for c in inspector.get_columns('policy')]
     if 'total_premium' not in policy_columns:
         op.add_column('policy', sa.Column('total_premium', sa.Numeric(precision=15, scale=2), nullable=True))
+
+    risknote_columns = [c['name'] for c in inspector.get_columns('risknote')]
+    if 'effective_date' in risknote_columns:
+        op.drop_column('risknote', 'effective_date')

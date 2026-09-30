@@ -165,7 +165,7 @@ class MotorPrivateRiskDetails(BaseModel):
         # 7. Handle terms that might be list/dict in legacy data
         for term_key in ["benefits_and_limits", "excesses", "special_clauses"]:
             val = data.get(term_key)
-            if isinstance(val, (list, dict)):
+            if isinstance(val, list | dict):
                 data[term_key] = json.dumps(val, indent=2)
             elif val is None:
                 data[term_key] = ""
