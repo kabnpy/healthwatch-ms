@@ -8,7 +8,7 @@
 - **Prestart Service Stabilization**: The `prestart` service now successfully completes database migrations and mock data seeding.
 - **Client Regeneration**: Successfully regenerated the TypeScript client from the backend OpenAPI schema and verified type integrity with `tsc`.
 
-- **Upstream Sync Phase 1 (Backend Core & Python 3.14)**: Successfully upgraded backend to Python 3.14.8, synchronized dependencies to upstream FastAPI template (FastAPI 0.143+, SQLModel 0.0.48+, Pydantic 2.14+, Alembic 1.20+), migrated password hashing from `passlib` to `pwdlib[argon2,bcrypt]`, enforced UTC-aware timestamps across models and soft-deletes, and synchronized Alembic migration `f1e2d3c4b5a6` with `risknote.coverage_start` and `coverage_end`.
+- **Upstream Sync Phase 1 (Backend Core & Python 3.14)**: Successfully upgraded backend to Python 3.14.8, synchronized dependencies to upstream FastAPI template (FastAPI 0.143+, SQLModel 0.0.48+, Pydantic 2.14+, Alembic 1.20+), migrated password hashing from `passlib` to `pwdlib[argon2,bcrypt]`, enforced UTC-aware timestamps across models and soft-deletes, squashed all 31 legacy Alembic migrations into a single clean baseline (`19bab995ff26_initial_schema.py`), and added an `AUTO_CREATE_TABLES` development toggle.
 
 ## Ongoing
 - **Upstream Template Synchronization**: Step-by-step merge of upstream improvements onto `chore/upstream-sync`.
@@ -21,6 +21,8 @@
 4. **Automated Testing**: Expand the backend test suite to cover the new pro-rata endorsement calculations and rating tier logic.
 
 ## Architectural Decisions
+- **Squashed Alembic Baseline Migration**: Because the project is pre-production with no historical data, all 31 incremental migrations were consolidated into a single clean initial schema (`19bab995ff26_initial_schema.py`).
+- **Flexible Schema Initialization (`AUTO_CREATE_TABLES`)**: Supported in `prestart.sh`, `.env`, and `Settings`: when set to `true`, tables can be created directly from SQLModel metadata without applying Alembic migrations. When `false` (default), Alembic migrations execute as usual.
 - **Password Hashing via `pwdlib`**: Replaced deprecated `passlib` with `pwdlib[argon2,bcrypt]` for Python 3.14+ compatibility while ensuring bcrypt hash verification remains completely functional.
 - **Strict Timezone-Aware UTC Datetimes**: Standardized on timezone-aware UTC timestamps via `get_datetime_utc()` to comply with SQLModel 0.0.48+ and Pydantic 2.14+ requirements.
 - **Atomic Snapshot Strategy**: We store the full state of the risk (the "Snapshot") on the `RiskNote` issued for each transaction. This ensures that every document (Risk Note, Invoice) refers to the authoritative state of the cover at the exact moment of issuance.
