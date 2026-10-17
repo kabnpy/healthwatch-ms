@@ -1,11 +1,11 @@
-FROM python:3.10
+FROM python:3.14
 
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app/
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.9.26 /uv /uvx /bin/
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"

@@ -36,6 +36,16 @@ def upgrade():
         op.drop_column('policy', 'risk_details')
 
     risknote_columns = [c['name'] for c in inspector.get_columns('risknote')]
+    if 'start_date' in risknote_columns and 'coverage_start' not in risknote_columns:
+        op.alter_column('risknote', 'start_date', new_column_name='coverage_start')
+    elif 'coverage_start' not in risknote_columns:
+        op.add_column('risknote', sa.Column('coverage_start', sa.Date(), nullable=False, server_default=sa.func.current_date()))
+
+    if 'end_date' in risknote_columns and 'coverage_end' not in risknote_columns:
+        op.alter_column('risknote', 'end_date', new_column_name='coverage_end')
+    elif 'coverage_end' not in risknote_columns:
+        op.add_column('risknote', sa.Column('coverage_end', sa.Date(), nullable=False, server_default=sa.func.current_date()))
+
     if 'effective_date' not in risknote_columns:
         op.add_column('risknote', sa.Column('effective_date', sa.Date(), nullable=True))
         op.execute("UPDATE risknote SET effective_date = COALESCE(created_at::date, CURRENT_DATE) WHERE effective_date IS NULL")
