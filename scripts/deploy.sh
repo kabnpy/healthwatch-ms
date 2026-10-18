@@ -6,8 +6,9 @@ set -e
 DOMAIN=${DOMAIN?Variable not set} \
 STACK_NAME=${STACK_NAME?Variable not set} \
 TAG=${TAG?Variable not set} \
-docker-compose \
--f docker-compose.yml \
+docker compose \
+-f compose.yml \
+-f compose.deploy.yml \
 config > docker-stack.yml
 
 docker-auto-labels docker-stack.yml

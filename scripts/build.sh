@@ -5,6 +5,6 @@ set -e
 
 TAG=${TAG?Variable not set} \
 FRONTEND_ENV=${FRONTEND_ENV-production} \
-docker-compose \
--f docker-compose.yml \
+docker compose \
+-f compose.yml \
 build

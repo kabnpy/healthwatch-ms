@@ -10,6 +10,7 @@
 
 - **Upstream Sync Phase 1 (Backend Core & Python 3.14)**: Successfully upgraded backend to Python 3.14.8, synchronized dependencies to upstream FastAPI template (FastAPI 0.143+, SQLModel 0.0.48+, Pydantic 2.14+, Alembic 1.20+), migrated password hashing from `passlib` to `pwdlib[argon2,bcrypt]`, enforced UTC-aware timestamps across models and soft-deletes, squashed all 31 legacy Alembic migrations into a single clean baseline (`19bab995ff26_initial_schema.py`), and added an `AUTO_CREATE_TABLES` development toggle.
 - **Dockerfile Standardization**: Standardized `backend/Dockerfile` to use direct `fastapi run` honoring the `$PORT` environment variable and decoupled migrations from container startup. Cleaned `frontend/Dockerfile` by replacing runtime `sed -i` hacks with official Nginx template envsubst (`/etc/nginx/templates/default.conf.template`) and default `PORT=80`.
+- **Database URL Standardization**: Updated `backend/app/core/config.py` to support `DATABASE_URL: PostgresDsn` directly with automatic Psycopg 3 driver prefix normalization (`postgres://` / `postgresql://` -> `postgresql+psycopg://`), enabling direct binding of Railway `${{Postgres.DATABASE_URL}}` while maintaining full backward compatibility with split `POSTGRES_*` variables.
 
 ## Ongoing
 - **Upstream Template Synchronization**: Step-by-step merge of upstream improvements onto `chore/upstream-sync`.

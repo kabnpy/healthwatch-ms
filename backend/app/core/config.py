@@ -9,6 +9,7 @@ from pydantic import (
     HttpUrl,
     PostgresDsn,
     computed_field,
+    field_validator,
     model_validator,
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -25,8 +26,8 @@ def parse_cors(v: Any) -> list[str] | str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        # Use top level .env file (one level above ./backend/)
-        env_file="../.env",
+        # Use top level .env file (one level above ./backend/ or current directory)
+        env_file=(".env", "../.env"),
         env_ignore_empty=True,
         extra="ignore",
     )
@@ -51,23 +52,46 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
-    POSTGRES_SERVER: str
+    DATABASE_URL: PostgresDsn | None = None
+    POSTGRES_SERVER: str | None = None
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str
+    POSTGRES_USER: str | None = None
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _use_psycopg_driver(cls, value: str | PostgresDsn | None) -> str | None:
+        if not value:
+            return None
+        database_url = str(value)
+        for scheme in ("postgres://", "postgresql://"):
+            if database_url.startswith(scheme):
+                return database_url.replace(scheme, "postgresql+psycopg://", 1)
+        return database_url
+
+    @model_validator(mode="after")
+    def _validate_database_url(self) -> Self:
+        if not self.DATABASE_URL:
+            if not self.POSTGRES_SERVER or not self.POSTGRES_USER:
+                raise ValueError(
+                    "Either DATABASE_URL or (POSTGRES_SERVER and POSTGRES_USER) must be set."
+                )
+            self.DATABASE_URL = PostgresDsn.build(
+                scheme="postgresql+psycopg",
+                username=self.POSTGRES_USER,
+                password=self.POSTGRES_PASSWORD,
+                host=self.POSTGRES_SERVER,
+                port=self.POSTGRES_PORT,
+                path=self.POSTGRES_DB,
+            )
+        return self
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
-        return PostgresDsn.build(
-            scheme="postgresql+psycopg",
-            username=self.POSTGRES_USER,
-            password=self.POSTGRES_PASSWORD,
-            host=self.POSTGRES_SERVER,
-            port=self.POSTGRES_PORT,
-            path=self.POSTGRES_DB,
-        )
+        assert self.DATABASE_URL is not None
+        return self.DATABASE_URL
 
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False
@@ -109,7 +133,12 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _enforce_non_default_secrets(self) -> Self:
         self._check_default_secret("SECRET_KEY", self.SECRET_KEY)
-        self._check_default_secret("POSTGRES_PASSWORD", self.POSTGRES_PASSWORD)
+        if self.POSTGRES_PASSWORD:
+            self._check_default_secret("POSTGRES_PASSWORD", self.POSTGRES_PASSWORD)
+        if self.DATABASE_URL:
+            for host in self.DATABASE_URL.hosts():
+                if host.get("password"):
+                    self._check_default_secret("DATABASE_URL password", host["password"])
         self._check_default_secret(
             "FIRST_SUPERUSER_PASSWORD", self.FIRST_SUPERUSER_PASSWORD
         )
