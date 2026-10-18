@@ -44,10 +44,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.14"
       - name: Setup uv
         uses: astral-sh/setup-uv@v7
         with:
+          version: "0.9.26"
           cache-dependency-glob: |
             backend/requirements**.txt
             backend/pyproject.toml
