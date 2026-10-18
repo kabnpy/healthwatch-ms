@@ -18,15 +18,18 @@
   - Modernized proxy to Traefik v3.3, utilizing native entrypoint HTTP-to-HTTPS redirection (`entrypoint.to=https`) and clean Let's Encrypt TLS challenge configs in `compose.deploy.yml`.
   - Upgraded local dev email testing service from obsolete `mailcatcher` to `mailpit` (`axllent/mailpit`).
   - Removed deprecated `docker-compose.traefik.yml` and updated staging/production deployment workflows.
+- **Upstream Sync Phases 4 & 5 (Root Workspaces, Scripts, & CI/CD Modernization)**:
+  - Modernized shell automation scripts (`scripts/build.sh`, `scripts/build-push.sh`, `scripts/deploy.sh`, `scripts/test-local.sh`) to use Docker Compose v2 commands and file flags.
+  - Aligned all GitHub Actions workflows (`test-backend.yml`, `playwright.yml`, `pre-commit.yml`, `generate-client.yml`) with Python 3.14, Node LTS, and `setup-uv` v0.9.26.
+  - Updated Dependabot configuration (`.github/dependabot.yml`) to maintain `@hey-api/openapi-ts` alongside standard dependencies.
 
 ## Ongoing
-- **Upstream Template Synchronization**: Step-by-step merge of upstream improvements onto `chore/upstream-sync`.
+- **Upstream Template Synchronization Completed**: All 5 phases are completed and committed on `chore/upstream-sync`.
 
 ## Next Steps
-1. **Upstream Sync Phase 4**: Root workspace / monorepo alignment (`pyproject.toml` or workspace configs).
-2. **Upstream Sync Phase 5**: CI/CD workflows, pre-commit, dependabot.
-3. **Audit Traceability**: Finalize the `change_log` implementation for endorsements to ensure full traceability of risk detail modifications.
-4. **Automated Testing**: Expand the backend test suite to cover the new pro-rata endorsement calculations and rating tier logic.
+1. **Audit Traceability**: Finalize the `change_log` implementation for endorsements to ensure full traceability of risk detail modifications.
+2. **Automated Testing**: Expand the backend test suite to cover the new pro-rata endorsement calculations and rating tier logic.
+3. **Merge Preparation**: Review git log and open PR / merge `chore/upstream-sync` into `main`.
 
 ## Architectural Decisions
 - **Docker Compose v2 File Structure**: Standardized on `compose.yml`, `compose.override.yml`, and `compose.deploy.yml` matching upstream template. Local execution defaults seamlessly to `compose.yml` + `compose.override.yml`, while deployments use `-f compose.yml -f compose.deploy.yml`.
