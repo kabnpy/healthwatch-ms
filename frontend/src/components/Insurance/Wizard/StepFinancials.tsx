@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
+import { ArrowLeft } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -44,6 +45,7 @@ interface StepFinancialsProps {
   }
   onNext: (data: any) => void
   onBack: () => void
+  onSumInsuredChange?: (value: number) => void
   productId: string
   sum_insured: number
 }
@@ -52,11 +54,18 @@ export function StepFinancials({
   defaultValues,
   onNext,
   onBack,
+  onSumInsuredChange,
   productId,
   sum_insured,
 }: StepFinancialsProps) {
   const { data: productsData } = useProducts()
   const quoteMutation = useQuote()
+
+  const handleSumInsuredChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^0-9]/g, "")
+    const num = Number(raw) || 0
+    onSumInsuredChange?.(num)
+  }
 
   const selectedProduct = useMemo(() => {
     return productsData?.data.find((p) => p.id === productId) as
@@ -193,19 +202,31 @@ export function StepFinancials({
 
   return (
     <Form {...(form as any)}>
-      <form onSubmit={form.handleSubmit(onNext)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onNext)} className="space-y-8">
+        <div className="space-y-1">
+          <h3 className="text-lg font-bold tracking-tight">Financials & Coverage</h3>
+          <p className="text-sm text-muted-foreground">
+            Review the insured value and define the duration of protection.
+          </p>
+        </div>
+
         <div className="space-y-8">
           {/* Inputs Section */}
           <div className="space-y-6">
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {!isPA && (
                 <div className="space-y-2">
-                  <FormLabel>Sum Insured</FormLabel>
-                  <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted/50 text-sm font-bold flex items-center">
-                    KES {(Number(sum_insured) || 0).toLocaleString()}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground italic">
-                    Value derived from asset details.
+                  <FormLabel>Sum Insured (KES)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      value={(Number(sum_insured) || 0).toLocaleString()}
+                      onChange={handleSumInsuredChange}
+                      className="h-12 text-base font-bold"
+                    />
+                  </FormControl>
+                  <p className="text-[10px] text-muted-foreground">
+                    Define the authoritative value of the asset.
                   </p>
                 </div>
               )}
@@ -215,7 +236,7 @@ export function StepFinancials({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {isPA ? "Premium (Flat Amount)" : "Rate (%)"}
+                      {isPA ? "Premium (Flat Amount)" : "Applied Rate (%)"}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -224,7 +245,7 @@ export function StepFinancials({
                         {...field}
                         value={field.value || 0}
                         readOnly={!!isMotorPrivate && !isManual}
-                        className={isMotorPrivate && !isManual ? "bg-slate-100" : ""}
+                        className={`h-12 text-base ${isMotorPrivate && !isManual ? "bg-muted/50" : ""}`}
                       />
                     </FormControl>
                     <FormMessage />
@@ -233,15 +254,15 @@ export function StepFinancials({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4 border-t pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
               <FormField
                 control={form.control as any}
                 name="financials.startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date</FormLabel>
+                    <FormLabel>Coverage Start Date</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} value={field.value || ""} />
+                      <Input type="date" {...field} value={field.value || ""} className="h-12 text-base" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -252,12 +273,13 @@ export function StepFinancials({
                 name="financials.duration"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Duration (Months)</FormLabel>
+                    <FormLabel>Policy Duration (Months)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         {...field}
                         value={field.value || 12}
+                        className="h-12 text-base"
                       />
                     </FormControl>
                     <FormMessage />
@@ -284,7 +306,7 @@ export function StepFinancials({
                     control={form.control as any}
                     name="extensions.pvt"
                     render={({ field }) => (
-                      <FormItem className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-white">
+                      <FormItem className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card">
                         <FormLabel className="text-sm cursor-pointer w-full">
                           Political Violence & Terrorism (0.25%)
                           {isHighEnd && (
@@ -307,7 +329,7 @@ export function StepFinancials({
                     control={form.control as any}
                     name="extensions.excessProtector"
                     render={({ field }) => (
-                      <FormItem className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-white">
+                      <FormItem className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card">
                         <FormLabel className="text-sm cursor-pointer w-full">
                           Excess Protector (0.25%)
                           {isHighEnd && (
@@ -331,7 +353,7 @@ export function StepFinancials({
                       control={form.control as any}
                       name="extensions.passengerLiability"
                       render={({ field }) => (
-                        <FormItem className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-white">
+                        <FormItem className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card">
                           <FormLabel className="text-sm cursor-pointer w-full">
                             Passenger Liability (KES 500)
                           </FormLabel>
@@ -350,7 +372,7 @@ export function StepFinancials({
                       control={form.control as any}
                       name="extensions.omRescuePlus"
                       render={({ field }) => (
-                        <FormItem className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-white">
+                        <FormItem className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card">
                           <FormLabel className="text-sm cursor-pointer w-full">
                             OM Rescue Plus (KES 1,000)
                           </FormLabel>
@@ -519,10 +541,10 @@ export function StepFinancials({
         </div>
 
         <div className="flex justify-between pt-6 border-t mt-4">
-          <Button type="button" variant="outline" onClick={onBack}>
-            Back: Asset Details
+          <Button type="button" variant="outline" onClick={onBack} size="lg">
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back: Asset Details
           </Button>
-          <Button type="submit" size="lg" className="px-8">
+          <Button type="submit" size="lg" className="px-10">
             Next: Review & Issue
           </Button>
         </div>

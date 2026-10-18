@@ -7,6 +7,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form"
 import {
   Select,
@@ -15,11 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { useProducts } from "@/hooks/useInsurance"
 
 interface StepAssetProps {
-  defaultValues: { product_id: string }
-  onNext: (data: { product_id: string }) => void
+  defaultValues: { product_id: string; policy_number: string }
+  onNext: (data: { product_id: string; policy_number: string }) => void
 }
 
 export function StepAsset({ defaultValues, onNext }: StepAssetProps) {
@@ -28,60 +30,86 @@ export function StepAsset({ defaultValues, onNext }: StepAssetProps) {
   const form = useForm({
     defaultValues: {
       product_id: defaultValues?.product_id || "",
+      policy_number: defaultValues?.policy_number || "",
     },
   })
 
   const selectedProductId = form.watch("product_id")
+  const policyNumber = form.watch("policy_number")
 
   return (
     <Form {...(form as any)}>
-      <form onSubmit={form.handleSubmit(onNext)} className="space-y-6">
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6">
-          <p className="text-sm text-blue-700 font-medium">
-            Step 1: Select Insurance Product
-          </p>
-          <p className="text-xs text-blue-600 mt-1">
-            Choose the baseline product for this policy.
+      <form onSubmit={form.handleSubmit(onNext)} className="space-y-8">
+        <div className="space-y-1">
+          <h3 className="text-lg font-bold tracking-tight">Policy Identity</h3>
+          <p className="text-sm text-muted-foreground">
+            Identify the insurance product and record the official policy number.
           </p>
         </div>
 
-        <FormField
-          control={form.control}
-          name="product_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Insurance Product</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Search or select a product..." />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {productsData?.data
-                    .filter((p) =>
-                      p.class_of_insurance.toLowerCase().includes("motor private"),
-                    )
-                    .map((product) => (
-                      <SelectItem key={product.id} value={product.id}>
-                        {product.name} ({product.class_of_insurance})
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid gap-6">
+          <FormField
+            control={form.control}
+            name="product_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Insurance Product</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="h-12 text-base">
+                      <SelectValue placeholder="Select a product..." />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {productsData?.data
+                      .filter((p) =>
+                        p.class_of_insurance.toLowerCase().includes("motor private"),
+                      )
+                      .map((product) => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.name} ({product.class_of_insurance})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  The baseline coverage rules will be derived from this selection.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <div className="flex justify-end pt-8">
+          <FormField
+            control={form.control}
+            name="policy_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Policy Number</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    placeholder="e.g. POL/2026/001" 
+                    className="h-12 text-base"
+                  />
+                </FormControl>
+                <FormDescription>
+                  Enter the unique reference number provided by the insurance company.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex justify-end pt-4">
           <Button
             type="submit"
-            disabled={!selectedProductId}
+            disabled={!selectedProductId || !policyNumber}
             size="lg"
             className="px-10"
           >
-            Next: Product Details
+            Next: Asset Details
           </Button>
         </div>
       </form>

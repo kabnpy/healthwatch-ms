@@ -125,10 +125,10 @@ export function injectWizardData(
         result[key] = "[ EMPTY ]"
       }
     } else if (typeof value === "object" && value !== null) {
-      // Recurse, passing the same root inputs but extending the path
-      // Also pass the sub-object if it exists for traditional nesting
-      const nextInputs =
-        inputs?.[key] && typeof inputs[key] === "object" ? inputs[key] : inputs
+      // Recurse, passing the same root inputs to allow absolute path resolution
+      // We pass the nested input object if it exists at the current key, 
+      // otherwise we pass the same inputs to allow flat path lookups.
+      const nextInputs = (inputs && typeof inputs === 'object' && inputs[key]) ? inputs[key] : inputs
 
       result[key] = injectWizardData(value, nextInputs, currentPath, actualRoot)
     } else {

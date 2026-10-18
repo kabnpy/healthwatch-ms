@@ -64,6 +64,7 @@ export interface WizardExtensions {
 
 export interface WizardState {
   product_id: string
+  policy_number: string
   sum_insured: number
   details: Record<string, any>
   terms: {

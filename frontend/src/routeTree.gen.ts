@@ -166,7 +166,6 @@ const LayoutClientsClientIdPoliciesPolicyIdRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof LayoutIndexRoute
   '/login': typeof LoginRoute
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -174,21 +173,22 @@ export interface FileRoutesByFullPath {
   '/admin': typeof LayoutAdminRoute
   '/catalog': typeof LayoutCatalogRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
+  '/': typeof LayoutIndexRoute
   '/clients/$clientId': typeof LayoutClientsClientIdRouteWithChildren
   '/print/risk-notes/$id': typeof PrintRiskNotesIdRoute
   '/catalog/': typeof LayoutCatalogIndexRoute
-  '/clients/': typeof LayoutClientsIndexRoute
+  '/clients': typeof LayoutClientsIndexRoute
   '/catalog/insurers/$insurerId': typeof LayoutCatalogInsurersInsurerIdRoute
   '/catalog/products/$productId': typeof LayoutCatalogProductsProductIdRoute
   '/clients/$clientId/documents': typeof LayoutClientsClientIdDocumentsRoute
   '/clients/$clientId/invoices': typeof LayoutClientsClientIdInvoicesRoute
   '/clients/$clientId/overview': typeof LayoutClientsClientIdOverviewRoute
   '/clients/$clientId/settings': typeof LayoutClientsClientIdSettingsRoute
-  '/catalog/insurers/': typeof LayoutCatalogInsurersIndexRoute
-  '/catalog/products/': typeof LayoutCatalogProductsIndexRoute
+  '/catalog/insurers': typeof LayoutCatalogInsurersIndexRoute
+  '/catalog/products': typeof LayoutCatalogProductsIndexRoute
   '/clients/$clientId/': typeof LayoutClientsClientIdIndexRoute
   '/clients/$clientId/policies/$policyId': typeof LayoutClientsClientIdPoliciesPolicyIdRoute
-  '/clients/$clientId/policies/': typeof LayoutClientsClientIdPoliciesIndexRoute
+  '/clients/$clientId/policies': typeof LayoutClientsClientIdPoliciesIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -243,7 +243,6 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/login'
     | '/recover-password'
     | '/reset-password'
@@ -251,21 +250,22 @@ export interface FileRouteTypes {
     | '/admin'
     | '/catalog'
     | '/settings'
+    | '/'
     | '/clients/$clientId'
     | '/print/risk-notes/$id'
     | '/catalog/'
-    | '/clients/'
+    | '/clients'
     | '/catalog/insurers/$insurerId'
     | '/catalog/products/$productId'
     | '/clients/$clientId/documents'
     | '/clients/$clientId/invoices'
     | '/clients/$clientId/overview'
     | '/clients/$clientId/settings'
-    | '/catalog/insurers/'
-    | '/catalog/products/'
+    | '/catalog/insurers'
+    | '/catalog/products'
     | '/clients/$clientId/'
     | '/clients/$clientId/policies/$policyId'
-    | '/clients/$clientId/policies/'
+    | '/clients/$clientId/policies'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -359,7 +359,7 @@ declare module '@tanstack/react-router' {
     '/_layout': {
       id: '/_layout'
       path: ''
-      fullPath: '/'
+      fullPath: ''
       preLoaderRoute: typeof LayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -394,7 +394,7 @@ declare module '@tanstack/react-router' {
     '/_layout/clients/': {
       id: '/_layout/clients/'
       path: '/clients'
-      fullPath: '/clients/'
+      fullPath: '/clients'
       preLoaderRoute: typeof LayoutClientsIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
@@ -429,14 +429,14 @@ declare module '@tanstack/react-router' {
     '/_layout/catalog/products/': {
       id: '/_layout/catalog/products/'
       path: '/products'
-      fullPath: '/catalog/products/'
+      fullPath: '/catalog/products'
       preLoaderRoute: typeof LayoutCatalogProductsIndexRouteImport
       parentRoute: typeof LayoutCatalogRoute
     }
     '/_layout/catalog/insurers/': {
       id: '/_layout/catalog/insurers/'
       path: '/insurers'
-      fullPath: '/catalog/insurers/'
+      fullPath: '/catalog/insurers'
       preLoaderRoute: typeof LayoutCatalogInsurersIndexRouteImport
       parentRoute: typeof LayoutCatalogRoute
     }
@@ -485,7 +485,7 @@ declare module '@tanstack/react-router' {
     '/_layout/clients/$clientId/policies/': {
       id: '/_layout/clients/$clientId/policies/'
       path: '/policies'
-      fullPath: '/clients/$clientId/policies/'
+      fullPath: '/clients/$clientId/policies'
       preLoaderRoute: typeof LayoutClientsClientIdPoliciesIndexRouteImport
       parentRoute: typeof LayoutClientsClientIdRoute
     }

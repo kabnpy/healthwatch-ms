@@ -1,4 +1,5 @@
 import React, { useMemo } from "react"
+import { ArrowLeft } from "lucide-react"
 import type { MotorFinancialBreakdown } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -66,21 +67,25 @@ export function StepReview({
     .includes("personal accident")
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="space-y-6">
-        {/* Asset Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium uppercase text-muted-foreground tracking-wider">
-              Product & Inputs
+        {/* Identity & Asset Summary */}
+        <Card className="shadow-sm border-muted/60">
+          <CardHeader className="pb-3 bg-muted/10">
+            <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+              Identity & Asset
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Product:</span>
-              <span className="font-bold">{selectedProduct?.name}</span>
+          <CardContent className="pt-4 space-y-3">
+            <div className="flex justify-between items-baseline">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">Policy Number:</span>
+              <span className="font-mono font-bold text-sm">{state.policy_number}</span>
             </div>
-            <div className="border-t pt-2 mt-2 space-y-1">
+            <div className="flex justify-between items-baseline">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">Insurance Product:</span>
+              <span className="font-bold text-sm text-right">{selectedProduct?.name}</span>
+            </div>
+            <div className="border-t pt-3 mt-3 space-y-2">
               {(() => {
                 const renderEntries = (
                   obj: any,
@@ -88,21 +93,16 @@ export function StepReview({
                 ): React.ReactNode => {
                   return Object.entries(obj || {}).map(([key, value]) => {
                     const label = prefix ? `${prefix} > ${key}` : key
-                    if (
-                      typeof value === "object" &&
-                      value !== null &&
-                      !Array.isArray(value)
-                    ) {
-                      return (
-                        <React.Fragment key={label}>
-                          {renderEntries(value, label)}
-                        </React.Fragment>
-                      )
-                    }
+                    // Filter for only the essential keys we show in the wizard
+                    const essentialKeys = ["registration_number", "make", "year_of_manufacture"]
+                    const lastKey = key.toLowerCase()
+                    
+                    if (!essentialKeys.includes(lastKey)) return null
+
                     return (
-                      <div key={label} className="flex justify-between text-xs">
-                        <span className="text-muted-foreground font-medium">
-                          {label.replace(/_/g, " ")}:
+                      <div key={label} className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground font-semibold uppercase tracking-tighter">
+                          {key.replace(/_/g, " ")}:
                         </span>
                         <span className="font-mono">{String(value)}</span>
                       </div>
@@ -123,32 +123,32 @@ export function StepReview({
         </Card>
 
         {/* Financial Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium uppercase text-muted-foreground tracking-wider flex justify-between">
+        <Card className="shadow-sm border-muted/60">
+          <CardHeader className="pb-3 bg-muted/10">
+            <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground flex justify-between">
               <span>Financial Summary</span>
               {breakdown && (
-                <span className="text-[10px] font-bold text-emerald-600 border border-emerald-600 px-1 rounded">
+                <span className="text-[9px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200">
                   AUTHORITATIVE
                 </span>
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="pt-4 space-y-3">
             {!isPA && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Sum Insured:</span>
-                <span className="font-bold">
+              <div className="flex justify-between text-sm items-baseline">
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">Sum Insured:</span>
+                <span className="font-mono font-bold">
                   KES {(Number(state.sum_insured) || 0).toLocaleString()}
                 </span>
               </div>
             )}
 
             {breakdown ? (
-              <div className="space-y-2 border-y py-3 my-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Net Premium:</span>
-                  <span className="font-mono">
+              <div className="space-y-2 border-y py-3 my-2 bg-muted/5 rounded px-2">
+                <div className="flex justify-between text-xs items-baseline">
+                  <span className="text-muted-foreground uppercase tracking-tighter font-semibold">Net Premium:</span>
+                  <span className="font-mono font-bold">
                     {Number(breakdown.net_premium).toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                     })}
@@ -157,9 +157,9 @@ export function StepReview({
                 {breakdown.benefits?.map((benefit) => (
                   <div
                     key={benefit.name}
-                    className="flex justify-between text-xs pl-4 italic"
+                    className="flex justify-between text-[10px] pl-4 italic"
                   >
-                    <span className="text-muted-foreground">
+                    <span className="text-muted-foreground uppercase tracking-tighter">
                       {benefit.name}:
                     </span>
                     <span className="font-mono text-slate-600">
@@ -170,9 +170,9 @@ export function StepReview({
                   </div>
                 ))}
                 {breakdown.taxes && Object.entries(breakdown.taxes).map(([name, amount]) => (
-                  <div key={name} className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">
-                      {name.replace(/_/g, " ").toUpperCase()}:
+                  <div key={name} className="flex justify-between text-[10px]">
+                    <span className="text-muted-foreground uppercase tracking-tighter">
+                      {name.replace(/_/g, " ")}:
                     </span>
                     <span className="font-mono text-slate-600">
                       {Number(amount).toLocaleString(undefined, {
@@ -184,9 +184,9 @@ export function StepReview({
               </div>
             ) : null}
 
-            <div className="flex justify-between pt-1">
-              <span className="text-muted-foreground">Total Payable:</span>
-              <span className="font-bold text-lg text-green-700">
+            <div className="flex justify-between pt-1 items-baseline">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">Total Payable:</span>
+              <span className="font-black text-xl text-emerald-600 font-mono tracking-tighter">
                 KES{" "}
                 {(breakdown
                   ? Number(breakdown.total_amount)
@@ -196,32 +196,33 @@ export function StepReview({
                 })}
               </span>
             </div>
-            <div className="flex justify-between border-t pt-2 text-sm">
-              <span className="text-muted-foreground">Start Date:</span>
-              <span className="font-medium">{state.financials?.startDate}</span>
+            <div className="flex justify-between border-t pt-2 text-xs items-baseline">
+              <span className="text-muted-foreground uppercase tracking-tight font-medium">Coverage Start Date:</span>
+              <span className="font-bold font-mono">{state.financials?.startDate}</span>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 p-4 rounded-md text-sm text-blue-800">
-        Review the captured inputs. The final Risk Note will be generated by
-        combining these with the product's standard benefits and clauses.
+      <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg text-[11px] text-slate-600 leading-relaxed italic">
+        Confirmation: The final Risk Note document will be generated by
+        combining the above data with standard product terms and regulatory requirements.
       </div>
 
-      <div className="flex justify-between pt-4 border-t">
+      <div className="flex justify-between pt-4 border-t gap-4">
         <Button
           type="button"
           variant="outline"
           onClick={onBack}
           disabled={isSubmitting}
+          className="h-11 px-6"
         >
-          Back: Financials
+          <ArrowLeft className="size-4 mr-2" /> Back: Financials
         </Button>
         <LoadingButton
           onClick={onIssue}
           loading={isSubmitting}
-          className="bg-blue-700 hover:bg-blue-800 h-10 px-8 font-bold"
+          className="bg-zinc-900 hover:bg-zinc-800 text-white h-11 px-10 font-black uppercase tracking-widest text-xs"
         >
           Issue Policy
         </LoadingButton>
