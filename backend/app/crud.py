@@ -1,6 +1,5 @@
 import uuid
 from collections.abc import Sequence
-from datetime import datetime
 from typing import Any, cast
 
 from sqlalchemy.orm import selectinload
@@ -51,6 +50,7 @@ from app.models import (
     User,
     UserCreate,
     UserUpdate,
+    get_datetime_utc,
 )
 
 # ==========================================
@@ -132,7 +132,7 @@ def count_insurers(session: Session) -> int:
 
 
 def delete_insurer(session: Session, *, db_insurer: Insurer) -> None:
-    db_insurer.deleted_at = datetime.now()
+    db_insurer.deleted_at = get_datetime_utc()
     session.add(db_insurer)
     session.commit()
 
@@ -186,7 +186,7 @@ def count_products(session: Session, *, insurer_id: uuid.UUID | None = None) -> 
 
 
 def delete_product(session: Session, *, db_product: Product) -> None:
-    db_product.deleted_at = datetime.now()
+    db_product.deleted_at = get_datetime_utc()
     session.add(db_product)
     session.commit()
 
@@ -255,7 +255,7 @@ def count_clients(session: Session) -> int:
 
 
 def delete_client(session: Session, *, db_client: Client) -> None:
-    db_client.deleted_at = datetime.now()
+    db_client.deleted_at = get_datetime_utc()
     session.add(db_client)
     session.commit()
 
@@ -311,7 +311,7 @@ def count_correspondences(
 def delete_correspondence(
     session: Session, *, db_correspondence: Correspondence
 ) -> None:
-    db_correspondence.deleted_at = datetime.now()
+    db_correspondence.deleted_at = get_datetime_utc()
     session.add(db_correspondence)
     session.commit()
 
@@ -404,7 +404,7 @@ def count_policies(session: Session, *, client_id: uuid.UUID | None = None) -> i
 
 
 def delete_policy(session: Session, *, db_policy: Policy) -> None:
-    db_policy.deleted_at = datetime.now()
+    db_policy.deleted_at = get_datetime_utc()
     session.add(db_policy)
     session.commit()
 
@@ -473,7 +473,7 @@ def count_risk_notes(
 
 
 def delete_risk_note(session: Session, *, db_risk_note: RiskNote) -> None:
-    db_risk_note.deleted_at = datetime.now()
+    db_risk_note.deleted_at = get_datetime_utc()
     session.add(db_risk_note)
     session.commit()
 
@@ -533,7 +533,7 @@ def count_claims(
 
 
 def delete_claim(session: Session, *, db_claim: Claim) -> None:
-    db_claim.deleted_at = datetime.now()
+    db_claim.deleted_at = get_datetime_utc()
     session.add(db_claim)
     session.commit()
 

@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Optional
@@ -13,10 +13,20 @@ from sqlmodel import Field, Relationship, SQLModel
 # ==========================================
 
 
+def get_datetime_utc() -> datetime:
+    """Return the current time as a timezone-aware UTC datetime.
+
+    Returns:
+        The current UTC datetime with tzinfo set.
+    """
+    return datetime.now(UTC)
+
+
 class AuditMixin(SQLModel):
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=get_datetime_utc)
     updated_at: datetime = Field(
-        default_factory=datetime.now, sa_column_kwargs={"onupdate": datetime.now}
+        default_factory=get_datetime_utc,
+        sa_column_kwargs={"onupdate": get_datetime_utc},
     )
 
     deleted_at: datetime | None = Field(default=None, index=True)
