@@ -85,7 +85,7 @@ class PolicyService:
             created_by_id=current_user_id,
         )
 
-        PolicyService.create_risk_note_with_invoice(
+        PolicyService.create_risk_note(
             session=session, risk_note_in=risk_note_in
         )
 
@@ -179,10 +179,10 @@ class PolicyService:
         current_rn.status = RiskNoteStatus.REPLACED
         session.add(current_rn)
 
-        return PolicyService.create_risk_note_with_invoice(session=session, risk_note_in=risk_note_in)
+        return PolicyService.create_risk_note(session=session, risk_note_in=risk_note_in)
 
     @staticmethod
-    def create_risk_note_with_invoice(
+    def create_risk_note(
         *,
         session: Session,
         risk_note_in: RiskNoteCreate,
@@ -195,30 +195,6 @@ class PolicyService:
             risk_note_in.risk_note_number = generate_risk_note_number()
 
         risk_note = crud.create_risk_note(session=session, risk_note_in=risk_note_in)
-
-        if risk_note.status != RiskNoteStatus.DRAFT:
-            policy = crud.get_policy(session=session, id=risk_note.policy_id)
-            if not policy:
-                raise HTTPException(status_code=404, detail="Policy not found")
-
-            invoice = crud.create_invoice(session=session, invoice_in=InvoiceCreate(
-                invoice_number=f"INV-{uuid.uuid4().hex[:12].upper()}",
-                client_id=policy.client_id,
-                date_issued=date.today(),
-                total_amount=risk_note.total_amount,
-                balance_due=risk_note.total_amount,
-                status=InvoiceStatus.UNPAID,
-            ))
-
-            crud.create_invoice_line_item(session=session, line_item_in=InvoiceLineItemCreate(
-                invoice_id=invoice.id,
-                risk_note_id=risk_note.id,
-                amount=risk_note.total_amount,
-                description=f"{risk_note.transaction_type.value} - {policy.policy_number}",
-            ))
-
-            risk_note.invoice_number = invoice.invoice_number
-            session.add(risk_note)
 
         return risk_note
 

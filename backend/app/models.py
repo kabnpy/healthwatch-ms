@@ -440,7 +440,6 @@ class RiskNoteBase(AuditMixin, SQLModel):
     previous_risk_note_id: uuid.UUID | None = Field(
         default=None, foreign_key="risknote.id", index=True
     )
-    invoice_number: str | None = None
     created_by_id: uuid.UUID | None = Field(
         default=None, foreign_key="user.id", index=True
     )
@@ -463,7 +462,6 @@ class RiskNoteUpdate(SQLModel):
     risk_note_number: str | None = None
     status: RiskNoteStatus | None = None
     previous_risk_note_id: uuid.UUID | None = None
-    invoice_number: str | None = None
     effective_date: date | None = None
     coverage_start: date | None = None
     coverage_end: date | None = None
@@ -480,6 +478,7 @@ class RiskNotePublic(RiskNoteBase):
     policy: PolicyPublic | None = None
     financial_breakdown: dict[str, Any] = Field(default_factory=dict)
     special_clauses: list[str] = Field(default_factory=list)
+    invoice_line_items: list["InvoiceLineItemPublic"] = []
 
 
 class RiskNote(RiskNoteBase, table=True):
@@ -625,6 +624,7 @@ class ReceiptAllocationsPublic(SQLModel):
 class InvoiceLineItemPublic(InvoiceLineItemBase):
     id: uuid.UUID
     risk_note: Optional["RiskNotePublic"] = None
+    invoice: Optional["InvoicePublic"] = None
 
 
 class InvoicePublic(InvoiceBase):

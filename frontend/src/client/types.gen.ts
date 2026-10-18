@@ -262,6 +262,7 @@ export type InvoiceLineItemPublic = {
     description?: (string | null);
     id: string;
     risk_note?: (RiskNotePublic | null);
+    invoice?: (InvoicePublic | null);
 };
 
 export type InvoicePublic = {
@@ -328,6 +329,9 @@ export type PolicyCreateExtended = {
     inception_date?: string;
     coverage_start?: string;
     coverage_end: string;
+    risk_details?: {
+        [key: string]: unknown;
+    };
 };
 
 export type PolicyPublic = {
@@ -505,7 +509,6 @@ export type RiskNoteCreate = {
     transaction_type: TransactionType;
     status?: RiskNoteStatus;
     previous_risk_note_id?: (string | null);
-    invoice_number?: (string | null);
     created_by_id?: (string | null);
     effective_date?: string;
     coverage_start: string;
@@ -532,7 +535,6 @@ export type RiskNotePublic = {
     transaction_type: TransactionType;
     status?: RiskNoteStatus;
     previous_risk_note_id?: (string | null);
-    invoice_number?: (string | null);
     created_by_id?: (string | null);
     effective_date?: string;
     coverage_start: string;
@@ -549,6 +551,7 @@ export type RiskNotePublic = {
         [key: string]: unknown;
     };
     special_clauses?: Array<(string)>;
+    invoice_line_items?: Array<InvoiceLineItemPublic>;
 };
 
 export type RiskNotesPublic = {
@@ -563,7 +566,6 @@ export type RiskNoteUpdate = {
     risk_note_number?: (string | null);
     status?: (RiskNoteStatus | null);
     previous_risk_note_id?: (string | null);
-    invoice_number?: (string | null);
     effective_date?: (string | null);
     coverage_start?: (string | null);
     coverage_end?: (string | null);

@@ -252,6 +252,22 @@ export const RiskNoteTemplate = ({
       ),
     })
 
+    // 8. AUTHENTICATION
+    const invoice = riskNote.invoice_line_items?.[0]?.invoice
+    sections.push({
+      name: "AUTHENTICATION",
+      content: (
+        <div className="flex justify-between items-center text-black uppercase">
+          <span className="font-bold tracking-tight text-[11px]">
+            {invoice ? `Invoiced: ${invoice.invoice_number}` : "Pending Invoicing"}
+          </span>
+          <span className="font-mono text-[12px] font-bold">
+            [Risk Note Issued: {new Date(riskNote.created_at || "").toLocaleDateString()}]
+          </span>
+        </div>
+      ),
+    })
+
     return sections
   }, [client, policy, riskNote, localRiskDetails])
 

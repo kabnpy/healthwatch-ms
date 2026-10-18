@@ -1483,6 +1483,16 @@ export const InvoiceLineItemPublicSchema = {
                     type: 'null'
                 }
             ]
+        },
+        invoice: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/InvoicePublic'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     type: 'object',
@@ -1816,6 +1826,11 @@ export const PolicyCreateExtendedSchema = {
             type: 'string',
             format: 'date',
             title: 'Coverage End'
+        },
+        risk_details: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Risk Details'
         }
     },
     type: 'object',
@@ -2796,17 +2811,6 @@ export const RiskNoteCreateSchema = {
             ],
             title: 'Previous Risk Note Id'
         },
-        invoice_number: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Invoice Number'
-        },
         created_by_id: {
             anyOf: [
                 {
@@ -2964,17 +2968,6 @@ export const RiskNotePublicSchema = {
             ],
             title: 'Previous Risk Note Id'
         },
-        invoice_number: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Invoice Number'
-        },
         created_by_id: {
             anyOf: [
                 {
@@ -3048,6 +3041,14 @@ export const RiskNotePublicSchema = {
             },
             type: 'array',
             title: 'Special Clauses'
+        },
+        invoice_line_items: {
+            items: {
+                '$ref': '#/components/schemas/InvoiceLineItemPublic'
+            },
+            type: 'array',
+            title: 'Invoice Line Items',
+            default: []
         }
     },
     type: 'object',
@@ -3057,7 +3058,7 @@ export const RiskNotePublicSchema = {
 
 export const RiskNoteStatusSchema = {
     type: 'string',
-    enum: ['Draft', 'Issued', 'Replaced', 'Cancelled'],
+    enum: ['Draft', 'Issued', 'Replaced', 'Cancelled', 'Issued'],
     title: 'RiskNoteStatus'
 } as const;
 
@@ -3105,17 +3106,6 @@ export const RiskNoteUpdateSchema = {
                 }
             ],
             title: 'Previous Risk Note Id'
-        },
-        invoice_number: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Invoice Number'
         },
         effective_date: {
             anyOf: [
