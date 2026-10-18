@@ -13,18 +13,24 @@
   - Preserved `@tanstack/react-table` at 8.21.3 to protect all 12 custom insurance table column components against TanStack Table v9 breaking changes.
   - Refactored all 4 domain hooks (`useInsurance.ts`, `useCatalog.ts`, `useFinancials.ts`, `useDocuments.ts`), `useAuth.ts`, `queryClient.ts`, and direct service callers to use structured options (`path`, `query`, `body`) and unwrap `.data`.
   - Verified with 0 TypeScript compiler errors (`bun x tsc -p tsconfig.build.json`) and successful Vite production bundle (`bun run build`).
+- **Upstream Sync Phase 3 (Docker Compose Modernization)**:
+  - Transitioned from legacy `docker-compose*.yml` to standard Docker Compose v2 specification: `compose.yml` (base), `compose.override.yml` (local dev), and `compose.deploy.yml` (production).
+  - Modernized proxy to Traefik v3.3, utilizing native entrypoint HTTP-to-HTTPS redirection (`entrypoint.to=https`) and clean Let's Encrypt TLS challenge configs in `compose.deploy.yml`.
+  - Upgraded local dev email testing service from obsolete `mailcatcher` to `mailpit` (`axllent/mailpit`).
+  - Removed deprecated `docker-compose.traefik.yml` and updated staging/production deployment workflows.
 
 ## Ongoing
 - **Upstream Template Synchronization**: Step-by-step merge of upstream improvements onto `chore/upstream-sync`.
 
 ## Next Steps
-1. **Upstream Sync Phase 3**: Container & Compose modernization (transition `docker-compose.yml` to `compose.yml`, `compose.override.yml`, `compose.deploy.yml`, remove legacy Traefik configs).
-2. **Upstream Sync Phase 4**: Root workspace / monorepo alignment (`pyproject.toml` or workspace configs).
-3. **Upstream Sync Phase 5**: CI/CD workflows, pre-commit, dependabot.
-4. **Audit Traceability**: Finalize the `change_log` implementation for endorsements to ensure full traceability of risk detail modifications.
-5. **Automated Testing**: Expand the backend test suite to cover the new pro-rata endorsement calculations and rating tier logic.
+1. **Upstream Sync Phase 4**: Root workspace / monorepo alignment (`pyproject.toml` or workspace configs).
+2. **Upstream Sync Phase 5**: CI/CD workflows, pre-commit, dependabot.
+3. **Audit Traceability**: Finalize the `change_log` implementation for endorsements to ensure full traceability of risk detail modifications.
+4. **Automated Testing**: Expand the backend test suite to cover the new pro-rata endorsement calculations and rating tier logic.
 
 ## Architectural Decisions
+- **Docker Compose v2 File Structure**: Standardized on `compose.yml`, `compose.override.yml`, and `compose.deploy.yml` matching upstream template. Local execution defaults seamlessly to `compose.yml` + `compose.override.yml`, while deployments use `-f compose.yml -f compose.deploy.yml`.
+- **Mailpit over Mailcatcher**: Replaced abandoned `mailcatcher` with modern `axllent/mailpit` for high performance, zero Ruby vulnerability overhead, and built-in web UI and API.
 - **TanStack Table Pinning (v8.21.3)**: Maintained `@tanstack/react-table` at v8.21.3 instead of upstream's v9.2.4. TanStack Table v9 introduces breaking API redesigns (multi-type argument `ColumnDef<TData, ...>`, `useTable` changes) that would break 12 custom insurance tables; v8 builds cleanly under React 19 and Vite 8.
 - **Hook-Boundary Data Unwrapping**: Because modern `@hey-api/client-axios` returns raw `AxiosResponse<T>`, all custom domain hooks unwrap `.data` directly at the hook boundary, preserving existing component consumption signatures without touching dozens of downstream components.
 - **Squashed Alembic Baseline Migration**: Because the project is pre-production with no historical data, all 31 incremental migrations were consolidated into a single clean initial schema (`19bab995ff26_initial_schema.py`).
