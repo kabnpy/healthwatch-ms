@@ -5,11 +5,15 @@ import { DocumentsService } from "../client"
 export const useDocuments = (entityId?: string, entityType?: string) => {
   return useQuery({
     queryKey: ["documents", { entityId, entityType }],
-    queryFn: () =>
-      DocumentsService.readDocuments({
-        entityId: entityId as any,
-        entityType: entityType as any,
-      }),
+    queryFn: async () =>
+      (
+        await DocumentsService.readDocuments({
+          query: {
+            entity_id: entityId ?? null,
+            entity_type: entityType ?? null,
+          },
+        })
+      ).data,
     enabled: !!entityId,
   })
 }
@@ -18,22 +22,24 @@ export const useUploadDocument = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       file: File
       entity_type: string
       entity_id: string
       document_type: string
       metadata?: Record<string, any>
     }) => {
-      return DocumentsService.uploadDocument({
-        formData: {
-          file: data.file,
-          entity_type: data.entity_type,
-          entity_id: data.entity_id,
-          document_type: data.document_type,
-          metadata_json: data.metadata ? JSON.stringify(data.metadata) : "",
-        },
-      })
+      return (
+        await DocumentsService.uploadDocument({
+          body: {
+            file: data.file,
+            entity_type: data.entity_type,
+            entity_id: data.entity_id,
+            document_type: data.document_type,
+            metadata_json: data.metadata ? JSON.stringify(data.metadata) : "",
+          },
+        })
+      ).data
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
@@ -51,7 +57,8 @@ export const useDeleteDocument = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => DocumentsService.removeDocument({ id }),
+    mutationFn: async (id: string) =>
+      (await DocumentsService.removeDocument({ path: { id } })).data,
     onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: ["documents", { entityId: data.entity_id }],

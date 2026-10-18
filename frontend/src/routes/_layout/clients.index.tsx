@@ -11,7 +11,9 @@ import PendingItems from "@/components/Pending/PendingItems"
 
 function getClientsQueryOptions() {
   return {
-    queryFn: () => ClientsService.readClients({ skip: 0, limit: 100 }),
+    queryFn: async () =>
+      (await ClientsService.readClients({ query: { skip: 0, limit: 100 } }))
+        .data,
     queryKey: ["clients"],
   }
 }

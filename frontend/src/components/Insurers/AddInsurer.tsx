@@ -60,7 +60,7 @@ const AddInsurer = () => {
 
   const mutation = useMutation({
     mutationFn: (data: InsurerCreate) =>
-      InsurersService.createInsurer({ requestBody: data }),
+      InsurersService.createInsurer({ body: data }),
     onSuccess: () => {
       showSuccessToast("Insurer Created")
       setIsOpen(false)

@@ -17,7 +17,8 @@ import { queryClient } from "@/queryClient"
 
 function getInsurerQueryOptions(insurerId: string) {
   return {
-    queryFn: () => InsurersService.readInsurer({ id: insurerId }),
+    queryFn: async () =>
+      (await InsurersService.readInsurer({ path: { id: insurerId } })).data,
     queryKey: ["insurers", insurerId],
   }
 }

@@ -11,7 +11,9 @@ import PendingItems from "@/components/Pending/PendingItems"
 
 function getInsurersQueryOptions() {
   return {
-    queryFn: () => InsurersService.readInsurers({ skip: 0, limit: 100 }),
+    queryFn: async () =>
+      (await InsurersService.readInsurers({ query: { skip: 0, limit: 100 } }))
+        .data,
     queryKey: ["insurers"],
   }
 }

@@ -37,7 +37,8 @@ type ProductFormData = z.infer<typeof productSchema>
 
 function getProductQueryOptions(productId: string) {
   return {
-    queryFn: () => ProductsService.readProduct({ id: productId }),
+    queryFn: async () =>
+      (await ProductsService.readProduct({ path: { id: productId } })).data,
     queryKey: ["products", productId],
   }
 }
@@ -76,11 +77,13 @@ function ProductDetailContent({ productId }: { productId: string }) {
   })
 
   const mutation = useMutation({
-    mutationFn: (data: ProductFormData) =>
-      ProductsService.updateProduct({
-        id: productId,
-        requestBody: data as any,
-      }),
+    mutationFn: async (data: ProductFormData) =>
+      (
+        await ProductsService.updateProduct({
+          path: { id: productId },
+          body: data as any,
+        })
+      ).data,
     onSuccess: () => {
       showSuccessToast("Product updated successfully")
       qClient.invalidateQueries({ queryKey: ["products"] })

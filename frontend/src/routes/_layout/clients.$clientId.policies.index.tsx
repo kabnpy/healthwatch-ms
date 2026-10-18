@@ -11,8 +11,12 @@ import { Button } from "@/components/ui/button"
 
 function getPoliciesQueryOptions(clientId: string) {
   return {
-    queryFn: () =>
-      PoliciesService.readPolicies({ clientId, skip: 0, limit: 100 }),
+    queryFn: async () =>
+      (
+        await PoliciesService.readPolicies({
+          query: { client_id: clientId, skip: 0, limit: 100 },
+        })
+      ).data,
     queryKey: ["policies", { clientId }],
   }
 }

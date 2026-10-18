@@ -9,44 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
-import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
-import { Route as LayoutCatalogRouteImport } from './routes/_layout/catalog'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
-import { Route as LayoutClientsIndexRouteImport } from './routes/_layout/clients.index'
+import { Route as LayoutCatalogRouteImport } from './routes/_layout/catalog'
+import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutCatalogIndexRouteImport } from './routes/_layout/catalog.index'
-import { Route as PrintRiskNotesIdRouteImport } from './routes/print/risk-notes.$id'
+import { Route as LayoutClientsIndexRouteImport } from './routes/_layout/clients.index'
 import { Route as LayoutClientsClientIdRouteImport } from './routes/_layout/clients.$clientId'
-import { Route as LayoutClientsClientIdIndexRouteImport } from './routes/_layout/clients.$clientId.index'
-import { Route as LayoutCatalogProductsIndexRouteImport } from './routes/_layout/catalog.products.index'
+import { Route as PrintRiskNotesIdRouteImport } from './routes/print/risk-notes.$id'
 import { Route as LayoutCatalogInsurersIndexRouteImport } from './routes/_layout/catalog.insurers.index'
-import { Route as LayoutClientsClientIdSettingsRouteImport } from './routes/_layout/clients.$clientId.settings'
-import { Route as LayoutClientsClientIdOverviewRouteImport } from './routes/_layout/clients.$clientId.overview'
-import { Route as LayoutClientsClientIdInvoicesRouteImport } from './routes/_layout/clients.$clientId.invoices'
-import { Route as LayoutClientsClientIdDocumentsRouteImport } from './routes/_layout/clients.$clientId.documents'
-import { Route as LayoutCatalogProductsProductIdRouteImport } from './routes/_layout/catalog.products.$productId'
 import { Route as LayoutCatalogInsurersInsurerIdRouteImport } from './routes/_layout/catalog.insurers.$insurerId'
+import { Route as LayoutCatalogProductsIndexRouteImport } from './routes/_layout/catalog.products.index'
+import { Route as LayoutCatalogProductsProductIdRouteImport } from './routes/_layout/catalog.products.$productId'
+import { Route as LayoutClientsClientIdIndexRouteImport } from './routes/_layout/clients.$clientId.index'
+import { Route as LayoutClientsClientIdDocumentsRouteImport } from './routes/_layout/clients.$clientId.documents'
+import { Route as LayoutClientsClientIdInvoicesRouteImport } from './routes/_layout/clients.$clientId.invoices'
+import { Route as LayoutClientsClientIdOverviewRouteImport } from './routes/_layout/clients.$clientId.overview'
+import { Route as LayoutClientsClientIdSettingsRouteImport } from './routes/_layout/clients.$clientId.settings'
 import { Route as LayoutClientsClientIdPoliciesIndexRouteImport } from './routes/_layout/clients.$clientId.policies.index'
 import { Route as LayoutClientsClientIdPoliciesPolicyIdRouteImport } from './routes/_layout/clients.$clientId.policies.$policyId'
 
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RecoverPasswordRoute = RecoverPasswordRouteImport.update({
-  id: '/recover-password',
-  path: '/recover-password',
+const LayoutRoute = LayoutRouteImport.update({
+  id: '/_layout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -54,8 +43,19 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LayoutRoute = LayoutRouteImport.update({
-  id: '/_layout',
+const RecoverPasswordRoute = RecoverPasswordRouteImport.update({
+  id: '/recover-password',
+  path: '/recover-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LayoutIndexRoute = LayoutIndexRouteImport.update({
@@ -63,9 +63,9 @@ const LayoutIndexRoute = LayoutIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const LayoutAdminRoute = LayoutAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutCatalogRoute = LayoutCatalogRouteImport.update({
@@ -73,14 +73,9 @@ const LayoutCatalogRoute = LayoutCatalogRouteImport.update({
   path: '/catalog',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutAdminRoute = LayoutAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutClientsIndexRoute = LayoutClientsIndexRouteImport.update({
-  id: '/clients/',
-  path: '/clients/',
+const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutCatalogIndexRoute = LayoutCatalogIndexRouteImport.update({
@@ -88,21 +83,32 @@ const LayoutCatalogIndexRoute = LayoutCatalogIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LayoutCatalogRoute,
 } as any)
-const PrintRiskNotesIdRoute = PrintRiskNotesIdRouteImport.update({
-  id: '/print/risk-notes/$id',
-  path: '/print/risk-notes/$id',
-  getParentRoute: () => rootRouteImport,
+const LayoutClientsIndexRoute = LayoutClientsIndexRouteImport.update({
+  id: '/clients/',
+  path: '/clients/',
+  getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutClientsClientIdRoute = LayoutClientsClientIdRouteImport.update({
   id: '/clients/$clientId',
   path: '/clients/$clientId',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutClientsClientIdIndexRoute =
-  LayoutClientsClientIdIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => LayoutClientsClientIdRoute,
+const PrintRiskNotesIdRoute = PrintRiskNotesIdRouteImport.update({
+  id: '/print/risk-notes/$id',
+  path: '/print/risk-notes/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LayoutCatalogInsurersIndexRoute =
+  LayoutCatalogInsurersIndexRouteImport.update({
+    id: '/insurers/',
+    path: '/insurers/',
+    getParentRoute: () => LayoutCatalogRoute,
+  } as any)
+const LayoutCatalogInsurersInsurerIdRoute =
+  LayoutCatalogInsurersInsurerIdRouteImport.update({
+    id: '/insurers/$insurerId',
+    path: '/insurers/$insurerId',
+    getParentRoute: () => LayoutCatalogRoute,
   } as any)
 const LayoutCatalogProductsIndexRoute =
   LayoutCatalogProductsIndexRouteImport.update({
@@ -110,28 +116,16 @@ const LayoutCatalogProductsIndexRoute =
     path: '/products/',
     getParentRoute: () => LayoutCatalogRoute,
   } as any)
-const LayoutCatalogInsurersIndexRoute =
-  LayoutCatalogInsurersIndexRouteImport.update({
-    id: '/insurers/',
-    path: '/insurers/',
+const LayoutCatalogProductsProductIdRoute =
+  LayoutCatalogProductsProductIdRouteImport.update({
+    id: '/products/$productId',
+    path: '/products/$productId',
     getParentRoute: () => LayoutCatalogRoute,
   } as any)
-const LayoutClientsClientIdSettingsRoute =
-  LayoutClientsClientIdSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => LayoutClientsClientIdRoute,
-  } as any)
-const LayoutClientsClientIdOverviewRoute =
-  LayoutClientsClientIdOverviewRouteImport.update({
-    id: '/overview',
-    path: '/overview',
-    getParentRoute: () => LayoutClientsClientIdRoute,
-  } as any)
-const LayoutClientsClientIdInvoicesRoute =
-  LayoutClientsClientIdInvoicesRouteImport.update({
-    id: '/invoices',
-    path: '/invoices',
+const LayoutClientsClientIdIndexRoute =
+  LayoutClientsClientIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
     getParentRoute: () => LayoutClientsClientIdRoute,
   } as any)
 const LayoutClientsClientIdDocumentsRoute =
@@ -140,17 +134,23 @@ const LayoutClientsClientIdDocumentsRoute =
     path: '/documents',
     getParentRoute: () => LayoutClientsClientIdRoute,
   } as any)
-const LayoutCatalogProductsProductIdRoute =
-  LayoutCatalogProductsProductIdRouteImport.update({
-    id: '/products/$productId',
-    path: '/products/$productId',
-    getParentRoute: () => LayoutCatalogRoute,
+const LayoutClientsClientIdInvoicesRoute =
+  LayoutClientsClientIdInvoicesRouteImport.update({
+    id: '/invoices',
+    path: '/invoices',
+    getParentRoute: () => LayoutClientsClientIdRoute,
   } as any)
-const LayoutCatalogInsurersInsurerIdRoute =
-  LayoutCatalogInsurersInsurerIdRouteImport.update({
-    id: '/insurers/$insurerId',
-    path: '/insurers/$insurerId',
-    getParentRoute: () => LayoutCatalogRoute,
+const LayoutClientsClientIdOverviewRoute =
+  LayoutClientsClientIdOverviewRouteImport.update({
+    id: '/overview',
+    path: '/overview',
+    getParentRoute: () => LayoutClientsClientIdRoute,
+  } as any)
+const LayoutClientsClientIdSettingsRoute =
+  LayoutClientsClientIdSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => LayoutClientsClientIdRoute,
   } as any)
 const LayoutClientsClientIdPoliciesIndexRoute =
   LayoutClientsClientIdPoliciesIndexRouteImport.update({
@@ -166,6 +166,7 @@ const LayoutClientsClientIdPoliciesPolicyIdRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof LayoutIndexRoute
   '/login': typeof LoginRoute
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -173,22 +174,21 @@ export interface FileRoutesByFullPath {
   '/admin': typeof LayoutAdminRoute
   '/catalog': typeof LayoutCatalogRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
-  '/': typeof LayoutIndexRoute
   '/clients/$clientId': typeof LayoutClientsClientIdRouteWithChildren
   '/print/risk-notes/$id': typeof PrintRiskNotesIdRoute
   '/catalog/': typeof LayoutCatalogIndexRoute
-  '/clients': typeof LayoutClientsIndexRoute
+  '/clients/': typeof LayoutClientsIndexRoute
   '/catalog/insurers/$insurerId': typeof LayoutCatalogInsurersInsurerIdRoute
   '/catalog/products/$productId': typeof LayoutCatalogProductsProductIdRoute
   '/clients/$clientId/documents': typeof LayoutClientsClientIdDocumentsRoute
   '/clients/$clientId/invoices': typeof LayoutClientsClientIdInvoicesRoute
   '/clients/$clientId/overview': typeof LayoutClientsClientIdOverviewRoute
   '/clients/$clientId/settings': typeof LayoutClientsClientIdSettingsRoute
-  '/catalog/insurers': typeof LayoutCatalogInsurersIndexRoute
-  '/catalog/products': typeof LayoutCatalogProductsIndexRoute
+  '/catalog/insurers/': typeof LayoutCatalogInsurersIndexRoute
+  '/catalog/products/': typeof LayoutCatalogProductsIndexRoute
   '/clients/$clientId/': typeof LayoutClientsClientIdIndexRoute
   '/clients/$clientId/policies/$policyId': typeof LayoutClientsClientIdPoliciesPolicyIdRoute
-  '/clients/$clientId/policies': typeof LayoutClientsClientIdPoliciesIndexRoute
+  '/clients/$clientId/policies/': typeof LayoutClientsClientIdPoliciesIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -243,6 +243,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/login'
     | '/recover-password'
     | '/reset-password'
@@ -250,22 +251,21 @@ export interface FileRouteTypes {
     | '/admin'
     | '/catalog'
     | '/settings'
-    | '/'
     | '/clients/$clientId'
     | '/print/risk-notes/$id'
     | '/catalog/'
-    | '/clients'
+    | '/clients/'
     | '/catalog/insurers/$insurerId'
     | '/catalog/products/$productId'
     | '/clients/$clientId/documents'
     | '/clients/$clientId/invoices'
     | '/clients/$clientId/overview'
     | '/clients/$clientId/settings'
-    | '/catalog/insurers'
-    | '/catalog/products'
+    | '/catalog/insurers/'
+    | '/catalog/products/'
     | '/clients/$clientId/'
     | '/clients/$clientId/policies/$policyId'
-    | '/clients/$clientId/policies'
+    | '/clients/$clientId/policies/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -328,25 +328,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/recover-password': {
-      id: '/recover-password'
-      path: '/recover-password'
-      fullPath: '/recover-password'
-      preLoaderRoute: typeof RecoverPasswordRouteImport
+    '/_layout': {
+      id: '/_layout'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof LayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -356,11 +342,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_layout': {
-      id: '/_layout'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof LayoutRouteImport
+    '/recover-password': {
+      id: '/recover-password'
+      path: '/recover-password'
+      fullPath: '/recover-password'
+      preLoaderRoute: typeof RecoverPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_layout/': {
@@ -370,11 +370,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/settings': {
-      id: '/_layout/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof LayoutSettingsRouteImport
+    '/_layout/admin': {
+      id: '/_layout/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/catalog': {
@@ -384,18 +384,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutCatalogRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/admin': {
-      id: '/_layout/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof LayoutAdminRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/clients/': {
-      id: '/_layout/clients/'
-      path: '/clients'
-      fullPath: '/clients'
-      preLoaderRoute: typeof LayoutClientsIndexRouteImport
+    '/_layout/settings': {
+      id: '/_layout/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/catalog/': {
@@ -405,12 +398,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutCatalogIndexRouteImport
       parentRoute: typeof LayoutCatalogRoute
     }
-    '/print/risk-notes/$id': {
-      id: '/print/risk-notes/$id'
-      path: '/print/risk-notes/$id'
-      fullPath: '/print/risk-notes/$id'
-      preLoaderRoute: typeof PrintRiskNotesIdRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_layout/clients/': {
+      id: '/_layout/clients/'
+      path: '/clients'
+      fullPath: '/clients/'
+      preLoaderRoute: typeof LayoutClientsIndexRouteImport
+      parentRoute: typeof LayoutRoute
     }
     '/_layout/clients/$clientId': {
       id: '/_layout/clients/$clientId'
@@ -419,60 +412,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutClientsClientIdRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/clients/$clientId/': {
-      id: '/_layout/clients/$clientId/'
-      path: '/'
-      fullPath: '/clients/$clientId/'
-      preLoaderRoute: typeof LayoutClientsClientIdIndexRouteImport
-      parentRoute: typeof LayoutClientsClientIdRoute
-    }
-    '/_layout/catalog/products/': {
-      id: '/_layout/catalog/products/'
-      path: '/products'
-      fullPath: '/catalog/products'
-      preLoaderRoute: typeof LayoutCatalogProductsIndexRouteImport
-      parentRoute: typeof LayoutCatalogRoute
+    '/print/risk-notes/$id': {
+      id: '/print/risk-notes/$id'
+      path: '/print/risk-notes/$id'
+      fullPath: '/print/risk-notes/$id'
+      preLoaderRoute: typeof PrintRiskNotesIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_layout/catalog/insurers/': {
       id: '/_layout/catalog/insurers/'
       path: '/insurers'
-      fullPath: '/catalog/insurers'
+      fullPath: '/catalog/insurers/'
       preLoaderRoute: typeof LayoutCatalogInsurersIndexRouteImport
-      parentRoute: typeof LayoutCatalogRoute
-    }
-    '/_layout/clients/$clientId/settings': {
-      id: '/_layout/clients/$clientId/settings'
-      path: '/settings'
-      fullPath: '/clients/$clientId/settings'
-      preLoaderRoute: typeof LayoutClientsClientIdSettingsRouteImport
-      parentRoute: typeof LayoutClientsClientIdRoute
-    }
-    '/_layout/clients/$clientId/overview': {
-      id: '/_layout/clients/$clientId/overview'
-      path: '/overview'
-      fullPath: '/clients/$clientId/overview'
-      preLoaderRoute: typeof LayoutClientsClientIdOverviewRouteImport
-      parentRoute: typeof LayoutClientsClientIdRoute
-    }
-    '/_layout/clients/$clientId/invoices': {
-      id: '/_layout/clients/$clientId/invoices'
-      path: '/invoices'
-      fullPath: '/clients/$clientId/invoices'
-      preLoaderRoute: typeof LayoutClientsClientIdInvoicesRouteImport
-      parentRoute: typeof LayoutClientsClientIdRoute
-    }
-    '/_layout/clients/$clientId/documents': {
-      id: '/_layout/clients/$clientId/documents'
-      path: '/documents'
-      fullPath: '/clients/$clientId/documents'
-      preLoaderRoute: typeof LayoutClientsClientIdDocumentsRouteImport
-      parentRoute: typeof LayoutClientsClientIdRoute
-    }
-    '/_layout/catalog/products/$productId': {
-      id: '/_layout/catalog/products/$productId'
-      path: '/products/$productId'
-      fullPath: '/catalog/products/$productId'
-      preLoaderRoute: typeof LayoutCatalogProductsProductIdRouteImport
       parentRoute: typeof LayoutCatalogRoute
     }
     '/_layout/catalog/insurers/$insurerId': {
@@ -482,10 +433,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutCatalogInsurersInsurerIdRouteImport
       parentRoute: typeof LayoutCatalogRoute
     }
+    '/_layout/catalog/products/': {
+      id: '/_layout/catalog/products/'
+      path: '/products'
+      fullPath: '/catalog/products/'
+      preLoaderRoute: typeof LayoutCatalogProductsIndexRouteImport
+      parentRoute: typeof LayoutCatalogRoute
+    }
+    '/_layout/catalog/products/$productId': {
+      id: '/_layout/catalog/products/$productId'
+      path: '/products/$productId'
+      fullPath: '/catalog/products/$productId'
+      preLoaderRoute: typeof LayoutCatalogProductsProductIdRouteImport
+      parentRoute: typeof LayoutCatalogRoute
+    }
+    '/_layout/clients/$clientId/': {
+      id: '/_layout/clients/$clientId/'
+      path: '/'
+      fullPath: '/clients/$clientId/'
+      preLoaderRoute: typeof LayoutClientsClientIdIndexRouteImport
+      parentRoute: typeof LayoutClientsClientIdRoute
+    }
+    '/_layout/clients/$clientId/documents': {
+      id: '/_layout/clients/$clientId/documents'
+      path: '/documents'
+      fullPath: '/clients/$clientId/documents'
+      preLoaderRoute: typeof LayoutClientsClientIdDocumentsRouteImport
+      parentRoute: typeof LayoutClientsClientIdRoute
+    }
+    '/_layout/clients/$clientId/invoices': {
+      id: '/_layout/clients/$clientId/invoices'
+      path: '/invoices'
+      fullPath: '/clients/$clientId/invoices'
+      preLoaderRoute: typeof LayoutClientsClientIdInvoicesRouteImport
+      parentRoute: typeof LayoutClientsClientIdRoute
+    }
+    '/_layout/clients/$clientId/overview': {
+      id: '/_layout/clients/$clientId/overview'
+      path: '/overview'
+      fullPath: '/clients/$clientId/overview'
+      preLoaderRoute: typeof LayoutClientsClientIdOverviewRouteImport
+      parentRoute: typeof LayoutClientsClientIdRoute
+    }
+    '/_layout/clients/$clientId/settings': {
+      id: '/_layout/clients/$clientId/settings'
+      path: '/settings'
+      fullPath: '/clients/$clientId/settings'
+      preLoaderRoute: typeof LayoutClientsClientIdSettingsRouteImport
+      parentRoute: typeof LayoutClientsClientIdRoute
+    }
     '/_layout/clients/$clientId/policies/': {
       id: '/_layout/clients/$clientId/policies/'
       path: '/policies'
-      fullPath: '/clients/$clientId/policies'
+      fullPath: '/clients/$clientId/policies/'
       preLoaderRoute: typeof LayoutClientsClientIdPoliciesIndexRouteImport
       parentRoute: typeof LayoutClientsClientIdRoute
     }
