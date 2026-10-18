@@ -6,21 +6,27 @@
 - **Wizard Data Flow Alignment**: Enhanced the frontend `NewPolicyWizard` to calculate dynamic coverage periods based on selected duration, eliminating hardcoded 1-year assumptions.
 - **Financial Hardening & Rating Engine**: Standardized `sum_insured` as the single authoritative source for insured values across the stack. Refactored `RatingService` to use a singular semantic input and implemented `ManualRatingStrategy` for non-motor products.
 - **Prestart Service Stabilization**: The `prestart` service now successfully completes database migrations and mock data seeding.
-- **Client Regeneration**: Successfully regenerated the TypeScript client from the backend OpenAPI schema and verified type integrity with `tsc`.
-
 - **Upstream Sync Phase 1 (Backend Core & Python 3.14)**: Successfully upgraded backend to Python 3.14.8, synchronized dependencies to upstream FastAPI template (FastAPI 0.143+, SQLModel 0.0.48+, Pydantic 2.14+, Alembic 1.20+), migrated password hashing from `passlib` to `pwdlib[argon2,bcrypt]`, enforced UTC-aware timestamps across models and soft-deletes, squashed all 31 legacy Alembic migrations into a single clean baseline (`19bab995ff26_initial_schema.py`), and added an `AUTO_CREATE_TABLES` development toggle.
+- **Upstream Sync Phase 2 (Frontend Modernization & OpenAPI Client)**:
+  - Upgraded frontend dependencies to match upstream: React 19.3.1, `@tanstack/react-query` 5.104.4, `@tanstack/react-router` 1.170.45, Vite 8.3.4, TypeScript 6.0.3, and Biome 2.5.15.
+  - Regenerated API client using `@hey-api/openapi-ts` 0.97.3 with the modern `@hey-api/client-axios` 0.9.1 plugin.
+  - Preserved `@tanstack/react-table` at 8.21.3 to protect all 12 custom insurance table column components against TanStack Table v9 breaking changes.
+  - Refactored all 4 domain hooks (`useInsurance.ts`, `useCatalog.ts`, `useFinancials.ts`, `useDocuments.ts`), `useAuth.ts`, `queryClient.ts`, and direct service callers to use structured options (`path`, `query`, `body`) and unwrap `.data`.
+  - Verified with 0 TypeScript compiler errors (`bun x tsc -p tsconfig.build.json`) and successful Vite production bundle (`bun run build`).
 
 ## Ongoing
 - **Upstream Template Synchronization**: Step-by-step merge of upstream improvements onto `chore/upstream-sync`.
-- **Type Integrity & Stabilization**: Resolving persistent TypeScript errors in the auto-generated client and components.
 
 ## Next Steps
-1. **Upstream Sync Phase 2**: Frontend dependency updates, TanStack Query/Router bumps, TypeScript 6 verification, and Hey-API OpenAPI client regeneration.
-2. **Upstream Sync Phase 3**: Container & Compose modernization (standardize on `compose.yml`, remove legacy Traefik/nginx configurations).
-3. **Audit Traceability**: Finalize the `change_log` implementation for endorsements to ensure full traceability of risk detail modifications.
-4. **Automated Testing**: Expand the backend test suite to cover the new pro-rata endorsement calculations and rating tier logic.
+1. **Upstream Sync Phase 3**: Container & Compose modernization (transition `docker-compose.yml` to `compose.yml`, `compose.override.yml`, `compose.deploy.yml`, remove legacy Traefik configs).
+2. **Upstream Sync Phase 4**: Root workspace / monorepo alignment (`pyproject.toml` or workspace configs).
+3. **Upstream Sync Phase 5**: CI/CD workflows, pre-commit, dependabot.
+4. **Audit Traceability**: Finalize the `change_log` implementation for endorsements to ensure full traceability of risk detail modifications.
+5. **Automated Testing**: Expand the backend test suite to cover the new pro-rata endorsement calculations and rating tier logic.
 
 ## Architectural Decisions
+- **TanStack Table Pinning (v8.21.3)**: Maintained `@tanstack/react-table` at v8.21.3 instead of upstream's v9.2.4. TanStack Table v9 introduces breaking API redesigns (multi-type argument `ColumnDef<TData, ...>`, `useTable` changes) that would break 12 custom insurance tables; v8 builds cleanly under React 19 and Vite 8.
+- **Hook-Boundary Data Unwrapping**: Because modern `@hey-api/client-axios` returns raw `AxiosResponse<T>`, all custom domain hooks unwrap `.data` directly at the hook boundary, preserving existing component consumption signatures without touching dozens of downstream components.
 - **Squashed Alembic Baseline Migration**: Because the project is pre-production with no historical data, all 31 incremental migrations were consolidated into a single clean initial schema (`19bab995ff26_initial_schema.py`).
 - **Flexible Schema Initialization (`AUTO_CREATE_TABLES`)**: Supported in `prestart.sh`, `.env`, and `Settings`: when set to `true`, tables can be created directly from SQLModel metadata without applying Alembic migrations. When `false` (default), Alembic migrations execute as usual.
 - **Password Hashing via `pwdlib`**: Replaced deprecated `passlib` with `pwdlib[argon2,bcrypt]` for Python 3.14+ compatibility while ensuring bcrypt hash verification remains completely functional.
