@@ -4,13 +4,13 @@
 This track focuses on removing technical debt introduced during the transition to streamlined models. We will replace convoluted "best-effort" mapping logic with a **Strict Semantic Nesting** pattern. Each product class will have a dedicated, validated schema that organizes data into logical groups (e.g., `vehicle`, `extensions`) without supporting legacy key fallbacks.
 
 ## Functional Requirements
-- **Validation Cleanup:** 
+- **Validation Cleanup:**
     - Remove all "best-effort" key mapping (e.g., mapping "Value Kshs." to "sum_insured").
     - Implement dedicated Pydantic models for each product class that enforce semantic nesting.
-- **Policy Service Refactor:** 
+- **Policy Service Refactor:**
     - Remove all references to `policy_snapshot` in `PolicyService`.
     - Ensure `create_policy` and `create_endorsement` logic works exclusively with the nested `risk_details` stored on the `Policy` object.
-- **Rating Engine Standardization:** 
+- **Rating Engine Standardization:**
     - Standardize the `MotorPrivateRatingStrategy` to pull data from the `vehicle` and `extensions` sub-objects.
 - **Migration Hardening:** Review the latest Alembic migrations to ensure they correctly initialize the new nested structures from available snapshot data.
 

@@ -12,7 +12,7 @@ Improve the usability of the document viewer by expanding modal dimensions and i
 
 ## Step 2: Expand Document Viewer Modal Layout
 - [x] **Task**: Modify the `DocumentViewerModal` to maximize available screen real estate.
-- [x] **Action**: 
+- [x] **Action**:
     - Update `frontend/src/components/Common/DocumentViewerModal.tsx`.
     - Replace restrictive width classes with `sm:max-w-[95vw]` and `max-h-[95vh]`.
     - Add a `max-w-7xl` (or similar) cap for ultra-wide monitors to maintain readability.
@@ -29,7 +29,7 @@ Improve the usability of the document viewer by expanding modal dimensions and i
 
 ## Step 4: Refine Invoice View Scaling
 - [x] **Task**: Ensure the `InvoiceTemplate` and `BaseDocument` work seamlessly with the scaling.
-- [x] **Action**: 
+- [x] **Action**:
     - Remove any conflicting `overflow-auto` or hardcoded widths in `BaseDocument.tsx` that might fight the modal's scaling logic.
     - Ensure `InvoiceTemplate` content wraps correctly if needed (though scaling should handle most cases).
 - [x] **Verifiable Outcome**: Invoices look like "mini-PDFs" on mobile devices, maintaining their layout integrity.
@@ -41,7 +41,7 @@ Improve the usability of the document viewer by expanding modal dimensions and i
 
 ## Step 6: Verification & Print Test
 - [x] **Task**: Confirm that visual scaling does not break printing.
-- [x] **Action**: 
+- [x] **Action**:
     - Use the "Print" button in the modal.
     - Verify that the print CSS (already using `print:w-full`) correctly ignores the visual scale factor.
 - [x] **Verifiable Outcome**: Physical printouts/PDF exports remain standard A4 size regardless of screen scaling.

@@ -114,9 +114,7 @@ function RiskNotePrintContent({ id }: { id: string }) {
         </div>
         <div className="text-right">
           <p className="font-mono text-xl font-bold">
-            {isInvoice
-              ? riskNote.invoice_number || "Draft"
-              : riskNote.risk_note_number || "Draft"}
+            {riskNote.risk_note_number || "Draft"}
           </p>
           <p className="text-sm mt-1">
             Date: {new Date().toLocaleDateString()}
@@ -244,8 +242,8 @@ function RiskNotePrintContent({ id }: { id: string }) {
               </tr>
 
               {/* Taxes/Levies */}
-              <>{riskNote.financial_breakdown?.taxes &&
-                Object.entries(riskNote.financial_breakdown.taxes).map(
+              {Boolean((riskNote.financial_breakdown as any)?.taxes) &&
+                Object.entries((riskNote.financial_breakdown as any).taxes).map(
                   ([key, val]: [string, any], i: number) => (
                     <tr key={i}>
                       <td className="py-2 pl-2 text-gray-600 capitalize">
@@ -258,7 +256,7 @@ function RiskNotePrintContent({ id }: { id: string }) {
                       </td>
                     </tr>
                   ),
-                )}</>
+                )}
 
               {/* TOTAL */}
               <tr className="bg-gray-100 font-bold text-lg">
@@ -276,11 +274,7 @@ function RiskNotePrintContent({ id }: { id: string }) {
             <p className="font-bold text-black mb-1">Payment Instructions:</p>
             <p>
               Please pay via MPESA Paybill: <strong>555000</strong>, Account:{" "}
-              <strong>
-                {isInvoice
-                  ? riskNote.invoice_number || "Draft"
-                  : riskNote.risk_note_number || "Draft"}
-              </strong>
+              <strong>{riskNote.risk_note_number || "Draft"}</strong>
             </p>
             <p>
               Cheques payable to: <strong>HealthWatch Insurance Agency</strong>

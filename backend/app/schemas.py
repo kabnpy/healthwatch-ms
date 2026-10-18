@@ -1,9 +1,9 @@
-import uuid
 import json
-import pydantic
+import uuid
 from decimal import Decimal
 from typing import Annotated, Any, Literal
 
+import pydantic
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -54,6 +54,7 @@ class MotorVehicleDetails(BaseModel):
     @classmethod
     def parse_sum_insured(cls, v: Any) -> Decimal:
         from app.utils import parse_decimal
+
         return parse_decimal(v)
 
 
@@ -65,10 +66,7 @@ class MotorExtensions(BaseModel):
 
 
 class MotorPrivateRiskDetails(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-        extra="ignore"
-    )
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     vehicle: MotorVehicleDetails
     extensions: MotorExtensions = Field(default_factory=MotorExtensions)
@@ -82,7 +80,7 @@ class MotorPrivateRiskDetails(BaseModel):
     def wrap_legacy_and_flat_fields(cls, data: Any) -> Any:
         if not isinstance(data, dict):
             return data
-        
+
         # 1. Handle legacy sub-object names
         if "vehicle_details" in data and "vehicle" not in data:
             data["vehicle"] = data.pop("vehicle_details")
@@ -93,7 +91,7 @@ class MotorPrivateRiskDetails(BaseModel):
         vehicle = data.get("vehicle", {})
         if not isinstance(vehicle, dict):
             vehicle = {}
-            
+
         extensions = data.get("extensions", {})
         if not isinstance(extensions, dict):
             extensions = {}
@@ -109,7 +107,7 @@ class MotorPrivateRiskDetails(BaseModel):
             "Value Kshs.": "sum_insured",
             "sum_insured": "sum_insured",
         }
-        
+
         extension_mapping = {
             "pvt": "pvt",
             "excess_protector": "excess_protector",
@@ -132,7 +130,7 @@ class MotorPrivateRiskDetails(BaseModel):
         for legacy_key, semantic_key in vehicle_mapping.items():
             top_val = data.get(legacy_key)
             nested_val = vehicle.get(legacy_key)
-            
+
             best = get_best_val(top_val, nested_val)
             if best is not None:
                 final_vehicle[semantic_key] = best
@@ -143,7 +141,7 @@ class MotorPrivateRiskDetails(BaseModel):
         for legacy_key, semantic_key in extension_mapping.items():
             top_val = data.get(legacy_key)
             nested_val = extensions.get(legacy_key)
-            
+
             best = get_best_val(top_val, nested_val)
             if best is not None:
                 final_extensions[semantic_key] = best
@@ -161,13 +159,13 @@ class MotorPrivateRiskDetails(BaseModel):
         # 6. Final assignment
         data["vehicle"] = final_vehicle
         data["extensions"] = final_extensions
-            
+
         # 7. Handle terms that might be list/dict in legacy data
         for term_key in ["benefits_and_limits", "excesses", "special_clauses"]:
             val = data.get(term_key)
-            if isinstance(val, (list, dict)):
+            if isinstance(val, list | dict):
                 data[term_key] = json.dumps(val, indent=2)
             elif val is None:
                 data[term_key] = ""
-                
+
         return data

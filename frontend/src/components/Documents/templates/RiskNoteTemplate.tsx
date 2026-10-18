@@ -179,9 +179,12 @@ export const RiskNoteTemplate = ({
               }
             })
           }
-          
+
           // Singular Source Mapping: Map the internal 'sum_insured' to the template's 'Value Kshs.'
-          if (instance.sum_insured !== undefined && instance.sum_insured !== "[ EMPTY ]") {
+          if (
+            instance.sum_insured !== undefined &&
+            instance.sum_insured !== "[ EMPTY ]"
+          ) {
             mergedContent["Value Kshs."] = instance.sum_insured
           }
         } else if (instanceContent && instanceContent !== "[ EMPTY ]") {
@@ -259,10 +262,13 @@ export const RiskNoteTemplate = ({
       content: (
         <div className="flex justify-between items-center text-black uppercase">
           <span className="font-bold tracking-tight text-[11px]">
-            {invoice ? `Invoiced: ${invoice.invoice_number}` : "Pending Invoicing"}
+            {invoice
+              ? `Invoiced: ${invoice.invoice_number}`
+              : "Pending Invoicing"}
           </span>
           <span className="font-mono text-[12px] font-bold">
-            [Risk Note Issued: {new Date(riskNote.created_at || "").toLocaleDateString()}]
+            [Risk Note Issued:{" "}
+            {new Date(riskNote.created_at || "").toLocaleDateString()}]
           </span>
         </div>
       ),

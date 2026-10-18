@@ -72,7 +72,11 @@ export function injectWizardData(
 
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i]
-      if (current && typeof current === "object" && current[part] !== undefined) {
+      if (
+        current &&
+        typeof current === "object" &&
+        current[part] !== undefined
+      ) {
         current = current[part]
       } else {
         // Fallback: maybe the dot is part of the key
@@ -126,9 +130,12 @@ export function injectWizardData(
       }
     } else if (typeof value === "object" && value !== null) {
       // Recurse, passing the same root inputs to allow absolute path resolution
-      // We pass the nested input object if it exists at the current key, 
+      // We pass the nested input object if it exists at the current key,
       // otherwise we pass the same inputs to allow flat path lookups.
-      const nextInputs = (inputs && typeof inputs === 'object' && inputs[key]) ? inputs[key] : inputs
+      const nextInputs =
+        inputs && typeof inputs === "object" && inputs[key]
+          ? inputs[key]
+          : inputs
 
       result[key] = injectWizardData(value, nextInputs, currentPath, actualRoot)
     } else {

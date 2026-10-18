@@ -1,4 +1,5 @@
 import uuid
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
@@ -18,11 +19,8 @@ def test_get_policy_quote_motor_private(
             "registration_number": "KCM 123",
             "make": "Toyota",
             "year_of_manufacture": 2020,
-            "EXTENSIONS": {
-                "pvt": True,
-                "excess_protector": True
-            }
-        }
+            "EXTENSIONS": {"pvt": True, "excess_protector": True},
+        },
     }
     response = client.post(
         f"{settings.API_V1_STR}/policies/quote",
@@ -45,14 +43,13 @@ def test_get_policy_quote_motor_private(
     assert "stamp_duty" in breakdown["taxes"]
     assert len(breakdown["benefits"]) == 2
 
+
 def test_get_policy_quote_not_found(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     import uuid
-    data = {
-        "product_id": str(uuid.uuid4()),
-        "risk_details": {}
-    }
+
+    data = {"product_id": str(uuid.uuid4()), "risk_details": {}}
     response = client.post(
         f"{settings.API_V1_STR}/policies/quote",
         headers=superuser_token_headers,
@@ -65,11 +62,12 @@ def test_create_policy_with_breakdown(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     from datetime import date, timedelta
+
     from tests.utils.client import create_random_client
-    
+
     db_client = create_random_client(db)
     product = create_random_product(db, class_of_insurance="Motor Private")
-    
+
     # Use singular semantic keys
     data = {
         "policy_number": f"POL-{uuid.uuid4().hex[:6].upper()}",
@@ -81,10 +79,10 @@ def test_create_policy_with_breakdown(
             "sum_insured": 1000000,
             "registration_number": "KAA 001A",
             "make": "Toyota",
-            "year_of_manufacture": 2020
-        }
+            "year_of_manufacture": 2020,
+        },
     }
-    
+
     response = client.post(
         f"{settings.API_V1_STR}/policies/",
         headers=superuser_token_headers,
@@ -93,7 +91,7 @@ def test_create_policy_with_breakdown(
     assert response.status_code == 200
     content = response.json()
     assert content["policy_number"] == data["policy_number"]
-    
+
     # Check if risk note was created with breakdown
     policy_id = content["id"]
     rn_response = client.get(
@@ -104,7 +102,7 @@ def test_create_policy_with_breakdown(
     rn_content = rn_response.json()
     assert rn_content["count"] > 0
     risk_note = rn_content["data"][0]
-    
+
     assert "financial_breakdown" in risk_note
     breakdown = risk_note["financial_breakdown"]
     assert breakdown["type"] == "motor"
@@ -116,8 +114,9 @@ def test_read_policies(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     from tests.utils.insurance import create_random_policy
+
     create_random_policy(db)
-    
+
     response = client.get(
         f"{settings.API_V1_STR}/policies/",
         headers=superuser_token_headers,
@@ -131,8 +130,9 @@ def test_read_policy(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     from tests.utils.insurance import create_random_policy
+
     policy = create_random_policy(db)
-    
+
     response = client.get(
         f"{settings.API_V1_STR}/policies/{policy.id}",
         headers=superuser_token_headers,
@@ -146,9 +146,10 @@ def test_update_policy(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     from tests.utils.insurance import create_random_policy
+
     policy = create_random_policy(db)
     new_policy_number = f"UPDATED-{uuid.uuid4().hex[:6].upper()}"
-    
+
     data = {"policy_number": new_policy_number}
     response = client.put(
         f"{settings.API_V1_STR}/policies/{policy.id}",
@@ -164,14 +165,15 @@ def test_delete_policy(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     from tests.utils.insurance import create_random_policy
+
     policy = create_random_policy(db)
-    
+
     response = client.delete(
         f"{settings.API_V1_STR}/policies/{policy.id}",
         headers=superuser_token_headers,
     )
     assert response.status_code == 200
-    
+
     response = client.get(
         f"{settings.API_V1_STR}/policies/{policy.id}",
         headers=superuser_token_headers,

@@ -38,15 +38,15 @@ def create_risk_note(*, session: Session, risk_note_in: RiskNoteCreate) -> RiskN
     try:
         # Everything in one transaction
         db_obj = RiskNote.model_validate(risk_note_in)
-        
+
         if not db_obj.policy_snapshot:
             policy = session.get(Policy, db_obj.policy_id)
             if policy:
                 db_obj.policy_snapshot = jsonable_encoder(policy)
-        
+
         session.add(db_obj)
         session.flush()  # Get ID without committing
-        
+
         # Handle invoicing
         policy = session.get(Policy, db_obj.policy_id)
         if policy:
@@ -57,15 +57,15 @@ def create_risk_note(*, session: Session, risk_note_in: RiskNoteCreate) -> RiskN
                 amount=db_obj.total_amount,
             )
             session.add(line_item)
-            
+
             invoice.total_amount += db_obj.total_amount
             invoice.balance_due += db_obj.total_amount
             db_obj.invoice_number = invoice.invoice_number
-        
+
         session.commit()  # ONE commit for all changes
         session.refresh(db_obj)
         return db_obj
-        
+
     except SQLAlchemyError:
         session.rollback()
         raise
@@ -74,7 +74,7 @@ Location: backend/app/crud/insurance/financial.py:create_receipt_allocation()
 pythondef create_receipt_allocation(...) -> ReceiptAllocation:
     db_obj = ReceiptAllocation.model_validate(allocation_in)
     session.add(db_obj)
-    
+
     invoice = session.get(Invoice, db_obj.invoice_id)
     if invoice:
         invoice.balance_due -= db_obj.amount_allocated  # ⚠️ No validation!
@@ -100,7 +100,7 @@ pythondef create_receipt_allocation(
             f"Insufficient unallocated amount. Available: {receipt.unallocated_amount}, "
             f"Requested: {allocation_in.amount_allocated}"
         )
-    
+
     # Validate invoice
     invoice = session.get(Invoice, allocation_in.invoice_id)
     if not invoice:
@@ -112,11 +112,11 @@ pythondef create_receipt_allocation(
             f"Allocation exceeds invoice balance. Balance: {invoice.balance_due}, "
             f"Requested: {allocation_in.amount_allocated}"
         )
-    
+
     # Validate amount
     if allocation_in.amount_allocated <= 0:
         raise ValueError("Allocation amount must be positive")
-    
+
     # All validations passed - proceed with allocation
     # ... rest of implementation
 4. Runtime Error in Seed Data
@@ -251,7 +251,7 @@ from sqlalchemy.ext.declarative import declared_attr
 class Document(SQLModel):
     __tablename__ = "document"
     __mapper_args__ = {"polymorphic_on": "entity_type"}
-    
+
     entity_type: str = Field(sa_column=Column(String))
 
 class PolicyDocument(Document, table=True):
@@ -263,7 +263,7 @@ pythondef create_policy(...) -> Policy:
     db_obj = Policy.model_validate(policy_in)
     session.add(db_obj)
     session.commit()
-    
+
     # ⚠️ Hidden side effect
     create_risk_note(session=session, risk_note_in=first_risk_note_in)
     return db_obj
@@ -273,14 +273,14 @@ python# Service layer
 class PolicyService:
     @staticmethod
     def create_policy_with_draft_note(
-        session: Session, 
+        session: Session,
         policy_in: PolicyCreate,
         current_user: User
     ) -> tuple[Policy, RiskNote]:
         """Creates a policy and its initial draft risk note atomically."""
         try:
             policy = crud.create_policy(session=session, policy_in=policy_in)
-            
+
             risk_note_in = RiskNoteCreate(
                 policy_id=policy.id,
                 transaction_type="New Business",
@@ -288,7 +288,7 @@ class PolicyService:
                 # ...
             )
             risk_note = crud.create_risk_note(session=session, risk_note_in=risk_note_in)
-            
+
             session.commit()
             return policy, risk_note
         except SQLAlchemyError:
@@ -324,7 +324,7 @@ class VehicleDetails(BaseModel):
     model: str
     year: int
     value: Decimal
-    
+
     class Config:
         frozen = True  # Immutable
 
@@ -339,10 +339,10 @@ from sqlalchemy.dialects.postgresql import JSONB
 class Policy(PolicyBase, table=True):
     # Store as JSONB with schema validation
     risk_details: MotorRiskDetails | None = Field(
-        default=None, 
+        default=None,
         sa_type=JSONB  # Queryable in PostgreSQL
     )
-    
+
     @validator('risk_details', pre=True)
     def validate_risk_details(cls, v):
         if isinstance(v, dict):
@@ -380,7 +380,7 @@ async def upload_document(
 For financial records that might be edited concurrently:
 pythonclass Invoice(InvoiceBase, table=True):
     version: int = Field(default=1)  # Version counter
-    
+
 def update_invoice(..., invoice_in: InvoiceUpdate) -> Invoice:
     # Check version matches
     if invoice_in.version != db_invoice.version:
@@ -388,7 +388,7 @@ def update_invoice(..., invoice_in: InvoiceUpdate) -> Invoice:
             status_code=409,
             detail="Invoice was modified by another user. Please refresh."
         )
-    
+
     update_dict = invoice_in.model_dump(exclude_unset=True)
     db_invoice.sqlmodel_update(update_dict)
     db_invoice.version += 1  # Increment version
@@ -404,7 +404,7 @@ request_id_ctx: ContextVar[str] = ContextVar('request_id', default=None)
 async def add_correlation_id(request: Request, call_next):
     request_id = request.headers.get('X-Request-ID', str(uuid.uuid4()))
     request_id_ctx.set(request_id)
-    
+
     response = await call_next(request)
     response.headers['X-Request-ID'] = request_id
     return response
@@ -453,7 +453,7 @@ def get_invoice_state(invoice_id: uuid.UUID) -> InvoiceState:
         .where(FinancialEvent.aggregate_id == invoice_id)
         .order_by(FinancialEvent.created_at)
     ).all()
-    
+
     state = InvoiceState()
     for event in events:
         state = state.apply(event)

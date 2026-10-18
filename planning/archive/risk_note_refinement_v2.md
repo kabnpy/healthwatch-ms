@@ -1,7 +1,7 @@
 # Risk Note Refinement Strategy - Composable & Dynamic Layouts
 
 ## 1. Vision
-Transform the Risk Note from a static document into a composable, data-driven template that adapts to different insurance products (Motor, Personal Accident, Domestic Package, etc.). The layout will be driven by the `Product.form_schema`, ensuring that business logic and document structure are decoupled. 
+Transform the Risk Note from a static document into a composable, data-driven template that adapts to different insurance products (Motor, Personal Accident, Domestic Package, etc.). The layout will be driven by the `Product.form_schema`, ensuring that business logic and document structure are decoupled.
 
 **Workflow Change:** Every new policy will now automatically generate an initial "New Business" Risk Note upon creation. This ensures that a policy always has a financial and contractual "snapshot" from its inception.
 

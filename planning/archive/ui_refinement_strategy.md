@@ -26,7 +26,7 @@ Improve readability and consistency across the Policy and Client management modu
 
 ### Plan:
 - [ ] **Analysis:** Current columns: Name, KRA PIN, Email, Phone, Type.
-- [ ] **Improvement:** 
+- [ ] **Improvement:**
     - Add "Contact Person" column (especially for Corporate).
     - Use badges for "Individual" vs "Corporate" types.
     - (Optional) Add "Active Policies" count.

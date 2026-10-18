@@ -21,7 +21,9 @@ export function CoverageCard({ riskNote, onViewBreakdown }: CoverageCardProps) {
     )
   }
 
-  const displayName = riskNote.policy ? getPolicyDisplayName(riskNote.policy) : "Coverage"
+  const displayName = riskNote.policy
+    ? getPolicyDisplayName(riskNote.policy)
+    : "Coverage"
 
   return (
     <Card className="h-full border-l-4 border-l-green-600 shadow-sm">

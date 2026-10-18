@@ -150,7 +150,9 @@ export function StepFinancials({
   ])
 
   // 2. authoritative source of truth
-  const breakdown = quoteMutation.data?.breakdown as MotorFinancialBreakdown | undefined
+  const breakdown = quoteMutation.data?.breakdown as
+    | MotorFinancialBreakdown
+    | undefined
 
   // Auto-set rate for Motor Private
   useEffect(() => {
@@ -158,15 +160,17 @@ export function StepFinancials({
       if (isMotorPrivate && Number(breakdown.net_premium) > 0) {
         // Reverse calculate effective rate for display (inclusive of non-tax extensions)
         const siNum = Number(sum_insured) || 1
-        const effectiveRate =
-          (Number(breakdown.net_premium) / siNum) * 100
+        const effectiveRate = (Number(breakdown.net_premium) / siNum) * 100
         if (Math.abs(effectiveRate - financials.rate) > 0.001) {
           form.setValue("financials.rate", Number(effectiveRate.toFixed(3)))
         }
       }
 
       if (breakdown.basic_rate !== undefined) {
-        form.setValue("financials.basicRate", Number(breakdown.basic_rate) * 100)
+        form.setValue(
+          "financials.basicRate",
+          Number(breakdown.basic_rate) * 100,
+        )
       }
       if (breakdown.is_high_end !== undefined) {
         form.setValue("financials.isHighEnd", breakdown.is_high_end)
@@ -204,7 +208,9 @@ export function StepFinancials({
     <Form {...(form as any)}>
       <form onSubmit={form.handleSubmit(onNext)} className="space-y-8">
         <div className="space-y-1">
-          <h3 className="text-lg font-bold tracking-tight">Financials & Coverage</h3>
+          <h3 className="text-lg font-bold tracking-tight">
+            Financials & Coverage
+          </h3>
           <p className="text-sm text-muted-foreground">
             Review the insured value and define the duration of protection.
           </p>
@@ -262,7 +268,12 @@ export function StepFinancials({
                   <FormItem>
                     <FormLabel>Coverage Start Date</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} value={field.value || ""} className="h-12 text-base" />
+                      <Input
+                        type="date"
+                        {...field}
+                        value={field.value || ""}
+                        className="h-12 text-base"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -425,7 +436,8 @@ export function StepFinancials({
                         </span>
                         {isMotorPrivate && (
                           <span className="text-[10px] text-slate-500 font-mono">
-                            Applied Rate: {(financials as any).basicRate || financials.rate}%
+                            Applied Rate:{" "}
+                            {(financials as any).basicRate || financials.rate}%
                           </span>
                         )}
                       </div>

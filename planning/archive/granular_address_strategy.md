@@ -7,7 +7,7 @@ Refine the address structure for Clients to be more granular, supporting standar
 - **Town**: e.g., "Nairobi"
 
 ## 1. Backend Changes
-- **Model Update**: 
+- **Model Update**:
     - Update `ClientBase` in `backend/app/models/insurance/client.py` to include `postal_code` and `town`.
     - Update `ClientUpdate` to allow partial updates for these fields.
 - **Database Migration**:

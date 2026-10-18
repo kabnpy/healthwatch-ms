@@ -23,11 +23,11 @@ def upgrade():
     pricing_strategy_enum.create(op.get_bind(), checkfirst=True)
     op.add_column('product', sa.Column('pricing_strategy', pricing_strategy_enum, nullable=True))
     op.add_column('product', sa.Column('pricing_rules', sa.JSON(), nullable=True))
-    
+
     # Set default values for existing rows
     op.execute("UPDATE product SET pricing_strategy = 'PERCENTAGE' WHERE pricing_strategy IS NULL")
     op.execute("UPDATE product SET pricing_rules = '{}' WHERE pricing_rules IS NULL")
-    
+
     # Now make them not null
     op.alter_column('product', 'pricing_strategy', nullable=False)
     op.alter_column('product', 'pricing_rules', nullable=False)

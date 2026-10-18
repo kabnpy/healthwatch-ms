@@ -30,7 +30,7 @@ def test_polymorphic_documents(db: Session) -> None:
         entity_type=DocumentEntityType.CLIENT,
         entity_id=client.id,
         document_type=DocumentType.ID,
-        file_path="path/to/id.jpg"
+        file_path="path/to/id.jpg",
     )
     db.add(doc1)
 
@@ -38,7 +38,7 @@ def test_polymorphic_documents(db: Session) -> None:
         entity_type=DocumentEntityType.POLICY,
         entity_id=policy.id,
         document_type=DocumentType.LOGBOOK,
-        file_path="path/to/logbook.pdf"
+        file_path="path/to/logbook.pdf",
     )
     db.add(doc2)
     db.commit()

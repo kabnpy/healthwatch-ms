@@ -17,16 +17,16 @@ Create a helper hook that aggregates this logic so the UI is clean.
 ```typescript
 export const usePolicyDashboard = (policyId: string) => {
   const policyQuery = usePolicy(policyId);
-  
+
   // We need the *Latest* Risk Note to show current dates/premium
   const riskNotesQuery = useRiskNotes(policyId);
-  const latestRiskNote = riskNotesQuery.data?.sort((a, b) => 
+  const latestRiskNote = riskNotesQuery.data?.sort((a, b) =>
     new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
   )[0];
 
   // We need the *Active* Risk Item to show the vehicle details
   // (In a real app, fetch RiskItems and find the one where is_active=true)
-  const riskItemsQuery = useRiskItems(policyId); 
+  const riskItemsQuery = useRiskItems(policyId);
   const activeItem = riskItemsQuery.data?.find(item => item.is_active);
 
   return {

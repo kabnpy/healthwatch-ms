@@ -37,6 +37,10 @@ jobs:
         # To be able to commit it needs the head branch of the PR, the remote one
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -45,17 +49,19 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           cache-dependency-glob: |
-            requirements**.txt
-            pyproject.toml
-            uv.lock
-      - name: Install Dependencies
+            backend/requirements**.txt
+            backend/pyproject.toml
+            backend/uv.lock
+      - name: Install Frontend Dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Install Backend Dependencies
         run: uv sync
         working-directory: backend
       - name: Run prek - pre-commit
         id: precommit
-        run: uvx prek run --from-ref origin/${GITHUB_BASE_REF} --to-ref HEAD --show-diff-on-failure
+        run: uv run --project backend prek run --from-ref origin/${GITHUB_BASE_REF} --to-ref HEAD --show-diff-on-failure
         continue-on-error: true
-        working-directory: backend
       - name: Commit and push changes
         if: env.HAS_SECRETS == 'true'
         run: |

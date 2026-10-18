@@ -21,12 +21,10 @@ export const getColumns = (
     id: "display_name",
     header: "Policy / Cover",
     cell: ({ row }) => {
-      const displayName = row.original.policy ? getPolicyDisplayName(row.original.policy) : "Cover"
-      return (
-        <span className="font-medium text-foreground">
-          {displayName}
-        </span>
-      )
+      const displayName = row.original.policy
+        ? getPolicyDisplayName(row.original.policy)
+        : "Cover"
+      return <span className="font-medium text-foreground">{displayName}</span>
     },
   },
   {

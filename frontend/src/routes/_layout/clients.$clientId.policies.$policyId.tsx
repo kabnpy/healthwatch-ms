@@ -274,14 +274,20 @@ function PolicyDashboardContent({
                 </TabsList>
               </div>
 
-              <TabsContent value="timeline" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <TabsContent
+                value="timeline"
+                className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+              >
                 <VersionHistory
                   riskNotes={riskNotes}
                   onView={(rn) => handleViewRiskNote(rn.id, "risknote")}
                 />
               </TabsContent>
 
-              <TabsContent value="table" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <TabsContent
+                value="table"
+                className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+              >
                 <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
                   <DataTable
                     columns={getRiskNoteColumns((rn) =>

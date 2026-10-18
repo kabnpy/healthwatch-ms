@@ -28,7 +28,11 @@ export function AssetCard({ policy }: AssetCardProps) {
     let result: Record<string, any> = {}
     if (!obj) return result
     for (const [key, value] of Object.entries(obj)) {
-      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+      if (
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value)
+      ) {
         result = { ...result, ...flattenDetails(value) }
       } else if (typeof value !== "object") {
         result[key] = value
@@ -52,9 +56,7 @@ export function AssetCard({ policy }: AssetCardProps) {
       <CardContent>
         <div className="flex flex-col gap-4">
           <div>
-            <div className="text-xl font-bold truncate">
-              {displayName}
-            </div>
+            <div className="text-xl font-bold truncate">{displayName}</div>
             <p className="text-sm text-muted-foreground">
               {policy.product?.class_of_insurance || "Insurance"} cover
             </p>

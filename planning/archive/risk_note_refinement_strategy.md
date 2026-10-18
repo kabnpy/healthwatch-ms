@@ -25,7 +25,7 @@ Instead of multiple hardcoded sub-templates, we will use a **Dynamic Section Ren
 
 1. **Group Data**: Filter `form_schema` to find fields present in `items_snapshot`.
 2. **Aggregate**: Group these fields by their `category`.
-3. **Render**: 
+3. **Render**:
     - Categories like `VEHICLE DETAILS` or `LOCATION` will render as a horizontal grid/table.
     - Categories like `BENEFITS` or `EXCESS` will render as a vertical list/table of key-value pairs.
 

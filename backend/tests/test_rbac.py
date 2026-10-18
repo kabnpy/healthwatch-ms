@@ -21,8 +21,11 @@ def test_viewer_cannot_create_client(
     )
     assert response.status_code == 403
 
+
 def test_viewer_cannot_delete_client(
-    client: TestClient, superuser_token_headers: dict[str, str], normal_user_token_headers: dict[str, str]
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    normal_user_token_headers: dict[str, str],
 ) -> None:
     # Create a client as superuser
     data = {

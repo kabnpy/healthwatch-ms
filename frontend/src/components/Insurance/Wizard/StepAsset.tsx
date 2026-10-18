@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -16,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
 import { useProducts } from "@/hooks/useInsurance"
 
 interface StepAssetProps {
@@ -43,7 +43,8 @@ export function StepAsset({ defaultValues, onNext }: StepAssetProps) {
         <div className="space-y-1">
           <h3 className="text-lg font-bold tracking-tight">Policy Identity</h3>
           <p className="text-sm text-muted-foreground">
-            Identify the insurance product and record the official policy number.
+            Identify the insurance product and record the official policy
+            number.
           </p>
         </div>
 
@@ -54,7 +55,10 @@ export function StepAsset({ defaultValues, onNext }: StepAssetProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Insurance Product</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger className="h-12 text-base">
                       <SelectValue placeholder="Select a product..." />
@@ -63,7 +67,9 @@ export function StepAsset({ defaultValues, onNext }: StepAssetProps) {
                   <SelectContent>
                     {productsData?.data
                       .filter((p) =>
-                        p.class_of_insurance.toLowerCase().includes("motor private"),
+                        p.class_of_insurance
+                          .toLowerCase()
+                          .includes("motor private"),
                       )
                       .map((product) => (
                         <SelectItem key={product.id} value={product.id}>
@@ -73,7 +79,8 @@ export function StepAsset({ defaultValues, onNext }: StepAssetProps) {
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                  The baseline coverage rules will be derived from this selection.
+                  The baseline coverage rules will be derived from this
+                  selection.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -87,14 +94,15 @@ export function StepAsset({ defaultValues, onNext }: StepAssetProps) {
               <FormItem>
                 <FormLabel>Policy Number</FormLabel>
                 <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder="e.g. POL/2026/001" 
+                  <Input
+                    {...field}
+                    placeholder="e.g. POL/2026/001"
                     className="h-12 text-base"
                   />
                 </FormControl>
                 <FormDescription>
-                  Enter the unique reference number provided by the insurance company.
+                  Enter the unique reference number provided by the insurance
+                  company.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
