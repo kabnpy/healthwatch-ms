@@ -32,7 +32,7 @@ The **Insurance Management System** replaces cluttered, flat spreadsheet-like ta
 - **Dynamic Rating Engine**: Supports percentage-based, tiered, and manual rating strategies based on vehicle value or asset sum insured.
 - **Levy & Tax Auto-Calculation**: Standardized calculation of Training Levy, PHCF Levy, Stamp Duty, and Net Premium.
 - **New Business & Renewal Wizards**: Wizard-driven policy issuance with dynamic coverage period calculations.
-- **Mid-Term Endorsements & Pro-Rata**: Pro-rata premium adjustments on policy adjustments without losing historical state.
+- **Mid-Term Endorsements & Pro-Rata**: Pro-rata premium adjustments on policy modifications without losing historical state.
 
 ### 4. Printable Invoicing & Debit Notes
 - Print-ready HTML layouts (`@media print`) for **Risk Notes** (coverage details) and **Debit Notes** (tax invoices and payment breakdowns).
@@ -44,6 +44,7 @@ The **Insurance Management System** replaces cluttered, flat spreadsheet-like ta
 - **Atomic Snapshot Strategy**: Every issued `RiskNote` stores a frozen snapshot (`cover_snapshot`) of the policy state, sum insured, and tax calculations at transaction time. This guarantees strict financial integrity and auditability.
 - **Policy as Container**: The `Policy` table serves as the long-lived contract container, while all temporal details are derived from the active `RiskNote`.
 - **Temporal Versioning**: Risk items are versioned rather than mutated in-place (`valid_from` / `valid_to`), enabling historical time-travel and accurate endorsements.
+- **Financial Precision**: All monetary values, premiums, and levies use Python `Decimal` fixed-point arithmetic.
 - **Feature Flagging (`frontend/src/config/features.ts`)**: Modular flags to toggle features such as Endorsements, Renewals, and Claims.
 
 ---
@@ -51,25 +52,27 @@ The **Insurance Management System** replaces cluttered, flat spreadsheet-like ta
 ## ⚡ Technology Stack
 
 ### Backend
-- **Framework**: [FastAPI](https://fastapi.tiangolo.com) (Python 3.10+)
-- **ORM / Validation**: [SQLModel](https://sqlmodel.tiangolo.com) (SQLAlchemy + [Pydantic v2](https://docs.pydantic.dev))
-- **Database & Migrations**: PostgreSQL & [Alembic](https://alembic.sqlalchemy.org/)
+- **Framework**: [FastAPI](https://fastapi.tiangolo.com) (Python 3.14+)
+- **ORM / Validation**: [SQLModel](https://sqlmodel.tiangolo.com) (SQLAlchemy 2 + [Pydantic v2](https://docs.pydantic.dev))
+- **Database & Migrations**: PostgreSQL & [Alembic](https://alembic.sqlalchemy.org/) (`AUTO_CREATE_TABLES` dev toggle)
+- **Security**: `pwdlib[argon2,bcrypt]`
 - **Package & Runtime Manager**: [`uv`](https://github.com/astral-sh/uv)
 - **Testing & Code Quality**: Pytest, Ruff, Mypy
 
 ### Frontend
-- **Framework**: [React 19](https://react.dev) + [Vite](https://vitejs.dev)
+- **Framework**: [React 19](https://react.dev) + [Vite 8](https://vitejs.dev)
+- **Runtime & Package Manager**: [Bun](https://bun.sh)
 - **Language**: TypeScript
 - **State & Data Fetching**: [TanStack Query v5](https://tanstack.com/query)
 - **Routing**: [TanStack Router](https://tanstack.com/router)
 - **UI & Styling**: [Tailwind CSS v4](https://tailwindcss.com), [Shadcn UI](https://ui.shadcn.com), Lucide Icons
-- **API Client Generation**: `@hey-api/openapi-ts`
+- **API Client Generation**: `@hey-api/openapi-ts` with `@hey-api/client-axios`
 - **Linting & Formatting**: [Biome](https://biomejs.dev)
 
 ### Infrastructure & Operations
-- **Containerization**: Docker & Docker Compose
-- **Reverse Proxy**: Traefik
-- **Testing**: Playwright (E2E), Vitest (Unit)
+- **Containerization**: Docker Compose v2 (`compose.yml`, `compose.override.yml`, `compose.deploy.yml`)
+- **Reverse Proxy**: Traefik v3.3
+- **Local Mail Testing**: Mailpit (`axllent/mailpit`)
 
 ---
 
@@ -80,8 +83,8 @@ The **Insurance Management System** replaces cluttered, flat spreadsheet-like ta
 │   ├── app/
 │   │   ├── api/v1/         # FastAPI endpoints / routers
 │   │   ├── crud/           # Database CRUD logic
-│   │   ├── models/         # SQLModel database models
-│   │   ├── schemas/        # Pydantic validation schemas
+│   │   ├── models.py       # SQLModel database models
+│   │   ├── schemas.py      # Pydantic validation schemas
 │   │   ├── services/       # Rating, Policy & Financial business logic
 │   │   └── main.py         # App entry point
 │   └── alembic/            # Database migrations
@@ -92,136 +95,93 @@ The **Insurance Management System** replaces cluttered, flat spreadsheet-like ta
 │   │   ├── hooks/          # TanStack Query & custom React hooks
 │   │   ├── routes/         # TanStack file-based routes / pages
 │   │   └── config/         # Feature flags (`features.ts`)
-├── docs/                   # Product & Technical Specifications
+├── docs/                   # Authoritative Specifications & Architecture
 │   ├── 01_product_specs.md
 │   ├── 02_tech_architecture.md
 │   ├── 03_backend_data_models.md
-│   └── 04_development_roadmap.md
-└── planning/               # Architectural decisions and sprint tracking
-    ├── status.md
-    └── architecture_decision_records.md
+│   ├── 04_development_roadmap.md
+│   ├── architecture_decision_records.md
+│   ├── domain_deep_dive.md
+│   └── archive/            # Preserved track and planning archives
+├── .agents/skills/         # On-demand Agent & Developer Skills
+│   ├── conductor/          # TDD & feature delivery workflow
+│   └── db-migration/       # Safe schema migration runbook
+└── GEMINI.md               # Agent Constitution & Architectural Invariants
 ```
 
 ---
 
 ## 🚀 Quick Start & Local Development
 
-### Option 1: Docker Compose (Recommended)
+### Option 1: Docker Compose (Full Stack Dev)
 
-1. **Clone the repository**:
+1. **Configure Environment Variables**:
+   Copy the example `.env` file:
    ```bash
-   git clone <repository-url>
-   cd full-stack-fastapi-template
+   cp .env.example .env
    ```
 
-2. **Configure Environment Variables**:
-   Copy the example `.env` file and adjust secrets if needed:
+2. **Start the Stack**:
    ```bash
-   cp .env .env.local
-   ```
-
-3. **Start the Stack**:
-   ```bash
-   docker compose up -d --build
+   docker compose up -d
    ```
 
    The services will be available at:
    - **Frontend**: http://localhost:5173
    - **Backend API Docs (Swagger)**: http://localhost:8000/docs
    - **Traefik Dashboard**: http://localhost:8090
-   - **Mailcatcher**: http://localhost:1080
+   - **Mailpit Web UI**: http://localhost:1080 (SMTP on 1025)
+   - **Adminer DB Manager**: http://localhost:8080
 
 ---
 
 ### Option 2: Local Native Development
 
 #### Backend Setup
-
-1. **Install `uv`** (if not already installed):
-   ```bash
-   pip install uv
-   ```
-
-2. **Navigate to backend and install dependencies**:
-   ```bash
-   cd backend
-   uv sync
-   ```
-
-3. **Run Database Migrations & Seed Mock Data**:
-   ```bash
-   uv run alembic upgrade head
-   uv run python app/initial_data.py
-   ```
-
-4. **Start Backend Server**:
-   ```bash
-   uv run fastapi dev app/main.py
-   ```
+```bash
+cd backend
+uv sync
+uv run alembic upgrade head
+uv run python app/initial_data.py
+uv run fastapi dev app/main.py
+```
 
 #### Frontend Setup
-
-1. **Navigate to frontend and install dependencies**:
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-2. **Generate OpenAPI Client**:
-   ```bash
-   npm run generate-client
-   ```
-
-3. **Start Frontend Development Server**:
-   ```bash
-   npm run dev
-   ```
+```bash
+cd frontend
+bun install
+bun run generate-client
+bun run dev
+```
 
 ---
 
 ## 🧪 Testing & Quality Assurance
 
-### Backend
-Run backend test suite with Pytest:
+### Using Make (Recommended)
 ```bash
+make test       # Run all tests
+make lint       # Run Ruff & Biome linters
+make format     # Auto-format Python & TypeScript
+make client     # Regenerate OpenAPI frontend client
+```
+
+### Manual Execution
+```bash
+# Backend
 cd backend
 uv run pytest
-```
+uv run ruff check --fix
+uv run ruff format
 
-Check linting and types:
-```bash
-cd backend
-uv run ruff check .
-uv run mypy app
-```
-
-### Frontend
-Run unit tests and typecheck:
-```bash
+# Frontend
 cd frontend
-npm run test
-npm run build
+bun run test
+bun run build
+bun run lint
 ```
-
-Run Biome linter:
-```bash
-cd frontend
-npm run lint
-```
-
----
-
-## 🗺️ Roadmap & Phase Status
-
-- [x] **Phase 1: MVP "Happy Path"** - New Business Wizard, Client Hub, Cover Dashboard, Printable Risk/Debit Notes, Atomic Snapshots.
-- [ ] **Phase 2: Temporal Endorsements** - Pro-rata calculations, asset versioning history views, mid-term cover adjustments.
-- [ ] **Phase 3: Financial Invoicing & Cashiering** - Receipting, allocation, knock-off status, multi-invoice payments.
-- [ ] **Phase 4: Claims Management** - Loss reporting, claim lifecycle tracker, loss adjuster document attachments.
-
-For full architectural details and status updates, refer to [docs/](./docs/) and [planning/status.md](./planning/status.md).
 
 ---
 
 ## 📄 License
-
 This project is licensed under the MIT License.

@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import ConfigDict, EmailStr
 from sqlalchemy import JSON, Column, Numeric
@@ -222,7 +222,7 @@ class InsurerPublic(InsurerBase):
 
 class Insurer(InsurerBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    products: list["Product"] = Relationship(back_populates="insurer")
+    products: list[Product] = Relationship(back_populates="insurer")
 
 
 class InsurersPublic(SQLModel):
@@ -260,13 +260,13 @@ class ProductUpdate(SQLModel):
 
 class ProductPublic(ProductBase):
     id: uuid.UUID
-    insurer: Optional["InsurerPublic"] = None
+    insurer: InsurerPublic | None = None
 
 
 class Product(ProductBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    insurer: "Insurer" = Relationship(back_populates="products")
-    policies: list["Policy"] = Relationship(back_populates="product")
+    insurer: Insurer = Relationship(back_populates="products")
+    policies: list[Policy] = Relationship(back_populates="product")
 
     def validate_risk_details(self, risk_details: dict[str, Any]) -> dict[str, Any]:
         if "motor private" in self.class_of_insurance.lower():
@@ -332,10 +332,10 @@ class ClientPublic(ClientBase):
 
 class Client(ClientBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    policies: list["Policy"] = Relationship(back_populates="client")
-    correspondence: list["Correspondence"] = Relationship(back_populates="client")
-    invoices: list["Invoice"] = Relationship(back_populates="client")
-    receipts: list["Receipt"] = Relationship(back_populates="client")
+    policies: list[Policy] = Relationship(back_populates="client")
+    correspondence: list[Correspondence] = Relationship(back_populates="client")
+    invoices: list[Invoice] = Relationship(back_populates="client")
+    receipts: list[Receipt] = Relationship(back_populates="client")
 
 
 class ClientsPublic(SQLModel):
@@ -369,7 +369,7 @@ class CorrespondencePublic(CorrespondenceBase):
 
 class Correspondence(CorrespondenceBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    client: "Client" = Relationship(back_populates="correspondence")
+    client: Client = Relationship(back_populates="correspondence")
 
 
 class CorrespondencesPublic(SQLModel):
@@ -420,22 +420,22 @@ class PolicyUpdate(SQLModel):
 
 class Policy(PolicyBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    client: "Client" = Relationship(back_populates="policies")
-    product: Optional["Product"] = Relationship(back_populates="policies")
-    risk_notes: list["RiskNote"] = Relationship(
+    client: Client = Relationship(back_populates="policies")
+    product: Product | None = Relationship(back_populates="policies")
+    risk_notes: list[RiskNote] = Relationship(
         back_populates="policy",
         sa_relationship_kwargs={
             "order_by": "RiskNote.effective_date.desc(), RiskNote.created_at.desc()",
             "lazy": "selectin",
         },
     )
-    claims: list["Claim"] = Relationship(back_populates="policy")
+    claims: list[Claim] = Relationship(back_populates="policy")
 
 
 class PolicyPublic(PolicyBase):
     id: uuid.UUID
     product: ProductPublic | None = None
-    active_note: Optional["RiskNotePublic"] = None
+    active_note: RiskNotePublic | None = None
 
 
 class PoliciesPublic(SQLModel):
@@ -489,16 +489,14 @@ class RiskNotePublic(RiskNoteBase):
     policy: PolicyPublic | None = None
     financial_breakdown: dict[str, Any] = Field(default_factory=dict)
     special_clauses: list[str] = Field(default_factory=list)
-    invoice_line_items: list["InvoiceLineItemPublic"] = []
+    invoice_line_items: list[InvoiceLineItemPublic] = []
 
 
 class RiskNote(RiskNoteBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     policy: Policy = Relationship(back_populates="risk_notes")
-    invoice_line_items: list["InvoiceLineItem"] = Relationship(
-        back_populates="risk_note"
-    )
-    allocations: list["ReceiptAllocation"] = Relationship(back_populates="risk_note")
+    invoice_line_items: list[InvoiceLineItem] = Relationship(back_populates="risk_note")
+    allocations: list[ReceiptAllocation] = Relationship(back_populates="risk_note")
     financial_breakdown: dict[str, Any] = Field(
         default_factory=dict, sa_column=Column(JSON)
     )
@@ -553,9 +551,9 @@ class InvoiceUpdate(SQLModel):
 
 class Invoice(InvoiceBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    client: "Client" = Relationship(back_populates="invoices")
-    line_items: list["InvoiceLineItem"] = Relationship(back_populates="invoice")
-    allocations: list["ReceiptAllocation"] = Relationship(back_populates="invoice")
+    client: Client = Relationship(back_populates="invoices")
+    line_items: list[InvoiceLineItem] = Relationship(back_populates="invoice")
+    allocations: list[ReceiptAllocation] = Relationship(back_populates="invoice")
 
 
 class InvoiceLineItemBase(SQLModel):
@@ -571,8 +569,8 @@ class InvoiceLineItemCreate(InvoiceLineItemBase):
 
 class InvoiceLineItem(InvoiceLineItemBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    invoice: "Invoice" = Relationship(back_populates="line_items")
-    risk_note: "RiskNote" = Relationship(back_populates="invoice_line_items")
+    invoice: Invoice = Relationship(back_populates="line_items")
+    risk_note: RiskNote = Relationship(back_populates="invoice_line_items")
 
 
 class ReceiptBase(AuditMixin, SQLModel):
@@ -622,9 +620,9 @@ class ReceiptAllocationCreate(ReceiptAllocationBase):
 
 class ReceiptAllocation(ReceiptAllocationBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    receipt: "Receipt" = Relationship(back_populates="allocations")
-    invoice: "Invoice" = Relationship(back_populates="allocations")
-    risk_note: "RiskNote" = Relationship(back_populates="allocations")
+    receipt: Receipt = Relationship(back_populates="allocations")
+    invoice: Invoice = Relationship(back_populates="allocations")
+    risk_note: RiskNote = Relationship(back_populates="allocations")
 
 
 class ReceiptAllocationsPublic(SQLModel):
@@ -634,8 +632,8 @@ class ReceiptAllocationsPublic(SQLModel):
 
 class InvoiceLineItemPublic(InvoiceLineItemBase):
     id: uuid.UUID
-    risk_note: Optional["RiskNotePublic"] = None
-    invoice: Optional["InvoicePublic"] = None
+    risk_note: RiskNotePublic | None = None
+    invoice: InvoicePublic | None = None
 
 
 class InvoicePublic(InvoiceBase):
@@ -656,8 +654,8 @@ class ReceiptPublic(ReceiptBase):
 
 class Receipt(ReceiptBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    client: "Client" = Relationship(back_populates="receipts")
-    allocations: list["ReceiptAllocation"] = Relationship(back_populates="receipt")
+    client: Client = Relationship(back_populates="receipts")
+    allocations: list[ReceiptAllocation] = Relationship(back_populates="receipt")
 
 
 class ReceiptsPublic(SQLModel):
@@ -702,8 +700,8 @@ class ClaimPublic(ClaimBase):
 
 class Claim(ClaimBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    policy: "Policy" = Relationship(back_populates="claims")
-    events: list["ClaimEvent"] = Relationship(back_populates="claim")
+    policy: Policy = Relationship(back_populates="claims")
+    events: list[ClaimEvent] = Relationship(back_populates="claim")
 
 
 class ClaimsPublic(SQLModel):
@@ -731,7 +729,7 @@ class ClaimEventPublic(ClaimEventBase):
 
 class ClaimEvent(ClaimEventBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    claim: "Claim" = Relationship(back_populates="events")
+    claim: Claim = Relationship(back_populates="events")
 
 
 class ClaimEventsPublic(SQLModel):

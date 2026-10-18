@@ -15,93 +15,14 @@ But you have to configure a couple things first. 🤓
 * Configure a wildcard subdomain for your domain, so that you can have multiple subdomains for different services, e.g. `*.fastapi-project.example.com`. This will be useful for accessing different components, like `dashboard.fastapi-project.example.com`, `api.fastapi-project.example.com`, `traefik.fastapi-project.example.com`, `adminer.fastapi-project.example.com`, etc. And also for `staging`, like `dashboard.staging.fastapi-project.example.com`, `adminer.staging.fastapi-project.example.com`, etc.
 * Install and configure [Docker](https://docs.docker.com/engine/install/) on the remote server (Docker Engine, not Docker Desktop).
 
-## Public Traefik
+## Traefik & Domain Architecture
 
-We need a Traefik proxy to handle incoming connections and HTTPS certificates.
+Traefik v3.3 is natively defined within the application's Docker Compose stack (`compose.yml` and `compose.deploy.yml`). It handles:
+- Inbound HTTP/HTTPS routing based on domain subdomains (`api.yourdomain.com`, `dashboard.yourdomain.com`).
+- Automatic Let's Encrypt TLS certificate generation via ACME HTTP-01 challenge.
+- Automatic HTTP to HTTPS redirection (`entrypoint.to=https`).
 
-You need to do these next steps only once.
-
-### Traefik Docker Compose
-
-* Create a remote directory to store your Traefik Docker Compose file:
-
-```bash
-mkdir -p /root/code/traefik-public/
-```
-
-Copy the Traefik Docker Compose file to your server. You could do it by running the command `rsync` in your local terminal:
-
-```bash
-rsync -a docker-compose.traefik.yml root@your-server.example.com:/root/code/traefik-public/
-```
-
-### Traefik Public Network
-
-This Traefik will expect a Docker "public network" named `traefik-public` to communicate with your stack(s).
-
-This way, there will be a single public Traefik proxy that handles the communication (HTTP and HTTPS) with the outside world, and then behind that, you could have one or more stacks with different domains, even if they are on the same single server.
-
-To create a Docker "public network" named `traefik-public` run the following command in your remote server:
-
-```bash
-docker network create traefik-public
-```
-
-### Traefik Environment Variables
-
-The Traefik Docker Compose file expects some environment variables to be set in your terminal before starting it. You can do it by running the following commands in your remote server.
-
-* Create the username for HTTP Basic Auth, e.g.:
-
-```bash
-export USERNAME=admin
-```
-
-* Create an environment variable with the password for HTTP Basic Auth, e.g.:
-
-```bash
-export PASSWORD=changethis
-```
-
-* Use openssl to generate the "hashed" version of the password for HTTP Basic Auth and store it in an environment variable:
-
-```bash
-export HASHED_PASSWORD=$(openssl passwd -apr1 $PASSWORD)
-```
-
-To verify that the hashed password is correct, you can print it:
-
-```bash
-echo $HASHED_PASSWORD
-```
-
-* Create an environment variable with the domain name for your server, e.g.:
-
-```bash
-export DOMAIN=fastapi-project.example.com
-```
-
-* Create an environment variable with the email for Let's Encrypt, e.g.:
-
-```bash
-export EMAIL=admin@example.com
-```
-
-**Note**: you need to set a different email, an email `@example.com` won't work.
-
-### Start the Traefik Docker Compose
-
-Go to the directory where you copied the Traefik Docker Compose file in your remote server:
-
-```bash
-cd /root/code/traefik-public/
-```
-
-Now with the environment variables set and the `docker-compose.traefik.yml` in place, you can start the Traefik Docker Compose running the following command:
-
-```bash
-docker compose -f docker-compose.traefik.yml up -d
-```
+You do not need a separate standalone Traefik compose project; Traefik boots seamlessly alongside the stack.
 
 ## Deploy the FastAPI Project
 
@@ -165,13 +86,13 @@ Copy the content and use that as password / secret key. And run that again to ge
 
 ### Deploy with Docker Compose
 
-With the environment variables in place, you can deploy with Docker Compose:
+With the environment variables in place, deploy using Compose v2:
 
 ```bash
-docker compose -f docker-compose.yml up -d
+docker compose -f compose.yml -f compose.deploy.yml up -d
 ```
 
-For production you wouldn't want to have the overrides in `docker-compose.override.yml`, that's why we explicitly specify `docker-compose.yml` as the file to use.
+For staging or production deployments, `-f compose.yml -f compose.deploy.yml` applies production TLS certificates and disables local dev volume overrides.
 
 ## Continuous Deployment (CD)
 

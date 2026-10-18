@@ -1,8 +1,0 @@
-{
-  "track_id": "streamline_models_20260223",
-  "type": "chore",
-  "status": "new",
-  "created_at": "2026-02-23T10:45:00Z",
-  "updated_at": "2026-02-23T10:45:00Z",
-  "description": "streamline the models with ./planning/models.py as a blueprint. first review the approach and figure out the advantages and disadvantages over our current structure(exclusive of auditing features)"
-}

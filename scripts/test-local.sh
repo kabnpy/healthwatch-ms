@@ -7,7 +7,7 @@ docker compose down -v --remove-orphans # Remove possibly previous broken stacks
 
 if [ $(uname -s) = "Linux" ]; then
     echo "Remove __pycache__ files"
-    sudo find . -type d -name __pycache__ -exec rm -r {} \+
+    find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 fi
 
 docker compose build

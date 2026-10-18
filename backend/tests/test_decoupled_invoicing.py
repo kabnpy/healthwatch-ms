@@ -77,16 +77,16 @@ def test_create_policy_no_automatic_invoice(db: Session) -> None:
     # This test is EXPECTED TO FAIL during the Red phase because current logic creates an invoice.
 
     invoices = db.exec(select(Invoice).where(Invoice.client_id == client.id)).all()
-    assert (
-        len(invoices) == 0
-    ), "Invoice was automatically created but should not have been"
+    assert len(invoices) == 0, (
+        "Invoice was automatically created but should not have been"
+    )
 
     line_items = db.exec(
         select(InvoiceLineItem).where(InvoiceLineItem.risk_note_id == rn.id)
     ).all()
-    assert (
-        len(line_items) == 0
-    ), "Invoice line item was automatically created but should not have been"
+    assert len(line_items) == 0, (
+        "Invoice line item was automatically created but should not have been"
+    )
 
 
 def test_create_endorsement_no_automatic_invoice(db: Session) -> None:
@@ -167,9 +167,9 @@ def test_create_endorsement_no_automatic_invoice(db: Session) -> None:
     final_invoices = db.exec(
         select(Invoice).where(Invoice.client_id == client.id)
     ).all()
-    assert (
-        len(final_invoices) == initial_invoice_count
-    ), "New invoice was automatically created for endorsement"
+    assert len(final_invoices) == initial_invoice_count, (
+        "New invoice was automatically created for endorsement"
+    )
 
 
 def test_get_risk_notes_uninvoiced_filter(db: Session) -> None:

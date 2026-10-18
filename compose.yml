@@ -1,9 +1,9 @@
 services:
 
   proxy:
-    image: traefik:v3.3
+    image: docker.io/library/traefik:v3.3
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock:ro
     command:
       - --providers.docker
       - --providers.docker.exposedbydefault=false
@@ -13,7 +13,7 @@ services:
     restart: always
 
   db:
-    image: postgres:17
+    image: docker.io/library/postgres:17
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -32,7 +32,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
 
   adminer:
-    image: adminer
+    image: docker.io/library/adminer
     restart: always
     depends_on:
       - db
@@ -42,7 +42,8 @@ services:
   prestart:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     build:
-      context: ./backend
+      context: .
+      dockerfile: backend/Dockerfile
     depends_on:
       db:
         condition: service_healthy
@@ -50,6 +51,8 @@ services:
     command: bash scripts/prestart.sh
     env_file:
       - .env
+    environment:
+      - POSTGRES_SERVER=db
 
   backend:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
@@ -62,13 +65,16 @@ services:
         condition: service_completed_successfully
     env_file:
       - .env
+    environment:
+      - POSTGRES_SERVER=db
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
       interval: 10s
       timeout: 5s
       retries: 5
     build:
-      context: ./backend
+      context: .
+      dockerfile: backend/Dockerfile
 
   frontend:
     image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'

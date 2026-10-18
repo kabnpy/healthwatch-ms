@@ -1,6 +1,6 @@
 import secrets
 import warnings
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import (
     AnyUrl,
@@ -13,7 +13,6 @@ from pydantic import (
     model_validator,
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing_extensions import Self
 
 
 def parse_cors(v: Any) -> list[str] | str:
@@ -26,7 +25,7 @@ def parse_cors(v: Any) -> list[str] | str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        # Use top level .env file (one level above ./backend/ or current directory)
+        # Check both local and root .env files
         env_file=(".env", "../.env"),
         env_ignore_empty=True,
         extra="ignore",
@@ -50,14 +49,14 @@ class Settings(BaseSettings):
             self.FRONTEND_HOST
         ]
 
-    PROJECT_NAME: str
+    PROJECT_NAME: str = "HealthWatch MS"
     SENTRY_DSN: HttpUrl | None = None
     DATABASE_URL: PostgresDsn | None = None
-    POSTGRES_SERVER: str | None = None
+    POSTGRES_SERVER: str = "localhost"
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str | None = None
-    POSTGRES_PASSWORD: str = ""
-    POSTGRES_DB: str = ""
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "changethis"
+    POSTGRES_DB: str = "app"
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
@@ -73,10 +72,6 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _validate_database_url(self) -> Self:
         if not self.DATABASE_URL:
-            if not self.POSTGRES_SERVER or not self.POSTGRES_USER:
-                raise ValueError(
-                    "Either DATABASE_URL or (POSTGRES_SERVER and POSTGRES_USER) must be set."
-                )
             self.DATABASE_URL = PostgresDsn.build(
                 scheme="postgresql+psycopg",
                 username=self.POSTGRES_USER,
@@ -116,8 +111,8 @@ class Settings(BaseSettings):
         return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
 
     EMAIL_TEST_USER: EmailStr = "test@example.com"
-    FIRST_SUPERUSER: EmailStr
-    FIRST_SUPERUSER_PASSWORD: str
+    FIRST_SUPERUSER: EmailStr = "admin@example.com"
+    FIRST_SUPERUSER_PASSWORD: str = "changethis"
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":

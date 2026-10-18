@@ -1,7 +1,7 @@
 # Product Specifications: Insurance Management System
 
 ## 1. Product Vision
-A minimalist, high-performance insurance workspace inspired by "Linear/Papermark" aesthetics. It unifies Client Management, Policy Administration, and Financial Invoicing into a single "Dashboard" view. The system prioritizes "Context Isolation" (Deep Nesting) over flat tables to manage complexity.
+An audit-grade, high-density insurance brokerage workspace designed for professional underwriters and account managers. It unifies Client Management, Policy Administration, and Financial Invoicing into a context-isolated hierarchy (see [05_design_system.md](./05_design_system.md) for authoritative design specifications).
 
 ## 2. Core Entities & Terminology
 - **Client:** The customer. Identified by KRA PIN and Contact Info.
@@ -16,10 +16,10 @@ A minimalist, high-performance insurance workspace inspired by "Linear/Papermark
 ## 3. Feature Specifications
 
 ### 3.1 The Client Hub (`/clients/$id`)
-- **Goal:** "At a glance" view of the client's portfolio.
-- **UI Design System:** "Papermark" Grid.
-  - **Cards vs Lists:** Active covers are displayed as **Cards**.
-  - **Visuals:** Cards look like physical files/folders with a minimalist icon (Car/Home) and a subtle status dot.
+- **Goal:** "At a glance" portfolio view of the client's active and historical covers.
+- **UI Architecture:** Structured Portfolio Grid adhering to [05_design_system.md](./05_design_system.md).
+  - **Cards vs Lists:** Active covers are displayed as elevated cards with status badge, sum insured, policy period, and asset badge.
+  - **Visuals:** Strict semantic status badges (Emerald for Active, Amber for Pending, Rose for Lapsed), right-aligned monospace tabular figures for premiums.
 - **Logic:**
   - Clicking a card navigates to the *Insurance Dashboard*.
   - Empty state encourages "Create First Cover".

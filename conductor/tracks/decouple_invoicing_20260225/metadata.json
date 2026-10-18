@@ -1,8 +1,0 @@
-{
-  "track_id": "decouple_invoicing_20260225",
-  "type": "feature",
-  "status": "new",
-  "created_at": "2026-02-25T16:00:00Z",
-  "updated_at": "2026-02-25T16:00:00Z",
-  "description": "invoices are automatically created on risk note creation. we don't want this behaviour and would like invoice generation to be explicit"
-}

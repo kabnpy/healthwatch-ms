@@ -17,25 +17,33 @@ repos:
             )$
       - id: trailing-whitespace
         exclude: ^frontend/src/client/.*
+
   - repo: local
     hooks:
+      - id: check-commit-msg
+        name: conventional commit message check
+        entry: python3 scripts/check_commit_msg.py
+        language: system
+        stages: [commit-msg]
+        always_run: true
+
       - id: local-biome-check
         name: biome check
-        entry: bash -c 'cd frontend && npm run lint'
+        entry: bash -c 'cd frontend && (bun run lint || npm run lint)'
         language: system
         types: [text]
         files: ^frontend/
 
       - id: local-ruff-check
         name: ruff check
-        entry: uv run --project backend ruff check --force-exclude --fix --exit-non-zero-on-fix
+        entry: bash -c 'cd backend && (uv run ruff check --force-exclude --fix --exit-non-zero-on-fix || ./.venv/bin/ruff check --force-exclude --fix --exit-non-zero-on-fix)'
         require_serial: true
         language: system
         types: [python]
 
       - id: local-ruff-format
         name: ruff format
-        entry: uv run --project backend ruff format --force-exclude --check
+        entry: bash -c 'cd backend && (uv run ruff format --force-exclude --check || ./.venv/bin/ruff format --force-exclude --check)'
         require_serial: true
         language: system
         types: [python]

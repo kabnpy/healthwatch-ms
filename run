@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+set -e
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+cd "$DIR"
+
+cmd="${1:-help}"
+shift 2>/dev/null || true
+
+case "$cmd" in
+  dev)
+    docker compose watch
+    ;;
+  up)
+    docker compose up -d
+    ;;
+  down)
+    docker compose down
+    ;;
+  logs)
+    docker compose logs -f "$@"
+    ;;
+  test)
+    echo "==> Running backend tests..."
+    b_args=()
+    for arg in "$@"; do
+      b_args+=("${arg#backend/}")
+    done
+    (cd backend && (uv run pytest -q "${b_args[@]}" 2>/dev/null || ./.venv/bin/pytest -q "${b_args[@]}"))
+    echo "==> Running frontend tests..."
+    (cd frontend && bun run test "$@")
+    ;;
+  test:backend)
+    b_args=()
+    for arg in "$@"; do
+      b_args+=("${arg#backend/}")
+    done
+    (cd backend && (uv run pytest -q "${b_args[@]}" 2>/dev/null || ./.venv/bin/pytest -q "${b_args[@]}"))
+    ;;
+  test:frontend)
+    (cd frontend && bun run test "$@")
+    ;;
+  lint)
+    echo "==> Linting backend..."
+    (cd backend && (uv run ruff check . 2>/dev/null || ./.venv/bin/ruff check .))
+    echo "==> Linting frontend..."
+    (cd frontend && bun run lint)
+    ;;
+  format)
+    echo "==> Formatting backend..."
+    (cd backend && (uv run ruff format . 2>/dev/null || ./.venv/bin/ruff format .))
+    echo "==> Formatting frontend..."
+    (cd frontend && bun run lint)
+    ;;
+  client)
+    echo "==> Regenerating OpenAPI client..."
+    (cd frontend && bun run generate-client)
+    ;;
+  build)
+    echo "==> Building frontend bundle..."
+    (cd frontend && bun run build)
+    ;;
+  migrate)
+    echo "==> Running database migrations..."
+    (cd backend && (uv run alembic upgrade head 2>/dev/null || ./.venv/bin/alembic upgrade head))
+    ;;
+  seed)
+    echo "==> Seeding database..."
+    (cd backend && (uv run python app/seed_mock_data.py 2>/dev/null || ./.venv/bin/python app/seed_mock_data.py))
+    ;;
+  clean)
+    find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+    find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
+    find . -type d -name .ruff_cache -exec rm -rf {} + 2>/dev/null || true
+    rm -rf frontend/dist
+    echo "Cleaned cache and build artifacts."
+    ;;
+  *)
+    echo "HealthWatch MS Command Runner"
+    echo "Usage: ./run <command> [args]"
+    echo ""
+    echo "Commands:"
+    echo "  dev             Start dev stack with docker compose watch"
+    echo "  up              Start containers in background (docker compose up -d)"
+    echo "  down            Stop and remove containers"
+    echo "  logs [service]  Tail container logs"
+    echo "  test            Run all tests (backend + frontend)"
+    echo "  test:backend    Run pytest in backend"
+    echo "  test:frontend   Run vitest in frontend"
+    echo "  lint            Run Ruff and Biome linters"
+    echo "  format          Run Ruff and Biome auto-formatters"
+    echo "  client          Regenerate OpenAPI client from backend"
+    echo "  build           Build frontend production bundle"
+    echo "  migrate         Run Alembic database migrations"
+    echo "  seed            Seed initial mock data"
+    echo "  clean           Clean pycache, ruff, pytest, and dist artifacts"
+    ;;
+esac

@@ -1,43 +1,54 @@
-# Development Roadmap
+# Development Roadmap & Project Status
 
-## 🚩 Phase 1: The "Happy Path" MVP (Deadline: Showcase)
-**Goal:** Demonstrate the "Perfect Day" scenario (New Business -> Print).
-**Status:** In Progress.
+## 📌 Current Project Status
 
-- [ ] **Backend Core:** - [ ] Implement Models (Client, Policy, RiskNote, RiskItem).
-  - [ ] Implement `TransactionType` Enum and `valid_from` fields (Foundation for Phase 2).
-  - [ ] Create `seed_mock_data.py` script.
-- [ ] **Frontend Foundation:**
-  - [ ] Setup `features.ts` (Disable Endorsements/Claims).
-  - [ ] Generate OpenAPI Client.
-  - [ ] Create `useInsurance` hooks (React Query).
-- [ ] **Views (Papermark Style):**
-  - [ ] **Client Hub:** Grid of `InsuranceCard` components.
-  - [ ] **Dashboard:** Tabbed view (Overview/History/Docs).
-  - [ ] **Calculator:** "New Business" Modal (Auto-calc Premiums).
-- [ ] **Output:**
-  - [ ] **Print View:** CSS `@media print` layout for Risk Notes.
+### Completed Milestones
+- **Upstream Sync (Full Stack Modernization)**:
+  - Upgraded backend to Python 3.14.8 with `uv`, FastAPI 0.143+, SQLModel 0.0.48+, Pydantic 2.14+, and Alembic 1.20+.
+  - Migrated password hashing from deprecated `passlib` to `pwdlib[argon2,bcrypt]`.
+  - Consolidated Alembic baseline migration (`19bab995ff26_initial_schema.py`) with `AUTO_CREATE_TABLES` toggle.
+  - Upgraded frontend to React 19, `@tanstack/react-query` v5, `@tanstack/react-router`, Vite 8, and Biome with Bun.
+  - Regenerated API client using `@hey-api/openapi-ts` with `@hey-api/client-axios` unwrapping `.data` at domain hook boundaries.
+  - Upgraded to Docker Compose v2 specification (`compose.yml`, `compose.override.yml`, `compose.deploy.yml`), Traefik v3.3, and Mailpit.
+- **Transactional Snapshot Pattern**:
+  - `RiskNote.cover_snapshot` is the single authoritative source of truth for policy cover state.
+  - `Policy` serves as the durable identity container without temporal duplicate state.
+  - Financial calculations use fixed-point Python `Decimal`.
 
-## 🚩 Phase 2: The "Time Traveler" (Post-MVP)
-**Goal:** Handle the complexity of changing reality (Endorsements).
-**Prerequisite:** Feature Flag `ENDORSEMENTS = true`.
+### Immediate Next Objectives
+1. **Audit Traceability & Product Versioning (`audit_hardening`)**:
+   - Add product versioning (`version`, `is_active`, `superseded_by_id`) to ensure historical quotes remain intact.
+   - Normalize `Client.contacts` from JSON into relational `ClientContact` model.
+   - Standardize `AuditMixin` across all core models.
+2. **Endorsement Expansion**:
+   - Finalize pro-rata endorsement calculations and rating tier logic.
+   - Add comprehensive tests for temporal risk modifications.
 
-- [ ] **Backend:** Implement `RiskItem` versioning logic (Expire old -> Create new).
-- [ ] **Frontend:** Build "Endorsement Wizard" (Date Picker -> Delta View).
-- [ ] **Math:** Implement Pro-Rata Premium calculation algorithms.
-- [ ] **UI:** Enable "History" tab in Dashboard to show previous versions.
+---
 
-## 🚩 Phase 3: The "Financier" (Invoicing)
-**Goal:** Handle Money In / Money Out.
-**Prerequisite:** Feature Flag `PAYMENTS = true`.
+## 🚩 Feature Milestones
 
-- [ ] **Backend:** Create `Receipt` and `Allocation` models.
-- [ ] **Frontend:** Build "Debit Note" Print View (Invoice styling of Risk Note).
-- [ ] **Feature:** Payment splitting (One check paying for 3 policies).
+### Phase 1: MVP Core (Operational)
+- [x] Backend Core Models (Client, Policy, RiskNote, RiskItem).
+- [x] Transaction snapshot engine for New Business.
+- [x] Prestart migrations and seed data scripting.
+- [x] Frontend Client Hub and Policy Dashboard views.
+- [x] New Policy Wizard with dynamic duration calculations.
+- [x] Risk Note printable layout.
 
-## 🚩 Phase 4: The "Triager" (Claims)
-**Goal:** Lifecycle management of losses.
-**Prerequisite:** Feature Flag `CLAIMS = true`.
+### Phase 2: Temporal Versioning & Endorsements
+- [ ] Implement `RiskItem` versioning logic (expire previous version -> issue updated snapshot).
+- [ ] Endorsement Wizard for mid-term adjustments (asset, coverage, sum insured).
+- [ ] Pro-rata premium delta calculations.
+- [ ] Policy history log showing temporal changes across Risk Notes.
 
-- [ ] **Backend:** `Claim` and `ClaimEvent` models.
-- [ ] **Frontend:** Claims Timeline View / Status Tracker.
+### Phase 3: Invoicing & Payments
+- [x] Basic Debit Note view and decoupled invoicing.
+- [ ] `Receipt` and `Allocation` transaction models.
+- [ ] Multi-policy payment reconciliation and split allocations.
+- [ ] Statement of accounts for clients and broker commission tracking.
+
+### Phase 4: Claims Management
+- [ ] `Claim` and `ClaimEvent` models.
+- [ ] Claims registration workflow and notification dispatch.
+- [ ] Claims status tracking and settlement ledger.

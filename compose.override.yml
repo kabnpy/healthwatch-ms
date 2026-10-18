@@ -2,7 +2,7 @@ services:
 
   proxy:
     ports:
-      - "80:80"
+      - "${PROXY_HTTP_PORT:-80}:80"
       - "8090:8080"
     command:
       - --providers.docker
@@ -25,7 +25,7 @@ services:
       - "8080:8080"
 
   mailpit:
-    image: axllent/mailpit
+    image: docker.io/axllent/mailpit
     restart: "no"
     ports:
       - "1080:8025"
@@ -53,6 +53,7 @@ services:
         - path: ./backend/pyproject.toml
           action: rebuild
     environment:
+      POSTGRES_SERVER: "db"
       SMTP_HOST: "mailpit"
       SMTP_PORT: "1025"
       SMTP_TLS: "false"

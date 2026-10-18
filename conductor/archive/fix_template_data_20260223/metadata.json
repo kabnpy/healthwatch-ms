@@ -1,8 +1,0 @@
-{
-  "track_id": "fix_template_data_20260223",
-  "type": "bug",
-  "status": "new",
-  "created_at": "2026-02-23T10:00:00Z",
-  "updated_at": "2026-02-23T10:00:00Z",
-  "description": "Fix incorrect financial breakdown and premium data on Risk Note and Invoice templates, ensuring they reflect the authoritative backend snapshots."
-}

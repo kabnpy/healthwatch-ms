@@ -1,7 +1,7 @@
 import logging
 import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
@@ -104,7 +104,7 @@ def generate_new_account_email(
 
 def generate_password_reset_token(email: str) -> str:
     delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expires = now + delta
     exp = expires.timestamp()
     encoded_jwt = jwt.encode(
@@ -142,7 +142,7 @@ def parse_decimal(value: Any) -> Decimal:
         clean = re.sub(r"[^\d.]", "", clean)
         try:
             return Decimal(clean) if clean else Decimal("0")
-        except (InvalidOperation, ValueError):
+        except InvalidOperation, ValueError:
             return Decimal("0")
 
     return Decimal("0")

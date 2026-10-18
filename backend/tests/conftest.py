@@ -1,11 +1,15 @@
+import os
 from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, delete
+from sqlalchemy import text
+from sqlalchemy.pool import StaticPool
+from sqlmodel import Session, SQLModel, create_engine, delete
 
+from app.api.deps import get_db
+from app.core import db as core_db
 from app.core.config import settings
-from app.core.db import engine, init_db
 from app.main import app
 from app.models import (
     Claim,
@@ -26,47 +30,72 @@ from tests.utils.user import authentication_token_from_email
 from tests.utils.utils import get_superuser_token_headers
 
 
+def _init_test_engine():
+    """Returns PostgreSQL engine if reachable, otherwise in-memory SQLite engine."""
+    if os.getenv("FORCE_SQLITE_TEST", "false").lower() == "true":
+        return create_engine(
+            "sqlite:///:memory:",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+    try:
+        # Check if configured PostgreSQL database is live and accepting queries
+        with core_db.engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return core_db.engine
+    except Exception:
+        # Fall back to in-memory SQLite engine
+        return create_engine(
+            "sqlite:///:memory:",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+
+
+test_engine = _init_test_engine()
+core_db.engine = test_engine
+
+
 @pytest.fixture(scope="session", autouse=True)
-def db() -> Generator[Session, None, None]:
-    with Session(engine) as session:
-        SQLModel.metadata.drop_all(engine)
-        SQLModel.metadata.create_all(engine)
-        init_db(session)
+def db() -> Generator[Session]:
+    SQLModel.metadata.drop_all(test_engine)
+    SQLModel.metadata.create_all(test_engine)
+    with Session(test_engine) as session:
+        core_db.init_db(session)
         yield session
-        # Delete records in correct order to avoid foreign key constraint violations
-        statement = delete(Document)
-        session.execute(statement)
-        statement = delete(Claim)
-        session.execute(statement)
-        statement = delete(ReceiptAllocation)
-        session.execute(statement)
-        statement = delete(InvoiceLineItem)
-        session.execute(statement)
-        statement = delete(Receipt)
-        session.execute(statement)
-        statement = delete(Invoice)
-        session.execute(statement)
-        statement = delete(RiskNote)
-        session.execute(statement)
-        statement = delete(Policy)
-        session.execute(statement)
-        statement = delete(Product)
-        session.execute(statement)
-        statement = delete(Correspondence)
-        session.execute(statement)
-        statement = delete(Client)
-        session.execute(statement)
-        statement = delete(Insurer)
-        session.execute(statement)
-        statement = delete(User)
-        session.execute(statement)
-        session.commit()
+        # Cleanup
+        try:
+            for model in [
+                Document,
+                Claim,
+                ReceiptAllocation,
+                InvoiceLineItem,
+                Receipt,
+                Invoice,
+                RiskNote,
+                Policy,
+                Product,
+                Correspondence,
+                Client,
+                Insurer,
+                User,
+            ]:
+                session.execute(delete(model))
+            session.commit()
+        except Exception:
+            session.rollback()
 
 
 @pytest.fixture(scope="module")
-def client() -> Generator[TestClient, None, None]:
+def client(db: Session) -> Generator[TestClient]:
+    def _override_get_db() -> Generator[Session]:
+        with Session(test_engine) as session:
+            yield session
+
+    app.dependency_overrides[get_db] = _override_get_db
     with TestClient(app) as c:
         yield c
+    app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.fixture(scope="module")

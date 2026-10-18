@@ -1,8 +1,0 @@
-{
-  "track_id": "cleanup_legacy_logic_20260224",
-  "type": "refactor",
-  "status": "new",
-  "created_at": "2026-02-24T12:00:00Z",
-  "updated_at": "2026-02-24T12:00:00Z",
-  "description": "in our bid to streamline our models, the code has introduced a lot of convoluted code to ensure backwards compatibility which is unnecessary. what we need to do is clean up our logic to work directly with our new models without workarounds. we need to maintain our single source of truth principles."
-}

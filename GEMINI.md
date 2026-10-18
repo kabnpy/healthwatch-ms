@@ -1,73 +1,49 @@
-# AGENT CONSTITUTION & PROTOCOLS
+# AGENT CONSTITUTION & ARCHITECTURAL INVARIANTS
 
-> **MISSION:** Build a production-ready FastAPI application by Friday.
-> **CURRENT STATUS:** [See planning/status.md]
+> **MISSION:** Maintain and extend the HealthWatch MS insurance workspace with high code quality, strict financial precision, and zero-drift architecture.
+> **SOURCE OF TRUTH:** [docs/](docs/) | **ROADMAP & STATUS:** [docs/04_development_roadmap.md](docs/04_development_roadmap.md)
 
-## 1. ARCHITECTURAL CONSTRAINTS (FastAPI Starter)
-You are strictly bound by the `full-stack-fastapi-template` structure.
-- **Routers:** All endpoints must live in `backend/app/api/v1/endpoints/`. Never put routes in `main.py`.
-- **Schemas:** Use `Pydantic` v2 models for all request/response bodies. Place them in `backend/app/schemas/`.
-- **Models:** Use `SQLModel` for database tables. Place in `backend/app/models/`.
-- **CRUD:** Business logic goes into `backend/app/crud/`, not the router.
-- **Dependencies:** Use `FastAPI.Depends` for database sessions (`SessionDep`).
+---
 
-## 2. MEMORY & CONTEXT PRESERVATION
-You do not have a persistent brain between sessions. You must use the file system.
-- **Read First:** Before starting ANY task, read `planning/status.md` to know where we left off.
-- **Write Last:** After completing a task, update `planning/status.md` with:
-  - What was finished.
-  - What is the immediate next step.
-  - Any architectural decisions made (e.g., "We chose UUIDs over Integers").
+## 1. Architectural Constraints
 
-## 3. CODING GUIDELINES
-- **Style:** Follow PEP 8 guidelines.
-- **Type Safety:** Python 3.10+ types are mandatory. Use `dict[str, Any]`, not `Dict`.
-- **Docstrings:** Every function must have a docstring explaining arguments and return values.
-- **Error Handling:** Never let the app crash. Use `HTTPException` with meaningful error codes.
-- **No Hallucinations:** Do not import libraries that are not in `pyproject.toml` or `requirements.txt` without installing them first.
-- **Run Files:** Use `uv` to run files on the terminal when working on the backend.
-- **No Empty Functions:** Do not leave empty functions in the codebase.
+### Backend (FastAPI + SQLModel)
+- **Routers:** All endpoints must live in `backend/app/api/v1/endpoints/`. Never place route handlers in `main.py`.
+- **Schemas:** Use Pydantic v2 models for all request and response payloads.
+- **Models:** Use SQLModel for database models in `backend/app/models.py`.
+- **Business Logic:** Encapsulate domain calculations, rating, and state machines in `backend/app/services/` or `crud/`, never directly in endpoints.
+- **Dependencies:** Inject database sessions via `SessionDep` (`FastAPI.Depends`).
+- **Timestamps:** Enforce timezone-aware UTC timestamps across all models and queries.
 
-## 4. AGENT PERSONAS
+### Domain Invariants
+- **Atomic Snapshot Pattern:** `RiskNote.cover_snapshot` is the single source of truth for coverage details, asset terms, and premium breakdowns at transaction time. `Policy` is the durable container identity.
+- **Financial Precision:** Always use Python `Decimal` with fixed-point arithmetic for premiums, taxes, and levies. Never use floats.
 
-### 👷 The Builder (Default)
-- **Role:** Writes code, fixes bugs.
-- **Behavior:** Conservative. Only touches files explicitly mentioned.
-- **Output:** Clean, commented Python/React code.
+### Frontend (React 19 + TanStack)
+- **Routing:** TanStack Router in `frontend/src/routes/`.
+- **State & Data Fetching:** TanStack Query v5 hooks in `frontend/src/hooks/`.
+- **API Client:** Use generated `@hey-api` client services with `@hey-api/client-axios`. Always unwrap `.data` at the hook boundary before returning to UI components.
 
-### 🧐 The Auditor (Review Mode)
-- **Role:** Checks for "Intern Mistakes."
-- **Trigger:** When I ask "Review this."
-- **Checklist:**
-  - Are there hardcoded secrets? (Fail immediately)
-  - Are we following the folder structure?
-  - Did we update the tests?
+---
 
-## 5. EMERGENCY RECOVERY
-If you get stuck or confusing errors:
-1. Stop coding.
-2. Read `planning/status.md`.
-3. Check `backend/app/main.py` to ground yourself in the entry point.
-4. Ask the user for clarification.
+## 2. Tooling & Commands
 
-## 6. FRONTEND ARCHITECTURE (Template Native)
-You must strictly follow the `full-stack-fastapi-template` folder structure.
+- **Backend (Python 3.14):** Execute all Python commands with `uv run` inside `backend/`:
+  - Run tests: `uv run pytest`
+  - Lint & Format: `uv run ruff check --fix` and `uv run ruff format`
+  - Migrations: `uv run alembic upgrade head`
+- **Frontend (Bun / React 19):** Execute commands with `bun run` inside `frontend/`:
+  - Dev server: `bun run dev`
+  - Type-check & build: `bun x tsc -p tsconfig.build.json && bun run build`
+  - Lint: `bun run lint`
+- **Infrastructure:** Docker Compose v2 specification:
+  - Local dev: `docker compose up` (merges `compose.yml` + `compose.override.yml`)
+  - Staging/Deploy: `docker compose -f compose.yml -f compose.deploy.yml up`
 
-### A. Folder Mapping
-- **Pages:** Go to `frontend/src/routes/`. (e.g., `_layout/policies.tsx`).
-- **Components:** Go to `frontend/src/components/`.
-  - Generic UI: `frontend/src/components/ui/` (Shadcn).
-  - Domain Specific: `frontend/src/components/[domain]/` (e.g., `RiskNoteForm.tsx`).
-- **State/Logic:** Go to `frontend/src/hooks/`.
-  - Use TanStack Query hooks here (e.g., `usePolicies.ts`).
-- **API Client:** Use `frontend/src/client/` services.
-  - If the auto-generated client is outdated, create manual services in `frontend/src/client/custom/`.
+---
 
-### B. Routing (TanStack Router / React Router)
-- This template uses file-based routing or a specific router setup in `src/routes`.
-- Ensure new pages are registered in the router configuration.
+## 3. Workflows & Skills
 
-### C. Development Protocol
-1. **Model First:** Ensure the backend Schema exists.
-2. **Hook Second:** Create the React Query hook in `frontend/src/hooks/`.
-3. **UI Last:** Build the component in `frontend/src/routes/`.
+- **Complex Features & Refactors:** Use the `/conductor` skill ([.agents/skills/conductor/SKILL.md](.agents/skills/conductor/SKILL.md)) for TDD red-green cycles and quality gates.
+- **Database Schema Changes:** Use the `/db-migration` skill ([.agents/skills/db-migration/SKILL.md](.agents/skills/db-migration/SKILL.md)) for safe Alembic migrations and rollback testing.
+- **Reviews & Audits:** Delegate independent checks or security audits to subagents via `invoke_subagent`.

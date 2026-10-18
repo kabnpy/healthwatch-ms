@@ -1,0 +1,23 @@
+{
+  "name": "healthwatch-ms-workspace",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "docker compose watch",
+    "up": "docker compose up -d",
+    "down": "docker compose down",
+    "logs": "docker compose logs -f",
+    "test": "bun run test:backend && bun run test:frontend",
+    "test:backend": "bash -c 'cd backend && (uv run pytest -q || ./.venv/bin/pytest -q)'",
+    "test:frontend": "cd frontend && bun run test",
+    "lint": "bash -c 'cd backend && (uv run ruff check . || ./.venv/bin/ruff check .) && cd ../frontend && bun run lint'",
+    "format": "bash -c 'cd backend && (uv run ruff format . || ./.venv/bin/ruff format .) && cd ../frontend && bun run lint'",
+    "build:frontend": "cd frontend && bun run build",
+    "client": "cd frontend && bun run generate-client",
+    "migrate": "bash -c 'cd backend && (uv run alembic upgrade head || ./.venv/bin/alembic upgrade head)'",
+    "seed": "bash -c 'cd backend && (uv run python app/seed_mock_data.py || ./.venv/bin/python app/seed_mock_data.py)'",
+    "clean": "find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true"
+  }
+}

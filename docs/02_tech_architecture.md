@@ -1,11 +1,11 @@
 # Technical Architecture
 
 ## 1. Tech Stack
-- **Frontend:** React (Vite), TanStack Query, TanStack Router, Shadcn UI, Tailwind CSS.
-- **Backend:** Python (FastAPI), SQLModel (SQLAlchemy + Pydantic).
-- **Database:** PostgreSQL (Managed via Neon.tech).
-- **Runtime:** `uv` (Local Python management), Docker (Production Container).
-- **Client Gen:** `openapi-generator` (Syncs Frontend types with Backend).
+- **Frontend:** React 19 (Vite 8), Bun, TanStack Query v5, TanStack Router, Shadcn UI, Tailwind CSS.
+- **Backend:** Python 3.14.8, FastAPI, SQLModel (SQLAlchemy 2 + Pydantic v2), `pwdlib`.
+- **Database:** PostgreSQL (Alembic migrations with `AUTO_CREATE_TABLES` dev support).
+- **Runtime:** `uv` (Fast Python packaging/runner), Docker Compose v2 (Production & Local dev), Traefik v3.3, Mailpit.
+- **Client Gen:** `@hey-api/openapi-ts` with `@hey-api/client-axios` (Syncs frontend types and Axios callers).
 
 ## 2. Database Schema Strategy
 We use a **Transaction Log** approach for Risk Notes and a **Temporal Versioning** approach for Risk Items to support "Time Travel" (Endorsements) without losing history.
