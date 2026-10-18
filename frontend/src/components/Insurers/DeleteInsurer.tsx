@@ -31,7 +31,7 @@ const DeleteInsurer = ({ id, onSuccess }: DeleteInsurerProps) => {
   const { handleSubmit } = useForm()
 
   const mutation = useMutation({
-    mutationFn: () => InsurersService.deleteInsurer({ id: id }),
+    mutationFn: () => InsurersService.deleteInsurer({ path: { id } }),
     onSuccess: () => {
       showSuccessToast("Insurer Removed")
       setIsOpen(false)

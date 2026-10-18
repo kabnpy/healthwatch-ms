@@ -11,14 +11,20 @@ import {
 export const useInvoices = (clientId?: string, skip = 0, limit = 100) => {
   return useQuery({
     queryKey: ["invoices", { clientId, skip, limit }],
-    queryFn: () => FinancialsService.readInvoices({ clientId, skip, limit }),
+    queryFn: async () =>
+      (
+        await FinancialsService.readInvoices({
+          query: { client_id: clientId, skip, limit },
+        })
+      ).data,
   })
 }
 
 export const useInvoice = (id: string) => {
   return useQuery({
     queryKey: ["invoices", id],
-    queryFn: () => FinancialsService.readInvoice({ id }),
+    queryFn: async () =>
+      (await FinancialsService.readInvoice({ path: { id } })).data,
     enabled: !!id,
   })
 }
@@ -26,8 +32,8 @@ export const useInvoice = (id: string) => {
 export const useCreateBulkInvoice = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: InvoiceBulkCreate) =>
-      FinancialsService.createBulkInvoice({ requestBody: data }),
+    mutationFn: async (data: InvoiceBulkCreate) =>
+      (await FinancialsService.createBulkInvoice({ body: data })).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
       queryClient.invalidateQueries({ queryKey: ["risk-notes"] })
@@ -43,14 +49,20 @@ export const useCreateBulkInvoice = () => {
 export const useReceipts = (clientId?: string, skip = 0, limit = 100) => {
   return useQuery({
     queryKey: ["receipts", { clientId, skip, limit }],
-    queryFn: () => FinancialsService.readReceipts({ clientId, skip, limit }),
+    queryFn: async () =>
+      (
+        await FinancialsService.readReceipts({
+          query: { client_id: clientId, skip, limit },
+        })
+      ).data,
   })
 }
 
 export const useReceipt = (id: string) => {
   return useQuery({
     queryKey: ["receipts", id],
-    queryFn: () => FinancialsService.readReceiptById({ id }),
+    queryFn: async () =>
+      (await FinancialsService.readReceiptById({ path: { id } })).data,
     enabled: !!id,
   })
 }
@@ -58,8 +70,8 @@ export const useReceipt = (id: string) => {
 export const useCreateReceipt = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: ReceiptCreate) =>
-      FinancialsService.createNewReceipt({ requestBody: data }),
+    mutationFn: async (data: ReceiptCreate) =>
+      (await FinancialsService.createNewReceipt({ body: data })).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["receipts"] })
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
@@ -70,7 +82,8 @@ export const useCreateReceipt = () => {
 export const useVoidReceipt = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => FinancialsService.deleteReceipt({ id }),
+    mutationFn: async (id: string) =>
+      (await FinancialsService.deleteReceipt({ path: { id } })).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["receipts"] })
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
@@ -83,8 +96,15 @@ export const useVoidReceipt = () => {
 export const useAllocateReceipt = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: ReceiptAllocationCreate }) =>
-      FinancialsService.allocateReceipt({ id, requestBody: data }),
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string
+      data: ReceiptAllocationCreate
+    }) =>
+      (await FinancialsService.allocateReceipt({ path: { id }, body: data }))
+        .data,
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["receipts"] })
       queryClient.invalidateQueries({ queryKey: ["receipts", id] })

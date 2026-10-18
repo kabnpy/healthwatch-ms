@@ -25,7 +25,8 @@ export const ProductActionsMenu = ({ product }: ProductActionsMenuProps) => {
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const deleteMutation = useMutation({
-    mutationFn: () => ProductsService.deleteProduct({ id: product.id }),
+    mutationFn: () =>
+      ProductsService.deleteProduct({ path: { id: product.id } }),
     onSuccess: () => {
       showSuccessToast("Product deleted successfully")
       qClient.invalidateQueries({ queryKey: ["products"] })

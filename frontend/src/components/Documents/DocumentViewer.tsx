@@ -8,16 +8,11 @@ import { AlertCircle, FileText, Loader2 } from "lucide-react"
 import { Suspense } from "react"
 
 import {
-  type ClientPublic,
   ClientsService,
+  client,
   DocumentsService,
   FinancialsService,
-  type InvoicePublic,
-  OpenAPI,
   PoliciesService,
-  type PolicyPublic,
-  type ReceiptPublic,
-  type RiskNotePublic,
   RiskNotesService,
 } from "@/client"
 import useCustomToast from "@/hooks/useCustomToast"
@@ -96,26 +91,33 @@ function RiskNoteLoader({ id }: { id: string }) {
   const qClient = useQueryClient()
 
   const { data: riskNote } = useSuspenseQuery({
-    queryFn: () => RiskNotesService.readRiskNote({ id }),
+    queryFn: async () =>
+      (await RiskNotesService.notesReadRiskNote({ path: { id } })).data,
     queryKey: ["risk-notes", id],
-  }) as { data: RiskNotePublic }
+  })
 
   const { data: policy } = useSuspenseQuery({
-    queryFn: () => PoliciesService.readPolicy({ id: riskNote.policy_id }),
+    queryFn: async () =>
+      (await PoliciesService.readPolicy({ path: { id: riskNote.policy_id } }))
+        .data,
     queryKey: ["policies", riskNote.policy_id],
-  }) as { data: PolicyPublic }
+  })
 
   const { data: client } = useSuspenseQuery({
-    queryFn: () => ClientsService.readClient({ id: policy.client_id }),
+    queryFn: async () =>
+      (await ClientsService.readClient({ path: { id: policy.client_id } }))
+        .data,
     queryKey: ["clients", policy.client_id],
-  }) as { data: ClientPublic }
+  })
 
   const mutation = useMutation({
-    mutationFn: (updatedSnapshot: any) =>
-      RiskNotesService.updateRiskNote({
-        id: riskNote.id,
-        requestBody: { cover_snapshot: updatedSnapshot },
-      }),
+    mutationFn: async (updatedSnapshot: any) =>
+      (
+        await RiskNotesService.notesUpdateRiskNote({
+          path: { id: riskNote.id },
+          body: { cover_snapshot: updatedSnapshot },
+        })
+      ).data,
     onSuccess: () => {
       showSuccessToast("Risk note snapshot updated successfully")
       qClient.invalidateQueries({ queryKey: ["risk-notes", id] })
@@ -137,14 +139,17 @@ function RiskNoteLoader({ id }: { id: string }) {
 
 function InvoiceLoader({ id }: { id: string }) {
   const { data: invoice } = useSuspenseQuery({
-    queryFn: () => FinancialsService.readInvoice({ id }),
+    queryFn: async () =>
+      (await FinancialsService.readInvoice({ path: { id } })).data,
     queryKey: ["invoices", id],
-  }) as { data: InvoicePublic }
+  })
 
   const { data: client } = useSuspenseQuery({
-    queryFn: () => ClientsService.readClient({ id: invoice.client_id }),
+    queryFn: async () =>
+      (await ClientsService.readClient({ path: { id: invoice.client_id } }))
+        .data,
     queryKey: ["clients", invoice.client_id],
-  }) as { data: ClientPublic }
+  })
 
   return (
     <InvoiceTemplate
@@ -167,12 +172,17 @@ function FileLoader({ id, receiptId }: { id?: string; receiptId?: string }) {
     queryKey: ["document-metadata", id, receiptId],
     queryFn: async () => {
       console.log("Fetching document metadata...", { id, receiptId })
-      if (id) return DocumentsService.readDocumentById({ id })
+      if (id)
+        return (await DocumentsService.readDocumentById({ path: { id } })).data
       if (receiptId) {
-        const docs = await DocumentsService.readDocuments({
-          entityId: receiptId as any,
-          entityType: "Receipt",
-        })
+        const docs = (
+          await DocumentsService.readDocuments({
+            query: {
+              entity_id: receiptId,
+              entity_type: "Receipt",
+            },
+          })
+        ).data
         return docs.data[0] || null
       }
       return null
@@ -184,9 +194,11 @@ function FileLoader({ id, receiptId }: { id?: string; receiptId?: string }) {
     queryKey: ["receipt-metadata", receiptId],
     queryFn: async () =>
       receiptId
-        ? ((await FinancialsService.readReceiptById({
-            id: receiptId,
-          })) as ReceiptPublic)
+        ? (
+            await FinancialsService.readReceiptById({
+              path: { id: receiptId },
+            })
+          ).data
         : null,
     enabled: !!receiptId,
   })
@@ -209,7 +221,10 @@ function FileLoader({ id, receiptId }: { id?: string; receiptId?: string }) {
   }
 
   // Ensure BASE URL is present and doesn't have double slashes
-  const baseUrl = OpenAPI.BASE || "http://localhost:8000"
+  const baseUrl =
+    (client.getConfig().baseURL as string) ||
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:8000"
   const downloadUrl = `${baseUrl.replace(/\/$/, "")}/api/v1/documents/${document.id}/download`
 
   console.log("Document Ready:", {

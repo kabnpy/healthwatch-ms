@@ -15,14 +15,16 @@ const searchSchema = z.object({
 
 function getRiskNoteQueryOptions(id: string) {
   return {
-    queryFn: () => RiskNotesService.readRiskNote({ id }),
+    queryFn: async () =>
+      (await RiskNotesService.notesReadRiskNote({ path: { id } })).data,
     queryKey: ["risk-notes", id],
   }
 }
 
 function getPolicyQueryOptions(policyId: string) {
   return {
-    queryFn: () => PoliciesService.readPolicy({ id: policyId }),
+    queryFn: async () =>
+      (await PoliciesService.readPolicy({ path: { id: policyId } })).data,
     queryKey: ["policies", policyId],
     enabled: !!policyId,
   }
@@ -30,7 +32,8 @@ function getPolicyQueryOptions(policyId: string) {
 
 function getClientQueryOptions(clientId: string) {
   return {
-    queryFn: () => ClientsService.readClient({ id: clientId }),
+    queryFn: async () =>
+      (await ClientsService.readClient({ path: { id: clientId } })).data,
     queryKey: ["clients", clientId],
     enabled: !!clientId,
   }
@@ -210,7 +213,7 @@ function RiskNotePrintContent({ id }: { id: string }) {
               <li>Political Violence & Terrorism Included</li>
               <li>Excess Protector Included</li>
               <li>Authorized Repair Limits Clause</li>
-              {riskNote.special_clauses?.map((clause, i) => (
+              {riskNote.special_clauses?.map((clause: any, i: number) => (
                 <li key={i}>{clause}</li>
               ))}
             </ul>

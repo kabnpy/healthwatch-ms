@@ -11,7 +11,9 @@ import { columns } from "@/components/Products/columns"
 
 function getProductsQueryOptions() {
   return {
-    queryFn: () => ProductsService.readProducts({ skip: 0, limit: 100 }),
+    queryFn: async () =>
+      (await ProductsService.readProducts({ query: { skip: 0, limit: 100 } }))
+        .data,
     queryKey: ["products"],
   }
 }

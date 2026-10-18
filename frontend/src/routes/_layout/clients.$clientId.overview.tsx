@@ -7,7 +7,8 @@ import { useFinancialSummary } from "@/hooks/useFinancials"
 
 function getClientQueryOptions(clientId: string) {
   return {
-    queryFn: () => ClientsService.readClient({ id: clientId }),
+    queryFn: async () =>
+      (await ClientsService.readClient({ path: { id: clientId } })).data,
     queryKey: ["clients", clientId],
   }
 }

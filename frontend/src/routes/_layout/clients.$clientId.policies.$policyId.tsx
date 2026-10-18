@@ -38,7 +38,9 @@ export const Route = createFileRoute(
   loader: ({ params }) =>
     queryClient.ensureQueryData({
       queryKey: ["policies", params.policyId],
-      queryFn: () => PoliciesService.readPolicy({ id: params.policyId }),
+      queryFn: async () =>
+        (await PoliciesService.readPolicy({ path: { id: params.policyId } }))
+          .data,
     }),
 })
 
