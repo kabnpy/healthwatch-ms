@@ -903,8 +903,6 @@ class ReceiptAllocationsPublic(SQLModel):
 
 class InvoiceLineItemPublic(InvoiceLineItemBase):
     id: uuid.UUID
-    risk_note: RiskNotePublic | None = None
-    invoice: InvoicePublic | None = None
 
 
 class InvoicePublic(InvoiceBase):
