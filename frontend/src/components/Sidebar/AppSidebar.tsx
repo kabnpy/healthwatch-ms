@@ -8,6 +8,7 @@ import {
   UserRound,
 } from "lucide-react"
 
+import { AgencyStatusBadge } from "@/components/Common/AgencyStatusBadge"
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
 import {
@@ -48,6 +49,7 @@ export function AppSidebar() {
         <Main items={items} />
       </SidebarContent>
       <SidebarFooter>
+        <AgencyStatusBadge />
         <SidebarAppearance />
         <User user={currentUser} />
       </SidebarFooter>
