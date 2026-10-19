@@ -25,6 +25,7 @@ import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
 import { useFinancialSummary } from "@/hooks/useFinancials"
 import { usePolicies } from "@/hooks/useInsurance"
 import { cn } from "@/lib/utils"
+import { queryClient } from "@/queryClient"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 function getClientQueryOptions(clientId: string) {
@@ -32,11 +33,14 @@ function getClientQueryOptions(clientId: string) {
     queryFn: async () =>
       (await ClientsService.readClient({ path: { id: clientId } })).data,
     queryKey: ["clients", clientId],
+    staleTime: 1000 * 60 * 2,
   }
 }
 
 export const Route = createFileRoute("/_layout/clients/$clientId/overview")({
   component: ClientOverview,
+  loader: ({ params }) =>
+    queryClient.ensureQueryData(getClientQueryOptions(params.clientId)),
 })
 
 function ClientOverview() {

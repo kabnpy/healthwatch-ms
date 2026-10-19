@@ -2,12 +2,12 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { Users } from "lucide-react"
 import { Suspense } from "react"
-
 import { ClientsService } from "@/client"
 import { AddClient } from "@/components/Clients/AddClient"
+import { ClientsTableSkeleton } from "@/components/Clients/ClientsTableSkeleton"
 import { columns } from "@/components/Clients/columns"
 import { DataTable } from "@/components/Common/DataTable"
-import PendingItems from "@/components/Pending/PendingItems"
+import { queryClient } from "@/queryClient"
 
 function getClientsQueryOptions() {
   return {
@@ -15,11 +15,13 @@ function getClientsQueryOptions() {
       (await ClientsService.readClients({ query: { skip: 0, limit: 100 } }))
         .data,
     queryKey: ["clients"],
+    staleTime: 1000 * 60 * 2, // 2 minutes fresh cache
   }
 }
 
 export const Route = createFileRoute("/_layout/clients/")({
   component: Clients,
+  loader: () => queryClient.ensureQueryData(getClientsQueryOptions()),
   head: () => ({
     meta: [
       {
@@ -52,7 +54,7 @@ function ClientsTableContent() {
 
 function ClientsTable() {
   return (
-    <Suspense fallback={<PendingItems />}>
+    <Suspense fallback={<ClientsTableSkeleton />}>
       <ClientsTableContent />
     </Suspense>
   )

@@ -27,6 +27,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { queryClient } from "@/queryClient"
 import { formatCurrency } from "@/utils"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
@@ -39,11 +40,14 @@ function getPoliciesQueryOptions(clientId: string) {
         })
       ).data,
     queryKey: ["policies", { clientId }],
+    staleTime: 1000 * 60 * 2,
   }
 }
 
 export const Route = createFileRoute("/_layout/clients/$clientId/policies/")({
   component: ClientPolicies,
+  loader: ({ params }) =>
+    queryClient.ensureQueryData(getPoliciesQueryOptions(params.clientId)),
 })
 
 function getCoverIcon(classOfInsurance?: string, name?: string) {
