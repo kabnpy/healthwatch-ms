@@ -48,7 +48,7 @@ export const columns: ColumnDef<PolicyPublic>[] = [
     header: "Status",
     cell: ({ row }) => (
       <StatusIndicator
-        isActive={row.original.status === "Active"}
+        isActive={row.original.status?.toLowerCase() === "active"}
         label={row.original.status}
       />
     ),

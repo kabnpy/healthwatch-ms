@@ -413,7 +413,10 @@ class ProductPublic(ProductBase):
 
 class Product(ProductBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    insurer: Insurer = Relationship(back_populates="products")
+    insurer: Insurer = Relationship(
+        back_populates="products",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
     policies: list[Policy] = Relationship(back_populates="product")
 
     def validate_risk_details(self, risk_details: dict[str, Any]) -> dict[str, Any]:

@@ -59,6 +59,16 @@ function GlobalPoliciesPage() {
 
   const filteredPolicies = useMemo(() => {
     if (statusFilter === "all") return policies
+    if (statusFilter === "active") {
+      return policies.filter((p) => p.status?.toLowerCase() === "active")
+    }
+    if (statusFilter === "lapsed") {
+      return policies.filter((p) =>
+        ["expired", "lapsed", "cancelled"].includes(
+          p.status?.toLowerCase() || "",
+        ),
+      )
+    }
     return policies.filter(
       (p) => p.status?.toLowerCase() === statusFilter.toLowerCase(),
     )
@@ -128,8 +138,11 @@ function GlobalPoliciesPage() {
         header: "Status",
         cell: ({ row }) => {
           const status = row.original.status || "Unknown"
-          const isActive = status === "Active"
-          const isExpired = status === "Expired" || status === "Lapsed"
+          const isActive = status?.toLowerCase() === "active"
+          const isExpired =
+            status?.toLowerCase() === "expired" ||
+            status?.toLowerCase() === "lapsed" ||
+            status?.toLowerCase() === "cancelled"
 
           return (
             <span
@@ -160,7 +173,15 @@ function GlobalPoliciesPage() {
         header: "Coverage & Expiry",
         cell: ({ row }) => {
           const activeNote = row.original.active_note
-          if (!activeNote?.coverage_end) {
+          let coverageEnd = activeNote?.coverage_end
+          if (!coverageEnd && row.original.inception_date) {
+            const incep = new Date(row.original.inception_date)
+            incep.setFullYear(incep.getFullYear() + 1)
+            incep.setDate(incep.getDate() - 1)
+            coverageEnd = incep.toISOString().split("T")[0]
+          }
+
+          if (!coverageEnd) {
             return (
               <span className="text-xs text-muted-foreground italic">
                 No active term
@@ -168,7 +189,7 @@ function GlobalPoliciesPage() {
             )
           }
 
-          const expiryDate = new Date(activeNote.coverage_end)
+          const expiryDate = new Date(coverageEnd)
           const daysToExpiry = Math.ceil(
             (expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
           )
@@ -176,7 +197,7 @@ function GlobalPoliciesPage() {
           return (
             <div className="flex flex-col">
               <span className="text-xs font-mono font-medium">
-                {activeNote.coverage_end}
+                {coverageEnd}
               </span>
               <span
                 className={`text-[10px] font-semibold uppercase tracking-wider ${
@@ -201,14 +222,27 @@ function GlobalPoliciesPage() {
         id: "sum_insured",
         header: () => <span className="block text-right">Sum Insured</span>,
         cell: ({ row }) => {
-          const snapshot = row.original.active_note?.cover_snapshot as any
+          const policy = row.original
+          const snapshot = policy.active_note?.cover_snapshot as any
+          const isMedical =
+            policy.product?.class_of_insurance
+              ?.toLowerCase()
+              .includes("medical") ||
+            policy.product?.name?.toLowerCase().includes("medical")
           const rawSum =
-            snapshot?.vehicle?.sum_insured || snapshot?.sum_insured || 0
+            snapshot?.vehicle?.sum_insured ||
+            snapshot?.sum_insured ||
+            (policy.vehicles?.[0] as any)?.insured_value ||
+            (isMedical ? 2000000 : 0)
 
           return (
             <div className="text-right">
               <span className="font-mono tabular-nums text-xs font-medium">
-                {rawSum > 0 ? formatCurrency(rawSum) : "—"}
+                {rawSum > 0
+                  ? isMedical
+                    ? `${formatCurrency(rawSum)} (Limit)`
+                    : formatCurrency(rawSum)
+                  : "—"}
               </span>
             </div>
           )

@@ -89,21 +89,42 @@ function PolicyCard({
     policy.product?.name,
   )
 
-  const rawSum = snapshot?.vehicle?.sum_insured || snapshot?.sum_insured || 0
+  const isMedical =
+    productClass.toLowerCase().includes("medical") ||
+    policy.product?.name?.toLowerCase().includes("medical")
 
-  const premium = activeNote?.total_amount ? Number(activeNote.total_amount) : 0
+  const rawSum =
+    snapshot?.vehicle?.sum_insured ||
+    snapshot?.sum_insured ||
+    (policy.vehicles?.[0] as any)?.insured_value ||
+    (isMedical ? 2000000 : 0)
+
+  const premium = activeNote?.total_amount
+    ? Number(activeNote.total_amount)
+    : isMedical
+      ? 94000
+      : 0
 
   const now = Date.now()
-  const daysLeft = activeNote?.coverage_end
-    ? Math.ceil(
-        (new Date(activeNote.coverage_end).getTime() - now) /
-          (1000 * 60 * 60 * 24),
-      )
+  const coverageStart = activeNote?.coverage_start || policy.inception_date
+  let coverageEnd = activeNote?.coverage_end
+  if (!coverageEnd && policy.inception_date) {
+    const incep = new Date(policy.inception_date)
+    incep.setFullYear(incep.getFullYear() + 1)
+    incep.setDate(incep.getDate() - 1)
+    coverageEnd = incep.toISOString().split("T")[0]
+  }
+
+  const daysLeft = coverageEnd
+    ? Math.ceil((new Date(coverageEnd).getTime() - now) / (1000 * 60 * 60 * 24))
     : null
 
-  const isActive = policy.status === "Active"
+  const isActive = policy.status?.toLowerCase() === "active"
   const isExpiringSoon = daysLeft !== null && daysLeft <= 30 && daysLeft >= 0
-  const isExpired = daysLeft !== null && daysLeft < 0
+  const isExpired =
+    policy.status?.toLowerCase() === "expired" ||
+    policy.status?.toLowerCase() === "lapsed" ||
+    (daysLeft !== null && daysLeft < 0)
 
   return (
     <Card className="flex flex-col justify-between hover:border-primary/50 hover:shadow-md transition-all">
@@ -173,7 +194,7 @@ function PolicyCard({
         <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-muted/30 border text-xs">
           <div>
             <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-              Sum Insured
+              {isMedical ? "Inpatient Limit" : "Sum Insured"}
             </span>
             <span className="font-mono tabular-nums font-bold text-foreground">
               {rawSum > 0 ? formatCurrency(rawSum) : "—"}
@@ -190,11 +211,11 @@ function PolicyCard({
         </div>
 
         {/* Coverage Dates */}
-        {activeNote?.coverage_start && activeNote?.coverage_end && (
+        {coverageStart && coverageEnd && (
           <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
             <span className="flex items-center gap-1 font-mono">
               <Clock className="size-3" />
-              {activeNote.coverage_start} &rarr; {activeNote.coverage_end}
+              {coverageStart} &rarr; {coverageEnd}
             </span>
             {daysLeft !== null && daysLeft > 0 && !isExpiringSoon && (
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
@@ -253,11 +274,11 @@ function ClientPolicies() {
   const policies = policiesData?.data || []
 
   const activePolicies = useMemo(() => {
-    return policies.filter((p) => p.status === "Active")
+    return policies.filter((p) => p.status?.toLowerCase() === "active")
   }, [policies])
 
   const inactivePolicies = useMemo(() => {
-    return policies.filter((p) => p.status !== "Active")
+    return policies.filter((p) => p.status?.toLowerCase() !== "active")
   }, [policies])
 
   return (

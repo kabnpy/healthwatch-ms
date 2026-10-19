@@ -11,6 +11,7 @@ interface VehicleAssetCardProps {
     chassis_number?: string | null
     engine_number?: string | null
     sum_insured?: number | string | null
+    insured_value?: number | string | null
     body_type?: string | null
   } | null
 }
@@ -18,7 +19,9 @@ interface VehicleAssetCardProps {
 export function VehicleAssetCard({ vehicle }: VehicleAssetCardProps) {
   if (!vehicle) return null
 
-  const sumInsured = Number(vehicle.sum_insured || 0)
+  const sumInsured = Number(
+    vehicle.sum_insured || (vehicle as any).insured_value || 0,
+  )
   const isHighEnd = sumInsured >= 3000000
 
   return (

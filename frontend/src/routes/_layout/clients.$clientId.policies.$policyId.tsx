@@ -120,13 +120,31 @@ function PolicyDashboardContent({
     setRiskNoteFormOpen(true)
   }
 
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash.replace("#", "")
+      if (hash === "risk-notes" || hash === "history") return "history"
+      if (hash === "documents" || hash === "certificates") return "documents"
+      if (hash === "timeline") return "timeline"
+    }
+    return "overview"
+  })
+
   if (isLoading || !policy || !client) {
     return <PendingItems />
   }
 
-  const daysToExpiry = latestRiskNote?.coverage_end
+  let expiryDateStr = latestRiskNote?.coverage_end
+  if (!expiryDateStr && policy.inception_date) {
+    const d = new Date(policy.inception_date)
+    d.setFullYear(d.getFullYear() + 1)
+    d.setDate(d.getDate() - 1)
+    expiryDateStr = d.toISOString().split("T")[0]
+  }
+
+  const daysToExpiry = expiryDateStr
     ? Math.ceil(
-        (new Date(latestRiskNote.coverage_end).getTime() - Date.now()) /
+        (new Date(expiryDateStr).getTime() - Date.now()) /
           (1000 * 60 * 60 * 24),
       )
     : 0
@@ -159,7 +177,7 @@ function PolicyDashboardContent({
         onEndorse={handleEndorse}
       />
 
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-transparent border-b rounded-none w-full justify-start p-0 h-10 gap-6">
           <TabsTrigger
             value="overview"

@@ -51,6 +51,7 @@ export function CoverageMatrixCard({
                 {formatCurrency(
                   (snapshot as any)?.sum_insured ||
                     (snapshot as any)?.vehicle?.sum_insured ||
+                    (policy.vehicles?.[0] as any)?.insured_value ||
                     netPremium * 20, // fallback estimate if not present
                 )}
               </span>

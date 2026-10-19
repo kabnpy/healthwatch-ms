@@ -21,11 +21,18 @@ export function MedicalPolicyView({
 }: MedicalPolicyViewProps) {
   const snapshot = latestRiskNote?.cover_snapshot || {}
   const rawAdvisory = (snapshot as any)?.advisory_calculation
+  const productRules = (policy.product as any)?.pricing_rules?.inpatient_rates
+  const fallbackNet =
+    productRules?.["2000000"]?.["M+2"] ||
+    productRules?.["1000000"]?.["M+2"] ||
+    productRules?.["2000000"]?.M ||
+    94000
+
   const netPremium = Number(
     latestRiskNote?.net_premium ||
       rawAdvisory?.net_premium ||
       latestRiskNote?.total_amount ||
-      0,
+      fallbackNet,
   )
 
   const trainingLevy = Math.round(netPremium * 0.002 * 100) / 100
@@ -39,6 +46,16 @@ export function MedicalPolicyView({
     (snapshot as any)?.inpatient_limit ||
     (snapshot as any)?.tier_limit ||
     2000000
+
+  const coverageStart =
+    latestRiskNote?.coverage_start || policy.inception_date || "—"
+  let coverageEnd = latestRiskNote?.coverage_end
+  if (!coverageEnd && policy.inception_date) {
+    const end = new Date(policy.inception_date)
+    end.setFullYear(end.getFullYear() + 1)
+    end.setDate(end.getDate() - 1)
+    coverageEnd = end.toISOString().split("T")[0]
+  }
 
   return (
     <div className="space-y-6">
@@ -137,8 +154,7 @@ export function MedicalPolicyView({
                 Coverage Term Horizon
               </span>
               <p className="font-mono text-foreground">
-                {latestRiskNote?.coverage_start || policy.inception_date || "—"}{" "}
-                to {latestRiskNote?.coverage_end || "—"}
+                {coverageStart} to {coverageEnd || "—"}
               </p>
               <p className="text-muted-foreground">
                 Annual calendar-month term
@@ -292,7 +308,7 @@ export function MedicalPolicyView({
                   `Healthcare Policy ${policy.policy_number} - ${client.name}`,
                 )
                 const body = encodeURIComponent(
-                  `Dear ${client.name},\n\nPlease find attached the master healthcare schedule for policy ${policy.policy_number}.\n\nInpatient Limit: ${formatCurrency(inpatientLimit)}\nCoverage Period: ${latestRiskNote?.coverage_start || policy.inception_date || ""} to ${latestRiskNote?.coverage_end || ""}\n\nKind regards,\nHealthWatch MS`,
+                  `Dear ${client.name},\n\nPlease find attached the master healthcare schedule for policy ${policy.policy_number}.\n\nInpatient Limit: ${formatCurrency(inpatientLimit)}\nCoverage Period: ${coverageStart} to ${coverageEnd || ""}\n\nKind regards,\nHealthWatch MS`,
                 )
                 window.location.href = `mailto:${client.email}?subject=${subject}&body=${body}`
               }}
