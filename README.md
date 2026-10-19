@@ -1,187 +1,118 @@
-# Insurance Management System Workspace
+# HealthWatch MS
 
-A minimalist, high-performance insurance management workspace inspired by "Linear / Papermark" aesthetics. It unifies Client Portfolio Management, Policy Administration, Rating Engine, and Invoicing into a single streamlined workflow with context isolation and deep-nesting views.
-
----
-
-## 🚀 Product Vision & Core Concepts
-
-The **Insurance Management System** replaces cluttered, flat spreadsheet-like table views with a structured, folder-based context hierarchy. Key design principles and domain terms include:
-
-- **Client Hub (`/clients/$id`)**: "Papermark" style card grid providing an at-a-glance portfolio view for active covers.
-- **Insurance Dashboard (`/insurance/$id`)**: Deep-dive 3-column tabbed interface (Overview, History, Documents) for a specific insurance policy container.
-- **Risk Note (Transaction Core)**: The dual-purpose document serving as both the transaction record (policy issuance/renewal/endorsement) and the official Debit Note (Invoice).
-- **Risk Item (Asset & Versioning)**: Represents the insured asset (e.g. Vehicle, Property) with temporal history tracking.
-- **Sum Insured**: The authoritative single source of truth for calculations across rating tiers, levies, taxes, and premiums.
+HealthWatch MS is an agency management workspace designed to digitize the day-to-day operations of an insurance agency.
 
 ---
 
-## 🛠️ Key Features
+## Why This System Was Built
 
-### 1. Client & Portfolio Management
-- Multi-contact support for corporate and individual clients.
-- Visual card grid ("Papermark" style) with real-time coverage status indicators.
+At HealthWatch, managing insurance policies historically meant managing physical paper files. If an agent needed to verify what a client was charged last year, check an endorsement, or inspect a client's logbook and KRA PIN certificate, someone had to walk over to the filing cabinets, pull the physical folder, flip through printed pages, and scan documents again.
 
-### 2. Insurance Policy Administration
-- Tabbed dashboard for every cover:
-  - **Overview ("The Face")**: Live state derived from the active `RiskNote` snapshot (dates, premiums, sums insured, clauses).
-  - **History ("The Log")**: Immutable audit trail of transaction snapshots.
-  - **Documents ("The Vault")**: Storage for policy schedules, valuation reports, and KYC documents.
+When an agency manages hundreds of policies across multiple insurance carriers, physical paperwork creates constant friction:
 
-### 3. Rating & Transaction Engine
-- **Dynamic Rating Engine**: Supports percentage-based, tiered, and manual rating strategies based on vehicle value or asset sum insured.
-- **Levy & Tax Auto-Calculation**: Standardized calculation of Training Levy, PHCF Levy, Stamp Duty, and Net Premium.
-- **New Business & Renewal Wizards**: Wizard-driven policy issuance with dynamic coverage period calculations.
-- **Mid-Term Endorsements & Pro-Rata**: Pro-rata premium adjustments on policy modifications without losing historical state.
+- **Lost Time:** Agents spend hours locating physical folders, verifying older policy schedules, and re-scanning the same client KYC records.
+- **Renewal Risks:** In insurance, timing is critical. If a policy expiry date slips by unnoticed, a client is left uninsured on the road, and the agency risks losing the account.
+- **Payment and Balance Confusion:** Clients often pay in installments or send M-Pesa transaction messages over WhatsApp. Without a single ledger, tracking which invoices are paid, which are pending, and whether the insurer has confirmed receipt of funds becomes messy.
+- **Manual Calculation Errors:** Calculating premiums by hand against carrier rate sheets, minimum premiums, and statutory levies (Training Levy, Policyholders Compensation Fund, Stamp Duty) is slow and prone to mistakes.
 
-### 4. Printable Invoicing & Debit Notes
-- Print-ready HTML layouts (`@media print`) for **Risk Notes** (coverage details) and **Debit Notes** (tax invoices and payment breakdowns).
+HealthWatch MS was built to translate the real, everyday workflow of the agency into a working digital system. It replaces physical file cabinets with a single, reliable workspace where any agent can find what they need in seconds.
 
 ---
 
-## 🏗️ Architecture & Key Technical Decisions
+## What This Means for the Agency
 
-- **Atomic Snapshot Strategy**: Every issued `RiskNote` stores a frozen snapshot (`cover_snapshot`) of the policy state, sum insured, and tax calculations at transaction time. This guarantees strict financial integrity and auditability.
-- **Policy as Container**: The `Policy` table serves as the long-lived contract container, while all temporal details are derived from the active `RiskNote`.
-- **Temporal Versioning**: Risk items are versioned rather than mutated in-place (`valid_from` / `valid_to`), enabling historical time-travel and accurate endorsements.
-- **Financial Precision**: All monetary values, premiums, and levies use Python `Decimal` fixed-point arithmetic.
-- **Feature Flagging (`frontend/src/config/features.ts`)**: Modular flags to toggle features such as Endorsements, Renewals, and Claims.
+### 1. Centralized Client Files and KYC
+Every client profile acts as a digital master folder. National ID cards, KRA PIN certificates, vehicle logbooks, valuation reports, and correspondence are attached directly to the client and policy records. Documents are scanned and uploaded once, accessible to the entire team from any screen.
 
----
+### 2. A Disciplined Renewal Workflow
+The system actively tracks policy expiration dates and organizes renewals into an operational pipeline starting 30 days before expiry:
+- Tracking when the carrier's renewal notice is requested and received.
+- Reviewing terms before issuing a client invitation.
+- Handling client change requests without losing track of original terms.
+- Ensuring that two agents never accidentally work on or alter the same renewal simultaneously.
 
-## ⚡ Technology Stack
+### 3. Clear Invoices, Payments, and Statements
+The system brings clarity to client balances and accounting:
+- **Client Invoices:** Generated automatically when new cover or a renewal is issued.
+- **Payment Records:** Payments received by the agency are logged with their payment method (M-Pesa, bank transfer, cheque, financing) and allocated directly to outstanding invoices.
+- **Proof vs. Cleared Funds:** Client-provided M-Pesa screenshots or transfer slips are stored safely as evidence, but are kept distinct from cleared agency funds.
+- **Insurer Receipts:** Documents from the insurance company confirming payment are tracked separately, serving as the official indicator that coverage is in force and agency commission can be recognized.
+- **Statements on Demand:** Accurate, running-balance account statements can be generated for any client and date range with one click.
 
-### Backend
-- **Framework**: [FastAPI](https://fastapi.tiangolo.com) (Python 3.14+)
-- **ORM / Validation**: [SQLModel](https://sqlmodel.tiangolo.com) (SQLAlchemy 2 + [Pydantic v2](https://docs.pydantic.dev))
-- **Database & Migrations**: PostgreSQL & [Alembic](https://alembic.sqlalchemy.org/) (`AUTO_CREATE_TABLES` dev toggle)
-- **Security**: `pwdlib[argon2,bcrypt]`
-- **Package & Runtime Manager**: [`uv`](https://github.com/astral-sh/uv)
-- **Testing & Code Quality**: Pytest, Ruff, Mypy
+### 4. Fast, Accurate Premium Estimates
+Instead of digging through printed insurer circulars, agents can run instant indicative premium calculations:
+- **Motor Cover:** Automatically applies the right percentage rate and minimum premium based on the vehicle value.
+- **Domestic Cover:** Handles building and household contents values separately.
+- **Medical Cover:** Selects the appropriate insurer tier and benefit limits.
+- **Statutory Levies:** Automatically calculates and breaks down the Training Levy, PHCF levy, and Stamp Duty.
 
-### Frontend
-- **Framework**: [React 19](https://react.dev) + [Vite 8](https://vitejs.dev)
-- **Runtime & Package Manager**: [Bun](https://bun.sh)
-- **Language**: TypeScript
-- **State & Data Fetching**: [TanStack Query v5](https://tanstack.com/query)
-- **Routing**: [TanStack Router](https://tanstack.com/router)
-- **UI & Styling**: [Tailwind CSS v4](https://tailwindcss.com), [Shadcn UI](https://ui.shadcn.com), Lucide Icons
-- **API Client Generation**: `@hey-api/openapi-ts` with `@hey-api/client-axios`
-- **Linting & Formatting**: [Biome](https://biomejs.dev)
-
-### Infrastructure & Operations
-- **Containerization**: Docker Compose v2 (`compose.yml`, `compose.override.yml`, `compose.deploy.yml`)
-- **Reverse Proxy**: Traefik v3.3
-- **Local Mail Testing**: Mailpit (`axllent/mailpit`)
+### 5. Reliable Business History
+Whenever a risk note, renewal invitation, invoice, or statement is produced, the system locks in an exact snapshot of the terms and figures used at that moment. Updating a client's phone number or changing an insurer rate table later will never alter or corrupt a document that was issued months earlier.
 
 ---
 
-## 📁 Repository Structure
+## What the System Covers
 
-```
-├── backend/
-│   ├── app/
-│   │   ├── api/v1/         # FastAPI endpoints / routers
-│   │   ├── crud/           # Database CRUD logic
-│   │   ├── models.py       # SQLModel database models
-│   │   ├── schemas.py      # Pydantic validation schemas
-│   │   ├── services/       # Rating, Policy & Financial business logic
-│   │   └── main.py         # App entry point
-│   └── alembic/            # Database migrations
-├── frontend/
-│   ├── src/
-│   │   ├── client/         # Auto-generated OpenAPI TypeScript client
-│   │   ├── components/     # UI components & Shadcn primitives
-│   │   ├── hooks/          # TanStack Query & custom React hooks
-│   │   ├── routes/         # TanStack file-based routes / pages
-│   │   └── config/         # Feature flags (`features.ts`)
-├── docs/                   # Authoritative Specifications & Architecture
-│   ├── 01_product_specs.md
-│   ├── 02_tech_architecture.md
-│   ├── 03_backend_data_models.md
-│   ├── 04_development_roadmap.md
-│   ├── architecture_decision_records.md
-│   ├── domain_deep_dive.md
-│   └── archive/            # Preserved track and planning archives
-├── .agents/skills/         # On-demand Agent & Developer Skills
-│   ├── conductor/          # TDD & feature delivery workflow
-│   └── db-migration/       # Safe schema migration runbook
-└── GEMINI.md               # Agent Constitution & Architectural Invariants
-```
+- **Command Deck:** A daily dashboard highlighting upcoming expiries, renewals awaiting carrier notices, and accounts pending payment.
+- **Global Search (Cmd + K):** Instant lookup across clients, policy numbers, vehicle registration numbers, and uploaded files.
+- **Policy Administration:** Long-lived policy records that maintain their complete history of renewals and changes over time.
+- **Document Vault:** Secure storage and in-app preview for all client KYC documents, carrier notices, and valuation reports.
+- **Activity Timeline:** A chronological log of client calls, meetings, reminders, and notes attached to each account.
 
 ---
 
-## 🚀 Quick Start & Local Development
+## Project Documentation
 
-### Option 1: Docker Compose (Full Stack Dev)
+Detailed technical and operational documentation is maintained in the `docs/` directory:
 
-1. **Configure Environment Variables**:
-   Copy the example `.env` file:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. **Start the Stack**:
-   ```bash
-   docker compose up -d
-   ```
-
-   The services will be available at:
-   - **Frontend**: http://localhost:5173
-   - **Backend API Docs (Swagger)**: http://localhost:8000/docs
-   - **Traefik Dashboard**: http://localhost:8090
-   - **Mailpit Web UI**: http://localhost:1080 (SMTP on 1025)
-   - **Adminer DB Manager**: http://localhost:8080
+- **[Master System Specification](docs/insurance_agency_system_documentation.md):** Authoritative business rules, renewal transitions, and accounting logic.
+- **[Product Specifications](docs/01_product_specs.md):** Detailed workflow requirements and screen structures.
+- **[Technical Architecture](docs/02_tech_architecture.md):** Application structure, data integrity safeguards, and deployment setup.
+- **[Backend Data Models](docs/03_backend_data_models.md):** Database models and relational constraints.
+- **[Development Roadmap](docs/04_development_roadmap.md):** Implementation phases and production checklist.
+- **[Design System](docs/05_design_system.md):** UI patterns, color tokens, and typography guidelines.
+- **[Git Hygiene](docs/06_git_hygiene.md):** Branching conventions, commit syntax, and pre-push quality gates.
+- **[Reference Catalog & Seeding](docs/07_reference_catalog_and_seeding.md):** Authoritative Kenyan underwriter catalog, statutory levy benchmarks, and realistic test portfolio.
+- **[Architecture Decision Records](docs/architecture_decision_records.md):** Chronological log of key architectural decisions (ADR-001 through ADR-014).
 
 ---
 
-### Option 2: Local Native Development
+## Technical Overview
 
-#### Backend Setup
+For technical teams and developers:
+
+- **Backend:** Python 3.14, FastAPI, SQLModel (SQLAlchemy 2 + Pydantic v2), PostgreSQL 16+.
+- **Frontend:** React 19, Vite 8, Bun, TanStack Query v5, TanStack Router, Tailwind CSS, Shadcn UI.
+- **Storage:** Cloudflare R2 object storage with secure, short-lived signed URLs.
+- **Infrastructure:** Docker Compose v2 for local development, Railway for production hosting.
+
+### Running Locally
+
+Using Docker Compose:
 ```bash
-cd backend
+cp .env.example .env
+make up
+```
+
+- Frontend: http://localhost:5173
+- Backend API Documentation: http://localhost:8000/docs
+- Local Email Viewer (Mailpit): http://localhost:1080
+
+Using native development tools:
+```bash
+# Backend (in /backend)
 uv sync
 uv run alembic upgrade head
 uv run python app/initial_data.py
 uv run fastapi dev app/main.py
-```
 
-#### Frontend Setup
-```bash
-cd frontend
+# Frontend (in /frontend)
 bun install
-bun run generate-client
 bun run dev
 ```
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## License
 
-### Using Make (Recommended)
-```bash
-make test       # Run all tests
-make lint       # Run Ruff & Biome linters
-make format     # Auto-format Python & TypeScript
-make client     # Regenerate OpenAPI frontend client
-```
-
-### Manual Execution
-```bash
-# Backend
-cd backend
-uv run pytest
-uv run ruff check --fix
-uv run ruff format
-
-# Frontend
-cd frontend
-bun run test
-bun run build
-bun run lint
-```
-
----
-
-## 📄 License
 This project is licensed under the MIT License.

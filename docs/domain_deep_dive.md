@@ -1,18 +1,17 @@
-it does not showcase the new improvement we've made1:21 PMReconsidered architectural design to elevate documentation standardsThe user is right. We discussed an important improvement where:
+# Insurance Brokerage Management System - Data Model Deep Dive
 
-Policy should NOT duplicate data that's in RiskNote
-RiskNote should be the single source of truth for coverage details and premiums
-Policy should just be a container with computed properties that read from the latest RiskNote
+## Document Overview
+- **Version:** 2.0
+- **Context:** Historical deep-dive into the Transactional Risk Note and Atomic Snapshot patterns.
+- **Master Baseline:** See [insurance_agency_system_documentation.md](./insurance_agency_system_documentation.md) for authoritative binding business rules and current domain models.
+- **Technology Stack:** Python, FastAPI, SQLModel, PostgreSQL
 
-This was the key insight we arrived at - that the intermediate step of updating Policy.risk_details is unnecessary when RiskNotes are transactional and show the most current data.
-Let me revise the document to reflect this improved design as the recommended approach, making it clear this is the better pattern.Show moreDoneInsurance Brokerage Management System - Data Model Specification
-Document Overview
-Version: 2.0
-Last Updated: February 2026
-Purpose: Complete specification of data models and relationships for an insurance brokerage management system
-Technology Stack: Python, FastAPI, SQLModel, PostgreSQL
-⚠️ IMPORTANT DESIGN NOTE:
-This document reflects the improved transactional pattern where RiskNotes are the single source of truth for policy state. Policy entities serve only as containers with computed properties that read from the latest RiskNote. This eliminates data duplication and synchronization issues.
+> [!NOTE] ARCHITECTURAL CONTEXT & HISTORICAL SCOPE
+> This document represents an architectural exploration of the transactional snapshot pattern originally designed around motor and property insurance.
+> In operational agency practice (authoritatively governed by [insurance_agency_system_documentation.md](./insurance_agency_system_documentation.md)):
+> 1. **Risk Note Scope:** Risk Notes are generated only for product classes that require carrier cover slips (e.g., Motor, Domestic). Product lines like **Medical never use a Risk Note**.
+> 2. **Calculation Authority:** Pricing authority resides in the versioned `PremiumCalculation` and carrier quotation schedules, not the generated document.
+> 3. **Spreadsheet Reconciliation:** Multi-account banking and carrier commission reconciliation was historically managed in comprehensive agency spreadsheets; this system provides a bounded ledger and exportable tabular data to feed those spreadsheets without manual data entry errors.
 
 1. Business Domain Context
 1.1 What This System Does
@@ -204,7 +203,7 @@ One Product → Many Policies
 3.4 Policy Management (IMPROVED DESIGN)
 Policy
 Purpose: Container identifying the insurance contract - does NOT store coverage details
-⚠️ CRITICAL DESIGN PRINCIPLE:
+CRITICAL DESIGN PRINCIPLE:
 Policy is just a container. All coverage details, premiums, and terms live in RiskNotes. Current state is computed from the latest RiskNote.
 Fields:
 FieldTypeConstraintsDescriptionidUUIDPrimary KeyUnique identifierpolicy_numberStringUnique, Indexed, RequiredInsurer's policy numberclient_idUUIDForeign Key → Client, Indexed, RequiredInsured partyproduct_idUUIDForeign Key → Product, Indexed, OptionalInsurance productstatusEnum(PolicyStatus)RequiredPolicy statusinception_dateDateRequiredWhen policy first startedcreated_atDateTimeDefault: now()Creation timestamp
@@ -216,10 +215,10 @@ pythonPolicyStatus:
   - EXPIRED: Reached end date, not renewed
 NO DATA DUPLICATION:
 
-❌ Does NOT have risk_details
-❌ Does NOT have current_premium
-❌ Does NOT have current_term_start/end
-❌ Does NOT have premium_breakdown
+- Does NOT have risk_details
+- Does NOT have current_premium
+- Does NOT have current_term_start/end
+- Does NOT have premium_breakdown
 
 Computed Properties (read from latest RiskNote):
 python@property
@@ -271,7 +270,7 @@ current_premium = policy.current_premium
 
 RiskNote
 Purpose: The SINGLE SOURCE OF TRUTH for policy state at any point in time
-⚠️ CRITICAL: This is where ALL data lives
+CRITICAL: This is where ALL data lives
 Key Characteristics:
 
 Created for EVERY change to a policy (new, renewal, endorsement)
@@ -289,7 +288,7 @@ pythonTransactionType:
   - NEW_BUSINESS: Initial policy creation
   - RENEWAL: New term for existing policy
   - ENDORSEMENT: Mid-term change
-  - CANCELLATION: Policy terminated
+  # Note: Cancellations strictly do not generate Risk Notes; they are handled via PolicyStatus.CANCELLED and carrier cancellation certificates.
 
 RiskNoteStatus:
   - DRAFT: Being prepared
@@ -925,20 +924,20 @@ commission_amount = net_premium × (commission_rate / 100)
 Transaction Types:
 
 NEW_BUSINESS: First risk note, previous_risk_note_id = NULL
-RENEWAL: New coverage period, new effective_date
+RENEWAL: New coverage period, new effective_date (generated from the agency's prepared renewal invitation)
 ENDORSEMENT: Same coverage period, updated risk_details
-CANCELLATION: May have negative premium (refund)
+(Note: Policy cancellation does not generate a Risk Note. Cancellations transition Policy.status to CANCELLED and store the insurer's Cancellation Certificate and credit note under Documents.)
 
 
 
 8.2 No Policy Updates on Transactions
 Critical Rule: When creating RiskNotes (endorsements, renewals), do NOT update Policy fields. Just create the new RiskNote. The Policy.current_* properties will automatically reflect the new state.
-python# ❌ OLD WAY (don't do this)
+python# [INCORRECT] (do not do this)
 policy.risk_details = new_details
 policy.current_premium = new_premium
 risk_note = RiskNote(policy_snapshot=new_details, ...)
 
-# ✅ NEW WAY (correct)
+# [CORRECT] (transactional snapshot pattern)
 risk_note = RiskNote(
     policy_id=policy.id,
     policy_snapshot={"risk_details": new_details},
@@ -1085,7 +1084,7 @@ class TransactionType(str, Enum):
     NEW_BUSINESS = "New Business"
     RENEWAL = "Renewal"
     ENDORSEMENT = "Endorsement"
-    CANCELLATION = "Cancellation"
+    # Cancellations operate at Policy status level and do not produce Risk Notes
 
 
 class RiskNoteStatus(str, Enum):
@@ -1177,20 +1176,20 @@ Event sourcing pattern (each RiskNote = event)
 Tradeoff: Slightly more complex queries (need to join/eager load risk_notes)
 Mitigation: Proper indexing makes queries fast
 12.2 When to Use This Pattern
-✅ Use when:
+Use when:
 
 Data changes over time and history matters
 Need complete audit trail
 Want to avoid sync issues
 Transactions are the business documents
 
-❌ Don't use when:
+Do not use when:
 
 Current state rarely changes
 History not important
 Need maximum query performance on current state
 
-For this insurance brokerage system: ✅ Perfect fit
+For this insurance agency system: Optimal architectural fit
 
 Document Version History
 VersionDateChanges1.02026-02-13Initial comprehensive documentation2.02026-02-13IMPROVED: Added transactional RiskNote pattern, Policy as container with computed properties
