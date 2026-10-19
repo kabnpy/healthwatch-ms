@@ -27,10 +27,56 @@ class MotorFinancialBreakdown(BaseFinancialBreakdown):
     is_high_end: bool = False
 
 
+class DomesticFinancialBreakdown(BaseFinancialBreakdown):
+    type: Literal["domestic"] = "domestic"
+    section_premiums: dict[str, Decimal] = Field(default_factory=dict)
+    buildings_sum_insured: Decimal = Field(default=Decimal("0.00"))
+    contents_sum_insured: Decimal = Field(default=Decimal("0.00"))
+    all_risks_valuables: Decimal = Field(default=Decimal("0.00"))
+
+
+class WIBAFinancialBreakdown(BaseFinancialBreakdown):
+    type: Literal["wiba"] = "wiba"
+    payroll_totals: dict[str, Decimal] = Field(default_factory=dict)
+    employee_count: int = 1
+
+
+class CommercialFireFinancialBreakdown(BaseFinancialBreakdown):
+    type: Literal["fire"] = "fire"
+    total_sum_insured: Decimal = Field(default=Decimal("0.00"))
+    special_perils_included: bool = True
+
+
+class MarineFinancialBreakdown(BaseFinancialBreakdown):
+    type: Literal["marine"] = "marine"
+    cif_value: Decimal = Field(default=Decimal("0.00"))
+    uplifted_value: Decimal = Field(default=Decimal("0.00"))
+    clause: str = "Clause A"
+
+
+class MedicalFinancialBreakdown(BaseFinancialBreakdown):
+    type: Literal["medical"] = "medical"
+    inpatient_limit: Decimal = Field(default=Decimal("0.00"))
+    inpatient_premium: Decimal = Field(default=Decimal("0.00"))
+    outpatient_premium: Decimal = Field(default=Decimal("0.00"))
+    family_size: int = 1
+
+
+BreakdownUnion = (
+    MotorFinancialBreakdown
+    | DomesticFinancialBreakdown
+    | WIBAFinancialBreakdown
+    | CommercialFireFinancialBreakdown
+    | MarineFinancialBreakdown
+    | MedicalFinancialBreakdown
+    | BaseFinancialBreakdown
+)
+
+
 class FinancialBreakdown(BaseModel):
     product_class: str
     breakdown: Annotated[
-        MotorFinancialBreakdown | BaseFinancialBreakdown,
+        BreakdownUnion,
         Field(discriminator="type"),
     ]
 
@@ -41,7 +87,7 @@ class QuoteRequest(BaseModel):
 
 
 class QuoteResponse(BaseModel):
-    breakdown: MotorFinancialBreakdown | BaseFinancialBreakdown
+    breakdown: BreakdownUnion
 
 
 class MotorVehicleDetails(BaseModel):
@@ -169,3 +215,101 @@ class MotorPrivateRiskDetails(BaseModel):
                 data[term_key] = ""
 
         return data
+
+
+class DomesticPackageRiskDetails(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    buildings_sum_insured: Decimal = Field(default=Decimal("0.00"))
+    contents_sum_insured: Decimal = Field(default=Decimal("0.00"))
+    all_risks_valuables: Decimal = Field(default=Decimal("0.00"))
+    domestic_servants_indoor: int = Field(default=0)
+    domestic_servants_outdoor: int = Field(default=0)
+    owners_liability_limit: Decimal = Field(default=Decimal("0.00"))
+
+    @field_validator(
+        "buildings_sum_insured",
+        "contents_sum_insured",
+        "all_risks_valuables",
+        "owners_liability_limit",
+        mode="before",
+    )
+    @classmethod
+    def parse_money(cls, v: Any) -> Decimal:
+        from app.utils import parse_decimal
+
+        return parse_decimal(v)
+
+
+class WIBARiskDetails(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    clerical_payroll: Decimal = Field(default=Decimal("0.00"))
+    artisan_payroll: Decimal = Field(default=Decimal("0.00"))
+    hazardous_payroll: Decimal = Field(default=Decimal("0.00"))
+    employee_count: int = Field(default=1)
+
+    @field_validator(
+        "clerical_payroll", "artisan_payroll", "hazardous_payroll", mode="before"
+    )
+    @classmethod
+    def parse_payroll(cls, v: Any) -> Decimal:
+        from app.utils import parse_decimal
+
+        return parse_decimal(v)
+
+
+class FirePerilsRiskDetails(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    buildings_sum_insured: Decimal = Field(default=Decimal("0.00"))
+    plant_machinery_sum_insured: Decimal = Field(default=Decimal("0.00"))
+    stock_sum_insured: Decimal = Field(default=Decimal("0.00"))
+    include_special_perils: bool = Field(default=True)
+
+    @field_validator(
+        "buildings_sum_insured",
+        "plant_machinery_sum_insured",
+        "stock_sum_insured",
+        mode="before",
+    )
+    @classmethod
+    def parse_fire_si(cls, v: Any) -> Decimal:
+        from app.utils import parse_decimal
+
+        return parse_decimal(v)
+
+
+class MarineCargoRiskDetails(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    cif_value: Decimal = Field(default=Decimal("0.00"))
+    origin_port: str = Field(default="")
+    destination_port: str = Field(default="Mombasa")
+    clause: str = Field(default="Clause A")
+
+    @field_validator("cif_value", mode="before")
+    @classmethod
+    def parse_cif(cls, v: Any) -> Decimal:
+        from app.utils import parse_decimal
+
+        return parse_decimal(v)
+
+
+class MedicalRiskDetails(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    inpatient_limit: Decimal = Field(default=Decimal("1000000.00"))
+    principal_age: int = Field(default=30)
+    has_spouse: bool = Field(default=False)
+    spouse_age: int | None = Field(default=None)
+    children_count: int = Field(default=0)
+    include_outpatient: bool = Field(default=False)
+    outpatient_limit: Decimal = Field(default=Decimal("50000.00"))
+
+    @field_validator("inpatient_limit", "outpatient_limit", mode="before")
+    @classmethod
+    def parse_med_limits(cls, v: Any) -> Decimal:
+        from app.utils import parse_decimal
+
+        return parse_decimal(v)

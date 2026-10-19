@@ -133,7 +133,9 @@ class Settings(BaseSettings):
         if self.DATABASE_URL:
             for host in self.DATABASE_URL.hosts():
                 if host.get("password"):
-                    self._check_default_secret("DATABASE_URL password", host["password"])
+                    self._check_default_secret(
+                        "DATABASE_URL password", host["password"]
+                    )
         self._check_default_secret(
             "FIRST_SUPERUSER_PASSWORD", self.FIRST_SUPERUSER_PASSWORD
         )

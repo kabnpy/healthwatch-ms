@@ -43,7 +43,8 @@ class PolicyService:
         *,
         session: Session,
         policy_in: PolicyCreate,
-        cover_snapshot: dict[str, Any],
+        cover_snapshot: dict[str, Any] | None = None,
+        risk_details: dict[str, Any] | None = None,
         coverage_start: date,
         coverage_end: date,
         current_user_id: uuid.UUID | None = None,
@@ -51,12 +52,15 @@ class PolicyService:
         """
         Create a Policy with an initial Risk Note (New Business).
         """
+        effective_snapshot = (
+            cover_snapshot if cover_snapshot is not None else (risk_details or {})
+        )
         product = session.get(Product, policy_in.product_id)
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
 
         try:
-            validated_risk = product.validate_risk_details(cover_snapshot)
+            validated_risk = product.validate_risk_details(effective_snapshot)
             breakdown = RatingService.calculate_breakdown(product, validated_risk)
         except Exception as e:
             logger.exception("Validation or Rating failure")
@@ -91,7 +95,8 @@ class PolicyService:
         *,
         session: Session,
         policy_id: uuid.UUID,
-        updated_cover_snapshot: dict[str, Any],
+        updated_cover_snapshot: dict[str, Any] | None = None,
+        updated_risk_details: dict[str, Any] | None = None,
         change_description: str,
         effective_date: date | None = None,
         current_user_id: uuid.UUID | None = None,
@@ -103,6 +108,12 @@ class PolicyService:
         if not policy or not policy.product:
             raise HTTPException(status_code=404, detail="Policy or Product not found")
 
+        effective_snapshot = (
+            updated_cover_snapshot
+            if updated_cover_snapshot is not None
+            else (updated_risk_details or {})
+        )
+
         # effective_date is already defaulted to date.today() in the controller/schema if null
         # but we re-verify here for service-layer safety.
         effective_date = effective_date or date.today()
@@ -113,9 +124,7 @@ class PolicyService:
             raise HTTPException(status_code=400, detail="No active risk note found")
 
         try:
-            validated_risk = policy.product.validate_risk_details(
-                updated_cover_snapshot
-            )
+            validated_risk = policy.product.validate_risk_details(effective_snapshot)
             full_breakdown = RatingService.calculate_breakdown(
                 policy.product, validated_risk
             )

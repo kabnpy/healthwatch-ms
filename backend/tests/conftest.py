@@ -12,6 +12,7 @@ from app.core import db as core_db
 from app.core.config import settings
 from app.main import app
 from app.models import (
+    Activity,
     Claim,
     Client,
     Correspondence,
@@ -19,12 +20,16 @@ from app.models import (
     Insurer,
     Invoice,
     InvoiceLineItem,
+    PaymentAllocation,
+    PaymentRecord,
     Policy,
     Product,
     Receipt,
     ReceiptAllocation,
+    Renewal,
     RiskNote,
     User,
+    Vehicle,
 )
 from tests.utils.user import authentication_token_from_email
 from tests.utils.utils import get_superuser_token_headers
@@ -68,10 +73,15 @@ def db() -> Generator[Session]:
             for model in [
                 Document,
                 Claim,
+                Activity,
+                PaymentAllocation,
+                PaymentRecord,
                 ReceiptAllocation,
                 InvoiceLineItem,
                 Receipt,
                 Invoice,
+                Renewal,
+                Vehicle,
                 RiskNote,
                 Policy,
                 Product,

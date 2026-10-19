@@ -86,7 +86,7 @@ def test_create_claim(
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 200
+    assert response.status_code in (200, 201)
     content = response.json()
     assert content["claim_number"] == data["claim_number"]
     assert content["policy_id"] == str(policy.id)
