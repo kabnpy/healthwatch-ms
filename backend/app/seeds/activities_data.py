@@ -66,7 +66,7 @@ def seed_activities(
         add_activity(
             client=c_agnes,
             policy=p_agnes,
-            act_type=ActivityType.CALL,
+            act_type=ActivityType.PHONE_CALL,
             body="Telephone call with client regarding annual motor valuation for KCM 780L. Client confirmed valuation report from Automobile Association of Kenya showing KES 5,000,000 value.",
         )
         add_activity(
@@ -122,7 +122,7 @@ def seed_activities(
         add_activity(
             client=c_rv,
             policy=p_rv_t1,
-            act_type=ActivityType.CALL,
+            act_type=ActivityType.PHONE_CALL,
             body="Liaised with fleet manager Lydia Chelagat. Confirmed speed governor compliance certificates and NTSA inspection stickers submitted for all 3 commercial trucks.",
         )
 

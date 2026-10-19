@@ -1,17 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
+  ActivitiesService,
+  type ActivityCreate,
   type ClientCreate,
   ClientsService,
   type ClientUpdate,
   FinancialsService,
+  type PaymentAllocationCreate,
+  PaymentAllocationsService,
+  type PaymentRecordCreate,
+  PaymentRecordsService,
   PoliciesService,
   type PolicyCreateExtended,
   type PolicyUpdate,
   ProductsService,
   type QuoteRequest,
+  type RenewalCreate,
+  type RenewalStatus,
+  RenewalsService,
+  type RenewalTransition,
+  type RenewalUpdate,
+  type ReversalCreate,
   type RiskNoteCreate,
   RiskNotesService,
   type RiskNoteUpdate,
+  type VehicleCreate,
+  VehiclesService,
+  type VehicleUpdate,
 } from "../client"
 
 // 1. CLIENTS
@@ -289,5 +304,302 @@ export const useQuoteQuery = (data: QuoteRequest | null) => {
     },
     enabled: !!data && !!data.product_id,
     staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+// 9. RENEWALS (Workflow Engine)
+export const useRenewals = (
+  policyId?: string,
+  status?: RenewalStatus,
+  skip = 0,
+  limit = 100,
+) => {
+  return useQuery({
+    queryKey: ["renewals", { policyId, status, skip, limit }],
+    queryFn: async () =>
+      (
+        await RenewalsService.readRenewals({
+          query: { policy_id: policyId, status, skip, limit },
+        })
+      ).data,
+  })
+}
+
+export const useRenewal = (id: string) => {
+  return useQuery({
+    queryKey: ["renewals", id],
+    queryFn: async () =>
+      (await RenewalsService.readRenewal({ path: { id } })).data,
+    enabled: !!id,
+  })
+}
+
+export const useCreateRenewal = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: RenewalCreate) =>
+      (await RenewalsService.createRenewal({ body: data })).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["renewals"] })
+      queryClient.invalidateQueries({ queryKey: ["policies"] })
+    },
+  })
+}
+
+export const useTransitionRenewal = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: RenewalTransition }) =>
+      (
+        await RenewalsService.transitionRenewal({
+          path: { id },
+          body: data,
+        })
+      ).data,
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["renewals"] })
+      queryClient.invalidateQueries({ queryKey: ["renewals", id] })
+    },
+  })
+}
+
+export const useUpdateRenewal = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: RenewalUpdate }) =>
+      (
+        await RenewalsService.updateRenewal({
+          path: { id },
+          body: data,
+        })
+      ).data,
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["renewals"] })
+      queryClient.invalidateQueries({ queryKey: ["renewals", id] })
+    },
+  })
+}
+
+// 10. ACTIVITIES (Timeline)
+export const useActivities = (
+  clientId?: string,
+  policyId?: string,
+  renewalId?: string,
+  skip = 0,
+  limit = 100,
+) => {
+  return useQuery({
+    queryKey: ["activities", { clientId, policyId, renewalId, skip, limit }],
+    queryFn: async () =>
+      (
+        await ActivitiesService.readActivities({
+          query: {
+            client_id: clientId,
+            policy_id: policyId,
+            renewal_id: renewalId,
+            skip,
+            limit,
+          },
+        })
+      ).data,
+  })
+}
+
+export const useCreateActivity = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: ActivityCreate) =>
+      (await ActivitiesService.createActivity({ body: data })).data,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["activities"] })
+      if (variables.client_id) {
+        queryClient.invalidateQueries({
+          queryKey: ["activities", { clientId: variables.client_id }],
+        })
+      }
+    },
+  })
+}
+
+// 11. PAYMENT RECORDS & ALLOCATIONS
+export const usePaymentRecords = (clientId?: string, skip = 0, limit = 100) => {
+  return useQuery({
+    queryKey: ["payment-records", { clientId, skip, limit }],
+    queryFn: async () =>
+      (
+        await PaymentRecordsService.recordsReadPaymentRecords({
+          query: { client_id: clientId, skip, limit },
+        })
+      ).data,
+  })
+}
+
+export const usePaymentRecord = (id: string) => {
+  return useQuery({
+    queryKey: ["payment-records", id],
+    queryFn: async () =>
+      (await PaymentRecordsService.recordsReadPaymentRecord({ path: { id } }))
+        .data,
+    enabled: !!id,
+  })
+}
+
+export const useRecordPayment = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: PaymentRecordCreate) =>
+      (await PaymentRecordsService.recordsCreatePaymentRecord({ body: data }))
+        .data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payment-records"] })
+    },
+  })
+}
+
+export const useAllocatePayment = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string
+      data: PaymentAllocationCreate
+    }) =>
+      (
+        await PaymentRecordsService.recordsAllocatePaymentToInvoice({
+          path: { id },
+          body: data,
+        })
+      ).data,
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["payment-records"] })
+      queryClient.invalidateQueries({ queryKey: ["payment-records", id] })
+      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+    },
+  })
+}
+
+export const useReversePaymentRecord = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: ReversalCreate }) =>
+      (
+        await PaymentRecordsService.recordsReversePaymentRecord({
+          path: { id },
+          body: data,
+        })
+      ).data,
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["payment-records"] })
+      queryClient.invalidateQueries({ queryKey: ["payment-records", id] })
+      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+    },
+  })
+}
+
+export const usePaymentAllocations = (
+  paymentRecordId?: string,
+  invoiceId?: string,
+  skip = 0,
+  limit = 100,
+) => {
+  return useQuery({
+    queryKey: [
+      "payment-allocations",
+      { paymentRecordId, invoiceId, skip, limit },
+    ],
+    queryFn: async () =>
+      (
+        await PaymentAllocationsService.allocationsReadPaymentAllocations({
+          query: {
+            payment_record_id: paymentRecordId,
+            invoice_id: invoiceId,
+            skip,
+            limit,
+          },
+        })
+      ).data,
+  })
+}
+
+export const useReversePaymentAllocation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: ReversalCreate }) =>
+      (
+        await PaymentAllocationsService.allocationsReversePaymentAllocation({
+          path: { id },
+          body: data,
+        })
+      ).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payment-records"] })
+      queryClient.invalidateQueries({ queryKey: ["payment-allocations"] })
+      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+    },
+  })
+}
+
+// 12. VEHICLES
+export const useVehicles = (policyId?: string, skip = 0, limit = 100) => {
+  return useQuery({
+    queryKey: ["vehicles", { policyId, skip, limit }],
+    queryFn: async () =>
+      (
+        await VehiclesService.readVehicles({
+          query: { policy_id: policyId, skip, limit },
+        })
+      ).data,
+  })
+}
+
+export const useVehicle = (id: string) => {
+  return useQuery({
+    queryKey: ["vehicles", id],
+    queryFn: async () =>
+      (await VehiclesService.readVehicle({ path: { id } })).data,
+    enabled: !!id,
+  })
+}
+
+export const useCreateVehicle = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: VehicleCreate) =>
+      (await VehiclesService.createVehicle({ body: data })).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] })
+      queryClient.invalidateQueries({ queryKey: ["policies"] })
+    },
+  })
+}
+
+export const useUpdateVehicle = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: VehicleUpdate }) =>
+      (
+        await VehiclesService.updateVehicle({
+          path: { id },
+          body: data,
+        })
+      ).data,
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] })
+      queryClient.invalidateQueries({ queryKey: ["vehicles", id] })
+    },
+  })
+}
+
+export const useDeleteVehicle = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) =>
+      (await VehiclesService.deleteVehicle({ path: { id } })).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] })
+      queryClient.invalidateQueries({ queryKey: ["policies"] })
+    },
   })
 }

@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 
 import { Footer } from "@/components/Common/Footer"
+import { DocumentJobStatusTray } from "@/components/Documents/DocumentJobStatusTray"
 import { Header } from "@/components/layout/Header"
 import AppSidebar from "@/components/Sidebar/AppSidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -29,6 +30,7 @@ function Layout() {
           </div>
         </main>
         <Footer />
+        <DocumentJobStatusTray />
       </SidebarInset>
     </SidebarProvider>
   )

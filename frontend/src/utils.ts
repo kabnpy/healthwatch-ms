@@ -128,7 +128,5 @@ export const formatCurrency = (
     style: "currency",
     currency: "KES",
     minimumFractionDigits: 2,
-  })
-    .format(numericAmount)
-    .replace("KES", "Kshs.")
+  }).format(numericAmount)
 }

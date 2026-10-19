@@ -1,18 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { FileDown, Mail } from "lucide-react"
+import { Eye, FileDown, FileText, Mail, Printer } from "lucide-react"
 import { Suspense, useCallback, useState } from "react"
 import { PoliciesService } from "@/client"
+import { ActivityTimeline } from "@/components/Activities/ActivityTimeline"
 import { DataTable } from "@/components/Common/DataTable"
 import { DocumentManager } from "@/components/Common/DocumentManager"
 import { DocumentViewerModal } from "@/components/Common/DocumentViewerModal"
 import ErrorComponent from "@/components/Common/ErrorComponent"
+import { DocumentPreviewDrawer } from "@/components/Documents/DocumentPreviewDrawer"
 import { DocumentViewer } from "@/components/Documents/DocumentViewer"
-import { RiskNoteTemplate } from "@/components/Documents/templates/RiskNoteTemplate"
 import { RiskNoteForm } from "@/components/Insurance/RiskNoteForm"
 import { VersionHistory } from "@/components/Insurance/VersionHistory"
 import PendingItems from "@/components/Pending/PendingItems"
+import { CoverageMatrixCard } from "@/components/Policies/CoverageMatrixCard"
 import { PolicyDashboardSkeleton } from "@/components/Policies/Dashboard/PolicyDashboardSkeleton"
 import { PolicyHeader } from "@/components/Policies/Dashboard/PolicyHeader"
+import { MedicalPolicyView } from "@/components/Policies/MedicalPolicyView"
+import { VehicleAssetCard } from "@/components/Policies/VehicleAssetCard"
 import { getColumns as getRiskNoteColumns } from "@/components/RiskNotes/columns"
 import { Button } from "@/components/ui/button"
 import {
@@ -77,6 +81,7 @@ function PolicyDashboardContent({
     null,
   )
   const [viewType, setViewType] = useState<"risknote" | "invoice">("risknote")
+  const [previewDrawerOpen, setPreviewDrawerOpen] = useState(false)
 
   // State for Risk Note Form
   const [riskNoteFormOpen, setRiskNoteFormOpen] = useState(false)
@@ -126,6 +131,20 @@ function PolicyDashboardContent({
       )
     : 0
 
+  const isMedical =
+    policy.product?.class_of_insurance?.toLowerCase().includes("medical") ||
+    policy.product?.name?.toLowerCase().includes("medical") ||
+    policy.product?.name?.toLowerCase().includes("health") ||
+    false
+
+  const isMotor =
+    policy.product?.class_of_insurance?.toLowerCase().includes("motor") || false
+
+  const vehicle =
+    (policy as any).vehicles?.[0] ||
+    (latestRiskNote?.cover_snapshot as any)?.vehicle ||
+    (policy as any).vehicle
+
   const displayName = getPolicyDisplayName(policy)
 
   return (
@@ -141,110 +160,177 @@ function PolicyDashboardContent({
       />
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
+        <TabsList className="bg-transparent border-b rounded-none w-full justify-start p-0 h-10 gap-6">
+          <TabsTrigger
+            value="overview"
+            className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
+          >
+            Digital File
+          </TabsTrigger>
+          <TabsTrigger
+            value="history"
+            className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
+          >
+            {isMedical ? "Census & Endorsement History" : "Risk Note Versions"}
+          </TabsTrigger>
+          <TabsTrigger
+            value="timeline"
+            className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
+          >
+            Activity & Audit Log
+          </TabsTrigger>
+          <TabsTrigger
+            value="documents"
+            className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
+          >
+            Documents
+          </TabsTrigger>
         </TabsList>
 
         {/* TAB 1: OVERVIEW (The Digital File) */}
         <TabsContent value="overview" className="pt-6">
           <div className="flex flex-col gap-8 max-w-5xl mx-auto">
-            {/* Top Info & Actions Row */}
-            <div className="flex flex-col md:flex-row justify-between items-start gap-6 bg-muted/30 p-6 rounded-xl border border-border/50">
-              <div className="flex items-center gap-6">
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">
-                    Coverage Status
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <div className="text-3xl font-bold tracking-tight">
-                      {daysToExpiry}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground uppercase leading-tight font-semibold">
-                      Days until
-                      <br />
-                      Expiry
-                    </div>
-                  </div>
-                </div>
-                <div className="w-32 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${daysToExpiry < 30 ? "bg-destructive" : "bg-blue-500"}`}
-                    style={{
-                      width: `${Math.min(100, (daysToExpiry / 365) * 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 h-9 shadow-sm"
-                >
-                  <FileDown className="size-4" />
-                  Download PDF
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 h-9 shadow-sm"
-                >
-                  <Mail className="size-4" />
-                  Email to Client
-                </Button>
-              </div>
-            </div>
-
-            {/* Main Content: The Document */}
-            <div className="space-y-6">
-              {(latestRiskNote as any)?.status === "Draft" && (
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg flex items-center justify-between shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-500 p-2 rounded-full">
-                      <FileDown className="size-4 text-white" />
-                    </div>
+            {isMedical ? (
+              <MedicalPolicyView
+                policy={policy as EnhancedPolicy}
+                client={client}
+                latestRiskNote={latestRiskNote as EnhancedRiskNote}
+                onEndorseCensus={handleEndorse}
+              />
+            ) : (
+              <>
+                {/* Top Info & Actions Row */}
+                <div className="flex flex-col md:flex-row justify-between items-start gap-6 bg-muted/30 p-6 rounded-xl border border-border/50">
+                  <div className="flex items-center gap-6">
                     <div>
-                      <p className="text-sm font-bold text-blue-900">
-                        Draft Risk Note Detected
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">
+                        Coverage Status
                       </p>
-                      <p className="text-xs text-blue-700">
-                        This {latestRiskNote?.transaction_type} has not been
-                        finalized yet.
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <div className="text-3xl font-bold tracking-tight">
+                          {daysToExpiry}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground uppercase leading-tight font-semibold">
+                          Days until
+                          <br />
+                          Expiry
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-32 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${daysToExpiry < 30 ? "bg-destructive" : "bg-blue-500"}`}
+                        style={{
+                          width: `${Math.min(100, (daysToExpiry / 365) * 100)}%`,
+                        }}
+                      />
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
-                    onClick={handlePopulateDraft}
-                  >
-                    Populate & Issue
-                  </Button>
-                </div>
-              )}
 
-              {latestRiskNote ? (
-                <div className="border rounded-lg shadow-2xl overflow-hidden bg-white dark:bg-zinc-950">
-                  <div className="p-1 bg-muted/20 border-b text-[10px] uppercase tracking-widest text-center text-muted-foreground font-semibold">
-                    Current Master Risk Note
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 h-9 shadow-sm cursor-pointer"
+                      onClick={() => setPreviewDrawerOpen(true)}
+                      disabled={!latestRiskNote?.id}
+                    >
+                      <Printer className="size-4" />
+                      Print / Export Schedule
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 h-9 shadow-sm"
+                      onClick={() => {
+                        if (!client?.email) {
+                          alert("No email address registered for this client.")
+                          return
+                        }
+                        const subject = encodeURIComponent(
+                          `Policy ${policy.policy_number} - ${displayName}`,
+                        )
+                        const body = encodeURIComponent(
+                          `Dear ${client.name},\n\nPlease find attached details for your policy ${policy.policy_number}.\n\nCoverage Period: ${latestRiskNote?.coverage_start || ""} to ${latestRiskNote?.coverage_end || ""}\n\nKind regards,\nHealthWatch MS`,
+                        )
+                        window.location.href = `mailto:${client.email}?subject=${subject}&body=${body}`
+                      }}
+                    >
+                      <Mail className="size-4" />
+                      Email Client
+                    </Button>
                   </div>
-                  <RiskNoteTemplate
-                    riskNote={latestRiskNote as EnhancedRiskNote}
-                    client={client}
+                </div>
+
+                {/* Draft Risk Note Alert if present */}
+                {(latestRiskNote as any)?.status === "Draft" && (
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-blue-500 p-2 rounded-full">
+                        <FileDown className="size-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-blue-900">
+                          Draft Risk Note Detected
+                        </p>
+                        <p className="text-xs text-blue-700">
+                          This {latestRiskNote?.transaction_type} has not been
+                          finalized yet.
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                      onClick={handlePopulateDraft}
+                    >
+                      Populate & Issue
+                    </Button>
+                  </div>
+                )}
+
+                {/* Vehicle Asset Card for Motor policies */}
+                {(isMotor || vehicle) && <VehicleAssetCard vehicle={vehicle} />}
+
+                {/* Interactive Coverage & Statutory Levies Matrix */}
+                {latestRiskNote && (
+                  <CoverageMatrixCard
                     policy={policy as EnhancedPolicy}
+                    riskNote={latestRiskNote as EnhancedRiskNote}
+                    onOpenPreview={() => setPreviewDrawerOpen(true)}
                   />
-                </div>
-              ) : (
-                <div className="p-12 text-center border-2 border-dashed rounded-lg bg-muted/10">
-                  <p className="text-muted-foreground italic">
-                    No transaction history found for this policy.
-                  </p>
-                </div>
-              )}
-            </div>
+                )}
+
+                {/* Outbound Document Engine Action Banner */}
+                {latestRiskNote && (
+                  <div className="rounded-xl border bg-muted/20 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
+                        <FileText className="size-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-foreground">
+                          Official Carrier Policy Schedule (A4 Format)
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          Pre-flight verified underwriter transmittal slip with
+                          digital certified seal, fixed-point taxes, and legal
+                          schedule notes.
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => setPreviewDrawerOpen(true)}
+                      disabled={!latestRiskNote?.id}
+                      className="gap-2 shrink-0 cursor-pointer text-xs"
+                    >
+                      <Eye className="size-3.5" />
+                      View Outbound A4 Slip
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </TabsContent>
 
@@ -303,6 +389,13 @@ function PolicyDashboardContent({
           </div>
         </TabsContent>
 
+        {/* TAB 3: ACTIVITY TIMELINE */}
+        <TabsContent value="timeline" className="pt-6">
+          <div className="max-w-4xl mx-auto">
+            <ActivityTimeline clientId={client.id} policyId={policy.id} />
+          </div>
+        </TabsContent>
+
         {/* TAB 4: DOCUMENTS */}
         <TabsContent value="documents" className="pt-6">
           <DocumentManager
@@ -340,11 +433,22 @@ function PolicyDashboardContent({
           <RiskNoteForm
             policyId={policyId}
             riskNoteId={editingRiskNoteId}
+            initialTransactionType={transactionType}
             onSuccess={() => setRiskNoteFormOpen(false)}
             onCancel={() => setRiskNoteFormOpen(false)}
           />
         </DialogContent>
       </Dialog>
+
+      {/* Outbound A4 Document Engine Drawer */}
+      <DocumentPreviewDrawer
+        isOpen={previewDrawerOpen}
+        onOpenChange={setPreviewDrawerOpen}
+        riskNote={latestRiskNote as EnhancedRiskNote}
+        client={client}
+        policy={policy as EnhancedPolicy}
+        onEditDraft={handlePopulateDraft}
+      />
     </div>
   )
 }

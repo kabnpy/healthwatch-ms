@@ -13,10 +13,10 @@ export const CurrencyInput = React.forwardRef<
   const [displayValue, setDisplayValue] = React.useState("")
 
   // Format number to string with commas
-  const format = (val: number) => {
+  const format = React.useCallback((val: number) => {
     if (Number.isNaN(val) || val === 0) return ""
     return new Intl.NumberFormat("en-KE").format(val)
-  }
+  }, [])
 
   // Initialize display value
   React.useEffect(() => {

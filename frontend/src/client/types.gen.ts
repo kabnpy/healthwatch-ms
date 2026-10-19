@@ -5,6 +5,108 @@ export type ClientOptions = {
 };
 
 /**
+ * ActivitiesPublic
+ */
+export type ActivitiesPublic = {
+    /**
+     * Data
+     */
+    data: Array<ActivityPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * ActivityCreate
+ */
+export type ActivityCreate = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Policy Id
+     */
+    policy_id?: string | null;
+    /**
+     * Renewal Id
+     */
+    renewal_id?: string | null;
+    activity_type?: ActivityType;
+    /**
+     * Body
+     */
+    body: string;
+};
+
+/**
+ * ActivityPublic
+ */
+export type ActivityPublic = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Policy Id
+     */
+    policy_id?: string | null;
+    /**
+     * Renewal Id
+     */
+    renewal_id?: string | null;
+    activity_type?: ActivityType;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Created By Id
+     */
+    created_by_id?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * ActivityType
+ */
+export type ActivityType = 'note' | 'call' | 'phone_call' | 'email' | 'meeting' | 'reminder' | 'system';
+
+/**
+ * AdvisoryQuoteRequest
+ */
+export type AdvisoryQuoteRequest = {
+    /**
+     * Rate Table Id
+     */
+    rate_table_id: string;
+    /**
+     * Inputs
+     */
+    inputs: {
+        [key: string]: unknown;
+    };
+    business_event?: BusinessEvent;
+    /**
+     * Policy Id
+     */
+    policy_id?: string | null;
+    /**
+     * Renewal Id
+     */
+    renewal_id?: string | null;
+};
+
+/**
  * BaseFinancialBreakdown
  */
 export type BaseFinancialBreakdown = {
@@ -31,6 +133,11 @@ export type BaseFinancialBreakdown = {
      */
     total_amount: string;
 };
+
+/**
+ * BenefitCalculationType
+ */
+export type BenefitCalculationType = 'percentage' | 'fixed_amount';
 
 /**
  * BenefitLineItem
@@ -103,6 +210,11 @@ export type Body_login_login_access_token = {
 };
 
 /**
+ * BusinessEvent
+ */
+export type BusinessEvent = 'new_business' | 'renewal' | 'cover_change';
+
+/**
  * ClaimCreate
  */
 export type ClaimCreate = {
@@ -131,6 +243,14 @@ export type ClaimCreate = {
      */
     policy_id: string;
     /**
+     * Client Id
+     */
+    client_id?: string | null;
+    /**
+     * Vehicle Id
+     */
+    vehicle_id?: string | null;
+    /**
      * Date Of Loss
      */
     date_of_loss: string;
@@ -142,11 +262,27 @@ export type ClaimCreate = {
      * Description
      */
     description: string;
+    /**
+     * Loss Type
+     */
+    loss_type?: string | null;
+    /**
+     * Loss Description
+     */
+    loss_description?: string | null;
     status?: ClaimStatus;
     /**
      * Reserve Amount
      */
     reserve_amount?: number | string;
+    /**
+     * Settled Amount
+     */
+    settled_amount?: number | string | null;
+    /**
+     * Assigned Adjuster
+     */
+    assigned_adjuster?: string | null;
 };
 
 /**
@@ -178,6 +314,14 @@ export type ClaimPublic = {
      */
     policy_id: string;
     /**
+     * Client Id
+     */
+    client_id?: string | null;
+    /**
+     * Vehicle Id
+     */
+    vehicle_id?: string | null;
+    /**
      * Date Of Loss
      */
     date_of_loss: string;
@@ -189,11 +333,27 @@ export type ClaimPublic = {
      * Description
      */
     description: string;
+    /**
+     * Loss Type
+     */
+    loss_type?: string | null;
+    /**
+     * Loss Description
+     */
+    loss_description?: string | null;
     status?: ClaimStatus;
     /**
      * Reserve Amount
      */
     reserve_amount?: string;
+    /**
+     * Settled Amount
+     */
+    settled_amount?: string | null;
+    /**
+     * Assigned Adjuster
+     */
+    assigned_adjuster?: string | null;
     /**
      * Id
      */
@@ -203,7 +363,7 @@ export type ClaimPublic = {
 /**
  * ClaimStatus
  */
-export type ClaimStatus = 'Reported' | 'Assessed' | 'Paid' | 'Rejected' | 'Closed';
+export type ClaimStatus = 'intimated' | 'documents_pending' | 'adjuster_appointed' | 'repairs_authorized' | 'discharge_voucher' | 'settled' | 'declined' | 'closed' | 'Reported' | 'Assessed' | 'Paid' | 'Rejected';
 
 /**
  * ClaimUpdate
@@ -218,6 +378,14 @@ export type ClaimUpdate = {
      */
     policy_id?: string | null;
     /**
+     * Client Id
+     */
+    client_id?: string | null;
+    /**
+     * Vehicle Id
+     */
+    vehicle_id?: string | null;
+    /**
      * Date Of Loss
      */
     date_of_loss?: string | null;
@@ -229,11 +397,27 @@ export type ClaimUpdate = {
      * Description
      */
     description?: string | null;
+    /**
+     * Loss Type
+     */
+    loss_type?: string | null;
+    /**
+     * Loss Description
+     */
+    loss_description?: string | null;
     status?: ClaimStatus | null;
     /**
      * Reserve Amount
      */
     reserve_amount?: number | string | null;
+    /**
+     * Settled Amount
+     */
+    settled_amount?: number | string | null;
+    /**
+     * Assigned Adjuster
+     */
+    assigned_adjuster?: string | null;
 };
 
 /**
@@ -445,6 +629,133 @@ export type ClientsPublic = {
 };
 
 /**
+ * CommercialFireFinancialBreakdown
+ */
+export type CommercialFireFinancialBreakdown = {
+    /**
+     * Type
+     */
+    type?: 'fire';
+    /**
+     * Net Premium
+     */
+    net_premium: string;
+    /**
+     * Taxes
+     */
+    taxes?: {
+        [key: string]: string;
+    };
+    /**
+     * Commission Amount
+     */
+    commission_amount: string;
+    /**
+     * Total Amount
+     */
+    total_amount: string;
+    /**
+     * Total Sum Insured
+     */
+    total_sum_insured?: string;
+    /**
+     * Special Perils Included
+     */
+    special_perils_included?: boolean;
+};
+
+/**
+ * CommissionCalculationRequest
+ */
+export type CommissionCalculationRequest = {
+    /**
+     * Net Base Premium
+     */
+    net_base_premium: number | string;
+    /**
+     * Gross Invoice Total
+     */
+    gross_invoice_total: number | string;
+    /**
+     * Commission Rate
+     */
+    commission_rate?: number | string | null;
+    product_line?: ProductLine | null;
+};
+
+/**
+ * CommissionScheduleCreate
+ */
+export type CommissionScheduleCreate = {
+    /**
+     * Insurer Id
+     */
+    insurer_id: string;
+    product_line: ProductLine;
+    /**
+     * Commission Rate Percent
+     */
+    commission_rate_percent: number | string;
+    /**
+     * Withholding Tax Percent
+     */
+    withholding_tax_percent?: number | string;
+    /**
+     * Effective From
+     */
+    effective_from?: string;
+    /**
+     * Is Active
+     */
+    is_active?: boolean;
+};
+
+/**
+ * CommissionSchedulePublic
+ */
+export type CommissionSchedulePublic = {
+    /**
+     * Insurer Id
+     */
+    insurer_id: string;
+    product_line: ProductLine;
+    /**
+     * Commission Rate Percent
+     */
+    commission_rate_percent: string;
+    /**
+     * Withholding Tax Percent
+     */
+    withholding_tax_percent?: string;
+    /**
+     * Effective From
+     */
+    effective_from?: string;
+    /**
+     * Is Active
+     */
+    is_active?: boolean;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * CommissionSchedulesPublic
+ */
+export type CommissionSchedulesPublic = {
+    /**
+     * Data
+     */
+    data: Array<CommissionSchedulePublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * CorrespondenceCreate
  */
 export type CorrespondenceCreate = {
@@ -549,7 +860,98 @@ export type CorrespondencesPublic = {
 /**
  * DocumentEntityType
  */
-export type DocumentEntityType = 'Client' | 'Policy' | 'Claim' | 'User' | 'RiskNote';
+export type DocumentEntityType = 'Client' | 'Policy' | 'Renewal' | 'Claim' | 'User' | 'RiskNote' | 'Payment';
+
+/**
+ * DocumentJobEnqueueRequest
+ */
+export type DocumentJobEnqueueRequest = {
+    resource_type: DocumentJobResourceType;
+    /**
+     * Resource Id
+     */
+    resource_id?: string | null;
+    /**
+     * Snapshot Data
+     */
+    snapshot_data?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Idempotency Key
+     */
+    idempotency_key?: string | null;
+};
+
+/**
+ * DocumentJobPublic
+ */
+export type DocumentJobPublic = {
+    resource_type: DocumentJobResourceType;
+    /**
+     * Resource Id
+     */
+    resource_id?: string | null;
+    status?: DocumentJobStatus;
+    /**
+     * Idempotency Key
+     */
+    idempotency_key: string;
+    /**
+     * Snapshot Data
+     */
+    snapshot_data?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Attempt Count
+     */
+    attempt_count?: number;
+    /**
+     * Error Code
+     */
+    error_code?: string | null;
+    /**
+     * Error Message
+     */
+    error_message?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string;
+    /**
+     * Updated At
+     */
+    updated_at?: string;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * DocumentJobResourceType
+ */
+export type DocumentJobResourceType = 'risk_note' | 'invitation' | 'invoice' | 'invoice_batch' | 'statement';
+
+/**
+ * DocumentJobStatus
+ */
+export type DocumentJobStatus = 'pending' | 'processing' | 'succeeded' | 'failed';
+
+/**
+ * DocumentJobsPublic
+ */
+export type DocumentJobsPublic = {
+    /**
+     * Data
+     */
+    data: Array<DocumentJobPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
 
 /**
  * DocumentPublic
@@ -588,7 +990,7 @@ export type DocumentPublic = {
 /**
  * DocumentType
  */
-export type DocumentType = 'Logbook' | 'ID' | 'Valuation' | 'PoliceAbstract' | 'Receipt' | 'Other';
+export type DocumentType = 'insurer_receipt' | 'proof_of_payment' | 'carrier_renewal_notice' | 'kyc_document' | 'valuation_report' | 'Logbook' | 'ID' | 'Valuation' | 'PoliceAbstract' | 'Receipt' | 'Other';
 
 /**
  * DocumentsPublic
@@ -602,6 +1004,52 @@ export type DocumentsPublic = {
      * Count
      */
     count: number;
+};
+
+/**
+ * DomesticFinancialBreakdown
+ */
+export type DomesticFinancialBreakdown = {
+    /**
+     * Type
+     */
+    type?: 'domestic';
+    /**
+     * Net Premium
+     */
+    net_premium: string;
+    /**
+     * Taxes
+     */
+    taxes?: {
+        [key: string]: string;
+    };
+    /**
+     * Commission Amount
+     */
+    commission_amount: string;
+    /**
+     * Total Amount
+     */
+    total_amount: string;
+    /**
+     * Section Premiums
+     */
+    section_premiums?: {
+        [key: string]: string;
+    };
+    /**
+     * Buildings Sum Insured
+     */
+    buildings_sum_insured?: string;
+    /**
+     * Contents Sum Insured
+     */
+    contents_sum_insured?: string;
+    /**
+     * All Risks Valuables
+     */
+    all_risks_valuables?: string;
 };
 
 /**
@@ -633,6 +1081,158 @@ export type HTTPValidationError = {
      */
     detail?: Array<ValidationError>;
 };
+
+/**
+ * IPFAgreementCreate
+ */
+export type IPFAgreementCreate = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Policy Id
+     */
+    policy_id: string;
+    /**
+     * Invoice Id
+     */
+    invoice_id: string;
+    /**
+     * Financier Name
+     */
+    financier_name: string;
+    /**
+     * Agreement Reference
+     */
+    agreement_reference: string;
+    /**
+     * Total Financed Amount
+     */
+    total_financed_amount: number | string;
+    /**
+     * Deposit Amount
+     */
+    deposit_amount: number | string;
+    /**
+     * Number Of Installments
+     */
+    number_of_installments: number;
+    /**
+     * Monthly Installment
+     */
+    monthly_installment: number | string;
+    /**
+     * Commitment Letter Document Id
+     */
+    commitment_letter_document_id?: string | null;
+    status?: IPFStatus;
+};
+
+/**
+ * IPFAgreementPublic
+ */
+export type IPFAgreementPublic = {
+    /**
+     * Created At
+     */
+    created_at?: string;
+    /**
+     * Updated At
+     */
+    updated_at?: string;
+    /**
+     * Deleted At
+     */
+    deleted_at?: string | null;
+    /**
+     * Deleted By Id
+     */
+    deleted_by_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Policy Id
+     */
+    policy_id: string;
+    /**
+     * Invoice Id
+     */
+    invoice_id: string;
+    /**
+     * Financier Name
+     */
+    financier_name: string;
+    /**
+     * Agreement Reference
+     */
+    agreement_reference: string;
+    /**
+     * Total Financed Amount
+     */
+    total_financed_amount: string;
+    /**
+     * Deposit Amount
+     */
+    deposit_amount: string;
+    /**
+     * Number Of Installments
+     */
+    number_of_installments: number;
+    /**
+     * Monthly Installment
+     */
+    monthly_installment: string;
+    /**
+     * Commitment Letter Document Id
+     */
+    commitment_letter_document_id?: string | null;
+    status?: IPFStatus;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * IPFAgreementUpdate
+ */
+export type IPFAgreementUpdate = {
+    status?: IPFStatus | null;
+    /**
+     * Commitment Letter Document Id
+     */
+    commitment_letter_document_id?: string | null;
+    /**
+     * Financier Name
+     */
+    financier_name?: string | null;
+    /**
+     * Agreement Reference
+     */
+    agreement_reference?: string | null;
+};
+
+/**
+ * IPFAgreementsPublic
+ */
+export type IPFAgreementsPublic = {
+    /**
+     * Data
+     */
+    data: Array<IPFAgreementPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * IPFStatus
+ */
+export type IPFStatus = 'pending_deposit' | 'guaranteed' | 'disbursed' | 'cancelled';
 
 /**
  * InsurerCreate
@@ -732,6 +1332,72 @@ export type InsurersPublic = {
      * Data
      */
     data: Array<InsurerPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * InvoiceBatchCreateRequest
+ */
+export type InvoiceBatchCreateRequest = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Billing Month
+     */
+    billing_month: string;
+};
+
+/**
+ * InvoiceBatchPublic
+ */
+export type InvoiceBatchPublic = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Billing Month
+     */
+    billing_month: string;
+    /**
+     * Batch Number
+     */
+    batch_number: string;
+    /**
+     * Total Amount
+     */
+    total_amount: string;
+    /**
+     * Included Invoice Ids
+     */
+    included_invoice_ids?: Array<string>;
+    /**
+     * Generated At
+     */
+    generated_at?: string;
+    /**
+     * Storage Key
+     */
+    storage_key?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * InvoiceBatchesPublic
+ */
+export type InvoiceBatchesPublic = {
+    /**
+     * Data
+     */
+    data: Array<InvoiceBatchPublic>;
     /**
      * Count
      */
@@ -922,6 +1588,142 @@ export type InvoicesPublic = {
 };
 
 /**
+ * MarineFinancialBreakdown
+ */
+export type MarineFinancialBreakdown = {
+    /**
+     * Type
+     */
+    type?: 'marine';
+    /**
+     * Net Premium
+     */
+    net_premium: string;
+    /**
+     * Taxes
+     */
+    taxes?: {
+        [key: string]: string;
+    };
+    /**
+     * Commission Amount
+     */
+    commission_amount: string;
+    /**
+     * Total Amount
+     */
+    total_amount: string;
+    /**
+     * Cif Value
+     */
+    cif_value?: string;
+    /**
+     * Uplifted Value
+     */
+    uplifted_value?: string;
+    /**
+     * Clause
+     */
+    clause?: string;
+};
+
+/**
+ * MedicalFinancialBreakdown
+ */
+export type MedicalFinancialBreakdown = {
+    /**
+     * Type
+     */
+    type?: 'medical';
+    /**
+     * Net Premium
+     */
+    net_premium: string;
+    /**
+     * Taxes
+     */
+    taxes?: {
+        [key: string]: string;
+    };
+    /**
+     * Commission Amount
+     */
+    commission_amount: string;
+    /**
+     * Total Amount
+     */
+    total_amount: string;
+    /**
+     * Inpatient Limit
+     */
+    inpatient_limit?: string;
+    /**
+     * Inpatient Premium
+     */
+    inpatient_premium?: string;
+    /**
+     * Outpatient Premium
+     */
+    outpatient_premium?: string;
+    /**
+     * Family Size
+     */
+    family_size?: number;
+};
+
+/**
+ * MedicalTierCreate
+ */
+export type MedicalTierCreate = {
+    /**
+     * Rate Table Version Id
+     */
+    rate_table_version_id: string;
+    /**
+     * Tier Code
+     */
+    tier_code: string;
+    /**
+     * Benefit Limits
+     */
+    benefit_limits?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Premium
+     */
+    premium: number | string;
+};
+
+/**
+ * MedicalTierPublic
+ */
+export type MedicalTierPublic = {
+    /**
+     * Rate Table Version Id
+     */
+    rate_table_version_id: string;
+    /**
+     * Tier Code
+     */
+    tier_code: string;
+    /**
+     * Benefit Limits
+     */
+    benefit_limits?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Premium
+     */
+    premium: string;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
  * Message
  */
 export type Message = {
@@ -983,6 +1785,238 @@ export type NewPassword = {
      * New Password
      */
     new_password: string;
+};
+
+/**
+ * PaymentAllocationCreate
+ */
+export type PaymentAllocationCreate = {
+    /**
+     * Payment Record Id
+     */
+    payment_record_id: string;
+    /**
+     * Invoice Id
+     */
+    invoice_id: string;
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Risk Note Id
+     */
+    risk_note_id?: string | null;
+};
+
+/**
+ * PaymentAllocationPublic
+ */
+export type PaymentAllocationPublic = {
+    /**
+     * Payment Record Id
+     */
+    payment_record_id: string;
+    /**
+     * Invoice Id
+     */
+    invoice_id: string;
+    /**
+     * Risk Note Id
+     */
+    risk_note_id?: string | null;
+    /**
+     * Amount
+     */
+    amount: string;
+    status?: PaymentAllocationStatus;
+    /**
+     * Reversal Of Id
+     */
+    reversal_of_id?: string | null;
+    /**
+     * Reversal Reason
+     */
+    reversal_reason?: string | null;
+    /**
+     * Allocated At
+     */
+    allocated_at?: string;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * PaymentAllocationStatus
+ */
+export type PaymentAllocationStatus = 'active' | 'reversed';
+
+/**
+ * PaymentAllocationsPublic
+ */
+export type PaymentAllocationsPublic = {
+    /**
+     * Data
+     */
+    data: Array<PaymentAllocationPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * PaymentMethod
+ */
+export type PaymentMethod = 'mpesa' | 'cheque' | 'bank_transfer' | 'ipf' | 'cash';
+
+/**
+ * PaymentRecordCreate
+ */
+export type PaymentRecordCreate = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Payment Date
+     */
+    payment_date?: string;
+    payment_method?: PaymentMethod;
+    /**
+     * Reference Number
+     */
+    reference_number?: string | null;
+    /**
+     * Payer Name
+     */
+    payer_name?: string | null;
+    /**
+     * Proof Document Id
+     */
+    proof_document_id?: string | null;
+};
+
+/**
+ * PaymentRecordPublic
+ */
+export type PaymentRecordPublic = {
+    /**
+     * Created At
+     */
+    created_at?: string;
+    /**
+     * Updated At
+     */
+    updated_at?: string;
+    /**
+     * Deleted At
+     */
+    deleted_at?: string | null;
+    /**
+     * Deleted By Id
+     */
+    deleted_by_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Unallocated Amount
+     */
+    unallocated_amount?: string;
+    /**
+     * Currency
+     */
+    currency?: string;
+    /**
+     * Payment Date
+     */
+    payment_date?: string;
+    payment_method?: PaymentMethod;
+    /**
+     * Reference Number
+     */
+    reference_number?: string | null;
+    /**
+     * Payer Name
+     */
+    payer_name?: string | null;
+    /**
+     * Proof Document Id
+     */
+    proof_document_id?: string | null;
+    status?: PaymentStatus;
+    /**
+     * Reversal Of Id
+     */
+    reversal_of_id?: string | null;
+    /**
+     * Reversal Reason
+     */
+    reversal_reason?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * PaymentRecordsPublic
+ */
+export type PaymentRecordsPublic = {
+    /**
+     * Data
+     */
+    data: Array<PaymentRecordPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * PaymentStatus
+ */
+export type PaymentStatus = 'active' | 'reversed';
+
+/**
+ * PersistQuoteRequest
+ */
+export type PersistQuoteRequest = {
+    /**
+     * Rate Table Id
+     */
+    rate_table_id: string;
+    /**
+     * Inputs
+     */
+    inputs: {
+        [key: string]: unknown;
+    };
+    business_event?: BusinessEvent;
+    /**
+     * Policy Id
+     */
+    policy_id: string;
+    /**
+     * Renewal Id
+     */
+    renewal_id?: string | null;
+    /**
+     * Is Selected
+     */
+    is_selected?: boolean;
 };
 
 /**
@@ -1095,6 +2129,10 @@ export type PolicyPublic = {
     id: string;
     product?: ProductPublic | null;
     active_note?: RiskNotePublic | null;
+    /**
+     * Vehicles
+     */
+    vehicles?: Array<VehiclePublic>;
 };
 
 /**
@@ -1124,6 +2162,86 @@ export type PolicyUpdate = {
      */
     inception_date?: string | null;
 };
+
+/**
+ * PremiumCalculationPublic
+ */
+export type PremiumCalculationPublic = {
+    /**
+     * Policy Id
+     */
+    policy_id: string;
+    /**
+     * Renewal Id
+     */
+    renewal_id?: string | null;
+    business_event?: BusinessEvent;
+    /**
+     * Rating Date
+     */
+    rating_date?: string;
+    /**
+     * Rate Table Version Id
+     */
+    rate_table_version_id?: string | null;
+    /**
+     * Input Snapshot
+     */
+    input_snapshot?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Rule Provenance
+     */
+    rule_provenance?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Calculation Detail
+     */
+    calculation_detail?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Total Premium
+     */
+    total_premium: string;
+    /**
+     * Is Selected
+     */
+    is_selected?: boolean;
+    /**
+     * Created By Id
+     */
+    created_by_id?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * PremiumCalculationsPublic
+ */
+export type PremiumCalculationsPublic = {
+    /**
+     * Data
+     */
+    data: Array<PremiumCalculationPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * PricingMethod
+ */
+export type PricingMethod = 'bracketed_percentage' | 'multi_component' | 'fixed_tier' | 'wage_roll' | 'limit_of_indemnity' | 'packaged';
 
 /**
  * PricingStrategy
@@ -1214,6 +2332,11 @@ export type ProductCreate = {
      */
     default_special_clauses?: string | null;
 };
+
+/**
+ * ProductLine
+ */
+export type ProductLine = 'motor_comprehensive' | 'motor_third_party' | 'domestic_package' | 'medical' | 'wiba' | 'fire' | 'burglary' | 'all_risks' | 'personal_accident' | 'golfers' | 'professional_indemnity' | 'public_liability';
 
 /**
  * ProductPublic
@@ -1355,7 +2478,286 @@ export type QuoteResponse = {
     /**
      * Breakdown
      */
-    breakdown: MotorFinancialBreakdown | BaseFinancialBreakdown;
+    breakdown: MotorFinancialBreakdown | DomesticFinancialBreakdown | WIBAFinancialBreakdown | CommercialFireFinancialBreakdown | MarineFinancialBreakdown | MedicalFinancialBreakdown | BaseFinancialBreakdown;
+};
+
+/**
+ * RateBenefitCreate
+ */
+export type RateBenefitCreate = {
+    /**
+     * Rate Table Version Id
+     */
+    rate_table_version_id: string;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Name
+     */
+    name: string;
+    calculation_type?: BenefitCalculationType;
+    /**
+     * Rate Value
+     */
+    rate_value: number | string;
+    /**
+     * Is Mandatory
+     */
+    is_mandatory?: boolean;
+    /**
+     * Is Complimentary
+     */
+    is_complimentary?: boolean;
+    /**
+     * Complimentary Threshold
+     */
+    complimentary_threshold?: number | string | null;
+};
+
+/**
+ * RateBenefitPublic
+ */
+export type RateBenefitPublic = {
+    /**
+     * Rate Table Version Id
+     */
+    rate_table_version_id: string;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Name
+     */
+    name: string;
+    calculation_type?: BenefitCalculationType;
+    /**
+     * Rate Value
+     */
+    rate_value: string;
+    /**
+     * Is Mandatory
+     */
+    is_mandatory?: boolean;
+    /**
+     * Is Complimentary
+     */
+    is_complimentary?: boolean;
+    /**
+     * Complimentary Threshold
+     */
+    complimentary_threshold?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * RateBracketCreate
+ */
+export type RateBracketCreate = {
+    /**
+     * Rate Table Version Id
+     */
+    rate_table_version_id: string;
+    /**
+     * Min Value
+     */
+    min_value: number | string;
+    /**
+     * Max Value
+     */
+    max_value?: number | string | null;
+    /**
+     * Rate Percent
+     */
+    rate_percent: number | string;
+    /**
+     * Minimum Premium
+     */
+    minimum_premium: number | string;
+    /**
+     * Display Label
+     */
+    display_label: string;
+};
+
+/**
+ * RateBracketPublic
+ */
+export type RateBracketPublic = {
+    /**
+     * Rate Table Version Id
+     */
+    rate_table_version_id: string;
+    /**
+     * Min Value
+     */
+    min_value: string;
+    /**
+     * Max Value
+     */
+    max_value?: string | null;
+    /**
+     * Rate Percent
+     */
+    rate_percent: string;
+    /**
+     * Minimum Premium
+     */
+    minimum_premium: string;
+    /**
+     * Display Label
+     */
+    display_label: string;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * RateTableStatus
+ */
+export type RateTableStatus = 'draft' | 'published' | 'retired';
+
+/**
+ * RateTableVersionCreate
+ */
+export type RateTableVersionCreate = {
+    /**
+     * Insurer Id
+     */
+    insurer_id: string;
+    /**
+     * Class Of Insurance
+     */
+    class_of_insurance: string;
+    pricing_method?: PricingMethod;
+    /**
+     * Currency
+     */
+    currency?: string;
+    /**
+     * Version Number
+     */
+    version_number?: number;
+    /**
+     * Effective From
+     */
+    effective_from?: string;
+    /**
+     * Effective To
+     */
+    effective_to?: string | null;
+    /**
+     * Source Reference
+     */
+    source_reference: string;
+    /**
+     * Change Reason
+     */
+    change_reason?: string | null;
+};
+
+/**
+ * RateTableVersionPublic
+ */
+export type RateTableVersionPublic = {
+    /**
+     * Created At
+     */
+    created_at?: string;
+    /**
+     * Updated At
+     */
+    updated_at?: string;
+    /**
+     * Deleted At
+     */
+    deleted_at?: string | null;
+    /**
+     * Deleted By Id
+     */
+    deleted_by_id?: string | null;
+    /**
+     * Insurer Id
+     */
+    insurer_id: string;
+    /**
+     * Class Of Insurance
+     */
+    class_of_insurance: string;
+    pricing_method?: PricingMethod;
+    /**
+     * Currency
+     */
+    currency?: string;
+    /**
+     * Version Number
+     */
+    version_number?: number;
+    status?: RateTableStatus;
+    /**
+     * Effective From
+     */
+    effective_from?: string;
+    /**
+     * Effective To
+     */
+    effective_to?: string | null;
+    /**
+     * Source Reference
+     */
+    source_reference: string;
+    /**
+     * Change Reason
+     */
+    change_reason?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * RateTableVersionUpdate
+ */
+export type RateTableVersionUpdate = {
+    status?: RateTableStatus | null;
+    /**
+     * Effective From
+     */
+    effective_from?: string | null;
+    /**
+     * Effective To
+     */
+    effective_to?: string | null;
+    /**
+     * Source Reference
+     */
+    source_reference?: string | null;
+    /**
+     * Change Reason
+     */
+    change_reason?: string | null;
+};
+
+/**
+ * RateTableVersionsPublic
+ */
+export type RateTableVersionsPublic = {
+    /**
+     * Data
+     */
+    data: Array<RateTableVersionPublic>;
+    /**
+     * Count
+     */
+    count: number;
 };
 
 /**
@@ -1548,6 +2950,201 @@ export type ReceiptsPublic = {
 };
 
 /**
+ * RenewalCreate
+ */
+export type RenewalCreate = {
+    /**
+     * Policy Id
+     */
+    policy_id: string;
+    /**
+     * Renewal Period Start
+     */
+    renewal_period_start: string;
+    /**
+     * Renewal Period End
+     */
+    renewal_period_end: string;
+    /**
+     * Previous Premium
+     */
+    previous_premium?: number | string;
+    /**
+     * Proposed Premium
+     */
+    proposed_premium?: number | string | null;
+    /**
+     * Target Premium
+     */
+    target_premium?: number | string | null;
+    /**
+     * Notes
+     */
+    notes?: string | null;
+};
+
+/**
+ * RenewalPublic
+ */
+export type RenewalPublic = {
+    /**
+     * Created At
+     */
+    created_at?: string;
+    /**
+     * Updated At
+     */
+    updated_at?: string;
+    /**
+     * Deleted At
+     */
+    deleted_at?: string | null;
+    /**
+     * Deleted By Id
+     */
+    deleted_by_id?: string | null;
+    /**
+     * Policy Id
+     */
+    policy_id: string;
+    status?: RenewalStatus;
+    /**
+     * Version
+     */
+    version?: number;
+    /**
+     * Renewal Period Start
+     */
+    renewal_period_start: string;
+    /**
+     * Renewal Period End
+     */
+    renewal_period_end: string;
+    /**
+     * Previous Premium
+     */
+    previous_premium?: string;
+    /**
+     * Proposed Premium
+     */
+    proposed_premium?: string | null;
+    /**
+     * Agreed Premium
+     */
+    agreed_premium?: string | null;
+    /**
+     * Selected Calculation Id
+     */
+    selected_calculation_id?: string | null;
+    /**
+     * Carrier Document Key
+     */
+    carrier_document_key?: string | null;
+    /**
+     * Carrier Received At
+     */
+    carrier_received_at?: string | null;
+    /**
+     * Invited At
+     */
+    invited_at?: string | null;
+    /**
+     * Paid At
+     */
+    paid_at?: string | null;
+    /**
+     * Completed At
+     */
+    completed_at?: string | null;
+    /**
+     * Notes
+     */
+    notes?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * RenewalStatus
+ */
+export type RenewalStatus = 'awaiting_carrier' | 'carrier_received' | 'client_invited' | 'changes_requested' | 'paid' | 'completed' | 'cancelled';
+
+/**
+ * RenewalTransition
+ */
+export type RenewalTransition = {
+    target_status: RenewalStatus;
+    /**
+     * Expected Version
+     */
+    expected_version?: number;
+    /**
+     * Agreed Premium
+     */
+    agreed_premium?: number | string | null;
+    /**
+     * Notes
+     */
+    notes?: string | null;
+};
+
+/**
+ * RenewalUpdate
+ */
+export type RenewalUpdate = {
+    /**
+     * Expected Version
+     */
+    expected_version?: number;
+    /**
+     * Proposed Premium
+     */
+    proposed_premium?: number | string | null;
+    /**
+     * Agreed Premium
+     */
+    agreed_premium?: number | string | null;
+    /**
+     * Selected Calculation Id
+     */
+    selected_calculation_id?: string | null;
+    /**
+     * Carrier Document Key
+     */
+    carrier_document_key?: string | null;
+    /**
+     * Notes
+     */
+    notes?: string | null;
+};
+
+/**
+ * RenewalsPublic
+ */
+export type RenewalsPublic = {
+    /**
+     * Data
+     */
+    data: Array<RenewalPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * ReversalCreate
+ */
+export type ReversalCreate = {
+    /**
+     * Reversal Reason
+     */
+    reversal_reason: string;
+};
+
+/**
  * RiskNoteCreate
  */
 export type RiskNoteCreate = {
@@ -1600,15 +3197,15 @@ export type RiskNoteCreate = {
     /**
      * Net Premium
      */
-    net_premium: number | string;
+    net_premium?: number | string;
     /**
      * Commission Amount
      */
-    commission_amount: number | string;
+    commission_amount?: number | string;
     /**
      * Total Amount
      */
-    total_amount: number | string;
+    total_amount?: number | string;
     /**
      * Cover Snapshot
      */
@@ -1680,15 +3277,15 @@ export type RiskNotePublic = {
     /**
      * Net Premium
      */
-    net_premium: string;
+    net_premium?: string;
     /**
      * Commission Amount
      */
-    commission_amount: string;
+    commission_amount?: string;
     /**
      * Total Amount
      */
-    total_amount: string;
+    total_amount?: string;
     /**
      * Cover Snapshot
      */
@@ -1899,7 +3496,7 @@ export type UserRegister = {
 /**
  * UserRole
  */
-export type UserRole = 'Admin' | 'Underwriter' | 'Cashier' | 'Viewer';
+export type UserRole = 'Admin' | 'Underwriter' | 'Cashier' | 'Operations' | 'Viewer';
 
 /**
  * UserUpdate
@@ -1982,6 +3579,204 @@ export type ValidationError = {
     ctx?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * VehicleCreate
+ */
+export type VehicleCreate = {
+    /**
+     * Created At
+     */
+    created_at?: string;
+    /**
+     * Updated At
+     */
+    updated_at?: string;
+    /**
+     * Deleted At
+     */
+    deleted_at?: string | null;
+    /**
+     * Deleted By Id
+     */
+    deleted_by_id?: string | null;
+    /**
+     * Policy Id
+     */
+    policy_id: string;
+    /**
+     * Registration Number
+     */
+    registration_number: string;
+    /**
+     * Make
+     */
+    make: string;
+    /**
+     * Model
+     */
+    model: string;
+    /**
+     * Year Of Manufacture
+     */
+    year_of_manufacture: number;
+    /**
+     * Insured Value
+     */
+    insured_value: number | string;
+    /**
+     * Chassis Number
+     */
+    chassis_number?: string | null;
+    /**
+     * Engine Number
+     */
+    engine_number?: string | null;
+};
+
+/**
+ * VehiclePublic
+ */
+export type VehiclePublic = {
+    /**
+     * Created At
+     */
+    created_at?: string;
+    /**
+     * Updated At
+     */
+    updated_at?: string;
+    /**
+     * Deleted At
+     */
+    deleted_at?: string | null;
+    /**
+     * Deleted By Id
+     */
+    deleted_by_id?: string | null;
+    /**
+     * Policy Id
+     */
+    policy_id: string;
+    /**
+     * Registration Number
+     */
+    registration_number: string;
+    /**
+     * Make
+     */
+    make: string;
+    /**
+     * Model
+     */
+    model: string;
+    /**
+     * Year Of Manufacture
+     */
+    year_of_manufacture: number;
+    /**
+     * Insured Value
+     */
+    insured_value: string;
+    /**
+     * Chassis Number
+     */
+    chassis_number?: string | null;
+    /**
+     * Engine Number
+     */
+    engine_number?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
+ * VehicleUpdate
+ */
+export type VehicleUpdate = {
+    /**
+     * Registration Number
+     */
+    registration_number?: string | null;
+    /**
+     * Make
+     */
+    make?: string | null;
+    /**
+     * Model
+     */
+    model?: string | null;
+    /**
+     * Year Of Manufacture
+     */
+    year_of_manufacture?: number | null;
+    /**
+     * Insured Value
+     */
+    insured_value?: number | string | null;
+    /**
+     * Chassis Number
+     */
+    chassis_number?: string | null;
+    /**
+     * Engine Number
+     */
+    engine_number?: string | null;
+};
+
+/**
+ * VehiclesPublic
+ */
+export type VehiclesPublic = {
+    /**
+     * Data
+     */
+    data: Array<VehiclePublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * WIBAFinancialBreakdown
+ */
+export type WIBAFinancialBreakdown = {
+    /**
+     * Type
+     */
+    type?: 'wiba';
+    /**
+     * Net Premium
+     */
+    net_premium: string;
+    /**
+     * Taxes
+     */
+    taxes?: {
+        [key: string]: string;
+    };
+    /**
+     * Commission Amount
+     */
+    commission_amount: string;
+    /**
+     * Total Amount
+     */
+    total_amount: string;
+    /**
+     * Payroll Totals
+     */
+    payroll_totals?: {
+        [key: string]: string;
+    };
+    /**
+     * Employee Count
+     */
+    employee_count?: number;
 };
 
 export type loginLoginAccessTokenData = {
@@ -3320,6 +5115,159 @@ export type policiesReadPolicyRiskNotesResponses = {
 
 export type policiesReadPolicyRiskNotesResponse = policiesReadPolicyRiskNotesResponses[keyof policiesReadPolicyRiskNotesResponses];
 
+export type vehiclesReadVehiclesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Policy Id
+         */
+        policy_id?: string | null;
+    };
+    url: '/api/v1/vehicles/';
+};
+
+export type vehiclesReadVehiclesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type vehiclesReadVehiclesError = vehiclesReadVehiclesErrors[keyof vehiclesReadVehiclesErrors];
+
+export type vehiclesReadVehiclesResponses = {
+    /**
+     * Successful Response
+     */
+    200: VehiclesPublic;
+};
+
+export type vehiclesReadVehiclesResponse = vehiclesReadVehiclesResponses[keyof vehiclesReadVehiclesResponses];
+
+export type vehiclesCreateVehicleData = {
+    body: VehicleCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/vehicles/';
+};
+
+export type vehiclesCreateVehicleErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type vehiclesCreateVehicleError = vehiclesCreateVehicleErrors[keyof vehiclesCreateVehicleErrors];
+
+export type vehiclesCreateVehicleResponses = {
+    /**
+     * Successful Response
+     */
+    201: VehiclePublic;
+};
+
+export type vehiclesCreateVehicleResponse = vehiclesCreateVehicleResponses[keyof vehiclesCreateVehicleResponses];
+
+export type vehiclesDeleteVehicleData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/vehicles/{id}';
+};
+
+export type vehiclesDeleteVehicleErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type vehiclesDeleteVehicleError = vehiclesDeleteVehicleErrors[keyof vehiclesDeleteVehicleErrors];
+
+export type vehiclesDeleteVehicleResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type vehiclesDeleteVehicleResponse = vehiclesDeleteVehicleResponses[keyof vehiclesDeleteVehicleResponses];
+
+export type vehiclesReadVehicleData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/vehicles/{id}';
+};
+
+export type vehiclesReadVehicleErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type vehiclesReadVehicleError = vehiclesReadVehicleErrors[keyof vehiclesReadVehicleErrors];
+
+export type vehiclesReadVehicleResponses = {
+    /**
+     * Successful Response
+     */
+    200: VehiclePublic;
+};
+
+export type vehiclesReadVehicleResponse = vehiclesReadVehicleResponses[keyof vehiclesReadVehicleResponses];
+
+export type vehiclesUpdateVehicleData = {
+    body: VehicleUpdate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/vehicles/{id}';
+};
+
+export type vehiclesUpdateVehicleErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type vehiclesUpdateVehicleError = vehiclesUpdateVehicleErrors[keyof vehiclesUpdateVehicleErrors];
+
+export type vehiclesUpdateVehicleResponses = {
+    /**
+     * Successful Response
+     */
+    200: VehiclePublic;
+};
+
+export type vehiclesUpdateVehicleResponse = vehiclesUpdateVehicleResponses[keyof vehiclesUpdateVehicleResponses];
+
 export type riskNotesReadRiskNotesData = {
     body?: never;
     path?: never;
@@ -3752,6 +5700,300 @@ export type financialsAllocateReceiptResponses = {
 
 export type financialsAllocateReceiptResponse = financialsAllocateReceiptResponses[keyof financialsAllocateReceiptResponses];
 
+export type paymentRecordsReadPaymentRecordsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+    };
+    url: '/api/v1/payment-records/';
+};
+
+export type paymentRecordsReadPaymentRecordsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type paymentRecordsReadPaymentRecordsError = paymentRecordsReadPaymentRecordsErrors[keyof paymentRecordsReadPaymentRecordsErrors];
+
+export type paymentRecordsReadPaymentRecordsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaymentRecordsPublic;
+};
+
+export type paymentRecordsReadPaymentRecordsResponse = paymentRecordsReadPaymentRecordsResponses[keyof paymentRecordsReadPaymentRecordsResponses];
+
+export type paymentRecordsCreatePaymentRecordData = {
+    body: PaymentRecordCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/payment-records/';
+};
+
+export type paymentRecordsCreatePaymentRecordErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type paymentRecordsCreatePaymentRecordError = paymentRecordsCreatePaymentRecordErrors[keyof paymentRecordsCreatePaymentRecordErrors];
+
+export type paymentRecordsCreatePaymentRecordResponses = {
+    /**
+     * Successful Response
+     */
+    201: PaymentRecordPublic;
+};
+
+export type paymentRecordsCreatePaymentRecordResponse = paymentRecordsCreatePaymentRecordResponses[keyof paymentRecordsCreatePaymentRecordResponses];
+
+export type paymentRecordsReadPaymentRecordData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/payment-records/{id}';
+};
+
+export type paymentRecordsReadPaymentRecordErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type paymentRecordsReadPaymentRecordError = paymentRecordsReadPaymentRecordErrors[keyof paymentRecordsReadPaymentRecordErrors];
+
+export type paymentRecordsReadPaymentRecordResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaymentRecordPublic;
+};
+
+export type paymentRecordsReadPaymentRecordResponse = paymentRecordsReadPaymentRecordResponses[keyof paymentRecordsReadPaymentRecordResponses];
+
+export type paymentRecordsReadPaymentAllocationsForRecordData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/payment-records/{id}/allocations';
+};
+
+export type paymentRecordsReadPaymentAllocationsForRecordErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type paymentRecordsReadPaymentAllocationsForRecordError = paymentRecordsReadPaymentAllocationsForRecordErrors[keyof paymentRecordsReadPaymentAllocationsForRecordErrors];
+
+export type paymentRecordsReadPaymentAllocationsForRecordResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaymentAllocationsPublic;
+};
+
+export type paymentRecordsReadPaymentAllocationsForRecordResponse = paymentRecordsReadPaymentAllocationsForRecordResponses[keyof paymentRecordsReadPaymentAllocationsForRecordResponses];
+
+export type paymentRecordsAllocatePaymentToInvoiceData = {
+    body: PaymentAllocationCreate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/payment-records/{id}/allocations';
+};
+
+export type paymentRecordsAllocatePaymentToInvoiceErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type paymentRecordsAllocatePaymentToInvoiceError = paymentRecordsAllocatePaymentToInvoiceErrors[keyof paymentRecordsAllocatePaymentToInvoiceErrors];
+
+export type paymentRecordsAllocatePaymentToInvoiceResponses = {
+    /**
+     * Successful Response
+     */
+    201: PaymentAllocationPublic;
+};
+
+export type paymentRecordsAllocatePaymentToInvoiceResponse = paymentRecordsAllocatePaymentToInvoiceResponses[keyof paymentRecordsAllocatePaymentToInvoiceResponses];
+
+export type paymentRecordsReversePaymentRecordData = {
+    body: ReversalCreate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/payment-records/{id}/reverse';
+};
+
+export type paymentRecordsReversePaymentRecordErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type paymentRecordsReversePaymentRecordError = paymentRecordsReversePaymentRecordErrors[keyof paymentRecordsReversePaymentRecordErrors];
+
+export type paymentRecordsReversePaymentRecordResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaymentRecordPublic;
+};
+
+export type paymentRecordsReversePaymentRecordResponse = paymentRecordsReversePaymentRecordResponses[keyof paymentRecordsReversePaymentRecordResponses];
+
+export type paymentAllocationsReadPaymentAllocationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Payment Record Id
+         */
+        payment_record_id?: string | null;
+        /**
+         * Invoice Id
+         */
+        invoice_id?: string | null;
+    };
+    url: '/api/v1/payment-allocations/';
+};
+
+export type paymentAllocationsReadPaymentAllocationsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type paymentAllocationsReadPaymentAllocationsError = paymentAllocationsReadPaymentAllocationsErrors[keyof paymentAllocationsReadPaymentAllocationsErrors];
+
+export type paymentAllocationsReadPaymentAllocationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaymentAllocationsPublic;
+};
+
+export type paymentAllocationsReadPaymentAllocationsResponse = paymentAllocationsReadPaymentAllocationsResponses[keyof paymentAllocationsReadPaymentAllocationsResponses];
+
+export type paymentAllocationsReadPaymentAllocationData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/payment-allocations/{id}';
+};
+
+export type paymentAllocationsReadPaymentAllocationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type paymentAllocationsReadPaymentAllocationError = paymentAllocationsReadPaymentAllocationErrors[keyof paymentAllocationsReadPaymentAllocationErrors];
+
+export type paymentAllocationsReadPaymentAllocationResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaymentAllocationPublic;
+};
+
+export type paymentAllocationsReadPaymentAllocationResponse = paymentAllocationsReadPaymentAllocationResponses[keyof paymentAllocationsReadPaymentAllocationResponses];
+
+export type paymentAllocationsReversePaymentAllocationData = {
+    body: ReversalCreate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/payment-allocations/{id}/reverse';
+};
+
+export type paymentAllocationsReversePaymentAllocationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type paymentAllocationsReversePaymentAllocationError = paymentAllocationsReversePaymentAllocationErrors[keyof paymentAllocationsReversePaymentAllocationErrors];
+
+export type paymentAllocationsReversePaymentAllocationResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaymentAllocationPublic;
+};
+
+export type paymentAllocationsReversePaymentAllocationResponse = paymentAllocationsReversePaymentAllocationResponses[keyof paymentAllocationsReversePaymentAllocationResponses];
+
 export type claimsReadClaimsData = {
     body?: never;
     path?: never;
@@ -3810,10 +6052,40 @@ export type claimsCreateClaimResponses = {
     /**
      * Successful Response
      */
-    200: ClaimPublic;
+    201: ClaimPublic;
 };
 
 export type claimsCreateClaimResponse = claimsCreateClaimResponses[keyof claimsCreateClaimResponses];
+
+export type claimsGetPolicyClaimsAdvocacySummaryData = {
+    body?: never;
+    path: {
+        /**
+         * Policy Id
+         */
+        policy_id: string;
+    };
+    query?: never;
+    url: '/api/v1/claims/policy/{policy_id}/advocacy-summary';
+};
+
+export type claimsGetPolicyClaimsAdvocacySummaryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type claimsGetPolicyClaimsAdvocacySummaryError = claimsGetPolicyClaimsAdvocacySummaryErrors[keyof claimsGetPolicyClaimsAdvocacySummaryErrors];
+
+export type claimsGetPolicyClaimsAdvocacySummaryResponses = {
+    /**
+     * Response Claims-Get Policy Claims Advocacy Summary
+     *
+     * Successful Response
+     */
+    200: unknown;
+};
 
 export type claimsDeleteClaimData = {
     body?: never;
@@ -3904,6 +6176,1064 @@ export type claimsUpdateClaimResponses = {
 };
 
 export type claimsUpdateClaimResponse = claimsUpdateClaimResponses[keyof claimsUpdateClaimResponses];
+
+export type renewalsReadRenewalsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Policy Id
+         */
+        policy_id?: string | null;
+        /**
+         * Status
+         */
+        status?: RenewalStatus | null;
+    };
+    url: '/api/v1/renewals/';
+};
+
+export type renewalsReadRenewalsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type renewalsReadRenewalsError = renewalsReadRenewalsErrors[keyof renewalsReadRenewalsErrors];
+
+export type renewalsReadRenewalsResponses = {
+    /**
+     * Successful Response
+     */
+    200: RenewalsPublic;
+};
+
+export type renewalsReadRenewalsResponse = renewalsReadRenewalsResponses[keyof renewalsReadRenewalsResponses];
+
+export type renewalsCreateRenewalData = {
+    body: RenewalCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/renewals/';
+};
+
+export type renewalsCreateRenewalErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type renewalsCreateRenewalError = renewalsCreateRenewalErrors[keyof renewalsCreateRenewalErrors];
+
+export type renewalsCreateRenewalResponses = {
+    /**
+     * Successful Response
+     */
+    201: RenewalPublic;
+};
+
+export type renewalsCreateRenewalResponse = renewalsCreateRenewalResponses[keyof renewalsCreateRenewalResponses];
+
+export type renewalsReadRenewalData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/renewals/{id}';
+};
+
+export type renewalsReadRenewalErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type renewalsReadRenewalError = renewalsReadRenewalErrors[keyof renewalsReadRenewalErrors];
+
+export type renewalsReadRenewalResponses = {
+    /**
+     * Successful Response
+     */
+    200: RenewalPublic;
+};
+
+export type renewalsReadRenewalResponse = renewalsReadRenewalResponses[keyof renewalsReadRenewalResponses];
+
+export type renewalsUpdateRenewalData = {
+    body: RenewalUpdate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/renewals/{id}';
+};
+
+export type renewalsUpdateRenewalErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type renewalsUpdateRenewalError = renewalsUpdateRenewalErrors[keyof renewalsUpdateRenewalErrors];
+
+export type renewalsUpdateRenewalResponses = {
+    /**
+     * Successful Response
+     */
+    200: RenewalPublic;
+};
+
+export type renewalsUpdateRenewalResponse = renewalsUpdateRenewalResponses[keyof renewalsUpdateRenewalResponses];
+
+export type renewalsTransitionRenewalData = {
+    body: RenewalTransition;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/renewals/{id}/transition';
+};
+
+export type renewalsTransitionRenewalErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type renewalsTransitionRenewalError = renewalsTransitionRenewalErrors[keyof renewalsTransitionRenewalErrors];
+
+export type renewalsTransitionRenewalResponses = {
+    /**
+     * Successful Response
+     */
+    200: RenewalPublic;
+};
+
+export type renewalsTransitionRenewalResponse = renewalsTransitionRenewalResponses[keyof renewalsTransitionRenewalResponses];
+
+export type activitiesReadActivitiesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+        /**
+         * Policy Id
+         */
+        policy_id?: string | null;
+        /**
+         * Renewal Id
+         */
+        renewal_id?: string | null;
+    };
+    url: '/api/v1/activities/';
+};
+
+export type activitiesReadActivitiesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type activitiesReadActivitiesError = activitiesReadActivitiesErrors[keyof activitiesReadActivitiesErrors];
+
+export type activitiesReadActivitiesResponses = {
+    /**
+     * Successful Response
+     */
+    200: ActivitiesPublic;
+};
+
+export type activitiesReadActivitiesResponse = activitiesReadActivitiesResponses[keyof activitiesReadActivitiesResponses];
+
+export type activitiesCreateActivityData = {
+    body: ActivityCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/activities/';
+};
+
+export type activitiesCreateActivityErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type activitiesCreateActivityError = activitiesCreateActivityErrors[keyof activitiesCreateActivityErrors];
+
+export type activitiesCreateActivityResponses = {
+    /**
+     * Successful Response
+     */
+    201: ActivityPublic;
+};
+
+export type activitiesCreateActivityResponse = activitiesCreateActivityResponses[keyof activitiesCreateActivityResponses];
+
+export type rateTablesReadRateTablesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Insurer Id
+         */
+        insurer_id?: string | null;
+        /**
+         * Class Of Insurance
+         */
+        class_of_insurance?: string | null;
+        /**
+         * Status
+         */
+        status?: RateTableStatus | null;
+    };
+    url: '/api/v1/rate-tables/';
+};
+
+export type rateTablesReadRateTablesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type rateTablesReadRateTablesError = rateTablesReadRateTablesErrors[keyof rateTablesReadRateTablesErrors];
+
+export type rateTablesReadRateTablesResponses = {
+    /**
+     * Successful Response
+     */
+    200: RateTableVersionsPublic;
+};
+
+export type rateTablesReadRateTablesResponse = rateTablesReadRateTablesResponses[keyof rateTablesReadRateTablesResponses];
+
+export type rateTablesCreateRateTableData = {
+    body: RateTableVersionCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/rate-tables/';
+};
+
+export type rateTablesCreateRateTableErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type rateTablesCreateRateTableError = rateTablesCreateRateTableErrors[keyof rateTablesCreateRateTableErrors];
+
+export type rateTablesCreateRateTableResponses = {
+    /**
+     * Successful Response
+     */
+    201: RateTableVersionPublic;
+};
+
+export type rateTablesCreateRateTableResponse = rateTablesCreateRateTableResponses[keyof rateTablesCreateRateTableResponses];
+
+export type rateTablesReadRateTableData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/rate-tables/{id}';
+};
+
+export type rateTablesReadRateTableErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type rateTablesReadRateTableError = rateTablesReadRateTableErrors[keyof rateTablesReadRateTableErrors];
+
+export type rateTablesReadRateTableResponses = {
+    /**
+     * Successful Response
+     */
+    200: RateTableVersionPublic;
+};
+
+export type rateTablesReadRateTableResponse = rateTablesReadRateTableResponses[keyof rateTablesReadRateTableResponses];
+
+export type rateTablesUpdateRateTableData = {
+    body: RateTableVersionUpdate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/rate-tables/{id}';
+};
+
+export type rateTablesUpdateRateTableErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type rateTablesUpdateRateTableError = rateTablesUpdateRateTableErrors[keyof rateTablesUpdateRateTableErrors];
+
+export type rateTablesUpdateRateTableResponses = {
+    /**
+     * Successful Response
+     */
+    200: RateTableVersionPublic;
+};
+
+export type rateTablesUpdateRateTableResponse = rateTablesUpdateRateTableResponses[keyof rateTablesUpdateRateTableResponses];
+
+export type rateTablesAddRateBracketData = {
+    body: RateBracketCreate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/rate-tables/{id}/brackets';
+};
+
+export type rateTablesAddRateBracketErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type rateTablesAddRateBracketError = rateTablesAddRateBracketErrors[keyof rateTablesAddRateBracketErrors];
+
+export type rateTablesAddRateBracketResponses = {
+    /**
+     * Successful Response
+     */
+    201: RateBracketPublic;
+};
+
+export type rateTablesAddRateBracketResponse = rateTablesAddRateBracketResponses[keyof rateTablesAddRateBracketResponses];
+
+export type rateTablesAddRateBenefitData = {
+    body: RateBenefitCreate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/rate-tables/{id}/benefits';
+};
+
+export type rateTablesAddRateBenefitErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type rateTablesAddRateBenefitError = rateTablesAddRateBenefitErrors[keyof rateTablesAddRateBenefitErrors];
+
+export type rateTablesAddRateBenefitResponses = {
+    /**
+     * Successful Response
+     */
+    201: RateBenefitPublic;
+};
+
+export type rateTablesAddRateBenefitResponse = rateTablesAddRateBenefitResponses[keyof rateTablesAddRateBenefitResponses];
+
+export type rateTablesAddMedicalTierData = {
+    body: MedicalTierCreate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/rate-tables/{id}/medical-tiers';
+};
+
+export type rateTablesAddMedicalTierErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type rateTablesAddMedicalTierError = rateTablesAddMedicalTierErrors[keyof rateTablesAddMedicalTierErrors];
+
+export type rateTablesAddMedicalTierResponses = {
+    /**
+     * Successful Response
+     */
+    201: MedicalTierPublic;
+};
+
+export type rateTablesAddMedicalTierResponse = rateTablesAddMedicalTierResponses[keyof rateTablesAddMedicalTierResponses];
+
+export type calculationsQuotePreviewData = {
+    body: AdvisoryQuoteRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calculations/quote';
+};
+
+export type calculationsQuotePreviewErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type calculationsQuotePreviewError = calculationsQuotePreviewErrors[keyof calculationsQuotePreviewErrors];
+
+export type calculationsQuotePreviewResponses = {
+    /**
+     * Response Calculations-Quote Preview
+     *
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type calculationsReadCalculationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Policy Id
+         */
+        policy_id?: string | null;
+        /**
+         * Renewal Id
+         */
+        renewal_id?: string | null;
+    };
+    url: '/api/v1/calculations/';
+};
+
+export type calculationsReadCalculationsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type calculationsReadCalculationsError = calculationsReadCalculationsErrors[keyof calculationsReadCalculationsErrors];
+
+export type calculationsReadCalculationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PremiumCalculationsPublic;
+};
+
+export type calculationsReadCalculationsResponse = calculationsReadCalculationsResponses[keyof calculationsReadCalculationsResponses];
+
+export type calculationsCreateCalculationData = {
+    body: PersistQuoteRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calculations/';
+};
+
+export type calculationsCreateCalculationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type calculationsCreateCalculationError = calculationsCreateCalculationErrors[keyof calculationsCreateCalculationErrors];
+
+export type calculationsCreateCalculationResponses = {
+    /**
+     * Successful Response
+     */
+    201: PremiumCalculationPublic;
+};
+
+export type calculationsCreateCalculationResponse = calculationsCreateCalculationResponses[keyof calculationsCreateCalculationResponses];
+
+export type calculationsReadCalculationData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/calculations/{id}';
+};
+
+export type calculationsReadCalculationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type calculationsReadCalculationError = calculationsReadCalculationErrors[keyof calculationsReadCalculationErrors];
+
+export type calculationsReadCalculationResponses = {
+    /**
+     * Successful Response
+     */
+    200: PremiumCalculationPublic;
+};
+
+export type calculationsReadCalculationResponse = calculationsReadCalculationResponses[keyof calculationsReadCalculationResponses];
+
+export type calculationsSelectCalculationData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/calculations/{id}/select';
+};
+
+export type calculationsSelectCalculationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type calculationsSelectCalculationError = calculationsSelectCalculationErrors[keyof calculationsSelectCalculationErrors];
+
+export type calculationsSelectCalculationResponses = {
+    /**
+     * Successful Response
+     */
+    200: PremiumCalculationPublic;
+};
+
+export type calculationsSelectCalculationResponse = calculationsSelectCalculationResponses[keyof calculationsSelectCalculationResponses];
+
+export type ipfReadIpfAgreementsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+        /**
+         * Policy Id
+         */
+        policy_id?: string | null;
+    };
+    url: '/api/v1/ipf/';
+};
+
+export type ipfReadIpfAgreementsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type ipfReadIpfAgreementsError = ipfReadIpfAgreementsErrors[keyof ipfReadIpfAgreementsErrors];
+
+export type ipfReadIpfAgreementsResponses = {
+    /**
+     * Successful Response
+     */
+    200: IPFAgreementsPublic;
+};
+
+export type ipfReadIpfAgreementsResponse = ipfReadIpfAgreementsResponses[keyof ipfReadIpfAgreementsResponses];
+
+export type ipfCreateIpfAgreementData = {
+    body: IPFAgreementCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/ipf/';
+};
+
+export type ipfCreateIpfAgreementErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type ipfCreateIpfAgreementError = ipfCreateIpfAgreementErrors[keyof ipfCreateIpfAgreementErrors];
+
+export type ipfCreateIpfAgreementResponses = {
+    /**
+     * Successful Response
+     */
+    201: IPFAgreementPublic;
+};
+
+export type ipfCreateIpfAgreementResponse = ipfCreateIpfAgreementResponses[keyof ipfCreateIpfAgreementResponses];
+
+export type ipfReadIpfAgreementData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/ipf/{id}';
+};
+
+export type ipfReadIpfAgreementErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type ipfReadIpfAgreementError = ipfReadIpfAgreementErrors[keyof ipfReadIpfAgreementErrors];
+
+export type ipfReadIpfAgreementResponses = {
+    /**
+     * Successful Response
+     */
+    200: IPFAgreementPublic;
+};
+
+export type ipfReadIpfAgreementResponse = ipfReadIpfAgreementResponses[keyof ipfReadIpfAgreementResponses];
+
+export type ipfUpdateIpfAgreementData = {
+    body: IPFAgreementUpdate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/ipf/{id}';
+};
+
+export type ipfUpdateIpfAgreementErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type ipfUpdateIpfAgreementError = ipfUpdateIpfAgreementErrors[keyof ipfUpdateIpfAgreementErrors];
+
+export type ipfUpdateIpfAgreementResponses = {
+    /**
+     * Successful Response
+     */
+    200: IPFAgreementPublic;
+};
+
+export type ipfUpdateIpfAgreementResponse = ipfUpdateIpfAgreementResponses[keyof ipfUpdateIpfAgreementResponses];
+
+export type commissionsReadCommissionSchedulesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Insurer Id
+         */
+        insurer_id?: string | null;
+    };
+    url: '/api/v1/commissions/';
+};
+
+export type commissionsReadCommissionSchedulesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type commissionsReadCommissionSchedulesError = commissionsReadCommissionSchedulesErrors[keyof commissionsReadCommissionSchedulesErrors];
+
+export type commissionsReadCommissionSchedulesResponses = {
+    /**
+     * Successful Response
+     */
+    200: CommissionSchedulesPublic;
+};
+
+export type commissionsReadCommissionSchedulesResponse = commissionsReadCommissionSchedulesResponses[keyof commissionsReadCommissionSchedulesResponses];
+
+export type commissionsCreateCommissionScheduleData = {
+    body: CommissionScheduleCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/commissions/';
+};
+
+export type commissionsCreateCommissionScheduleErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type commissionsCreateCommissionScheduleError = commissionsCreateCommissionScheduleErrors[keyof commissionsCreateCommissionScheduleErrors];
+
+export type commissionsCreateCommissionScheduleResponses = {
+    /**
+     * Successful Response
+     */
+    201: CommissionSchedulePublic;
+};
+
+export type commissionsCreateCommissionScheduleResponse = commissionsCreateCommissionScheduleResponses[keyof commissionsCreateCommissionScheduleResponses];
+
+export type commissionsCalculateRemittanceData = {
+    body: CommissionCalculationRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/commissions/calculate';
+};
+
+export type commissionsCalculateRemittanceErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type commissionsCalculateRemittanceError = commissionsCalculateRemittanceErrors[keyof commissionsCalculateRemittanceErrors];
+
+export type commissionsCalculateRemittanceResponses = {
+    /**
+     * Response Commissions-Calculate Remittance
+     *
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type statementsGetClientStatementData = {
+    body?: never;
+    path: {
+        /**
+         * Client Id
+         */
+        client_id: string;
+    };
+    query?: never;
+    url: '/api/v1/statements/client/{client_id}';
+};
+
+export type statementsGetClientStatementErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type statementsGetClientStatementError = statementsGetClientStatementErrors[keyof statementsGetClientStatementErrors];
+
+export type statementsGetClientStatementResponses = {
+    /**
+     * Response Statements-Get Client Statement
+     *
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type invoiceBatchesReadInvoiceBatchesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+    };
+    url: '/api/v1/invoice-batches/';
+};
+
+export type invoiceBatchesReadInvoiceBatchesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type invoiceBatchesReadInvoiceBatchesError = invoiceBatchesReadInvoiceBatchesErrors[keyof invoiceBatchesReadInvoiceBatchesErrors];
+
+export type invoiceBatchesReadInvoiceBatchesResponses = {
+    /**
+     * Successful Response
+     */
+    200: InvoiceBatchesPublic;
+};
+
+export type invoiceBatchesReadInvoiceBatchesResponse = invoiceBatchesReadInvoiceBatchesResponses[keyof invoiceBatchesReadInvoiceBatchesResponses];
+
+export type invoiceBatchesCreateMonthlyBatchData = {
+    body: InvoiceBatchCreateRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/invoice-batches/';
+};
+
+export type invoiceBatchesCreateMonthlyBatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type invoiceBatchesCreateMonthlyBatchError = invoiceBatchesCreateMonthlyBatchErrors[keyof invoiceBatchesCreateMonthlyBatchErrors];
+
+export type invoiceBatchesCreateMonthlyBatchResponses = {
+    /**
+     * Successful Response
+     */
+    201: InvoiceBatchPublic;
+};
+
+export type invoiceBatchesCreateMonthlyBatchResponse = invoiceBatchesCreateMonthlyBatchResponses[keyof invoiceBatchesCreateMonthlyBatchResponses];
+
+export type invoiceBatchesReadInvoiceBatchData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/invoice-batches/{id}';
+};
+
+export type invoiceBatchesReadInvoiceBatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type invoiceBatchesReadInvoiceBatchError = invoiceBatchesReadInvoiceBatchErrors[keyof invoiceBatchesReadInvoiceBatchErrors];
+
+export type invoiceBatchesReadInvoiceBatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: InvoiceBatchPublic;
+};
+
+export type invoiceBatchesReadInvoiceBatchResponse = invoiceBatchesReadInvoiceBatchResponses[keyof invoiceBatchesReadInvoiceBatchResponses];
+
+export type documentJobsReadDocumentJobsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/document-jobs/';
+};
+
+export type documentJobsReadDocumentJobsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type documentJobsReadDocumentJobsError = documentJobsReadDocumentJobsErrors[keyof documentJobsReadDocumentJobsErrors];
+
+export type documentJobsReadDocumentJobsResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentJobsPublic;
+};
+
+export type documentJobsReadDocumentJobsResponse = documentJobsReadDocumentJobsResponses[keyof documentJobsReadDocumentJobsResponses];
+
+export type documentJobsEnqueueDocumentJobData = {
+    body: DocumentJobEnqueueRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/document-jobs/';
+};
+
+export type documentJobsEnqueueDocumentJobErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type documentJobsEnqueueDocumentJobError = documentJobsEnqueueDocumentJobErrors[keyof documentJobsEnqueueDocumentJobErrors];
+
+export type documentJobsEnqueueDocumentJobResponses = {
+    /**
+     * Successful Response
+     */
+    202: DocumentJobPublic;
+};
+
+export type documentJobsEnqueueDocumentJobResponse = documentJobsEnqueueDocumentJobResponses[keyof documentJobsEnqueueDocumentJobResponses];
+
+export type documentJobsReadDocumentJobData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/document-jobs/{id}';
+};
+
+export type documentJobsReadDocumentJobErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type documentJobsReadDocumentJobError = documentJobsReadDocumentJobErrors[keyof documentJobsReadDocumentJobErrors];
+
+export type documentJobsReadDocumentJobResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentJobPublic;
+};
+
+export type documentJobsReadDocumentJobResponse = documentJobsReadDocumentJobResponses[keyof documentJobsReadDocumentJobResponses];
+
+export type documentJobsProcessDocumentJobData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/document-jobs/{id}/process';
+};
+
+export type documentJobsProcessDocumentJobErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type documentJobsProcessDocumentJobError = documentJobsProcessDocumentJobErrors[keyof documentJobsProcessDocumentJobErrors];
+
+export type documentJobsProcessDocumentJobResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentJobPublic;
+};
+
+export type documentJobsProcessDocumentJobResponse = documentJobsProcessDocumentJobResponses[keyof documentJobsProcessDocumentJobResponses];
 
 export type privateCreateUserData = {
     body: PrivateUserCreate;

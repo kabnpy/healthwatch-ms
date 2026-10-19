@@ -9,7 +9,7 @@
     "test": "vitest run",
     "lint": "biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true ./",
     "preview": "vite preview",
-    "generate-client": "openapi-ts"
+    "generate-client": "openapi-ts && printf \"\\nexport { client } from './client.gen';\\nimport type { AxiosError } from 'axios';\\nexport type ApiError = AxiosError;\\n\" >> src/client/index.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

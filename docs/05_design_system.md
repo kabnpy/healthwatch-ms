@@ -6,14 +6,25 @@
 
 ## 1. Product Design Philosophy
 
-HealthWatch MS is an **audit-grade insurance brokerage workspace**. Its primary users (underwriters, brokers, cashiers) work with multi-variable risk schedules, complex financial levies, temporal policy modifications (endorsements), and legal contracts.
+HealthWatch MS is an **insurance agency workspace**. Its primary users (agents, account managers, operations staff) work with multi-variable risk schedules, complex financial levies, temporal policy modifications (endorsements), and legal contracts.
 
 ### Core Pillars
 
 1. **Audit-Grade Reliability:** UI states must never be ambiguous. Statuses, currency amounts, effective dates, and policy numbers must have unmistakable visual fidelity and strict alignment.
 2. **Information Density with Breathing Room:** Dense data (tables, schedules, line items) is balanced by consistent spatial rhythm, avoiding both bloated consumer-app whitespace and cramped legacy spreadsheets.
 3. **Context Preservation:** Complex sub-flows (contact management, document uploads, fee breakdowns) use slide-over sheets (`Sheet`) and contextual tabs rather than disorienting full-page redirects or nested modal stacks.
-4. **Dual Legal Output:** Web screens are fast, interactive tools; printed documents (Risk Notes, Debit Notes) are formal legal instruments adhering to strict A4 layout rules.
+4. **Dual Legal Output:** Web screens are fast, interactive tools; printed documents (Risk Notes, Invoices) are formal legal instruments adhering to strict A4 layout rules.
+
+### 1.1 Interface Voice & Copywriting Standards
+
+- **Tone:** Clear, grounded, respectful, and professional. Speak directly to the operational reality of managing client policies and paperless records.
+- **Visuals over Emoji:** Do not use emojis in UI buttons, dialogs, badges, tooltips, or toast notifications. Use clean, monochrome Lucide icons with explicit text labels.
+- **Approved Entity Terms:**
+  - Refer to the business as an **agency** and staff as **agents** or **account managers**.
+  - Refer to accounts as **client portfolios** and documents as **client files**.
+  - Refer to cleared funds as **Payment Records** and invoice credits as **Payment Allocations**.
+  - Refer to client-provided slips or M-Pesa screenshots as **Proof of Payment**.
+  - Refer to carrier confirmations as **Insurer Receipts**.
 
 ---
 

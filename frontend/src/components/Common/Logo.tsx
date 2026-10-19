@@ -1,11 +1,7 @@
 import { Link } from "@tanstack/react-router"
+import { Shield } from "lucide-react"
 
-import { useTheme } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
-import icon from "/assets/images/fastapi-icon.svg"
-import iconLight from "/assets/images/fastapi-icon-light.svg"
-import logo from "/assets/images/fastapi-logo.svg"
-import logoLight from "/assets/images/fastapi-logo-light.svg"
 
 interface LogoProps {
   variant?: "full" | "icon" | "responsive"
@@ -18,59 +14,45 @@ export function Logo({
   className,
   asLink = true,
 }: LogoProps) {
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
-
-  // For Documents/Print, we use a specialized branding style
-  if (variant === "full" && !asLink) {
-    return (
-      <div className={cn("flex items-center gap-2 font-sans", className)}>
-        <div className="flex flex-col leading-none">
-          <span className="text-xl font-black tracking-tighter uppercase">
-            HealthWatch
-          </span>
-          <span className="text-[8px] font-bold tracking-[0.3em] uppercase text-muted-foreground ml-0.5">
-            Insurance Agency
-          </span>
-        </div>
+  const brandMark = (
+    <div className={cn("flex items-center gap-2.5 font-sans", className)}>
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-xs">
+        <Shield className="size-4 stroke-[2.5]" />
       </div>
-    )
-  }
+      <div className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
+        <span className="text-sm font-extrabold tracking-tight uppercase text-foreground">
+          HealthWatch
+        </span>
+        <span className="text-[8px] font-bold tracking-[0.22em] uppercase text-muted-foreground">
+          Insurance Agency
+        </span>
+      </div>
+    </div>
+  )
 
-  const fullLogo = isDark ? logoLight : logo
-  const iconLogo = isDark ? iconLight : icon
+  const iconOnly = (
+    <div
+      className={cn(
+        "flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-xs",
+        className,
+      )}
+    >
+      <Shield className="size-4 stroke-[2.5]" />
+    </div>
+  )
 
-  const content =
-    variant === "responsive" ? (
-      <>
-        <img
-          src={fullLogo}
-          alt="FastAPI"
-          className={cn(
-            "h-6 w-auto group-data-[collapsible=icon]:hidden",
-            className,
-          )}
-        />
-        <img
-          src={iconLogo}
-          alt="FastAPI"
-          className={cn(
-            "size-5 hidden group-data-[collapsible=icon]:block",
-            className,
-          )}
-        />
-      </>
-    ) : (
-      <img
-        src={variant === "full" ? fullLogo : iconLogo}
-        alt="FastAPI"
-        className={cn(variant === "full" ? "h-6 w-auto" : "size-5", className)}
-      />
-    )
+  const content = variant === "icon" ? iconOnly : brandMark
 
   if (!asLink) {
     return content
   }
 
-  return <Link to="/">{content}</Link>
+  return (
+    <Link
+      to="/"
+      className="flex items-center outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
+    >
+      {content}
+    </Link>
+  )
 }

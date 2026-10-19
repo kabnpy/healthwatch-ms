@@ -1,4 +1,12 @@
-import { Home, Library, UserRound, Users } from "lucide-react"
+import {
+  CreditCard,
+  LayoutDashboard,
+  Library,
+  RefreshCw,
+  Shield,
+  UserCheck,
+  UserRound,
+} from "lucide-react"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
@@ -13,8 +21,11 @@ import { type Item, Main } from "./Main"
 import { User } from "./User"
 
 const baseItems: Item[] = [
-  { icon: Home, title: "Dashboard", path: "/" },
+  { icon: LayoutDashboard, title: "Dashboard", path: "/" },
   { icon: UserRound, title: "Clients", path: "/clients" },
+  { icon: Shield, title: "Policies", path: "/policies" },
+  { icon: RefreshCw, title: "Renewals", path: "/renewals" },
+  { icon: CreditCard, title: "Financials", path: "/financials" },
 ]
 
 export function AppSidebar() {
@@ -23,8 +34,8 @@ export function AppSidebar() {
   const items = currentUser?.is_superuser
     ? [
         ...baseItems,
-        { icon: Library, title: "Catalog", path: "/catalog/insurers" },
-        { icon: Users, title: "Admin", path: "/admin" },
+        { icon: Library, title: "Catalog", path: "/catalog/products" },
+        { icon: UserCheck, title: "Admin", path: "/admin" },
       ]
     : baseItems
 

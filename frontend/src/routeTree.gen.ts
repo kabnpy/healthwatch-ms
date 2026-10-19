@@ -21,6 +21,9 @@ import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutCatalogIndexRouteImport } from './routes/_layout/catalog.index'
 import { Route as LayoutClientsIndexRouteImport } from './routes/_layout/clients.index'
 import { Route as LayoutClientsClientIdRouteImport } from './routes/_layout/clients.$clientId'
+import { Route as LayoutFinancialsIndexRouteImport } from './routes/_layout/financials.index'
+import { Route as LayoutPoliciesIndexRouteImport } from './routes/_layout/policies.index'
+import { Route as LayoutRenewalsIndexRouteImport } from './routes/_layout/renewals.index'
 import { Route as PrintRiskNotesIdRouteImport } from './routes/print/risk-notes.$id'
 import { Route as LayoutCatalogInsurersIndexRouteImport } from './routes/_layout/catalog.insurers.index'
 import { Route as LayoutCatalogInsurersInsurerIdRouteImport } from './routes/_layout/catalog.insurers.$insurerId'
@@ -91,6 +94,21 @@ const LayoutClientsIndexRoute = LayoutClientsIndexRouteImport.update({
 const LayoutClientsClientIdRoute = LayoutClientsClientIdRouteImport.update({
   id: '/clients/$clientId',
   path: '/clients/$clientId',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutFinancialsIndexRoute = LayoutFinancialsIndexRouteImport.update({
+  id: '/financials/',
+  path: '/financials/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutPoliciesIndexRoute = LayoutPoliciesIndexRouteImport.update({
+  id: '/policies/',
+  path: '/policies/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutRenewalsIndexRoute = LayoutRenewalsIndexRouteImport.update({
+  id: '/renewals/',
+  path: '/renewals/',
   getParentRoute: () => LayoutRoute,
 } as any)
 const PrintRiskNotesIdRoute = PrintRiskNotesIdRouteImport.update({
@@ -178,6 +196,9 @@ export interface FileRoutesByFullPath {
   '/print/risk-notes/$id': typeof PrintRiskNotesIdRoute
   '/catalog/': typeof LayoutCatalogIndexRoute
   '/clients/': typeof LayoutClientsIndexRoute
+  '/financials/': typeof LayoutFinancialsIndexRoute
+  '/policies/': typeof LayoutPoliciesIndexRoute
+  '/renewals/': typeof LayoutRenewalsIndexRoute
   '/catalog/insurers/$insurerId': typeof LayoutCatalogInsurersInsurerIdRoute
   '/catalog/products/$productId': typeof LayoutCatalogProductsProductIdRoute
   '/clients/$clientId/documents': typeof LayoutClientsClientIdDocumentsRoute
@@ -201,6 +222,9 @@ export interface FileRoutesByTo {
   '/print/risk-notes/$id': typeof PrintRiskNotesIdRoute
   '/catalog': typeof LayoutCatalogIndexRoute
   '/clients': typeof LayoutClientsIndexRoute
+  '/financials': typeof LayoutFinancialsIndexRoute
+  '/policies': typeof LayoutPoliciesIndexRoute
+  '/renewals': typeof LayoutRenewalsIndexRoute
   '/catalog/insurers/$insurerId': typeof LayoutCatalogInsurersInsurerIdRoute
   '/catalog/products/$productId': typeof LayoutCatalogProductsProductIdRoute
   '/clients/$clientId/documents': typeof LayoutClientsClientIdDocumentsRoute
@@ -228,6 +252,9 @@ export interface FileRoutesById {
   '/print/risk-notes/$id': typeof PrintRiskNotesIdRoute
   '/_layout/catalog/': typeof LayoutCatalogIndexRoute
   '/_layout/clients/': typeof LayoutClientsIndexRoute
+  '/_layout/financials/': typeof LayoutFinancialsIndexRoute
+  '/_layout/policies/': typeof LayoutPoliciesIndexRoute
+  '/_layout/renewals/': typeof LayoutRenewalsIndexRoute
   '/_layout/catalog/insurers/$insurerId': typeof LayoutCatalogInsurersInsurerIdRoute
   '/_layout/catalog/products/$productId': typeof LayoutCatalogProductsProductIdRoute
   '/_layout/clients/$clientId/documents': typeof LayoutClientsClientIdDocumentsRoute
@@ -255,6 +282,9 @@ export interface FileRouteTypes {
     | '/print/risk-notes/$id'
     | '/catalog/'
     | '/clients/'
+    | '/financials/'
+    | '/policies/'
+    | '/renewals/'
     | '/catalog/insurers/$insurerId'
     | '/catalog/products/$productId'
     | '/clients/$clientId/documents'
@@ -278,6 +308,9 @@ export interface FileRouteTypes {
     | '/print/risk-notes/$id'
     | '/catalog'
     | '/clients'
+    | '/financials'
+    | '/policies'
+    | '/renewals'
     | '/catalog/insurers/$insurerId'
     | '/catalog/products/$productId'
     | '/clients/$clientId/documents'
@@ -304,6 +337,9 @@ export interface FileRouteTypes {
     | '/print/risk-notes/$id'
     | '/_layout/catalog/'
     | '/_layout/clients/'
+    | '/_layout/financials/'
+    | '/_layout/policies/'
+    | '/_layout/renewals/'
     | '/_layout/catalog/insurers/$insurerId'
     | '/_layout/catalog/products/$productId'
     | '/_layout/clients/$clientId/documents'
@@ -410,6 +446,27 @@ declare module '@tanstack/react-router' {
       path: '/clients/$clientId'
       fullPath: '/clients/$clientId'
       preLoaderRoute: typeof LayoutClientsClientIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/financials/': {
+      id: '/_layout/financials/'
+      path: '/financials'
+      fullPath: '/financials/'
+      preLoaderRoute: typeof LayoutFinancialsIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/policies/': {
+      id: '/_layout/policies/'
+      path: '/policies'
+      fullPath: '/policies/'
+      preLoaderRoute: typeof LayoutPoliciesIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/renewals/': {
+      id: '/_layout/renewals/'
+      path: '/renewals'
+      fullPath: '/renewals/'
+      preLoaderRoute: typeof LayoutRenewalsIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/print/risk-notes/$id': {
@@ -553,6 +610,9 @@ interface LayoutRouteChildren {
   LayoutIndexRoute: typeof LayoutIndexRoute
   LayoutClientsClientIdRoute: typeof LayoutClientsClientIdRouteWithChildren
   LayoutClientsIndexRoute: typeof LayoutClientsIndexRoute
+  LayoutFinancialsIndexRoute: typeof LayoutFinancialsIndexRoute
+  LayoutPoliciesIndexRoute: typeof LayoutPoliciesIndexRoute
+  LayoutRenewalsIndexRoute: typeof LayoutRenewalsIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
@@ -562,6 +622,9 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutIndexRoute: LayoutIndexRoute,
   LayoutClientsClientIdRoute: LayoutClientsClientIdRouteWithChildren,
   LayoutClientsIndexRoute: LayoutClientsIndexRoute,
+  LayoutFinancialsIndexRoute: LayoutFinancialsIndexRoute,
+  LayoutPoliciesIndexRoute: LayoutPoliciesIndexRoute,
+  LayoutRenewalsIndexRoute: LayoutRenewalsIndexRoute,
 }
 
 const LayoutRouteWithChildren =
