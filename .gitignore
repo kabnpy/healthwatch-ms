@@ -70,3 +70,7 @@ Thumbs.db
 
 # Scratch
 scratch/
+
+# Document Storage
+storage/
+backend/storage/

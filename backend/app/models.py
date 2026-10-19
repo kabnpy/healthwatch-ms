@@ -228,6 +228,19 @@ class DocumentType(str, Enum):
     POLICE_ABSTRACT = "PoliceAbstract"
     RECEIPT = "Receipt"
     OTHER = "Other"
+    # Document Presets for UI consistency
+    KRA_PIN_CERTIFICATE = "KRA PIN Certificate"
+    NATIONAL_ID_PASSPORT = "National ID / Passport"
+    CERTIFICATE_OF_INCORPORATION = "Certificate of Incorporation"
+    UTILITY_BILL = "Utility Bill"
+    POLICY_SCHEDULE = "Policy Schedule"
+    COVER_NOTE = "Cover Note"
+    ACCIDENT_PHOTOS = "Accident Photos"
+    REPAIR_ESTIMATE = "Repair Estimate"
+    CLAIM_FORM = "Claim Form"
+    POLICE_REPORT = "Police Report"
+    BANK_SLIP = "Bank Slip"
+    MPESA_SCREENSHOT = "M-Pesa Screenshot"
 
 
 class PricingStrategy(str, Enum):

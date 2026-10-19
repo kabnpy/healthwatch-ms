@@ -63,6 +63,12 @@ The system catalog seeds 8 major underwriters licensed by the IRA and their flag
 | **Old Mutual General Insurance Kenya Ltd.** | Individual Personal Accident (PA) | Personal Accident | FixedTiered benefit package by occupation: Class 1 Clerical (KES 6,500), Class 2 Supervisory (KES 9,500), Class 3 Manual (KES 14,000). |
 | **CIC General Insurance Ltd.** | Commercial Burglary & Theft | Burglary | Percentage on declared commercial stock/fixtures (0.75%, min KES 10,000). Requires forcible and violent entry clause. |
 | **Jubilee General Insurance Ltd.** | Standalone All Risks Protection | All Risks | Percentage on declared portable electronics/valuables schedule (1.75%, min KES 5,000). Geographical scope: Worldwide. |
+| **Heritage Insurance Company Ltd.** | Heritage Auto Prestige Comprehensive | Motor Private | FixedTiered (3.25%–4.50%, min KES 55,000). Windscreen KES 50,000, Towing KES 35,000, Courtesy car option. |
+| **Heritage Insurance Company Ltd.** | Heritage Commercial Transporter | Motor Commercial | Percentage (5.50%, min KES 60,000). Carriage of goods warranty and speed governor warranty. |
+| **Heritage Insurance Company Ltd.** | Heritage First Domestic Package | Domestic Package | Multi-component percentage: Buildings (0.12%), Contents (0.75%), All Risks (1.50%). Minimum premium KES 10,000. |
+| **GA Insurance Ltd.** | GA Motor Extra Comprehensive | Motor Private | FixedTiered (3.25%–4.75%, min KES 50,000). Windscreen KES 50,000, Towing KES 30,000. |
+| **GA Insurance Ltd.** | GA Corporate WIBA Scheme | WIBA | Percentage on declared annual payroll: Clerical (0.35%), Manual/Artisan (1.25%). Minimum premium KES 25,000. |
+| **GA Insurance Ltd.** | GA Fire & Industrial Perils | Fire & Perils | Percentage on declared sums insured (0.20%, min KES 15,000). Special perils deductible 10% min KES 25,000. |
 
 
 
@@ -121,7 +127,7 @@ To thoroughly validate the **Renewals Desk** and the **Broker Command Deck**, re
 └────────────────────┘     └─────────────────────┘
 ```
 
-1. **`awaiting_carrier`:** Policy `JUB/POL/MOT/2024/09124` (Subaru Outback KDA 410M). Expires in 30 days; awaiting Jubilee renewal notice.
+1. **`awaiting_carrier`:** Policy `JUB/POL/MOT/2024/09124` (Subaru Outback KDA 410M). Expires in 8 days; awaiting Jubilee renewal notice.
 2. **`carrier_received`:** Policy `OM/MED/2024/09841` (Afya Imara Health). Carrier terms schedule received and uploaded, pending broker invitation preparation.
 3. **`client_invited`:** Policy `BRT/MOT/2024/004812` (Mercedes C200 KDB 892P). Renewal terms invitation generated and issued to client.
 4. **`changes_requested`:** Policy `ICEA/MOT/2024/00091` (Land Cruiser 300 KDF 001M). Client negotiating 5% portfolio discount and anti-theft deductible waiver.
@@ -130,7 +136,51 @@ To thoroughly validate the **Renewals Desk** and the **Broker Command Deck**, re
 
 ---
 
-## 5. Financial Ledger & Spreadsheet Invariants
+## 5. Claims & Loss Ratio Advocacy
+
+Claims advocacy directly powers the renewal negotiation workflow (`RenewalTransitionSheet`). The seed data provides realistic motor and property claims:
+
+| Claim Number | Policy / Client | Asset | Status | Loss Type | Reserve / Settled | Key Timeline Events |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **`CLM/OM/2026/00142`** | Agnes Mwangi | Toyota Prado `KCM 780L` | `settled` | Windscreen Replacement | KES 35,000 / KES 35,000 | Intimation with photos, assessment at AutoGlass Westlands, repair voucher issued under KES 50K free limit, direct settlement remittance. |
+| **`CLM/OM/2026/00219`** | Rift Valley Hauliers | Isuzu FRR `KDA 920X` | `repairs_authorized` | Own Damage Collision | KES 185,000 / None | Terminal collision notice with OB abstract, independent assessor report at Mombasa yard, repair authorization issued to AVA Mombasa. |
+| **`CLM/BRT/2026/00388`** | Grace Wanjiku Kariuki | Mercedes C200 `KDB 892P` | `adjuster_appointed` | Third Party Property Damage | KES 75,000 / None | Parking scratch notice with third-party driver contacts, adjuster appointed to review third-party damage quotation. |
+
+---
+
+## 6. Document Repository & Physical Storage
+
+HealthWatch MS incorporates a polymorphic document repository with physical file storage backing client KYC, vehicle assets, claim evidence, and carrier receipts. Physical files exist as valid PDF stubs in `storage/`:
+
+- **Client KYC:**
+  - KRA PIN Certificates (Agnes Mwangi, Dr. David Kiptoo, Rift Valley Hauliers, Blue Nile Trading)
+  - National ID / Passport copies (Agnes Mwangi, Dr. David Kiptoo)
+  - Certificates of Incorporation (Rift Valley Hauliers CPR/2018/98412, Blue Nile Trading CPR/2016/10294)
+- **Policy Assets:**
+  - NTSA Motor Vehicle Logbooks (`KCM 780L`, `KDA 410M`, `KDB 892P`, `KDF 001M`)
+  - Certified Valuation Reports (Regent Valuers KES 5.0M for Prado, Fairway Valuers KES 11.5M for LC300)
+- **Claim Records:**
+  - Police abstracts (Mombasa Port collision OB 42/18/10/2026)
+  - Authorized repair estimates (AVA dealership estimate KES 185,000)
+  - Vendor settlement receipts (AutoGlass replacement voucher KES 35,000)
+
+---
+
+## 7. Staff Roles & RBAC Coverage
+
+Staff accounts are established across all five `UserRole` levels in `backend/app/seeds/staff_users_data.py`:
+
+| Role | Seed Email | Full Name | Primary Operational Views |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `admin@healthwatch.co.ke` | Antony Gitonga - Managing Director | User Management, Security Audit, Full Read/Write |
+| **Underwriter** | `underwriter@healthwatch.co.ke` | Grace Muthoni - Senior Underwriter | Policy Wizard, Risk Note Issuance, Rating Engine |
+| **Cashier** | `cashier@healthwatch.co.ke` | Kelvin Mwangi - Finance & Cashier | Payment Allocations, Invoicing, Receipts |
+| **Operations** | `operations@healthwatch.co.ke` | Daniel Otieno - Operations Manager | Renewals Desk, Claims Advocacy, Activity Logs |
+| **Viewer** | `auditor@healthwatch.co.ke` | Sarah Chebet - Compliance Auditor | Read-only Inspection & Statutory Reconciliation |
+
+---
+
+## 8. Financial Ledger & Spreadsheet Invariants
 
 HealthWatch MS provides a clean bounded financial ledger designed to feed agency reconciliation spreadsheets without calculation drift:
 
@@ -145,29 +195,31 @@ HealthWatch MS provides a clean bounded financial ledger designed to feed agency
 
 ---
 
-## 6. Execution & Verification Runbook
+## 9. Execution & Verification Runbook
 
-### 6.1 Execution
+### 9.1 Execution
 The seed dataset is fully idempotent and can be safely re-run without duplicate key violations:
 
 ```bash
 # Via master initial data workflow
-python -m app.initial_data
+backend/.venv/bin/python -m app.initial_data
 
 # Or directly via seed script
-python -m app.seed_mock_data
+backend/.venv/bin/python -m app.seed_mock_data
 ```
 
-### 6.2 Automated Quality Verification
+### 9.2 Automated Quality Verification
 The automated test suite verifies dataset integrity, relational consistency, and architectural invariants against an in-memory test database:
 
 ```bash
-pytest tests/test_seed_data.py -v
+backend/.venv/bin/pytest backend/tests/test_seed_data.py -v
 ```
 
 Verification assertions include:
+- Invariant: Every catalog underwriter offers at least one product.
 - Invariant: Medical policies have zero Risk Notes.
 - Invariant: Motor and Domestic policies have issued Risk Notes.
 - Invariant: Payment allocations sum $\le$ PaymentRecord amount.
 - Invariant: Zero float usage across financial models.
+- Operational: Active, Expiring (Next 30 Days), and Lapsed policies exist for dashboard triage.
 - Idempotency: Consecutive executions do not duplicate records or mutate existing primary keys.

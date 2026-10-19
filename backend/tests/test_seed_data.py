@@ -8,7 +8,9 @@ from sqlmodel import Session, select
 
 from app.models import (
     Activity,
+    Claim,
     Client,
+    Document,
     Insurer,
     Invoice,
     PaymentAllocation,
@@ -17,6 +19,7 @@ from app.models import (
     Product,
     Renewal,
     RiskNote,
+    User,
     Vehicle,
 )
 from app.seed_mock_data import create_mock_data
@@ -33,20 +36,40 @@ def test_seed_data_pipeline_and_invariants(db: Session) -> None:
     insurers = db.exec(select(Insurer)).all()
     assert len(insurers) >= 8, f"Expected at least 8 underwriters, got {len(insurers)}"
 
+    # Invariant: Every underwriter in the catalog must offer at least one product
+    from app.seeds.carriers_and_products import INSURERS_DATA
+
+    catalog_insurer_names = {i["name"] for i in INSURERS_DATA}
+    for ins in insurers:
+        if ins.name in catalog_insurer_names:
+            ins_prods = db.exec(
+                select(Product).where(Product.insurer_id == ins.id)
+            ).all()
+            assert len(ins_prods) >= 1, f"Insurer {ins.name} has no products in catalog"
+
     products = db.exec(select(Product)).all()
-    assert len(products) >= 12, f"Expected at least 12 products, got {len(products)}"
+    assert len(products) >= 20, f"Expected at least 20 products, got {len(products)}"
 
     clients = db.exec(select(Client)).all()
     assert len(clients) >= 20, f"Expected at least 20 clients, got {len(clients)}"
 
     policies = db.exec(select(Policy)).all()
-    assert len(policies) >= 10, f"Expected at least 10 policies, got {len(policies)}"
+    assert len(policies) >= 15, f"Expected at least 15 policies, got {len(policies)}"
 
     vehicles = db.exec(select(Vehicle)).all()
     assert len(vehicles) >= 8, f"Expected at least 8 vehicles, got {len(vehicles)}"
 
     renewals = db.exec(select(Renewal)).all()
-    assert len(renewals) >= 5, f"Expected at least 5 renewals, got {len(renewals)}"
+    assert len(renewals) >= 6, f"Expected at least 6 renewals, got {len(renewals)}"
+
+    claims = db.exec(select(Claim)).all()
+    assert len(claims) >= 3, f"Expected at least 3 claims, got {len(claims)}"
+
+    documents = db.exec(select(Document)).all()
+    assert len(documents) >= 10, f"Expected at least 10 documents, got {len(documents)}"
+
+    users = db.exec(select(User)).all()
+    assert len(users) >= 5, f"Expected at least 5 staff users, got {len(users)}"
 
     invoices = db.exec(select(Invoice)).all()
     assert len(invoices) >= 6, f"Expected at least 6 invoices, got {len(invoices)}"
@@ -61,7 +84,27 @@ def test_seed_data_pipeline_and_invariants(db: Session) -> None:
         f"Expected at least 4 activities, got {len(activities)}"
     )
 
-    # 3. Verify Invariant: Medical policies NEVER use a Risk Note
+    # 3. Check Dashboard Triage Policies (Lapsed and Draft Renewals)
+    from app.models import PolicyStatus, RiskNoteStatus, TransactionType
+
+    expired_policies = db.exec(
+        select(Policy).where(Policy.status == PolicyStatus.EXPIRED)
+    ).all()
+    assert len(expired_policies) >= 2, (
+        f"Expected at least 2 expired policies for triage, got {len(expired_policies)}"
+    )
+
+    draft_renewals = db.exec(
+        select(RiskNote).where(
+            RiskNote.transaction_type == TransactionType.RENEWAL,
+            RiskNote.status == RiskNoteStatus.DRAFT,
+        )
+    ).all()
+    assert len(draft_renewals) >= 1, (
+        f"Expected at least 1 draft renewal risk note for triage, got {len(draft_renewals)}"
+    )
+
+    # 4. Verify Invariant: Medical policies NEVER use a Risk Note
     medical_policies = [
         p
         for p in policies
@@ -74,7 +117,7 @@ def test_seed_data_pipeline_and_invariants(db: Session) -> None:
             f"Medical policy {med_pol.policy_number} must NOT have Risk Notes"
         )
 
-    # 4. Verify Invariant: Motor & Domestic policies have Risk Notes
+    # 5. Verify Invariant: Motor & Domestic policies have Risk Notes
     motor_policies = [
         p
         for p in policies
@@ -86,7 +129,7 @@ def test_seed_data_pipeline_and_invariants(db: Session) -> None:
             f"Motor policy {mot_pol.policy_number} should have at least 1 Risk Note"
         )
 
-    # 5. Verify Invariant: Payment allocations sum <= PaymentRecord amount
+    # 6. Verify Invariant: Payment allocations sum <= PaymentRecord amount
     for p_rec in payments:
         allocs = db.exec(
             select(PaymentAllocation).where(
@@ -101,13 +144,17 @@ def test_seed_data_pipeline_and_invariants(db: Session) -> None:
             f"Unallocated balance mismatch on {p_rec.reference_number}"
         )
 
-    # 6. Verify Idempotency: Re-running seed does NOT duplicate entities or fail
+    # 7. Verify Idempotency: Re-running seed does NOT duplicate entities or fail
     initial_client_count = len(clients)
     initial_policy_count = len(policies)
     initial_invoice_count = len(invoices)
+    initial_claim_count = len(claims)
+    initial_doc_count = len(documents)
 
     create_mock_data(session=db)
 
     assert len(db.exec(select(Client)).all()) == initial_client_count
     assert len(db.exec(select(Policy)).all()) == initial_policy_count
     assert len(db.exec(select(Invoice)).all()) == initial_invoice_count
+    assert len(db.exec(select(Claim)).all()) == initial_claim_count
+    assert len(db.exec(select(Document)).all()) == initial_doc_count
