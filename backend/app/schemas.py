@@ -313,3 +313,12 @@ class MedicalRiskDetails(BaseModel):
         from app.utils import parse_decimal
 
         return parse_decimal(v)
+
+
+class SystemInfo(BaseModel):
+    app_name: str = "HealthWatch MS"
+    environment: str
+    currency: str = "KES"
+    timezone: str = "UTC"
+    version: str = "0.1.0"
+    status: str = "operational"
