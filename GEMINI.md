@@ -54,9 +54,11 @@
   - Dev server: `bun run dev`
   - Type-check & build: `bun x tsc -p tsconfig.build.json && bun run build`
   - Lint: `bun run lint`
-- **Infrastructure:** Docker Compose v2 specification:
-  - Local dev: `docker compose up` (merges `compose.yml` + `compose.override.yml`)
-  - Staging/Deploy: `docker compose -f compose.yml -f compose.deploy.yml up`
+- **Infrastructure & Runner:** Unified `./run` runner with automatic Podman and Docker detection:
+  - Local dev stack: `./run dev` (starts DB in Podman/Docker, applies migrations, seeds initial data, runs FastAPI + Vite)
+  - Environment status: `./run status`
+  - Background services: `./run services:up` / `./run services:down`
+  - Full compose: Docker Compose v2 or Podman Compose (merges `compose.yml` + `compose.override.yml`)
 - **Git & Pre-Commit:**
   - Validate hooks across all files: `backend/.venv/bin/prek run -a`
   - Reinstall shims: `backend/.venv/bin/prek install -t pre-commit -t commit-msg`

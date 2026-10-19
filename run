@@ -4,70 +4,253 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 cd "$DIR"
 
+detect_compose() {
+  if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    echo "docker compose"
+  elif command -v podman >/dev/null 2>&1 && podman compose version >/dev/null 2>&1; then
+    echo "podman compose"
+  elif command -v podman-compose >/dev/null 2>&1; then
+    echo "podman-compose"
+  elif command -v docker-compose >/dev/null 2>&1; then
+    echo "docker-compose"
+  else
+    echo ""
+  fi
+}
+
+run_backend() {
+  (
+    cd "$DIR/backend"
+    if command -v uv >/dev/null 2>&1; then
+      uv run "$@"
+    elif [ -f ".venv/bin/$1" ]; then
+      local c="$1"
+      shift
+      "./.venv/bin/$c" "$@"
+    elif [ -f ".venv/bin/python" ]; then
+      "./.venv/bin/python" "$@"
+    else
+      "$@"
+    fi
+  )
+}
+
+run_frontend() {
+  (
+    cd "$DIR/frontend"
+    bun run "$@"
+  )
+}
+
+is_db_ready() {
+  run_backend python -c "import socket; s = socket.socket(); s.settimeout(1); res = s.connect_ex(('127.0.0.1', 5432)); exit(res)" 2>/dev/null
+}
+
+start_db_if_needed() {
+  if is_db_ready; then
+    echo "==> Database is reachable on port 5432."
+    return 0
+  fi
+
+  local compose_cmd
+  compose_cmd="$(detect_compose)"
+  if [ -z "$compose_cmd" ]; then
+    echo "Error: Neither docker nor podman compose found, and database is not running on port 5432." >&2
+    exit 1
+  fi
+
+  echo "==> Starting database and mailpit via $compose_cmd..."
+  $compose_cmd up -d db mailpit
+
+  echo "==> Waiting for database to accept connections..."
+  local retries=20
+  while ! is_db_ready; do
+    retries=$((retries - 1))
+    if [ "$retries" -le 0 ]; then
+      echo "Error: Database did not become ready within timeout." >&2
+      exit 1
+    fi
+    sleep 1
+  done
+  echo "==> Database is ready."
+}
+
 cmd="${1:-help}"
 shift 2>/dev/null || true
 
 case "$cmd" in
   dev)
-    docker compose watch
+    start_db_if_needed
+
+    echo "==> Running database migrations..."
+    run_backend alembic upgrade head
+
+    echo "==> Ensuring initial data exists..."
+    run_backend python app/initial_data.py
+
+    echo "==> Starting development environment..."
+    echo "    Backend API: http://localhost:8000 (docs: http://localhost:8000/docs)"
+    echo "    Frontend UI: http://localhost:5173"
+    echo "==> Press Ctrl+C to stop all development servers."
+
+    cleanup() {
+      echo ""
+      echo "==> Shutting down development servers..."
+      if [ -n "$BACKEND_PID" ]; then kill "$BACKEND_PID" 2>/dev/null || true; fi
+      if [ -n "$FRONTEND_PID" ]; then kill "$FRONTEND_PID" 2>/dev/null || true; fi
+      wait "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
+      echo "==> Development servers stopped."
+    }
+    trap cleanup EXIT INT TERM
+
+    (run_backend fastapi dev app/main.py --port 8000) &
+    BACKEND_PID=$!
+
+    (run_frontend dev) &
+    FRONTEND_PID=$!
+
+    wait "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
     ;;
+
+  dev:backend)
+    start_db_if_needed
+    echo "==> Starting backend dev server on http://localhost:8000..."
+    run_backend fastapi dev app/main.py --port 8000
+    ;;
+
+  dev:frontend)
+    echo "==> Starting frontend dev server on http://localhost:5173..."
+    run_frontend dev
+    ;;
+
+  status)
+    echo "HealthWatch MS Environment Status"
+    echo "================================="
+    compose_cmd="$(detect_compose)"
+    echo "Container runtime : ${compose_cmd:-none detected}"
+    if is_db_ready; then
+      echo "PostgreSQL (5432) : RUNNING"
+    else
+      echo "PostgreSQL (5432) : STOPPED"
+    fi
+    if curl -s -f http://localhost:8000/api/v1/utils/system-info >/dev/null 2>&1; then
+      echo "Backend API (8000): RUNNING"
+    else
+      echo "Backend API (8000): STOPPED"
+    fi
+    if curl -s -f http://localhost:5173/ >/dev/null 2>&1; then
+      echo "Frontend (5173)   : RUNNING"
+    else
+      echo "Frontend (5173)   : STOPPED"
+    fi
+    ;;
+
+  services:up|db:up)
+    compose_cmd="$(detect_compose)"
+    if [ -z "$compose_cmd" ]; then
+      echo "Error: No docker or podman compose tool found." >&2
+      exit 1
+    fi
+    echo "==> Starting db and mailpit via $compose_cmd..."
+    $compose_cmd up -d db mailpit
+    ;;
+
+  services:down|db:down)
+    compose_cmd="$(detect_compose)"
+    if [ -z "$compose_cmd" ]; then
+      echo "Error: No docker or podman compose tool found." >&2
+      exit 1
+    fi
+    echo "==> Stopping db and mailpit via $compose_cmd..."
+    $compose_cmd stop db mailpit
+    ;;
+
   up)
-    docker compose up -d
+    compose_cmd="$(detect_compose)"
+    if [ -z "$compose_cmd" ]; then
+      echo "Error: No docker or podman compose tool found." >&2
+      exit 1
+    fi
+    echo "==> Starting container stack via $compose_cmd..."
+    $compose_cmd up -d "$@"
     ;;
+
   down)
-    docker compose down
+    compose_cmd="$(detect_compose)"
+    if [ -z "$compose_cmd" ]; then
+      echo "Error: No docker or podman compose tool found." >&2
+      exit 1
+    fi
+    echo "==> Stopping container stack via $compose_cmd..."
+    $compose_cmd down "$@"
     ;;
+
   logs)
-    docker compose logs -f "$@"
+    compose_cmd="$(detect_compose)"
+    if [ -z "$compose_cmd" ]; then
+      echo "Error: No docker or podman compose tool found." >&2
+      exit 1
+    fi
+    $compose_cmd logs -f "$@"
     ;;
+
   test)
     echo "==> Running backend tests..."
     b_args=()
     for arg in "$@"; do
       b_args+=("${arg#backend/}")
     done
-    (cd backend && (uv run pytest -q "${b_args[@]}" 2>/dev/null || ./.venv/bin/pytest -q "${b_args[@]}"))
+    run_backend pytest -q "${b_args[@]}"
     echo "==> Running frontend tests..."
-    (cd frontend && bun run test "$@")
+    run_frontend test "$@"
     ;;
+
   test:backend)
     b_args=()
     for arg in "$@"; do
       b_args+=("${arg#backend/}")
     done
-    (cd backend && (uv run pytest -q "${b_args[@]}" 2>/dev/null || ./.venv/bin/pytest -q "${b_args[@]}"))
+    run_backend pytest -q "${b_args[@]}"
     ;;
+
   test:frontend)
-    (cd frontend && bun run test "$@")
+    run_frontend test "$@"
     ;;
+
   lint)
     echo "==> Linting backend..."
-    (cd backend && (uv run ruff check . 2>/dev/null || ./.venv/bin/ruff check .))
+    run_backend ruff check .
     echo "==> Linting frontend..."
-    (cd frontend && bun run lint)
+    run_frontend lint
     ;;
+
   format)
     echo "==> Formatting backend..."
-    (cd backend && (uv run ruff format . 2>/dev/null || ./.venv/bin/ruff format .))
+    run_backend ruff format .
     echo "==> Formatting frontend..."
-    (cd frontend && bun run lint)
+    run_frontend lint
     ;;
+
   client)
     echo "==> Regenerating OpenAPI client..."
-    (cd frontend && bun run generate-client)
+    run_frontend generate-client
     ;;
+
   build)
     echo "==> Building frontend bundle..."
-    (cd frontend && bun run build)
+    run_frontend build
     ;;
+
   migrate)
     echo "==> Running database migrations..."
-    (cd backend && (uv run alembic upgrade head 2>/dev/null || ./.venv/bin/alembic upgrade head))
+    run_backend alembic upgrade head
     ;;
+
   seed)
     echo "==> Seeding database..."
-    (cd backend && (uv run python app/seed_mock_data.py 2>/dev/null || ./.venv/bin/python app/seed_mock_data.py))
+    run_backend python app/seed_mock_data.py
     ;;
+
   clean)
     find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
     find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
@@ -75,24 +258,36 @@ case "$cmd" in
     rm -rf frontend/dist
     echo "Cleaned cache and build artifacts."
     ;;
+
   *)
     echo "HealthWatch MS Command Runner"
     echo "Usage: ./run <command> [args]"
     echo ""
-    echo "Commands:"
-    echo "  dev             Start dev stack with docker compose watch"
-    echo "  up              Start containers in background (docker compose up -d)"
-    echo "  down            Stop and remove containers"
+    echo "Development Workflow:"
+    echo "  dev             Start DB and run backend + frontend concurrently (recommended)"
+    echo "  dev:backend     Start DB and run only backend dev server (FastAPI)"
+    echo "  dev:frontend    Run only frontend dev server (Vite)"
+    echo "  status          Check status of container runtime, DB, API, and frontend"
+    echo ""
+    echo "Service & Container Control (Podman / Docker):"
+    echo "  services:up     Start background services (PostgreSQL + Mailpit)"
+    echo "  services:down   Stop background services"
+    echo "  up              Start entire container stack in background"
+    echo "  down            Stop and tear down container stack"
     echo "  logs [service]  Tail container logs"
-    echo "  test            Run all tests (backend + frontend)"
+    echo ""
+    echo "Testing & Quality Gates:"
+    echo "  test            Run all tests (backend pytest + frontend vitest)"
     echo "  test:backend    Run pytest in backend"
     echo "  test:frontend   Run vitest in frontend"
     echo "  lint            Run Ruff and Biome linters"
     echo "  format          Run Ruff and Biome auto-formatters"
-    echo "  client          Regenerate OpenAPI client from backend"
-    echo "  build           Build frontend production bundle"
+    echo ""
+    echo "Database & Client Tooling:"
     echo "  migrate         Run Alembic database migrations"
-    echo "  seed            Seed initial mock data"
-    echo "  clean           Clean pycache, ruff, pytest, and dist artifacts"
+    echo "  seed            Seed initial mock data portfolio"
+    echo "  client          Regenerate TypeScript OpenAPI client from backend"
+    echo "  build           Build frontend production bundle"
+    echo "  clean           Clean cache directories and build artifacts"
     ;;
 esac

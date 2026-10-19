@@ -88,27 +88,32 @@ For technical teams and developers:
 
 ### Running Locally
 
-Using Docker Compose:
+Ensure `.env` exists (copied from `.env.example`).
+
+The recommended local development workflow uses `./run`, which automatically detects whether your system runs **Podman** (`podman compose` / `podman-compose`) or **Docker** (`docker compose`):
+
 ```bash
-cp .env.example .env
-make up
+# 1. Start database, run migrations, seed data, and launch backend + frontend concurrently:
+./run dev
+
+# 2. Check operational status of runtime, DB, API, and frontend:
+./run status
 ```
 
-- Frontend: http://localhost:5173
+Service URLs:
+- Frontend UI: http://localhost:5173
 - Backend API Documentation: http://localhost:8000/docs
 - Local Email Viewer (Mailpit): http://localhost:1080
 
-Using native development tools:
+Additional runner commands:
 ```bash
-# Backend (in /backend)
-uv sync
-uv run alembic upgrade head
-uv run python app/initial_data.py
-uv run fastapi dev app/main.py
-
-# Frontend (in /frontend)
-bun install
-bun run dev
+./run services:up     # Start background database & mailpit in Podman or Docker
+./run dev:backend     # Run FastAPI dev server natively
+./run dev:frontend    # Run Vite dev server natively
+./run test            # Run all backend pytest and frontend vitest suites
+./run lint            # Run Ruff and Biome linters
+./run format          # Auto-format codebase
+./run seed            # Seed realistic underwriting and client portfolio
 ```
 
 ---
