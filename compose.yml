@@ -1,7 +1,7 @@
 services:
 
   proxy:
-    image: docker.io/library/traefik:v3.3
+    image: docker.io/library/traefik:v3.7
     volumes:
       - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock:ro
     command:
