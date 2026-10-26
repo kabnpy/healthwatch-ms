@@ -70,6 +70,16 @@ def test_document_job_risk_note_pipeline(
     db.commit()
     db.refresh(risk_note)
 
+    # 1.5. Test HTML preview endpoint
+    r_prev = client.get(
+        f"{settings.API_V1_STR}/document-jobs/preview/html?resource_type=risk_note&resource_id={risk_note.id}",
+        headers=superuser_token_headers,
+    )
+    assert r_prev.status_code == 200
+    assert "text/html" in r_prev.headers["content-type"]
+    assert f"RN-SAFARI-{uid}" in r_prev.text
+    assert "CERTIFIED OFFICIAL" in r_prev.text
+
     # 2. Enqueue document job for Risk Note
     req = {
         "resource_type": DocumentJobResourceType.RISK_NOTE.value,

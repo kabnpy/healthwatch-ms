@@ -43,6 +43,9 @@ export function DocumentPreviewDrawer({
   onEditDraft,
 }: DocumentPreviewDrawerProps) {
   const [includeDigitalStamp, setIncludeDigitalStamp] = useState(true)
+  const [previewMode, setPreviewMode] = useState<"interactive" | "official">(
+    "interactive",
+  )
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const enqueueJob = useEnqueueDocumentJob()
   const processJob = useProcessDocumentJob()
@@ -223,8 +226,8 @@ export function DocumentPreviewDrawer({
             </div>
           )}
 
-          {/* Official Stamp & Sign Toggle Bar */}
-          <div className="flex items-center justify-between px-3 py-2 rounded-lg border bg-muted/30 text-xs">
+          {/* View Mode & Official Stamp Controls */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 px-3 py-2 rounded-lg border bg-muted/30 text-xs">
             <label
               htmlFor="stamp-toggle"
               className="flex items-center gap-2 cursor-pointer select-none font-medium text-foreground"
@@ -238,21 +241,44 @@ export function DocumentPreviewDrawer({
               />
               <span>Include official agency seal and signature</span>
             </label>
-            <span className="text-[11px] text-muted-foreground font-mono">
-              Official Agency Copy
-            </span>
+            <div className="flex items-center gap-1 self-end sm:self-auto">
+              <Button
+                size="sm"
+                variant={previewMode === "interactive" ? "secondary" : "ghost"}
+                onClick={() => setPreviewMode("interactive")}
+                className="h-7 text-xs px-2.5 font-medium cursor-pointer"
+              >
+                Interactive View
+              </Button>
+              <Button
+                size="sm"
+                variant={previewMode === "official" ? "secondary" : "ghost"}
+                onClick={() => setPreviewMode("official")}
+                className="h-7 text-xs px-2.5 font-medium cursor-pointer"
+              >
+                Official Preview
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* 1:1 A4 Paper Schedule Document Container */}
         <div className="border rounded-xl shadow-lg overflow-hidden bg-slate-100 dark:bg-zinc-900 p-4 sm:p-6 flex justify-center">
-          <div className="w-full max-w-3xl bg-white shadow-2xl rounded-sm">
-            <RiskNoteTemplate
-              riskNote={riskNote}
-              client={client}
-              policy={policy}
-              includeDigitalStamp={includeDigitalStamp}
-            />
+          <div className="w-full max-w-3xl bg-white shadow-2xl rounded-sm overflow-hidden">
+            {previewMode === "interactive" ? (
+              <RiskNoteTemplate
+                riskNote={riskNote}
+                client={client}
+                policy={policy}
+                includeDigitalStamp={includeDigitalStamp}
+              />
+            ) : (
+              <iframe
+                src={`/api/v1/document-jobs/preview/html?resource_type=risk_note&resource_id=${riskNote.id}`}
+                className="w-full h-[850px] border-0 bg-white"
+                title="Official Carrier Risk Note Preview"
+              />
+            )}
           </div>
         </div>
       </SheetContent>

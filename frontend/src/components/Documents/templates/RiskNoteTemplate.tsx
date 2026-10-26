@@ -142,6 +142,49 @@ export const RiskNoteTemplate = ({
       ),
     })
 
+    // Multi-vehicle schedule for fleet policies
+    const policyVehicles = (policy as any)?.vehicles || []
+    if (policyVehicles.length > 1) {
+      sections.push({
+        name: `ASSET SCHEDULE (${policyVehicles.length} VEHICLES)`,
+        content: (
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-[10px]">
+              <thead>
+                <tr className="border-b border-black font-mono uppercase text-muted-foreground">
+                  <th className="py-1">Reg No</th>
+                  <th className="py-1">Make / Model</th>
+                  <th className="py-1">Year</th>
+                  <th className="py-1">Chassis (VIN)</th>
+                  <th className="py-1 text-right">Sum Insured</th>
+                </tr>
+              </thead>
+              <tbody>
+                {policyVehicles.map((v: any, idx: number) => (
+                  <tr
+                    key={v.id || idx}
+                    className="border-b border-black/10 font-mono"
+                  >
+                    <td className="py-1 font-bold">
+                      {v.registration_number || v.reg_no}
+                    </td>
+                    <td className="py-1">
+                      {v.make} {v.model || ""}
+                    </td>
+                    <td className="py-1">{v.year_of_manufacture || "-"}</td>
+                    <td className="py-1">{v.chassis_number || "ON RECORD"}</td>
+                    <td className="py-1 text-right font-bold">
+                      {formatCurrency(v.sum_insured || 0)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ),
+      })
+    }
+
     // 5. DYNAMIC RISK SECTIONS (Template + Instance)
     const template: Record<string, any> = policy.product?.product_details || {}
     const instance: Record<string, any> = localRiskDetails || {}
