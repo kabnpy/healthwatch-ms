@@ -545,7 +545,14 @@ export function ClientInvoices({ clientId }: ClientInvoicesProps) {
           title="Invoice Details"
         >
           <Suspense fallback={<InvoicesSkeleton />}>
-            <DocumentViewer id={selectedDocId} type="invoice" />
+            <DocumentViewer
+              id={selectedDocId}
+              type="invoice"
+              onClose={() => {
+                setViewerOpen(false)
+                setSelectedDocId(null)
+              }}
+            />
           </Suspense>
         </DocumentViewerModal>
       )}

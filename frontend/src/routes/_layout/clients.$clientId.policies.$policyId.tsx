@@ -431,7 +431,11 @@ function PolicyDashboardContent({
           title={`Document: ${selectedRiskNoteId}`}
         >
           <Suspense fallback={<PendingItems />}>
-            <DocumentViewer id={selectedRiskNoteId} type={viewType} />
+            <DocumentViewer
+              id={selectedRiskNoteId}
+              type={viewType}
+              onClose={() => setViewerOpen(false)}
+            />
           </Suspense>
         </DocumentViewerModal>
       )}

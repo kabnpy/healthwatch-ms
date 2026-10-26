@@ -1,13 +1,17 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
-import { AlertCircle, FileText, Loader2 } from "lucide-react"
-import { Suspense } from "react"
-
+import { AlertCircle, ExternalLink, FileText, Loader2, X } from "lucide-react"
+import { Suspense, useState } from "react"
 import {
   client,
   DocumentsService,
   FinancialsService,
   RiskNotesService,
 } from "@/client"
+import { Button } from "@/components/ui/button"
+import {
+  useEnqueueDocumentJob,
+  useProcessDocumentJob,
+} from "@/hooks/useDocumentJobs"
 import { CanonicalDocumentViewer } from "./CanonicalDocumentViewer"
 
 // --- Types ---
@@ -17,6 +21,7 @@ type DocumentType = "risknote" | "invoice" | "receipt" | "external"
 interface DocumentViewerProps {
   id: string
   type: DocumentType
+  onClose?: () => void
 }
 
 // --- Shared Components ---
@@ -27,30 +32,50 @@ function DocumentShell({
   children,
   headerExtra,
   footer,
+  onClose,
 }: {
   title: string
   subtitle?: string
   children: React.ReactNode
   headerExtra?: React.ReactNode
   footer?: React.ReactNode
+  onClose?: () => void
 }) {
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg shadow-inner overflow-hidden border">
-      <div className="p-6 border-b bg-muted/30 flex justify-between items-center">
-        <div>
-          <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
-            {subtitle || "Document"}
-          </p>
-          <h3 className="text-sm font-bold font-mono">{title}</h3>
+    <div className="flex flex-col h-full bg-slate-100 rounded-lg overflow-hidden border">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b text-xs">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-slate-900">{title}</span>
+          {subtitle && (
+            <span className="text-[10px] font-mono uppercase bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+              {subtitle}
+            </span>
+          )}
         </div>
-        {headerExtra}
+        <div className="flex items-center gap-1.5">
+          {headerExtra}
+          {onClose && (
+            <div className="flex items-center pl-1 border-l ml-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onClose}
+                className="h-7 w-7 p-0 cursor-pointer text-slate-500 hover:text-slate-900"
+                title="Close"
+              >
+                <X className="size-4" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex-1 min-h-[600px] bg-zinc-100 p-4 flex items-center justify-center overflow-auto">
+      <div className="flex-1 p-4 overflow-auto flex items-center justify-center">
         {children}
       </div>
 
-      {footer && <div className="p-6 border-t bg-muted/10">{footer}</div>}
+      {footer && <div className="p-4 border-t bg-white text-xs">{footer}</div>}
     </div>
   )
 }
@@ -64,7 +89,7 @@ function ErrorDisplay({ id, message }: { id: string; message?: string }) {
       <h3 className="text-lg font-bold">Document Not Found</h3>
       <p className="text-muted-foreground max-w-xs mx-auto">
         {message ||
-          "We couldn't find the requested file. It may have been deleted or the link is invalid."}
+          "We could not find the requested file. It may have been deleted or the link is invalid."}
       </p>
       <p className="text-[10px] text-muted-foreground mt-4 font-mono">
         Reference ID: {id}
@@ -73,44 +98,101 @@ function ErrorDisplay({ id, message }: { id: string; message?: string }) {
   )
 }
 
-// --- Loader Components (Internal) ---
+// --- Loader Components (Canonical System Documents) ---
 
-function RiskNoteLoader({ id }: { id: string }) {
+function RiskNoteLoader({ id, onClose }: { id: string; onClose?: () => void }) {
   const { data: riskNote } = useSuspenseQuery({
     queryFn: async () =>
       (await RiskNotesService.notesReadRiskNote({ path: { id } })).data,
     queryKey: ["risk-notes", id],
   })
 
+  const enqueueJob = useEnqueueDocumentJob()
+  const processJob = useProcessDocumentJob()
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
+
+  const handleDownloadPdf = async () => {
+    setIsDownloadingPdf(true)
+    try {
+      const enqueued = await enqueueJob.mutateAsync({
+        resource_type: "risk_note" as any,
+        resource_id: riskNote.id,
+      })
+      if (enqueued?.id) {
+        await processJob.mutateAsync(enqueued.id)
+        window.open(`/api/v1/document-jobs/${enqueued.id}/download`, "_blank")
+      }
+    } catch (err) {
+      console.error("Failed to generate official PDF:", err)
+    } finally {
+      setIsDownloadingPdf(false)
+    }
+  }
+
   return (
     <CanonicalDocumentViewer
       resourceType="risk_note"
       resourceId={riskNote.id}
       title={`Risk Note - ${riskNote.risk_note_number || "Schedule"}`}
+      onDownloadPdf={handleDownloadPdf}
+      isDownloadingPdf={isDownloadingPdf}
+      onClose={onClose}
     />
   )
 }
 
-function InvoiceLoader({ id }: { id: string }) {
+function InvoiceLoader({ id, onClose }: { id: string; onClose?: () => void }) {
   const { data: invoice } = useSuspenseQuery({
     queryFn: async () =>
       (await FinancialsService.readInvoice({ path: { id } })).data,
     queryKey: ["invoices", id],
   })
 
+  const enqueueJob = useEnqueueDocumentJob()
+  const processJob = useProcessDocumentJob()
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
+
+  const handleDownloadPdf = async () => {
+    setIsDownloadingPdf(true)
+    try {
+      const enqueued = await enqueueJob.mutateAsync({
+        resource_type: "invoice" as any,
+        resource_id: invoice.id,
+      })
+      if (enqueued?.id) {
+        await processJob.mutateAsync(enqueued.id)
+        window.open(`/api/v1/document-jobs/${enqueued.id}/download`, "_blank")
+      }
+    } catch (err) {
+      console.error("Failed to generate official PDF:", err)
+    } finally {
+      setIsDownloadingPdf(false)
+    }
+  }
+
   return (
     <CanonicalDocumentViewer
       resourceType="invoice"
       resourceId={invoice.id}
       title={`Invoice - ${invoice.invoice_number || "Debit Note"}`}
+      onDownloadPdf={handleDownloadPdf}
+      isDownloadingPdf={isDownloadingPdf}
+      onClose={onClose}
     />
   )
 }
 
-// --- Loader Components (External) ---
+// --- Loader Components (External Files) ---
 
-function FileLoader({ id, receiptId }: { id?: string; receiptId?: string }) {
-  // 1. Fetch the Document Metadata
+function FileLoader({
+  id,
+  receiptId,
+  onClose,
+}: {
+  id?: string
+  receiptId?: string
+  onClose?: () => void
+}) {
   const {
     data: document,
     isLoading: isDocLoading,
@@ -118,9 +200,9 @@ function FileLoader({ id, receiptId }: { id?: string; receiptId?: string }) {
   } = useQuery({
     queryKey: ["document-metadata", id, receiptId],
     queryFn: async () => {
-      console.log("Fetching document metadata...", { id, receiptId })
-      if (id)
+      if (id) {
         return (await DocumentsService.readDocumentById({ path: { id } })).data
+      }
       if (receiptId) {
         const docs = (
           await DocumentsService.readDocuments({
@@ -136,7 +218,6 @@ function FileLoader({ id, receiptId }: { id?: string; receiptId?: string }) {
     },
   })
 
-  // 2. Fetch Receipt Metadata (only if it's a receipt view)
   const { data: receipt, isLoading: isReceiptLoading } = useQuery({
     queryKey: ["receipt-metadata", receiptId],
     queryFn: async () =>
@@ -154,55 +235,57 @@ function FileLoader({ id, receiptId }: { id?: string; receiptId?: string }) {
     return (
       <div className="flex flex-col items-center justify-center p-24 text-center w-full">
         <Loader2 className="size-8 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Loading document...</p>
+        <p className="text-muted-foreground text-xs">Loading document...</p>
       </div>
     )
   }
 
   if (isDocError || !document) {
-    console.error("Document not found or error fetching metadata", {
-      isDocError,
-      document,
-    })
     return <ErrorDisplay id={id || receiptId || "N/A"} />
   }
 
-  // Ensure BASE URL is present and doesn't have double slashes
   const baseUrl =
     (client.getConfig().baseURL as string) ||
     import.meta.env.VITE_API_URL ||
     "http://localhost:8000"
   const downloadUrl = `${baseUrl.replace(/\/$/, "")}/api/v1/documents/${document.id}/download`
 
-  console.log("Document Ready:", {
-    name: document.document_type,
-    mime: document.mime_type,
-    url: downloadUrl,
-  })
-
-  const headerExtra = receipt ? (
-    <div className="flex gap-6 text-right">
-      <div>
-        <p className="text-[10px] font-bold uppercase text-muted-foreground">
-          Amount
-        </p>
-        <p className="font-bold text-xs">
-          KES {receipt.amount.toLocaleString()}
-        </p>
-      </div>
-      <div>
-        <p className="text-[10px] font-bold uppercase text-muted-foreground">
-          Mode
-        </p>
-        <p className="font-bold text-xs">{receipt.mode}</p>
-      </div>
+  const headerExtra = (
+    <div className="flex items-center gap-3">
+      {receipt && (
+        <div className="flex gap-4 text-right">
+          <div>
+            <span className="text-[10px] font-bold uppercase text-muted-foreground mr-1">
+              Amount:
+            </span>
+            <span className="font-bold text-xs">
+              KES {receipt.amount.toLocaleString()}
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase text-muted-foreground mr-1">
+              Mode:
+            </span>
+            <span className="font-bold text-xs">{receipt.mode}</span>
+          </div>
+        </div>
+      )}
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => window.open(downloadUrl, "_blank")}
+        className="h-7 text-xs px-2.5 gap-1.5 cursor-pointer"
+      >
+        <ExternalLink className="size-3" />
+        Pop Out
+      </Button>
     </div>
-  ) : null
+  )
 
   const footer =
     receipt?.allocations && receipt.allocations.length > 0 ? (
       <>
-        <p className="text-[10px] font-bold uppercase text-muted-foreground mb-3 flex items-center gap-2">
+        <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
           <FileText className="size-3" />
           Payment Allocations
         </p>
@@ -210,7 +293,7 @@ function FileLoader({ id, receiptId }: { id?: string; receiptId?: string }) {
           {receipt.allocations.map((alloc: any, i: number) => (
             <div
               key={i}
-              className="flex justify-between text-xs bg-white p-2 rounded border border-black/5"
+              className="flex justify-between text-xs bg-slate-50 p-2 rounded border"
             >
               <span className="text-muted-foreground font-mono">
                 {alloc.invoice_id.substring(0, 13)}...
@@ -230,18 +313,18 @@ function FileLoader({ id, receiptId }: { id?: string; receiptId?: string }) {
       subtitle={receipt ? "Receipt Proof" : "Attachment"}
       headerExtra={headerExtra}
       footer={footer}
+      onClose={onClose}
     >
       {document.mime_type?.startsWith("image/") ? (
         <img
           src={downloadUrl}
           alt={document.document_type}
-          className="max-w-full h-auto shadow-2xl rounded-sm border bg-white"
-          onError={() => console.error("Image failed to load:", downloadUrl)}
+          className="max-w-full max-h-[80vh] object-contain shadow-xl rounded-sm border bg-white"
         />
       ) : (
         <iframe
           src={downloadUrl}
-          className="w-full h-full min-h-[800px] border-none shadow-2xl bg-white rounded-sm"
+          className="w-full h-full min-h-[750px] border-none shadow-xl bg-white rounded-sm"
           title="Document Viewer"
         />
       )}
@@ -251,10 +334,9 @@ function FileLoader({ id, receiptId }: { id?: string; receiptId?: string }) {
 
 // --- Main Component ---
 
-export function DocumentViewer({ id, type }: DocumentViewerProps) {
+export function DocumentViewer({ id, type, onClose }: DocumentViewerProps) {
   return (
-    <div className="w-full h-full animate-in fade-in zoom-in-95 duration-300">
-      {/* Templates use Suspense */}
+    <div className="w-full h-full animate-in fade-in zoom-in-95 duration-200">
       {(type === "risknote" || type === "invoice") && (
         <Suspense
           fallback={
@@ -263,14 +345,13 @@ export function DocumentViewer({ id, type }: DocumentViewerProps) {
             </div>
           }
         >
-          {type === "risknote" && <RiskNoteLoader id={id} />}
-          {type === "invoice" && <InvoiceLoader id={id} />}
+          {type === "risknote" && <RiskNoteLoader id={id} onClose={onClose} />}
+          {type === "invoice" && <InvoiceLoader id={id} onClose={onClose} />}
         </Suspense>
       )}
 
-      {/* External Files use internal state for better error handling */}
-      {type === "receipt" && <FileLoader receiptId={id} />}
-      {type === "external" && <FileLoader id={id} />}
+      {type === "receipt" && <FileLoader receiptId={id} onClose={onClose} />}
+      {type === "external" && <FileLoader id={id} onClose={onClose} />}
     </div>
   )
 }

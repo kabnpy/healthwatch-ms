@@ -263,7 +263,11 @@ export function DocumentManager({
           title="View Document"
         >
           <Suspense fallback={<PendingItems />}>
-            <DocumentViewer id={selectedDocId} type="external" />
+            <DocumentViewer
+              id={selectedDocId}
+              type="external"
+              onClose={() => setSelectedDocId(null)}
+            />
           </Suspense>
         </DocumentViewerModal>
       )}

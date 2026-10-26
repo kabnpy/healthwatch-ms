@@ -4,6 +4,7 @@ import {
   Loader2,
   Printer,
   RefreshCw,
+  X,
 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -16,6 +17,7 @@ interface CanonicalDocumentViewerProps {
   className?: string
   onDownloadPdf?: () => void
   isDownloadingPdf?: boolean
+  onClose?: () => void
 }
 
 export function CanonicalDocumentViewer({
@@ -26,6 +28,7 @@ export function CanonicalDocumentViewer({
   className = "",
   onDownloadPdf,
   isDownloadingPdf = false,
+  onClose,
 }: CanonicalDocumentViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [htmlContent, setHtmlContent] = useState<string>("")
@@ -149,6 +152,20 @@ export function CanonicalDocumentViewer({
               )}
               Official PDF
             </Button>
+          )}
+          {onClose && (
+            <div className="flex items-center pl-1 border-l ml-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onClose}
+                className="h-7 w-7 p-0 cursor-pointer text-slate-500 hover:text-slate-900"
+                title="Close"
+              >
+                <X className="size-4" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </div>
           )}
         </div>
       </div>
