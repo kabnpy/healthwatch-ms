@@ -259,7 +259,7 @@ export const RiskNoteTemplate = ({
     })
 
     // 8. AUTHENTICATION
-    const invoice = riskNote.invoice_line_items?.[0]?.invoice
+    const invoice = (riskNote.invoice_line_items?.[0] as any)?.invoice
     sections.push({
       name: "AUTHENTICATION",
       content: (

@@ -17,6 +17,7 @@ from app.models import (
     Client,
     Correspondence,
     Document,
+    DocumentJob,
     Insurer,
     Invoice,
     InvoiceLineItem,
@@ -71,6 +72,7 @@ def db() -> Generator[Session]:
         # Cleanup
         try:
             for model in [
+                DocumentJob,
                 Document,
                 Claim,
                 Activity,

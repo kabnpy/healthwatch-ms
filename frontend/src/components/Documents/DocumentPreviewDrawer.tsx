@@ -2,6 +2,8 @@ import {
   AlertCircle,
   CheckCircle2,
   ExternalLink,
+  FileDown,
+  Loader2,
   Printer,
   ShieldCheck,
 } from "lucide-react"
@@ -16,6 +18,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import {
+  useEnqueueDocumentJob,
+  useProcessDocumentJob,
+} from "@/hooks/useDocumentJobs"
 import type { EnhancedPolicy, EnhancedRiskNote } from "@/types/insurance"
 import { RiskNoteTemplate } from "./templates/RiskNoteTemplate"
 
@@ -37,6 +43,29 @@ export function DocumentPreviewDrawer({
   onEditDraft,
 }: DocumentPreviewDrawerProps) {
   const [includeDigitalStamp, setIncludeDigitalStamp] = useState(true)
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
+  const enqueueJob = useEnqueueDocumentJob()
+  const processJob = useProcessDocumentJob()
+
+  const handleGenerateServerPdf = async () => {
+    if (!riskNote) return
+    setIsGeneratingPdf(true)
+    try {
+      const enqueued = await enqueueJob.mutateAsync({
+        resource_type: "risk_note" as any,
+        resource_id: riskNote.id,
+        snapshot_data: { include_digital_stamp: includeDigitalStamp },
+      })
+      if (enqueued?.id) {
+        await processJob.mutateAsync(enqueued.id)
+        window.open(`/api/v1/document-jobs/${enqueued.id}/download`, "_blank")
+      }
+    } catch (err) {
+      console.error("Failed to generate official PDF:", err)
+    } finally {
+      setIsGeneratingPdf(false)
+    }
+  }
 
   // Pre-flight Data Completeness Validator
   const validation = useMemo(() => {
@@ -123,13 +152,27 @@ export function DocumentPreviewDrawer({
             {/* Action Bar */}
             <div className="flex items-center gap-2 shrink-0">
               <Button
+                variant="default"
+                size="sm"
+                onClick={handleGenerateServerPdf}
+                disabled={isGeneratingPdf}
+                className="gap-1.5 text-xs h-8 cursor-pointer font-semibold shadow-sm"
+              >
+                {isGeneratingPdf ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <FileDown className="size-3.5" />
+                )}
+                <span>Official PDF</span>
+              </Button>
+              <Button
                 variant="outline"
                 size="sm"
                 onClick={handlePrint}
                 className="gap-1.5 text-xs h-8 cursor-pointer"
               >
                 <Printer className="size-3.5" />
-                Print / Export PDF
+                Print
               </Button>
               <Button
                 size="sm"

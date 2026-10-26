@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Statement of Account - {{ statement.client_name }}</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 12mm 15mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 11px;
+      line-height: 1.4;
+      color: #0f172a;
+      background: #ffffff;
+    }
+    .header {
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .agency-brand {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      text-transform: uppercase;
+      color: #0f172a;
+    }
+    .agency-tag {
+      font-size: 8px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .agency-meta {
+      text-align: right;
+      font-size: 9px;
+      color: #475569;
+      line-height: 1.35;
+    }
+    .statement-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .statement-title {
+      font-size: 20px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+      color: #0f172a;
+    }
+    .statement-meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .meta-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 14px;
+    }
+    .meta-card h4 {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+      margin-bottom: 6px;
+      font-weight: 800;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      margin-bottom: 4px;
+    }
+    .meta-label {
+      color: #64748b;
+    }
+    .meta-val {
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .summary-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .summary-card {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 10px 12px;
+      background: #ffffff;
+    }
+    .summary-card.highlight {
+      background: #f8fafc;
+      border-color: #0f172a;
+    }
+    .summary-card .label {
+      font-size: 8.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .summary-card .amount {
+      font-size: 15px;
+      font-weight: 800;
+      font-family: monospace;
+      color: #0f172a;
+    }
+    .ledger-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .ledger-table th {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 8px 10px;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: left;
+    }
+    .ledger-table th.num, .ledger-table td.num {
+      text-align: right;
+    }
+    .ledger-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 10px;
+    }
+    .ledger-table tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    .type-badge {
+      display: inline-block;
+      font-size: 8px;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    .type-invoice {
+      background: #e2e8f0;
+      color: #334155;
+    }
+    .type-payment {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 12px;
+      margin-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 8.5px;
+      color: #64748b;
+    }
+    .remittance-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 12px;
+      font-size: 9.5px;
+    }
+    .remittance-box h5 {
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #334155;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="agency-brand">HealthWatch</div>
+      <div class="agency-tag">Insurance Agency &bull; Operations & Underwriting</div>
+    </div>
+    <div class="agency-meta">
+      <strong>HealthWatch Insurance Agency Ltd</strong><br>
+      Upper Hill Chambers, 4th Floor &bull; Nairobi, Kenya<br>
+      Tel: +254 700 000 000 &bull; Email: accounts@healthwatch.co.ke<br>
+      KRA PIN: P051234567Z &bull; IRA Lic: IRA/05/2026
+    </div>
+  </div>
+
+  <div class="statement-title-bar">
+    <div>
+      <div class="statement-title">Statement of Account</div>
+      <div style="font-size: 10px; color: #64748b; margin-top: 2px;">
+        Chronological reconciliation of debits, credits, and outstanding balances.
+      </div>
+    </div>
+    <div style="text-align: right;">
+      <span style="font-size: 10px; color: #64748b;">Statement Date:</span><br>
+      <span style="font-family: monospace; font-weight: 700; font-size: 12px;">{{ generated_at[:10] if generated_at else "TODAY" }}</span>
+    </div>
+  </div>
+
+  <div class="statement-meta-grid">
+    <div class="meta-card">
+      <h4>Account Holder</h4>
+      <div class="meta-row">
+        <span class="meta-label">Client Name:</span>
+        <span class="meta-val">{{ statement.client_name }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Client ID:</span>
+        <span class="meta-val" style="font-family: monospace;">{{ statement.client_id[:8] if statement.client_id else "N/A" }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">KRA PIN:</span>
+        <span class="meta-val" style="font-family: monospace;">{{ statement.kra_pin or "NOT SPECIFIED" }}</span>
+      </div>
+    </div>
+
+    <div class="meta-card">
+      <h4>Ledger Overview</h4>
+      <div class="meta-row">
+        <span class="meta-label">Invoices Issued:</span>
+        <span class="meta-val">{{ statement.invoice_count }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Remittances Applied:</span>
+        <span class="meta-val">{{ statement.allocation_count }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Ledger Currency:</span>
+        <span class="meta-val">KES (Kenyan Shilling)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="label">Total Billed (Debits)</div>
+      <div class="amount">KES {{ "{:,.2f}".format(statement.total_invoiced|float) }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Total Received (Credits)</div>
+      <div class="amount" style="color: #166534;">KES {{ "{:,.2f}".format(statement.total_allocated|float) }}</div>
+    </div>
+    <div class="summary-card highlight">
+      <div class="label">Net Outstanding Balance</div>
+      <div class="amount" style="color: #0f172a;">KES {{ "{:,.2f}".format(statement.net_outstanding_balance|float) }}</div>
+    </div>
+  </div>
+
+  <table class="ledger-table">
+    <thead>
+      <tr>
+        <th style="width: 15%;">Date</th>
+        <th style="width: 15%;">Type</th>
+        <th style="width: 20%;">Reference</th>
+        <th style="width: 26%;">Description</th>
+        <th class="num" style="width: 12%;">Debit (KES)</th>
+        <th class="num" style="width: 12%;">Credit (KES)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in statement.ledger_entries %}
+      <tr>
+        <td style="font-family: monospace;">{{ entry.date }}</td>
+        <td>
+          {% if entry.type == 'INVOICE' %}
+          <span class="type-badge type-invoice">Invoice</span>
+          {% else %}
+          <span class="type-badge type-payment">Payment</span>
+          {% endif %}
+        </td>
+        <td style="font-family: monospace;">{{ entry.reference }}</td>
+        <td>{{ entry.description }}</td>
+        <td class="num" style="font-family: monospace;">{{ "{:,.2f}".format(entry.debit|float) if entry.debit|float > 0 else "-" }}</td>
+        <td class="num" style="font-family: monospace; color: #166534;">{{ "{:,.2f}".format(entry.credit|float) if entry.credit|float > 0 else "-" }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 18px; color: #64748b;">
+          No transactions recorded for this account.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="remittance-box">
+    <h5>Settlement & Remittance Instructions</h5>
+    <p style="color: #475569; line-height: 1.4;">
+      Please quote your Client Name and relevant Invoice Numbers when remitting payments.<br>
+      <strong>M-Pesa Paybill:</strong> 522522 &bull; <strong>Account Number:</strong> HW-{{ statement.client_name.split()[0] if statement.client_name else 'CLIENT' }}<br>
+      <strong>Direct Bank Remittance:</strong> NCBA Bank Kenya PLC &bull; Upper Hill Branch &bull; A/C: 1002003004
+    </p>
+  </div>
+
+  <div class="footer">
+    <div>HealthWatch Insurance Agency Ltd &bull; Reconciled Financial Document</div>
+    <div>Strictly Confidential &bull; Generated {{ generated_at or "" }}</div>
+  </div>
+</body>
+</html>

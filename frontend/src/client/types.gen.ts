@@ -990,7 +990,7 @@ export type DocumentPublic = {
 /**
  * DocumentType
  */
-export type DocumentType = 'insurer_receipt' | 'proof_of_payment' | 'carrier_renewal_notice' | 'kyc_document' | 'valuation_report' | 'Logbook' | 'ID' | 'Valuation' | 'PoliceAbstract' | 'Receipt' | 'Other';
+export type DocumentType = 'insurer_receipt' | 'proof_of_payment' | 'carrier_renewal_notice' | 'kyc_document' | 'valuation_report' | 'Logbook' | 'ID' | 'Valuation' | 'PoliceAbstract' | 'Receipt' | 'Other' | 'KRA PIN Certificate' | 'National ID / Passport' | 'Certificate of Incorporation' | 'Utility Bill' | 'Policy Schedule' | 'Cover Note' | 'Accident Photos' | 'Repair Estimate' | 'Claim Form' | 'Police Report' | 'Bank Slip' | 'M-Pesa Screenshot';
 
 /**
  * DocumentsPublic
@@ -1501,8 +1501,6 @@ export type InvoiceLineItemPublic = {
      * Id
      */
     id: string;
-    risk_note?: RiskNotePublic | null;
-    invoice?: InvoicePublic | null;
 };
 
 /**
@@ -3389,6 +3387,36 @@ export type RiskNotesPublic = {
 };
 
 /**
+ * SystemInfo
+ */
+export type SystemInfo = {
+    /**
+     * App Name
+     */
+    app_name?: string;
+    /**
+     * Environment
+     */
+    environment: string;
+    /**
+     * Currency
+     */
+    currency?: string;
+    /**
+     * Timezone
+     */
+    timezone?: string;
+    /**
+     * Version
+     */
+    version?: string;
+    /**
+     * Status
+     */
+    status?: string;
+};
+
+/**
  * Token
  */
 export type Token = {
@@ -4208,6 +4236,22 @@ export type utilsHealthCheckResponses = {
 };
 
 export type utilsHealthCheckResponse = utilsHealthCheckResponses[keyof utilsHealthCheckResponses];
+
+export type utilsGetSystemInfoData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/utils/system-info';
+};
+
+export type utilsGetSystemInfoResponses = {
+    /**
+     * Successful Response
+     */
+    200: SystemInfo;
+};
+
+export type utilsGetSystemInfoResponse = utilsGetSystemInfoResponses[keyof utilsGetSystemInfoResponses];
 
 export type documentsReadDocumentsData = {
     body?: never;
@@ -7204,6 +7248,36 @@ export type documentJobsReadDocumentJobResponses = {
 };
 
 export type documentJobsReadDocumentJobResponse = documentJobsReadDocumentJobResponses[keyof documentJobsReadDocumentJobResponses];
+
+export type documentJobsDownloadDocumentJobArtifactData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/document-jobs/{id}/download';
+};
+
+export type documentJobsDownloadDocumentJobArtifactErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type documentJobsDownloadDocumentJobArtifactError = documentJobsDownloadDocumentJobArtifactErrors[keyof documentJobsDownloadDocumentJobArtifactErrors];
+
+export type documentJobsDownloadDocumentJobArtifactResponses = {
+    /**
+     * Response Document-Jobs-Download Document Job Artifact
+     *
+     * Successful Response
+     */
+    200: unknown;
+};
 
 export type documentJobsProcessDocumentJobData = {
     body?: never;

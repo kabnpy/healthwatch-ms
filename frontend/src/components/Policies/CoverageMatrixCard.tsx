@@ -23,7 +23,7 @@ export function CoverageMatrixCard({
   const terms = (snapshot as any)?.terms || {}
   const extensions = (snapshot as any)?.extensions || {}
 
-  const invoice = riskNote.invoice_line_items?.[0]?.invoice
+  const invoice = (riskNote.invoice_line_items?.[0] as any)?.invoice
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -44,3 +44,14 @@ export const useEnqueueDocumentJob = () => {
     },
   })
 }
+
+export const useProcessDocumentJob = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) =>
+      (await DocumentJobsService.jobsProcessDocumentJob({ path: { id } })).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["document-jobs"] })
+    },
+  })
+}

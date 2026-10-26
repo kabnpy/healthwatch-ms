@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Download,
   FileCheck2,
   FileText,
   Loader2,
@@ -123,13 +124,25 @@ export function DocumentJobStatusTray() {
                       </Badge>
                     )}
                     {isSuccess && (
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
-                      >
-                        <CheckCircle2 className="size-2.5 mr-1" />
-                        Ready
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                        >
+                          <CheckCircle2 className="size-2.5 mr-1" />
+                          Ready
+                        </Badge>
+                        <a
+                          href={`/api/v1/document-jobs/${job.id}/download`}
+                          target="_blank"
+                          rel="noreferrer"
+                          download
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline ml-1"
+                        >
+                          <Download className="size-3" />
+                          PDF
+                        </a>
+                      </div>
                     )}
                     {isFailed && (
                       <Badge
