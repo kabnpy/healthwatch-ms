@@ -106,12 +106,6 @@ export function CommandMenu() {
               <span>Renewals ({expiringPolicies.length} due)</span>
             </CommandItem>
             <CommandItem
-              onSelect={() => runCommand(() => navigate({ to: "/policies" }))}
-            >
-              <Shield className="mr-2 h-4 w-4" />
-              <span>Policies Portfolio</span>
-            </CommandItem>
-            <CommandItem
               onSelect={() => runCommand(() => navigate({ to: "/clients" }))}
             >
               <Users className="mr-2 h-4 w-4" />

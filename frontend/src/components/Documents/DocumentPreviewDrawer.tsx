@@ -423,8 +423,7 @@ export function DocumentPreviewDrawer({
                 resourceId={riskNote.id}
                 draftSnapshot={draftSnapshot}
                 title="Live Document Preview"
-                onDownloadPdf={handleGenerateServerPdf}
-                isDownloadingPdf={isGeneratingPdf}
+                hideToolbar
               />
             </div>
           </div>
@@ -435,8 +434,7 @@ export function DocumentPreviewDrawer({
               resourceId={riskNote.id}
               draftSnapshot={draftSnapshot}
               title={policy.product?.name || "Official Policy Schedule"}
-              onDownloadPdf={handleGenerateServerPdf}
-              isDownloadingPdf={isGeneratingPdf}
+              hideToolbar
             />
           </div>
         )}

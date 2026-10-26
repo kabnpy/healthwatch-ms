@@ -372,7 +372,7 @@ function RenewalsDeskPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
-            <Link to="/policies">Browse All Policies</Link>
+            <Link to="/clients">Browse Clients</Link>
           </Button>
         </div>
       </div>

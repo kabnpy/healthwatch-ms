@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   Library,
   RefreshCw,
-  Shield,
   UserCheck,
   UserRound,
 } from "lucide-react"
@@ -24,7 +23,6 @@ import { User } from "./User"
 const baseItems: Item[] = [
   { icon: LayoutDashboard, title: "Dashboard", path: "/" },
   { icon: UserRound, title: "Clients", path: "/clients" },
-  { icon: Shield, title: "Policies", path: "/policies" },
   { icon: RefreshCw, title: "Renewals", path: "/renewals" },
   { icon: CreditCard, title: "Financials", path: "/financials" },
 ]

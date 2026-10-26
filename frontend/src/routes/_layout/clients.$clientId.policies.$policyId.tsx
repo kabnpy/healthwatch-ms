@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { Eye, FileDown, FileText, Mail, Printer } from "lucide-react"
+import { FileDown, FileText, Mail } from "lucide-react"
 import { Suspense, useCallback, useState } from "react"
 import { PoliciesService } from "@/client"
 import { ActivityTimeline } from "@/components/Activities/ActivityTimeline"
@@ -10,9 +10,7 @@ import ErrorComponent from "@/components/Common/ErrorComponent"
 import { DocumentPreviewDrawer } from "@/components/Documents/DocumentPreviewDrawer"
 import { DocumentViewer } from "@/components/Documents/DocumentViewer"
 import { RiskNoteForm } from "@/components/Insurance/RiskNoteForm"
-import { VersionHistory } from "@/components/Insurance/VersionHistory"
 import PendingItems from "@/components/Pending/PendingItems"
-import { CoverageMatrixCard } from "@/components/Policies/CoverageMatrixCard"
 import { PolicyDashboardSkeleton } from "@/components/Policies/Dashboard/PolicyDashboardSkeleton"
 import { PolicyHeader } from "@/components/Policies/Dashboard/PolicyHeader"
 import { MedicalPolicyView } from "@/components/Policies/MedicalPolicyView"
@@ -30,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useClient, usePolicyDashboard } from "@/hooks/useInsurance"
 import { queryClient } from "@/queryClient"
 import type { EnhancedPolicy, EnhancedRiskNote } from "@/types/insurance"
+import { formatCurrency } from "@/utils"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 // --- Route Definition ---
@@ -165,6 +164,18 @@ function PolicyDashboardContent({
 
   const displayName = getPolicyDisplayName(policy)
 
+  const snapshot = (latestRiskNote?.cover_snapshot as any) || {}
+  const rawSum =
+    snapshot.vehicle?.sum_insured ||
+    snapshot.sum_insured ||
+    (vehicle as any)?.insured_value ||
+    (vehicle as any)?.sum_insured ||
+    (isMedical ? 2000000 : Number(latestRiskNote?.net_premium || 0) * 20)
+
+  const invoice = (latestRiskNote?.invoice_line_items?.[0] as any)?.invoice
+  const balanceDue = Number(invoice?.balance_due ?? 0)
+  const isSettled = invoice ? balanceDue === 0 : false
+
   return (
     <div className="flex flex-col gap-6">
       <PolicyHeader
@@ -207,7 +218,7 @@ function PolicyDashboardContent({
 
         {/* TAB 1: OVERVIEW */}
         <TabsContent value="overview" className="pt-6">
-          <div className="flex flex-col gap-8 max-w-5xl mx-auto">
+          <div className="flex flex-col gap-6 max-w-5xl mx-auto">
             {isMedical ? (
               <MedicalPolicyView
                 policy={policy as EnhancedPolicy}
@@ -217,49 +228,57 @@ function PolicyDashboardContent({
               />
             ) : (
               <>
-                {/* Top Info & Actions Row */}
-                <div className="flex flex-col md:flex-row justify-between items-start gap-6 bg-muted/30 p-6 rounded-xl border border-border/50">
-                  <div className="flex items-center gap-6">
-                    <div>
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">
-                        Coverage Status
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <div className="text-3xl font-bold tracking-tight">
-                          {daysToExpiry}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground uppercase leading-tight font-semibold">
-                          Days until
-                          <br />
-                          Expiry
-                        </div>
-                      </div>
+                {/* Policy Schedule Header & Primary Actions */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl border bg-card shadow-sm">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-wider">
+                        Official Policy Schedule
+                      </span>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                          latestRiskNote?.status === "Draft"
+                            ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                        }`}
+                      >
+                        {latestRiskNote?.status || "Final"}
+                      </span>
                     </div>
-                    <div className="w-32 h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${daysToExpiry < 30 ? "bg-destructive" : "bg-blue-500"}`}
-                        style={{
-                          width: `${Math.min(100, (daysToExpiry / 365) * 100)}%`,
-                        }}
-                      />
-                    </div>
+                    <h3 className="text-lg font-bold text-foreground">
+                      {displayName}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Ref:{" "}
+                      <span className="font-mono font-medium">
+                        {latestRiskNote?.risk_note_number || "DRAFT"}
+                      </span>
+                      {latestRiskNote?.coverage_start &&
+                        latestRiskNote?.coverage_end && (
+                          <span>
+                            {" "}
+                            &bull; Term: {latestRiskNote.coverage_start} to{" "}
+                            {latestRiskNote.coverage_end}
+                          </span>
+                        )}
+                    </p>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <Button
-                      variant="outline"
+                      variant="default"
                       size="sm"
-                      className="gap-2 h-9 shadow-sm cursor-pointer"
                       onClick={() => setPreviewDrawerOpen(true)}
                       disabled={!latestRiskNote?.id}
+                      className="gap-2 h-9 cursor-pointer shadow-sm text-xs font-semibold"
                     >
-                      <Printer className="size-4" />
-                      Print / Export Schedule
+                      <FileText className="size-4" />
+                      <span>View Schedule</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 h-9 shadow-sm"
+                      className="gap-2 h-9 text-xs cursor-pointer"
                       onClick={() => {
                         if (!client?.email) {
                           alert("No email address registered for this client.")
@@ -275,23 +294,104 @@ function PolicyDashboardContent({
                       }}
                     >
                       <Mail className="size-4" />
-                      Email Client
+                      <span>Email Client</span>
                     </Button>
+                  </div>
+                </div>
+
+                {/* Key Figures Strip */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-xl border bg-card shadow-sm space-y-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                      Sum Insured
+                    </span>
+                    <p className="text-lg font-bold font-mono tabular-nums text-foreground">
+                      {rawSum > 0 ? formatCurrency(rawSum) : "—"}
+                    </p>
+                    <span className="text-[11px] text-muted-foreground block truncate">
+                      {policy.product?.class_of_insurance || "Agreed Value"}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-xl border bg-card shadow-sm space-y-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                      Net Premium
+                    </span>
+                    <p className="text-lg font-bold font-mono tabular-nums text-foreground">
+                      {latestRiskNote?.net_premium != null
+                        ? formatCurrency(latestRiskNote.net_premium)
+                        : "—"}
+                    </p>
+                    <span className="text-[11px] text-muted-foreground block truncate">
+                      {latestRiskNote?.total_amount != null
+                        ? `Total Payable: ${formatCurrency(latestRiskNote.total_amount)}`
+                        : "Excludes statutory levies"}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-xl border bg-card shadow-sm space-y-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                      Invoice Balance
+                    </span>
+                    <p className="text-lg font-bold font-mono tabular-nums text-foreground">
+                      {invoice ? (
+                        isSettled ? (
+                          <span className="text-emerald-600 dark:text-emerald-400">
+                            Settled in Full
+                          </span>
+                        ) : (
+                          formatCurrency(balanceDue)
+                        )
+                      ) : (
+                        "Pending"
+                      )}
+                    </p>
+                    <span className="text-[11px] text-muted-foreground block truncate">
+                      {invoice
+                        ? `Invoice #${invoice.invoice_number}`
+                        : "Unbilled"}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-xl border bg-card shadow-sm space-y-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                      Policy Expiry
+                    </span>
+                    <p
+                      className={`text-lg font-bold tracking-tight ${
+                        daysToExpiry <= 14
+                          ? "text-rose-600 dark:text-rose-400"
+                          : daysToExpiry <= 30
+                            ? "text-amber-600 dark:text-amber-400"
+                            : "text-foreground"
+                      }`}
+                    >
+                      {daysToExpiry > 0
+                        ? `${daysToExpiry} days left`
+                        : daysToExpiry === 0
+                          ? "Expires today"
+                          : "Expired"}
+                    </p>
+                    <span className="text-[11px] text-muted-foreground block truncate">
+                      {expiryDateStr
+                        ? `Expires: ${expiryDateStr}`
+                        : "No expiry date"}
+                    </span>
                   </div>
                 </div>
 
                 {/* Draft Risk Note Alert if present */}
                 {(latestRiskNote as any)?.status === "Draft" && (
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg flex items-center justify-between shadow-sm">
+                  <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl flex items-center justify-between shadow-sm text-xs">
                     <div className="flex items-center gap-3">
-                      <div className="bg-blue-500 p-2 rounded-full">
-                        <FileDown className="size-4 text-white" />
+                      <div className="bg-amber-500 text-white p-2 rounded-lg">
+                        <FileDown className="size-4" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-blue-900">
+                        <p className="font-bold text-amber-900 dark:text-amber-200">
                           Draft Risk Note Detected
                         </p>
-                        <p className="text-xs text-blue-700">
+                        <p className="text-amber-700 dark:text-amber-300">
                           This {latestRiskNote?.transaction_type} has not been
                           finalized yet.
                         </p>
@@ -299,7 +399,7 @@ function PolicyDashboardContent({
                     </div>
                     <Button
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                      className="bg-amber-600 hover:bg-amber-700 text-white gap-2 font-medium cursor-pointer"
                       onClick={handlePopulateDraft}
                     >
                       Populate & Issue
@@ -309,100 +409,37 @@ function PolicyDashboardContent({
 
                 {/* Vehicle Asset Card for Motor policies */}
                 {(isMotor || vehicle) && <VehicleAssetCard vehicle={vehicle} />}
-
-                {/* Interactive Coverage & Statutory Levies Matrix */}
-                {latestRiskNote && (
-                  <CoverageMatrixCard
-                    policy={policy as EnhancedPolicy}
-                    riskNote={latestRiskNote as EnhancedRiskNote}
-                    onOpenPreview={() => setPreviewDrawerOpen(true)}
-                  />
-                )}
-
-                {/* Outbound Document Engine Action Banner */}
-                {latestRiskNote && (
-                  <div className="rounded-xl border bg-muted/20 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
-                        <FileText className="size-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-foreground">
-                          Policy Schedule (Risk Note)
-                        </h4>
-                        <p className="text-xs text-muted-foreground">
-                          View or export the official policy schedule, coverage
-                          terms, and premium breakdown.
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => setPreviewDrawerOpen(true)}
-                      disabled={!latestRiskNote?.id}
-                      className="gap-2 shrink-0 cursor-pointer text-xs"
-                    >
-                      <Eye className="size-3.5" />
-                      View Schedule
-                    </Button>
-                  </div>
-                )}
               </>
             )}
           </div>
         </TabsContent>
 
         {/* TAB 2: HISTORY (Risk Notes) */}
-
         <TabsContent value="history" className="pt-6">
-          <div className="max-w-5xl mx-auto space-y-8">
-            <div className="flex justify-between items-center border-b pb-4">
-              <h3 className="text-xl font-black uppercase tracking-tighter text-slate-900">
-                Transaction History
-              </h3>
+          <div className="max-w-5xl mx-auto space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-4">
+              <div>
+                <h3 className="text-lg font-bold text-foreground">
+                  Transaction & Schedule History
+                </h3>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Authoritative risk notes, endorsements, and coverage schedules
+                </p>
+              </div>
+              <span className="text-xs font-mono text-muted-foreground">
+                {riskNotes.length}{" "}
+                {riskNotes.length === 1 ? "record" : "records"}
+              </span>
             </div>
 
-            <Tabs defaultValue="timeline" className="w-full">
-              <div className="flex justify-end mb-6">
-                <TabsList className="bg-slate-100 p-1">
-                  <TabsTrigger
-                    value="timeline"
-                    className="text-xs font-bold uppercase tracking-widest px-4 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-                  >
-                    Timeline
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="table"
-                    className="text-xs font-bold uppercase tracking-widest px-4 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-                  >
-                    Table
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-
-              <TabsContent
-                value="timeline"
-                className="animate-in fade-in slide-in-from-bottom-2 duration-300"
-              >
-                <VersionHistory
-                  riskNotes={riskNotes}
-                  onView={(rn) => handleViewRiskNote(rn.id, "risknote")}
-                />
-              </TabsContent>
-
-              <TabsContent
-                value="table"
-                className="animate-in fade-in slide-in-from-bottom-2 duration-300"
-              >
-                <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
-                  <DataTable
-                    columns={getRiskNoteColumns((rn) =>
-                      handleViewRiskNote(rn.id, "risknote"),
-                    )}
-                    data={riskNotes}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
+            <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
+              <DataTable
+                columns={getRiskNoteColumns((rn) =>
+                  handleViewRiskNote(rn.id, "risknote"),
+                )}
+                data={riskNotes}
+              />
+            </div>
           </div>
         </TabsContent>
 

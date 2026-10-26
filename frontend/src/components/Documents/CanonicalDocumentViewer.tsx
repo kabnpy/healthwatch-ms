@@ -15,6 +15,7 @@ interface CanonicalDocumentViewerProps {
   draftSnapshot?: Record<string, any>
   title?: string
   className?: string
+  hideToolbar?: boolean
   onDownloadPdf?: () => void
   isDownloadingPdf?: boolean
   onClose?: () => void
@@ -26,6 +27,7 @@ export function CanonicalDocumentViewer({
   draftSnapshot,
   title = "Authoritative Document",
   className = "",
+  hideToolbar = false,
   onDownloadPdf,
   isDownloadingPdf = false,
   onClose,
@@ -97,78 +99,80 @@ export function CanonicalDocumentViewer({
       className={`flex flex-col h-full bg-slate-100 rounded-lg overflow-hidden border ${className}`}
     >
       {/* Control Header Bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b text-xs">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-slate-900">{title}</span>
-          <span className="text-[10px] font-mono uppercase bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
-            Canonical Print Engine (A4)
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={fetchDocumentHtml}
-            disabled={isLoading}
-            className="h-7 text-xs px-2 gap-1 cursor-pointer"
-            title="Refresh preview"
-          >
-            <RefreshCw
-              className={`size-3 ${isLoading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handlePrint}
-            disabled={isLoading || !htmlContent}
-            className="h-7 text-xs px-2.5 gap-1.5 cursor-pointer"
-          >
-            <Printer className="size-3" />
-            Print
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleOpenNewTab}
-            disabled={isLoading || !htmlContent}
-            className="h-7 text-xs px-2.5 gap-1.5 cursor-pointer"
-          >
-            <ExternalLink className="size-3" />
-            Pop Out
-          </Button>
-          {onDownloadPdf && (
+      {!hideToolbar && (
+        <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-900">{title}</span>
+            <span className="text-[10px] font-mono uppercase bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+              Canonical Print Engine (A4)
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
             <Button
               size="sm"
-              onClick={onDownloadPdf}
-              disabled={isDownloadingPdf}
-              className="h-7 text-xs px-2.5 gap-1.5 cursor-pointer bg-slate-900 text-white hover:bg-slate-800"
+              variant="ghost"
+              onClick={fetchDocumentHtml}
+              disabled={isLoading}
+              className="h-7 text-xs px-2 gap-1 cursor-pointer"
+              title="Refresh preview"
             >
-              {isDownloadingPdf ? (
-                <Loader2 className="size-3 animate-spin" />
-              ) : (
-                <Download className="size-3" />
-              )}
-              Official PDF
+              <RefreshCw
+                className={`size-3 ${isLoading ? "animate-spin" : ""}`}
+              />
+              Refresh
             </Button>
-          )}
-          {onClose && (
-            <div className="flex items-center pl-1 border-l ml-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handlePrint}
+              disabled={isLoading || !htmlContent}
+              className="h-7 text-xs px-2.5 gap-1.5 cursor-pointer"
+            >
+              <Printer className="size-3" />
+              Print
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleOpenNewTab}
+              disabled={isLoading || !htmlContent}
+              className="h-7 text-xs px-2.5 gap-1.5 cursor-pointer"
+            >
+              <ExternalLink className="size-3" />
+              Pop Out
+            </Button>
+            {onDownloadPdf && (
               <Button
                 size="sm"
-                variant="ghost"
-                onClick={onClose}
-                className="h-7 w-7 p-0 cursor-pointer text-slate-500 hover:text-slate-900"
-                title="Close"
+                onClick={onDownloadPdf}
+                disabled={isDownloadingPdf}
+                className="h-7 text-xs px-2.5 gap-1.5 cursor-pointer bg-slate-900 text-white hover:bg-slate-800"
               >
-                <X className="size-4" />
-                <span className="sr-only">Close</span>
+                {isDownloadingPdf ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : (
+                  <Download className="size-3" />
+                )}
+                Official PDF
               </Button>
-            </div>
-          )}
+            )}
+            {onClose && (
+              <div className="flex items-center pl-1 border-l ml-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onClose}
+                  className="h-7 w-7 p-0 cursor-pointer text-slate-500 hover:text-slate-900"
+                  title="Close"
+                >
+                  <X className="size-4" />
+                  <span className="sr-only">Close</span>
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Document View Area */}
       <div className="flex-1 p-4 sm:p-6 overflow-auto flex justify-center items-start">
