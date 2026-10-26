@@ -80,17 +80,17 @@
 ## 3. Final Production Acceptance Checklist (§20)
 
 The system is ready for initial production use only when all of the following invariants pass:
-- [ ] Agents can authenticate, log out, and have expired or revoked sessions rejected.
-- [ ] Client, policy, vehicle, insurer, offer, and document records can be created, indexed, and found via Cmd+K.
-- [ ] Annual renewal dates follow the calendar-month rule and manual initiation remains under agent control.
-- [ ] Insurer terms are reviewed before invitations are prepared; medical invitations are separate; competing offers and their versions remain preserved.
-- [ ] Every permitted and blocked renewal transition is tested, including the informal exception audit trail.
-- [ ] Client payment evidence cannot be mistaken for cleared payment; payment records, allocations, and insurer receipts remain distinct.
-- [ ] Invalid, missing, ambiguous, or uncovered rate data blocks premium calculation.
-- [ ] Calculation results are reproducible and use verified integer KES rounding and tax formulas.
-- [ ] Concurrent updates to renewals cannot silently overwrite newer changes (OCC returns 409).
-- [ ] Generated documents render from immutable request-time snapshots.
-- [ ] Background jobs survive restarts, retry safely, and expose terminal failures without duplicating artifacts.
-- [ ] Invoice batches and statements reconcile to agency invoices and payment allocations; insurer receipt documents are not counted as payment credits.
-- [ ] Document downloads are authenticated and use short-lived URLs.
-- [ ] Audit events capture material financial changes, rate revisions, and payment reversals.
+- [x] Agents can authenticate, log out, and have expired or revoked sessions rejected.
+- [x] Client, policy, vehicle, insurer, offer, and document records can be created, indexed, and found via Cmd+K.
+- [x] Annual renewal dates follow the calendar-month rule and manual initiation remains under agent control.
+- [x] Insurer terms are reviewed before invitations are prepared; medical invitations are separate; competing offers and their versions remain preserved.
+- [x] Every permitted and blocked renewal transition is tested, including the informal exception audit trail.
+- [x] Client payment evidence cannot be mistaken for cleared payment; payment records, allocations, and insurer receipts remain distinct.
+- [x] Invalid, missing, ambiguous, or uncovered rate data blocks premium calculation.
+- [x] Calculation results are reproducible and use verified integer KES rounding and tax formulas.
+- [x] Concurrent updates to renewals cannot silently overwrite newer changes (OCC returns 409).
+- [x] Generated documents render from immutable request-time snapshots.
+- [x] Background jobs survive restarts, retry safely, and expose terminal failures without duplicating artifacts.
+- [x] Invoice batches and statements reconcile to agency invoices and payment allocations; insurer receipt documents are not counted as payment credits.
+- [x] Document downloads are authenticated and use short-lived URLs.
+- [x] Audit events capture material financial changes, rate revisions, and payment reversals.
