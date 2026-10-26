@@ -80,6 +80,8 @@
     }
     .schedule-table tr {
       border-bottom: 1px solid #cbd5e1;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .schedule-table th {
       width: 25%;
@@ -154,36 +156,9 @@
       font-size: 9px;
       color: #475569;
     }
-    .stamp-container {
-      width: 130px;
-      height: 60px;
-      border: 2px solid #0369a1;
-      border-radius: 6px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #0369a1;
-      font-family: monospace;
-      transform: rotate(-3deg);
-      background: rgba(3, 105, 161, 0.03);
-    }
-    .stamp-title {
-      font-size: 9px;
-      font-weight: 900;
-      letter-spacing: 0.5px;
-    }
-    .stamp-sub {
-      font-size: 7px;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-    .stamp-date {
-      font-size: 8px;
-      font-weight: 800;
-      margin-top: 2px;
-      border-top: 1px dashed #0369a1;
-      padding-top: 1px;
+    .stamp-svg-wrapper {
+      display: inline-block;
+      vertical-align: middle;
     }
     .legal-notice {
       margin-top: 12px;
@@ -193,6 +168,8 @@
       text-align: justify;
       border-top: 1px solid #e2e8f0;
       padding-top: 6px;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
   </style>
 </head>
@@ -251,28 +228,56 @@
       </td>
     </tr>
 
-    {% if vehicle %}
+    {% if vehicles and vehicles|length > 1 %}
+    <tr>
+      <th>Asset Schedule ({{ vehicles|length }} Vehicles)</th>
+      <td>
+        <table class="sub-table" style="font-size: 9.5px;">
+          <thead>
+            <tr style="border-bottom: 1px solid #cbd5e1; font-weight: 700; color: #475569;">
+              <th style="padding: 2px 4px; text-align: left; width: 22%;">Reg No</th>
+              <th style="padding: 2px 4px; text-align: left; width: 28%;">Make &amp; Model</th>
+              <th style="padding: 2px 4px; text-align: left; width: 15%;">Year</th>
+              <th style="padding: 2px 4px; text-align: left; width: 20%;">Chassis No</th>
+              <th style="padding: 2px 4px; text-align: right; width: 15%;">Sum Insured</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in vehicles %}
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="font-family: monospace; font-weight: 700; padding: 2px 4px;">{{ v.registration_number or v.reg_no }}</td>
+              <td style="padding: 2px 4px;">{{ v.make }} {{ v.model or "" }}</td>
+              <td style="padding: 2px 4px;">{{ v.year_of_manufacture or v.year or "-" }}</td>
+              <td style="font-family: monospace; padding: 2px 4px;">{{ v.chassis_number or v.vin or "ON RECORD" }}</td>
+              <td style="font-family: monospace; text-align: right; font-weight: 700; padding: 2px 4px;">KES {{ (v.sum_insured or 0) | kes }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    {% elif vehicle %}
     <tr>
       <th>Asset Details</th>
       <td>
         <table class="sub-table">
           <tr>
             <td class="label">Registration No:</td>
-            <td class="val" style="font-family: monospace; font-size: 11px;">{{ vehicle.registration_number }}</td>
+            <td class="val" style="font-family: monospace; font-size: 11px;">{{ vehicle.registration_number or vehicle.reg_no }}</td>
             <td class="label">Make & Model:</td>
             <td class="val">{{ vehicle.make }} {{ vehicle.model or "" }}</td>
           </tr>
           <tr>
             <td class="label">Year of Manufacture:</td>
-            <td class="val">{{ vehicle.year_of_manufacture }}</td>
+            <td class="val">{{ vehicle.year_of_manufacture or vehicle.year or "-" }}</td>
             <td class="label">Body Type:</td>
             <td class="val">{{ vehicle.body_type or "Saloon / Station Wagon" }}</td>
           </tr>
           <tr>
             <td class="label">Chassis No (VIN):</td>
-            <td class="val" style="font-family: monospace;">{{ vehicle.chassis_number or "ON RECORD" }}</td>
+            <td class="val" style="font-family: monospace;">{{ vehicle.chassis_number or vehicle.vin or "ON RECORD" }}</td>
             <td class="label">Insured Sum Value:</td>
-            <td class="val" style="font-family: monospace; font-size: 11px;">KES {{ sum_insured_formatted or (risk_note.sum_insured if risk_note else "") }}</td>
+            <td class="val" style="font-family: monospace; font-size: 11px;">KES {{ sum_insured_formatted or (risk_note.sum_insured | kes if risk_note else "") }}</td>
           </tr>
         </table>
       </td>
@@ -285,23 +290,23 @@
         <table class="financial-table">
           <tr>
             <td>Net Base Premium</td>
-            <td class="amount">KES {{ net_premium_formatted or (risk_note.net_premium if risk_note else "0.00") }}</td>
+            <td class="amount">KES {{ net_premium_formatted or (risk_note.net_premium | kes if risk_note else "0.00") }}</td>
           </tr>
           {% for benefit in benefits or [] %}
           <tr>
             <td>{{ benefit.name }}</td>
-            <td class="amount">KES {{ benefit.amount_formatted }}</td>
+            <td class="amount">KES {{ benefit.amount_formatted or (benefit.amount | kes) }}</td>
           </tr>
           {% endfor %}
           {% for tax_name, tax_amt in (taxes or {}).items() %}
           <tr>
             <td>{{ tax_name }}</td>
-            <td class="amount">KES {{ tax_amt }}</td>
+            <td class="amount">KES {{ tax_amt | kes if tax_amt is number else tax_amt }}</td>
           </tr>
           {% endfor %}
           <tr class="total-row">
             <td>TOTAL AMOUNT PAYABLE</td>
-            <td class="amount" style="font-size: 12px; color: #0f172a;">KES {{ total_amount_formatted or (risk_note.net_premium if risk_note else "0.00") }}</td>
+            <td class="amount" style="font-size: 12px; color: #0f172a;">KES {{ total_amount_formatted or (risk_note.total_amount | kes if risk_note and risk_note.total_amount else (risk_note.net_premium | kes if risk_note else "0.00")) }}</td>
           </tr>
         </table>
       </td>
@@ -323,11 +328,21 @@
             <div>Issue Date: {{ issued_date_formatted or generated_at }}</div>
             <div style="margin-top: 4px; font-style: italic;">Subject to prompt payment of premium and insurer warranties.</div>
           </div>
-          <div class="stamp-container">
-            <div class="stamp-title">HEALTHWATCH MS</div>
-            <div class="stamp-sub">Authorized Cover Slip</div>
-            <div class="stamp-date">{{ stamp_date }}</div>
+          {% if include_digital_stamp %}
+          <div class="stamp-svg-wrapper">
+            <svg viewBox="0 0 240 140" width="165" height="96" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="120" cy="70" rx="112" ry="62" stroke="#0369a1" stroke-width="2.2" stroke-dasharray="4 2" fill="none" />
+              <ellipse cx="120" cy="70" rx="104" ry="54" stroke="#0369a1" stroke-width="1.2" fill="none" />
+              <text x="120" y="38" text-anchor="middle" font-size="9" font-family="monospace" font-weight="bold" letter-spacing="1.2" fill="#0369a1">HEALTHWATCH INSURANCE</text>
+              <text x="120" y="51" text-anchor="middle" font-size="7" font-family="sans-serif" font-weight="600" letter-spacing="1.2" fill="#0369a1">AGENCY OPERATIONS</text>
+              <rect x="40" y="59" width="160" height="19" fill="#0369a1" fill-opacity="0.06" stroke="#0369a1" stroke-width="0.8" />
+              <text x="120" y="72" text-anchor="middle" font-size="8.5" font-family="monospace" font-weight="bold" letter-spacing="1.5" fill="#0369a1">* CERTIFIED OFFICIAL *</text>
+              <text x="120" y="92" text-anchor="middle" font-size="8" font-family="monospace" font-weight="bold" letter-spacing="1" fill="#0369a1">{{ stamp_date or (generated_at[:11] if generated_at else "") }}</text>
+              <text x="120" y="108" text-anchor="middle" font-size="7.5" font-family="monospace" font-weight="bold" letter-spacing="1.2" fill="#0369a1">NAIROBI, KENYA</text>
+              <path d="M 55 82 Q 75 45 95 72 T 135 68 Q 155 58 175 75 Q 185 85 200 68" stroke="#0369a1" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0.8" />
+            </svg>
           </div>
+          {% endif %}
         </div>
       </td>
     </tr>

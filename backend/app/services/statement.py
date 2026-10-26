@@ -72,6 +72,12 @@ class ClientStatementService:
 
         entries.sort(key=lambda x: x["date"])
 
+        # Calculate sequential running ledger balance
+        running_bal = Decimal("0.00")
+        for entry in entries:
+            running_bal += Decimal(entry["debit"]) - Decimal(entry["credit"])
+            entry["running_balance"] = str(running_bal)
+
         return {
             "client_id": str(client.id),
             "client_name": client.name,

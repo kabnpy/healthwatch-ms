@@ -88,6 +88,14 @@
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 20px;
+      page-break-inside: auto;
+    }
+    .line-items-table thead {
+      display: table-header-group;
+    }
+    .line-items-table tr {
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .line-items-table th {
       background: #0f172a;
@@ -113,6 +121,8 @@
       margin-left: auto;
       border-collapse: collapse;
       margin-bottom: 24px;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .summary-box td {
       padding: 5px 8px;
@@ -137,6 +147,8 @@
       border-radius: 6px;
       padding: 12px 16px;
       font-size: 10px;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .payment-details h4 {
       font-size: 10px;
@@ -213,7 +225,7 @@
           {% endif %}
         </td>
         <td class="amount font-mono" style="font-weight: 700;">
-          {{ item.amount_formatted or item.total_amount or ("{:,.2f}".format(item.total_amount|float) if item.total_amount is defined else "") }}
+          {{ item.amount_formatted or (item.total_amount | kes if item.total_amount is defined else "") }}
         </td>
       </tr>
       {% endfor %}
@@ -223,7 +235,7 @@
   <table class="summary-box">
     <tr>
       <td>Subtotal Invoiced</td>
-      <td class="amount">KES {{ subtotal_formatted or ("{:,.2f}".format(invoice.total_amount|float) if invoice and invoice.total_amount else "0.00") }}</td>
+      <td class="amount">KES {{ subtotal_formatted or (invoice.total_amount | kes if invoice and invoice.total_amount else "0.00") }}</td>
     </tr>
     <tr>
       <td>Total Amount Paid / Allocated</td>
@@ -231,7 +243,7 @@
     </tr>
     <tr class="grand-total">
       <td>OUTSTANDING BALANCE DUE</td>
-      <td class="amount" style="color: #0f172a;">KES {{ balance_due_formatted or ("{:,.2f}".format(invoice.total_amount|float) if invoice and invoice.total_amount else "0.00") }}</td>
+      <td class="amount" style="color: #0f172a;">KES {{ balance_due_formatted or (invoice.total_amount | kes if invoice and invoice.total_amount else "0.00") }}</td>
     </tr>
   </table>
 
@@ -240,7 +252,7 @@
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
       <div>
         <strong>M-Pesa Paybill:</strong> 522522 &bull; <strong>Account:</strong> {{ invoice.invoice_number }}<br>
-        <strong>Direct Bank:</strong> NCBA Bank Kenya &bull; <strong>Branch:</strong> Kenyatta Avenue<br>
+        <strong>Direct Bank:</strong> NCBA Bank Kenya PLC &bull; <strong>Branch:</strong> Kenyatta Avenue<br>
         <strong>Account Name:</strong> HealthWatch Insurance Agency Ltd &bull; <strong>A/C:</strong> 1002345678
       </div>
       <div style="color: #475569; font-size: 9px; line-height: 1.35;">

@@ -211,27 +211,37 @@ export const InvoiceTemplate = ({
                 <div className="space-y-1 mt-2">
                   <p className="flex justify-between">
                     <span className="text-slate-500">Business No:</span>
-                    <span className="font-black">505800</span>
+                    <span className="font-black">522522</span>
                   </p>
                   <p className="flex justify-between">
                     <span className="text-slate-500">Account No:</span>
                     <span className="font-black font-mono">
-                      Car Registration / Name
+                      {invoice.invoice_number}
                     </span>
                   </p>
                 </div>
               </div>
-              {/*<div>
+              <div>
                 <p className="font-black uppercase mb-3 border-b border-black/10 pb-1 text-black tracking-widest">
-                  Cheque / EFT
+                  Direct Bank (EFT / RTGS)
                 </p>
                 <div className="space-y-1 mt-2">
-                  <p className="font-black">HealthWatch Insurance Agency</p>
-                  <p className="italic text-slate-400 font-medium">
-                    Bank details available on request
+                  <p className="flex justify-between">
+                    <span className="text-slate-500">Bank:</span>
+                    <span className="font-black">NCBA Bank Kenya PLC</span>
+                  </p>
+                  <p className="flex justify-between">
+                    <span className="text-slate-500">Account No:</span>
+                    <span className="font-black font-mono">1002345678</span>
+                  </p>
+                  <p className="flex justify-between">
+                    <span className="text-slate-500">Beneficiary:</span>
+                    <span className="font-bold">
+                      HealthWatch Insurance Agency
+                    </span>
                   </p>
                 </div>
-              </div>*/}
+              </div>
             </div>
           </div>
         </div>

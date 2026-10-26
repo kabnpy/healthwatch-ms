@@ -2,6 +2,7 @@ import logging
 import shutil
 import subprocess
 import tempfile
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,17 @@ FRONTEND_RENDER_SCRIPT = (
 )
 
 
+def format_kes(val: Any) -> str:
+    """Format numeric/decimal values as Kenyan Shillings with comma separators and 2 decimal places."""
+    if val is None or val == "":
+        return "0.00"
+    try:
+        d = Decimal(str(val))
+        return f"{d:,.2f}"
+    except Exception:
+        return str(val)
+
+
 class PdfRendererService:
     """Headless PDF rendering service utilizing Jinja2 templates and Bun+Playwright with fallback."""
 
@@ -30,6 +42,7 @@ class PdfRendererService:
                 loader=jinja2.FileSystemLoader(str(TEMPLATES_DIR)),
                 autoescape=jinja2.select_autoescape(["html", "xml"]),
             )
+            cls._jinja_env.filters["kes"] = format_kes
         return cls._jinja_env
 
     @classmethod

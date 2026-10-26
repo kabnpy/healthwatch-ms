@@ -2,7 +2,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 
 from app import crud
@@ -55,6 +55,23 @@ def read_document_jobs(
     """Retrieve document generation jobs."""
     jobs = crud.get_document_jobs(session=session, skip=skip, limit=limit)
     return DocumentJobsPublic(data=jobs, count=len(jobs))
+
+
+@router.get("/preview/html", response_class=HTMLResponse)
+def preview_document_html(
+    *,
+    session: SessionDep,
+    _current_user: CurrentUser,
+    resource_type: DocumentJobResourceType,
+    resource_id: uuid.UUID | None = None,
+) -> Any:
+    """Renders the canonical Jinja2 document HTML for instant browser preview with 100% print fidelity."""
+    html, _, _, _, _, _ = DocumentJobService.render_resource_html(
+        session=session,
+        resource_type=resource_type,
+        resource_id=resource_id,
+    )
+    return HTMLResponse(content=html)
 
 
 @router.get("/{id}", response_model=DocumentJobPublic)

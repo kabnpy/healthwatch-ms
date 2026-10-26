@@ -131,12 +131,20 @@
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 20px;
+      page-break-inside: auto;
+    }
+    .ledger-table thead {
+      display: table-header-group;
+    }
+    .ledger-table tr {
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .ledger-table th {
       background: #0f172a;
       color: #ffffff;
-      padding: 8px 10px;
-      font-size: 9px;
+      padding: 7px 8px;
+      font-size: 8.5px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -146,9 +154,9 @@
       text-align: right;
     }
     .ledger-table td {
-      padding: 7px 10px;
+      padding: 6px 8px;
       border-bottom: 1px solid #e2e8f0;
-      font-size: 10px;
+      font-size: 9.5px;
     }
     .ledger-table tr:nth-child(even) td {
       background: #f8fafc;
@@ -185,6 +193,8 @@
       padding: 10px 14px;
       margin-top: 12px;
       font-size: 9.5px;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .remittance-box h5 {
       font-size: 9px;
@@ -199,14 +209,14 @@
 <body>
   <div class="header">
     <div>
-      <div class="agency-brand">HealthWatch</div>
-      <div class="agency-tag">Insurance Agency &bull; Operations & Underwriting</div>
+      <div class="agency-brand">HealthWatch MS</div>
+      <div class="agency-tag">Insurance Agency Operations & Underwriting &bull; Nairobi, Kenya</div>
     </div>
     <div class="agency-meta">
       <strong>HealthWatch Insurance Agency Ltd</strong><br>
-      Upper Hill Chambers, 4th Floor &bull; Nairobi, Kenya<br>
-      Tel: +254 700 000 000 &bull; Email: accounts@healthwatch.co.ke<br>
-      KRA PIN: P051234567Z &bull; IRA Lic: IRA/05/2026
+      Hughes Building, 4th Floor, Kenyatta Avenue &bull; Nairobi, Kenya<br>
+      P.O. Box 45123 - 00100 Nairobi &bull; Tel: +254 (0) 20 2212345<br>
+      KRA PIN: P051234567Z &bull; IRA Reg: IRA/05/2048/2026
     </div>
   </div>
 
@@ -214,7 +224,7 @@
     <div>
       <div class="statement-title">Statement of Account</div>
       <div style="font-size: 10px; color: #64748b; margin-top: 2px;">
-        Chronological reconciliation of debits, credits, and outstanding balances.
+        Chronological reconciliation of debits, credits, and running balances.
       </div>
     </div>
     <div style="text-align: right;">
@@ -252,7 +262,7 @@
       </div>
       <div class="meta-row">
         <span class="meta-label">Ledger Currency:</span>
-        <span class="meta-val">KES (Kenyan Shilling)</span>
+        <span class="meta-val">KES (Kenyan Shilling - Fixed Point)</span>
       </div>
     </div>
   </div>
@@ -260,27 +270,28 @@
   <div class="summary-cards">
     <div class="summary-card">
       <div class="label">Total Billed (Debits)</div>
-      <div class="amount">KES {{ "{:,.2f}".format(statement.total_invoiced|float) }}</div>
+      <div class="amount">KES {{ statement.total_invoiced | kes }}</div>
     </div>
     <div class="summary-card">
       <div class="label">Total Received (Credits)</div>
-      <div class="amount" style="color: #166534;">KES {{ "{:,.2f}".format(statement.total_allocated|float) }}</div>
+      <div class="amount" style="color: #166534;">KES {{ statement.total_allocated | kes }}</div>
     </div>
     <div class="summary-card highlight">
       <div class="label">Net Outstanding Balance</div>
-      <div class="amount" style="color: #0f172a;">KES {{ "{:,.2f}".format(statement.net_outstanding_balance|float) }}</div>
+      <div class="amount" style="color: #0f172a;">KES {{ statement.net_outstanding_balance | kes }}</div>
     </div>
   </div>
 
   <table class="ledger-table">
     <thead>
       <tr>
-        <th style="width: 15%;">Date</th>
-        <th style="width: 15%;">Type</th>
-        <th style="width: 20%;">Reference</th>
-        <th style="width: 26%;">Description</th>
+        <th style="width: 12%;">Date</th>
+        <th style="width: 12%;">Type</th>
+        <th style="width: 16%;">Reference</th>
+        <th style="width: 24%;">Description</th>
         <th class="num" style="width: 12%;">Debit (KES)</th>
         <th class="num" style="width: 12%;">Credit (KES)</th>
+        <th class="num" style="width: 12%;">Balance (KES)</th>
       </tr>
     </thead>
     <tbody>
@@ -296,12 +307,13 @@
         </td>
         <td style="font-family: monospace;">{{ entry.reference }}</td>
         <td>{{ entry.description }}</td>
-        <td class="num" style="font-family: monospace;">{{ "{:,.2f}".format(entry.debit|float) if entry.debit|float > 0 else "-" }}</td>
-        <td class="num" style="font-family: monospace; color: #166534;">{{ "{:,.2f}".format(entry.credit|float) if entry.credit|float > 0 else "-" }}</td>
+        <td class="num" style="font-family: monospace;">{{ entry.debit | kes if entry.debit and entry.debit != '0.00' else "-" }}</td>
+        <td class="num" style="font-family: monospace; color: #166534;">{{ entry.credit | kes if entry.credit and entry.credit != '0.00' else "-" }}</td>
+        <td class="num" style="font-family: monospace; font-weight: 700; color: #0f172a;">KES {{ entry.running_balance | kes if entry.running_balance is defined else "-" }}</td>
       </tr>
       {% else %}
       <tr>
-        <td colspan="6" style="text-align: center; padding: 18px; color: #64748b;">
+        <td colspan="7" style="text-align: center; padding: 18px; color: #64748b;">
           No transactions recorded for this account.
         </td>
       </tr>
@@ -313,8 +325,8 @@
     <h5>Settlement & Remittance Instructions</h5>
     <p style="color: #475569; line-height: 1.4;">
       Please quote your Client Name and relevant Invoice Numbers when remitting payments.<br>
-      <strong>M-Pesa Paybill:</strong> 522522 &bull; <strong>Account Number:</strong> HW-{{ statement.client_name.split()[0] if statement.client_name else 'CLIENT' }}<br>
-      <strong>Direct Bank Remittance:</strong> NCBA Bank Kenya PLC &bull; Upper Hill Branch &bull; A/C: 1002003004
+      <strong>M-Pesa Paybill:</strong> 522522 &bull; <strong>Account Number:</strong> {{ statement.kra_pin or (statement.client_name.split()[0] if statement.client_name else 'CLIENT') }}<br>
+      <strong>Direct Bank Remittance:</strong> NCBA Bank Kenya PLC &bull; Kenyatta Avenue Branch &bull; A/C: 1002345678 &bull; HealthWatch Insurance Agency Ltd
     </p>
   </div>
 
