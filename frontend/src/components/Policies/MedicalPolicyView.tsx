@@ -236,7 +236,7 @@ export function MedicalPolicyView({
           <div className="rounded-lg border bg-muted/20 overflow-hidden">
             <div className="px-4 py-2 bg-muted/40 border-b flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-foreground">
-                Authoritative Financial Breakdown (Fixed-Point KES)
+                Premium Breakdown (KES)
               </span>
               <span className="text-[11px] font-mono text-muted-foreground">
                 Cap 487 Compliant

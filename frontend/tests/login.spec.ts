@@ -46,7 +46,7 @@ test("Log in with valid email and password ", async ({ page }) => {
   await page.waitForURL("/")
 
   await expect(
-    page.getByRole("heading", { name: "Agency Command Deck" }),
+    page.getByRole("heading", { name: /Agency Dashboard|Dashboard/i }),
   ).toBeVisible()
 })
 
@@ -80,7 +80,7 @@ test("Successful log out", async ({ page }) => {
   await page.waitForURL("/")
 
   await expect(
-    page.getByRole("heading", { name: "Agency Command Deck" }),
+    page.getByRole("heading", { name: /Agency Dashboard|Dashboard/i }),
   ).toBeVisible()
 
   await page.getByTestId("user-menu").click()
@@ -97,7 +97,7 @@ test("Logged-out user cannot access protected routes", async ({ page }) => {
   await page.waitForURL("/")
 
   await expect(
-    page.getByRole("heading", { name: "Agency Command Deck" }),
+    page.getByRole("heading", { name: /Agency Dashboard|Dashboard/i }),
   ).toBeVisible()
 
   await page.getByTestId("user-menu").click()

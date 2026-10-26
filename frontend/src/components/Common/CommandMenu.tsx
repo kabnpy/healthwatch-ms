@@ -97,13 +97,13 @@ export function CommandMenu() {
               onSelect={() => runCommand(() => navigate({ to: "/" }))}
             >
               <LayoutDashboard className="mr-2 h-4 w-4" />
-              <span>Agency Command Deck</span>
+              <span>Dashboard</span>
             </CommandItem>
             <CommandItem
               onSelect={() => runCommand(() => navigate({ to: "/renewals" }))}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
-              <span>Renewals Desk ({expiringPolicies.length} due)</span>
+              <span>Renewals ({expiringPolicies.length} due)</span>
             </CommandItem>
             <CommandItem
               onSelect={() => runCommand(() => navigate({ to: "/policies" }))}

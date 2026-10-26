@@ -237,7 +237,7 @@ function PolicyCard({
             to="/clients/$clientId/policies/$policyId"
             params={{ clientId, policyId: policy.id }}
           >
-            Digital File
+            View Policy
             <ArrowRight className="ml-1 size-3.5" />
           </Link>
         </Button>

@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_layout/renewals/")({
   head: () => ({
     meta: [
       {
-        title: "Renewals Desk - HealthWatch MS",
+        title: "Policy Renewals - HealthWatch MS",
       },
     ],
   }),
@@ -365,9 +365,9 @@ function RenewalsDeskPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Renewals Desk</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Policy Renewals</h1>
           <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
-            6-Stage Renewal Workflow & Expiry Triage Pipeline
+            Track and manage upcoming policy expirations and renewals
           </p>
         </div>
         <div className="flex items-center gap-2">

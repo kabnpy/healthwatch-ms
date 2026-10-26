@@ -183,7 +183,7 @@ function PolicyDashboardContent({
             value="overview"
             className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
           >
-            Digital File
+            Overview
           </TabsTrigger>
           <TabsTrigger
             value="history"
@@ -205,7 +205,7 @@ function PolicyDashboardContent({
           </TabsTrigger>
         </TabsList>
 
-        {/* TAB 1: OVERVIEW (The Digital File) */}
+        {/* TAB 1: OVERVIEW */}
         <TabsContent value="overview" className="pt-6">
           <div className="flex flex-col gap-8 max-w-5xl mx-auto">
             {isMedical ? (
@@ -328,12 +328,11 @@ function PolicyDashboardContent({
                       </div>
                       <div>
                         <h4 className="text-sm font-bold text-foreground">
-                          Official Carrier Policy Schedule (A4 Format)
+                          Policy Schedule (Risk Note)
                         </h4>
                         <p className="text-xs text-muted-foreground">
-                          Pre-flight verified underwriter transmittal slip with
-                          digital certified seal, fixed-point taxes, and legal
-                          schedule notes.
+                          View or export the official policy schedule, coverage
+                          terms, and premium breakdown.
                         </p>
                       </div>
                     </div>
@@ -343,7 +342,7 @@ function PolicyDashboardContent({
                       className="gap-2 shrink-0 cursor-pointer text-xs"
                     >
                       <Eye className="size-3.5" />
-                      View Outbound A4 Slip
+                      View Schedule
                     </Button>
                   </div>
                 )}

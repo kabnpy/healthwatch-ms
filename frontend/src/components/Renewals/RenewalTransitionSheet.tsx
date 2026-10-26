@@ -255,7 +255,7 @@ export function RenewalTransitionSheet({
         <SheetHeader className="space-y-1.5 border-b pb-4">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-mono font-semibold text-muted-foreground uppercase tracking-wider">
-              Renewal Workflow Triage
+              Renewal Review
             </span>
             {renewal ? (
               <Badge variant="outline" className="font-mono text-xs">
@@ -417,7 +417,7 @@ export function RenewalTransitionSheet({
                 className="h-6 text-[11px] gap-1 px-2 border-primary/30 text-primary hover:bg-primary/5"
               >
                 <Calculator className="size-3" />
-                Run Rating Engine
+                Calculate Premium
               </Button>
               {delta !== 0 && (
                 <span
@@ -632,7 +632,7 @@ export function RenewalTransitionSheet({
                         variant="outline"
                         className="text-[10px] font-mono"
                       >
-                        Ready for Transmittal
+                        Ready to Issue
                       </Badge>
                     </div>
 
@@ -709,7 +709,7 @@ export function RenewalTransitionSheet({
                 policyId: policy.id,
               }}
             >
-              Open Policy Digital File
+              View Policy
               <ExternalLink className="size-3" />
             </Link>
           </Button>
@@ -718,7 +718,7 @@ export function RenewalTransitionSheet({
             size="sm"
             onClick={() => onOpenChange(false)}
           >
-            Close Drawer
+            Close
           </Button>
         </SheetFooter>
       </SheetContent>

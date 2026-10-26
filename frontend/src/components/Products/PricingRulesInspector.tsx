@@ -57,8 +57,8 @@ export function PricingRulesInspector({ product }: PricingRulesInspectorProps) {
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            Authoritative actuarial brackets and statutory levies for{" "}
-            {product.name} ({product.insurer?.name || "General Carrier"}).
+            Actuarial brackets and statutory levies for {product.name} (
+            {product.insurer?.name || "General Carrier"}).
           </p>
         </div>
 

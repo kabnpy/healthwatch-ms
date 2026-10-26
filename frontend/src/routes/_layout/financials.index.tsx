@@ -255,15 +255,15 @@ function FinancialsHub() {
           <div className="flex items-center gap-2">
             <span className="size-2 rounded-full bg-blue-500" />
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Agency Accounts & Financial Ledger
+              Agency Finances
             </p>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight mt-1">
-            Financials & Accounts Hub
+            Finances & Invoicing
           </h1>
           <p className="text-sm text-muted-foreground">
-            Cleared payment instruments, debt reconciliation, and invoice
-            allocations
+            Manage payments, invoices, receipt allocations, and client
+            statements
           </p>
         </div>
 

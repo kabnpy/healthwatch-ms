@@ -15,7 +15,11 @@ test.describe("Smoke: Application Navigation & Route Health", () => {
     },
     { name: "Clients Hub", path: "/clients", heading: /Clients/i },
     { name: "Policies Hub", path: "/policies", heading: /Policies Hub/i },
-    { name: "Renewals Desk", path: "/renewals", heading: /Renewals Desk/i },
+    {
+      name: "Renewals",
+      path: "/renewals",
+      heading: /Renewals Desk|Policy Renewals|Renewals/i,
+    },
     { name: "Financials Ledger", path: "/financials", heading: /Financials/i },
     {
       name: "Catalog Products",
@@ -62,7 +66,9 @@ test.describe("Smoke: Application Navigation & Route Health", () => {
     // Renewals
     await page.getByRole("link", { name: "Renewals" }).first().click()
     await page.waitForURL(/\/renewals/)
-    await auditor.assertCleanNavigation(/Renewals Desk/i)
+    await auditor.assertCleanNavigation(
+      /Renewals Desk|Policy Renewals|Renewals/i,
+    )
 
     // Financials
     await page.getByRole("link", { name: "Financials" }).first().click()

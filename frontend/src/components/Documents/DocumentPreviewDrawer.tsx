@@ -124,7 +124,7 @@ export function DocumentPreviewDrawer({
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-wider">
-                  Outbound Legal Document Engine
+                  Policy Schedule
                 </span>
                 <Badge
                   variant="outline"
@@ -189,19 +189,16 @@ export function DocumentPreviewDrawer({
           </div>
         </SheetHeader>
 
-        {/* Pre-Flight Completeness Checklist Banner */}
+        {/* Completeness Status Banner */}
         <div className="flex flex-col gap-2">
           {validation.isValid ? (
             <div className="flex items-center justify-between p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 text-xs">
               <div className="flex items-center gap-2 font-medium">
                 <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
-                <span>
-                  Pre-Flight Verified: Authoritative Schedule Complete for
-                  Carrier Transmittal.
-                </span>
+                <span>Schedule details are complete and verified.</span>
               </div>
               <span className="text-[10px] font-mono font-semibold uppercase">
-                1-Page A4 Budget OK
+                A4 Layout
               </span>
             </div>
           ) : (
@@ -209,9 +206,8 @@ export function DocumentPreviewDrawer({
               <div className="flex items-center gap-2 font-medium">
                 <AlertCircle className="size-4 text-amber-600 shrink-0" />
                 <span>
-                  Underwriting Notice: Missing{" "}
-                  <strong>{validation.missingFields.join(", ")}</strong> on
-                  carrier schedule.
+                  Missing required fields:{" "}
+                  <strong>{validation.missingFields.join(", ")}</strong>
                 </span>
               </div>
               {onEditDraft && (
@@ -221,7 +217,7 @@ export function DocumentPreviewDrawer({
                   onClick={onEditDraft}
                   className="h-7 text-xs text-amber-900 dark:text-amber-200 underline font-semibold"
                 >
-                  Populate Fields
+                  Edit Details
                 </Button>
               )}
             </div>
@@ -240,10 +236,10 @@ export function DocumentPreviewDrawer({
                 onChange={(e) => setIncludeDigitalStamp(e.target.checked)}
                 className="size-4 rounded border-gray-300 text-primary cursor-pointer"
               />
-              <span>Include Official Agency Rubber Stamp & Signatory Seal</span>
+              <span>Include official agency seal and signature</span>
             </label>
             <span className="text-[11px] text-muted-foreground font-mono">
-              Certified Broker Copy
+              Official Agency Copy
             </span>
           </div>
         </div>

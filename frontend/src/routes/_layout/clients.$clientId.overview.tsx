@@ -417,7 +417,7 @@ function ClientOverview() {
                           to="/clients/$clientId/policies/$policyId"
                           params={{ clientId, policyId: pol.id }}
                         >
-                          Digital File
+                          View Policy
                           <ArrowRight className="size-3" />
                         </Link>
                       </Button>

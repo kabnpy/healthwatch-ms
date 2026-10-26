@@ -24,17 +24,17 @@ import { useClients, usePolicies, useRenewals } from "@/hooks/useInsurance"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 export const Route = createFileRoute("/_layout/")({
-  component: AgencyCommandDeck,
+  component: AgencyDashboard,
   head: () => ({
     meta: [
       {
-        title: "Agency Command Deck - HealthWatch MS",
+        title: "Agency Dashboard - HealthWatch MS",
       },
     ],
   }),
 })
 
-function AgencyCommandDeck() {
+function AgencyDashboard() {
   const { user: currentUser } = useAuth()
   const { data: policiesData, isLoading: isPoliciesLoading } = usePolicies(
     undefined,
@@ -154,30 +154,30 @@ function AgencyCommandDeck() {
             </p>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight mt-1">
-            Agency Command Deck
+            Agency Dashboard
           </h1>
           <p className="text-sm text-muted-foreground">
             Signed in as{" "}
             <span className="font-semibold text-foreground">
               {currentUser?.full_name || currentUser?.email}
             </span>{" "}
-            &bull; Ready for daily policy servicing and renewals triage
+            &bull; Daily policy servicing and renewal management
           </p>
         </div>
 
-        {/* Quick Action Dock */}
+        {/* Quick Actions */}
         <div className="flex flex-wrap items-center gap-2">
           <AddClient />
           <Button variant="outline" asChild>
             <Link to="/renewals" className="gap-2">
               <RefreshCw className="size-4" />
-              Renewals Desk
+              Renewals
             </Link>
           </Button>
           <Button variant="outline" asChild>
             <Link to="/financials" className="gap-2">
               <CreditCard className="size-4" />
-              Financials Hub
+              Finances
             </Link>
           </Button>
           <Button
@@ -293,7 +293,7 @@ function AgencyCommandDeck() {
             </div>
             <Button variant="ghost" size="sm" asChild className="text-xs">
               <Link to="/renewals">
-                Full Renewals Desk
+                View All Renewals
                 <ArrowRight className="ml-1 size-3.5" />
               </Link>
             </Button>
@@ -308,8 +308,7 @@ function AgencyCommandDeck() {
                     No urgent expiries in the next 30 days
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    All client policies are active with adequate coverage
-                    horizon.
+                    All client policies have current, active coverage.
                   </p>
                 </div>
               ) : (
@@ -389,12 +388,12 @@ function AgencyCommandDeck() {
             <div className="flex items-center gap-2">
               <RefreshCw className="size-4 text-blue-600" />
               <h2 className="text-lg font-bold tracking-tight">
-                In-Flight Renewal Workflows
+                Renewals in Progress
               </h2>
             </div>
             <Button variant="ghost" size="sm" asChild className="text-xs">
               <Link to="/renewals">
-                Renewals Desk
+                View All Renewals
                 <ArrowRight className="ml-1 size-3.5" />
               </Link>
             </Button>
@@ -403,7 +402,7 @@ function AgencyCommandDeck() {
           <Card>
             <CardHeader className="pb-3 border-b bg-muted/20">
               <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                <span>Active 6-Stage Pipeline</span>
+                <span>Active Renewals</span>
                 <span className="font-mono text-blue-600 font-bold">
                   {inFlightRenewals.length} in progress
                 </span>
@@ -414,11 +413,10 @@ function AgencyCommandDeck() {
                 <div className="p-8 text-center">
                   <CheckCircle2 className="size-8 text-emerald-500 mx-auto mb-2" />
                   <p className="text-sm font-semibold">
-                    No active renewal negotiations
+                    No active renewals in progress
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    All upcoming policies are either awaiting 30-day initiation
-                    or completed.
+                    Policies approaching expiration will appear here for review.
                   </p>
                 </div>
               ) : (
@@ -499,7 +497,7 @@ function AgencyCommandDeck() {
                 className="text-xs shrink-0"
               >
                 <Link to="/financials">
-                  Open Financials Hub
+                  View Finances
                   <ArrowRight className="ml-1 size-3" />
                 </Link>
               </Button>

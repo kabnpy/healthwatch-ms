@@ -71,9 +71,9 @@ test.describe("Phase 1: Identity & Layout Foundation", () => {
 
     await page.waitForURL(/\/clients\/[^/]+\/policies/)
 
-    // Click on the Digital File link for the first policy card
+    // Click on the View Policy link for the first policy card
     const digitalFileLink = page
-      .getByRole("link", { name: "Digital File" })
+      .getByRole("link", { name: /View Policy|Digital File/i })
       .first()
     if (await digitalFileLink.isVisible()) {
       await digitalFileLink.click()

@@ -273,7 +273,7 @@ function GlobalPoliciesPage() {
                       className="cursor-pointer"
                     >
                       <ExternalLink className="mr-2 h-4 w-4" />
-                      Open Digital File
+                      View Policy
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -283,7 +283,7 @@ function GlobalPoliciesPage() {
                       className="cursor-pointer"
                     >
                       <User className="mr-2 h-4 w-4" />
-                      View Client Hub
+                      View Client
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -319,7 +319,7 @@ function GlobalPoliciesPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
-            <Link to="/renewals">View Renewals Desk</Link>
+            <Link to="/renewals">View Renewals</Link>
           </Button>
           <Button asChild>
             <Link to="/clients">
