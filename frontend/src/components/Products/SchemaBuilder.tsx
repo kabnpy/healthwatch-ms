@@ -2,7 +2,7 @@ import { FileText, Info } from "lucide-react"
 import { useMemo } from "react"
 import { useFormContext } from "react-hook-form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { RiskNoteTable } from "../Documents/templates/RiskNote/RiskNoteTable"
+import { RiskNoteTable } from "./RiskNoteTable"
 
 export const SchemaBuilder = () => {
   const { watch, setValue } = useFormContext()

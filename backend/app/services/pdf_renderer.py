@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import jinja2
+from markdown_it import MarkdownIt
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,15 @@ FRONTEND_RENDER_SCRIPT = (
     / "scripts"
     / "render_pdf.ts"
 )
+
+md_parser = MarkdownIt()
+
+
+def render_markdown(val: Any) -> str:
+    """Renders markdown strings into HTML for policy schedules and endorsement clauses."""
+    if not val:
+        return ""
+    return md_parser.render(str(val))
 
 
 def format_kes(val: Any) -> str:
@@ -43,6 +53,7 @@ class PdfRendererService:
                 autoescape=jinja2.select_autoescape(["html", "xml"]),
             )
             cls._jinja_env.filters["kes"] = format_kes
+            cls._jinja_env.filters["markdown"] = render_markdown
         return cls._jinja_env
 
     @classmethod

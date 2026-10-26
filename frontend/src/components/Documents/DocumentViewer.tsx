@@ -1,25 +1,14 @@
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query"
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import { AlertCircle, FileText, Loader2 } from "lucide-react"
 import { Suspense } from "react"
 
 import {
-  ClientsService,
   client,
   DocumentsService,
   FinancialsService,
-  PoliciesService,
   RiskNotesService,
 } from "@/client"
-import useCustomToast from "@/hooks/useCustomToast"
-import type { EnhancedPolicy, EnhancedRiskNote } from "@/types/insurance"
-import { handleError } from "@/utils"
-import { InvoiceTemplate } from "./templates/InvoiceTemplate"
-import { RiskNoteTemplate } from "./templates/RiskNoteTemplate"
+import { CanonicalDocumentViewer } from "./CanonicalDocumentViewer"
 
 // --- Types ---
 
@@ -87,52 +76,17 @@ function ErrorDisplay({ id, message }: { id: string; message?: string }) {
 // --- Loader Components (Internal) ---
 
 function RiskNoteLoader({ id }: { id: string }) {
-  const { showSuccessToast, showErrorToast } = useCustomToast()
-  const qClient = useQueryClient()
-
   const { data: riskNote } = useSuspenseQuery({
     queryFn: async () =>
       (await RiskNotesService.notesReadRiskNote({ path: { id } })).data,
     queryKey: ["risk-notes", id],
   })
 
-  const { data: policy } = useSuspenseQuery({
-    queryFn: async () =>
-      (await PoliciesService.readPolicy({ path: { id: riskNote.policy_id } }))
-        .data,
-    queryKey: ["policies", riskNote.policy_id],
-  })
-
-  const { data: client } = useSuspenseQuery({
-    queryFn: async () =>
-      (await ClientsService.readClient({ path: { id: policy.client_id } }))
-        .data,
-    queryKey: ["clients", policy.client_id],
-  })
-
-  const mutation = useMutation({
-    mutationFn: async (updatedSnapshot: any) =>
-      (
-        await RiskNotesService.notesUpdateRiskNote({
-          path: { id: riskNote.id },
-          body: { cover_snapshot: updatedSnapshot },
-        })
-      ).data,
-    onSuccess: () => {
-      showSuccessToast("Risk note snapshot updated successfully")
-      qClient.invalidateQueries({ queryKey: ["risk-notes", id] })
-      qClient.invalidateQueries({ queryKey: ["policies", riskNote.policy_id] })
-    },
-    onError: (err: any) => handleError.bind(showErrorToast)(err),
-  })
-
   return (
-    <RiskNoteTemplate
-      riskNote={riskNote as EnhancedRiskNote}
-      client={client}
-      policy={policy as EnhancedPolicy}
-      isEditable={riskNote.status === "Draft"}
-      onSave={(snap) => mutation.mutate(snap)}
+    <CanonicalDocumentViewer
+      resourceType="risk_note"
+      resourceId={riskNote.id}
+      title={`Risk Note - ${riskNote.risk_note_number || "Schedule"}`}
     />
   )
 }
@@ -144,18 +98,11 @@ function InvoiceLoader({ id }: { id: string }) {
     queryKey: ["invoices", id],
   })
 
-  const { data: client } = useSuspenseQuery({
-    queryFn: async () =>
-      (await ClientsService.readClient({ path: { id: invoice.client_id } }))
-        .data,
-    queryKey: ["clients", invoice.client_id],
-  })
-
   return (
-    <InvoiceTemplate
-      invoice={invoice}
-      client={client}
-      lineItems={invoice.line_items || []}
+    <CanonicalDocumentViewer
+      resourceType="invoice"
+      resourceId={invoice.id}
+      title={`Invoice - ${invoice.invoice_number || "Debit Note"}`}
     />
   )
 }

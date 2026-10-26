@@ -7,7 +7,6 @@ import { z } from "zod"
 import { ClientsService, PoliciesService, RiskNotesService } from "@/client"
 import PendingItems from "@/components/Pending/PendingItems"
 import { Button } from "@/components/ui/button"
-import type { EnhancedPolicy, EnhancedRiskNote } from "@/types/insurance"
 
 const searchSchema = z.object({
   mode: z.enum(["invoice", "certificate"]).default("invoice").optional(),
@@ -44,8 +43,6 @@ export const Route = createFileRoute("/print/risk-notes/$id")({
   validateSearch: (search) => searchSchema.parse(search),
 })
 
-import { RiskNoteTemplate } from "@/components/Documents/templates/RiskNoteTemplate"
-
 function RiskNotePrintContent({ id }: { id: string }) {
   const { mode } = Route.useSearch()
   const navigate = Route.useNavigate()
@@ -63,12 +60,11 @@ function RiskNotePrintContent({ id }: { id: string }) {
 
   if (isInvoice) {
     return (
-      <div className="max-w-[800px] mx-auto bg-white shadow-lg print:shadow-none min-h-screen relative">
-        <RiskNoteTemplate
-          riskNote={riskNote as EnhancedRiskNote}
-          client={client}
-          policy={policy as EnhancedPolicy}
-          includeDigitalStamp={true}
+      <div className="max-w-[850px] mx-auto bg-white shadow-lg print:shadow-none min-h-screen relative p-4">
+        <iframe
+          src={`/api/v1/document-jobs/preview/html?resource_type=risk_note&resource_id=${riskNote.id}`}
+          className="w-full min-h-[950px] border-0"
+          title="Canonical Risk Note Schedule"
         />
 
         <div className="fixed bottom-8 right-8 print:hidden flex flex-col gap-2">

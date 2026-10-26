@@ -26,6 +26,12 @@ class DocumentJobEnqueueRequest(BaseModel):
     idempotency_key: str | None = None
 
 
+class DocumentPreviewDraftRequest(BaseModel):
+    resource_type: DocumentJobResourceType
+    resource_id: uuid.UUID | None = None
+    snapshot_data: dict[str, Any] = {}
+
+
 @router.post(
     "/", response_model=DocumentJobPublic, status_code=status.HTTP_202_ACCEPTED
 )
@@ -70,6 +76,23 @@ def preview_document_html(
         session=session,
         resource_type=resource_type,
         resource_id=resource_id,
+    )
+    return HTMLResponse(content=html)
+
+
+@router.post("/preview/html", response_class=HTMLResponse)
+def preview_document_html_draft(
+    *,
+    session: SessionDep,
+    _current_user: CurrentUser,
+    request: DocumentPreviewDraftRequest,
+) -> Any:
+    """Renders the canonical Jinja2 document HTML with live draft snapshot overrides."""
+    html, _, _, _, _, _ = DocumentJobService.render_resource_html(
+        session=session,
+        resource_type=request.resource_type,
+        resource_id=request.resource_id,
+        snapshot_data=request.snapshot_data,
     )
     return HTMLResponse(content=html)
 

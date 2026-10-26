@@ -138,6 +138,11 @@ class DocumentJobService:
                     else str(risk_note.coverage_end)
                 )
                 stamp_dt = get_datetime_utc().strftime("%d %b %Y").upper()
+                special_conditions = snapshot.get("special_conditions") or (
+                    risk_note.cover_snapshot.get("special_conditions")
+                    if risk_note and risk_note.cover_snapshot
+                    else None
+                )
 
                 rendered_html = PdfRendererService.render_html(
                     "risk_note.html",
@@ -151,6 +156,7 @@ class DocumentJobService:
                         "vehicles": vehicles,
                         "taxes": taxes,
                         "benefits": benefits,
+                        "special_conditions": special_conditions,
                         "coverage_start_formatted": cov_start_str,
                         "coverage_end_formatted": cov_end_str,
                         "stamp_date": stamp_dt,

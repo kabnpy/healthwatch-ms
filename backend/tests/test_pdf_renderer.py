@@ -40,6 +40,25 @@ def test_render_html_risk_note():
     assert "HealthWatch" in html
 
 
+def test_render_html_markdown_warranties():
+    context = {
+        "risk_note": {
+            "risk_note_number": "RN-MD-001",
+            "coverage_start": "2026-01-01",
+            "coverage_end": "2026-12-31",
+            "net_premium": "50000.00",
+        },
+        "policy": {"policy_number": "POL-MD-001"},
+        "client": {"name": "Test Client", "kra_pin": "A009988776B"},
+        "product": {"name": "Motor Commercial", "class_of_insurance": "Motor"},
+        "special_conditions": "- **Tracker Warranty:** Active telematics tracker required.\n- **Valuation:** Certified valuation within 30 days.",
+    }
+    html = PdfRendererService.render_html("risk_note.html", context)
+    assert "<strong>Tracker Warranty:</strong>" in html
+    assert "<li>" in html
+    assert "Active telematics tracker required." in html
+
+
 def test_render_html_invoice():
     context = {
         "invoice": {

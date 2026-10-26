@@ -122,6 +122,27 @@
       font-weight: 700;
       color: #0f172a;
     }
+    .markdown-clause {
+      font-size: 10px;
+      line-height: 1.4;
+      color: #1e293b;
+    }
+    .markdown-clause p {
+      margin-bottom: 4px;
+    }
+    .markdown-clause p:last-child {
+      margin-bottom: 0;
+    }
+    .markdown-clause ul, .markdown-clause ol {
+      margin-left: 16px;
+      margin-bottom: 4px;
+    }
+    .markdown-clause li {
+      margin-bottom: 2px;
+    }
+    .markdown-clause strong {
+      color: #0f172a;
+    }
     .financial-table {
       width: 100%;
       border-collapse: collapse;
@@ -222,9 +243,17 @@
     </tr>
 
     <tr>
-      <th>Cover Scope</th>
-      <td style="font-style: italic; color: #334155;">
-        Accidental physical loss or damage to insured property and indemnity against legal liability for third-party bodily injury, death, and property damage in accordance with standard carrier policy wording.
+      <th>Cover Scope &amp; Conditions</th>
+      <td style="color: #334155;">
+        {% if special_conditions %}
+          <div class="markdown-clause">{{ special_conditions | markdown | safe }}</div>
+        {% elif risk_note and risk_note.cover_snapshot and risk_note.cover_snapshot.get('special_conditions') %}
+          <div class="markdown-clause">{{ risk_note.cover_snapshot.get('special_conditions') | markdown | safe }}</div>
+        {% elif cover_scope %}
+          <div class="markdown-clause">{{ cover_scope | markdown | safe }}</div>
+        {% else %}
+          <p style="font-style: italic;">Accidental physical loss or damage to insured property and indemnity against legal liability for third-party bodily injury, death, and property damage in accordance with standard carrier policy wording.</p>
+        {% endif %}
       </td>
     </tr>
 
