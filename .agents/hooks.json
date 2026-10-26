@@ -1,0 +1,27 @@
+{
+  "git-guard": {
+    "enabled": false,
+    "PreToolUse": [
+      {
+        "matcher": "run_command|write_file|edit_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 hooks/git_guard.py",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  },
+  "commit-gate": {
+    "enabled": true,
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python3 hooks/stop_gate.py",
+        "timeout": 30
+      }
+    ]
+  }
+}

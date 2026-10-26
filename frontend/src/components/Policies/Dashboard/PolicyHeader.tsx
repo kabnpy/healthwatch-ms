@@ -27,7 +27,10 @@ export function PolicyHeader({
           <h1 className="text-4xl font-bold tracking-tight">
             {displayName || policyNumber}
           </h1>
-          <StatusIndicator isActive={status === "Active"} label={status} />
+          <StatusIndicator
+            isActive={status?.toLowerCase() === "active"}
+            label={status}
+          />
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
           <span>{clientName}</span>

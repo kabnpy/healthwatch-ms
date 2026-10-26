@@ -3,71 +3,342 @@ set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 cd "$DIR"
+PRIMARY="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" 2>/dev/null || echo "$DIR")"
+
+detect_compose() {
+  if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    echo "docker compose"
+  elif command -v podman >/dev/null 2>&1 && podman compose version >/dev/null 2>&1; then
+    echo "podman compose"
+  elif command -v podman-compose >/dev/null 2>&1; then
+    echo "podman-compose"
+  elif command -v docker-compose >/dev/null 2>&1; then
+    echo "docker-compose"
+  else
+    echo ""
+  fi
+}
+
+run_backend() {
+  (
+    cd "$DIR/backend"
+    if command -v uv >/dev/null 2>&1; then
+      uv run "$@"
+    elif [ -f ".venv/bin/$1" ]; then
+      local c="$1"
+      shift
+      "./.venv/bin/$c" "$@"
+    elif [ -f ".venv/bin/python" ]; then
+      "./.venv/bin/python" "$@"
+    else
+      "$@"
+    fi
+  )
+}
+
+run_frontend() {
+  (
+    cd "$DIR/frontend"
+    bun run "$@"
+  )
+}
+
+is_db_ready() {
+  run_backend python -c "import socket; s = socket.socket(); s.settimeout(1); res = s.connect_ex(('127.0.0.1', 5432)); exit(res)" 2>/dev/null
+}
+
+start_db_if_needed() {
+  if is_db_ready; then
+    echo "==> Database is reachable on port 5432."
+    return 0
+  fi
+
+  local compose_cmd
+  compose_cmd="$(detect_compose)"
+  if [ -z "$compose_cmd" ]; then
+    echo "Error: Neither docker nor podman compose found, and database is not running on port 5432." >&2
+    exit 1
+  fi
+
+  echo "==> Starting database and mailpit via $compose_cmd..."
+  $compose_cmd up -d db mailpit
+
+  echo "==> Waiting for database to accept connections..."
+  local retries=20
+  while ! is_db_ready; do
+    retries=$((retries - 1))
+    if [ "$retries" -le 0 ]; then
+      echo "Error: Database did not become ready within timeout." >&2
+      exit 1
+    fi
+    sleep 1
+  done
+  echo "==> Database is ready."
+}
 
 cmd="${1:-help}"
 shift 2>/dev/null || true
 
 case "$cmd" in
   dev)
-    docker compose watch
+    start_db_if_needed
+
+    echo "==> Running database migrations..."
+    run_backend alembic upgrade head
+
+    echo "==> Ensuring initial data exists..."
+    run_backend python app/initial_data.py
+
+    echo "==> Starting development environment..."
+    echo "    Backend API: http://localhost:8000 (docs: http://localhost:8000/docs)"
+    echo "    Frontend UI: http://localhost:5173"
+    echo "==> Press Ctrl+C to stop all development servers."
+
+    cleanup() {
+      echo ""
+      echo "==> Shutting down development servers..."
+      if [ -n "$BACKEND_PID" ]; then kill "$BACKEND_PID" 2>/dev/null || true; fi
+      if [ -n "$FRONTEND_PID" ]; then kill "$FRONTEND_PID" 2>/dev/null || true; fi
+      wait "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
+      echo "==> Development servers stopped."
+    }
+    trap cleanup EXIT INT TERM
+
+    (run_backend fastapi dev app/main.py --port 8000) &
+    BACKEND_PID=$!
+
+    (run_frontend dev) &
+    FRONTEND_PID=$!
+
+    wait "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
     ;;
+
+  dev:backend)
+    start_db_if_needed
+    echo "==> Starting backend dev server on http://localhost:8000..."
+    run_backend fastapi dev app/main.py --port 8000
+    ;;
+
+  dev:frontend)
+    echo "==> Starting frontend dev server on http://localhost:5173..."
+    run_frontend dev
+    ;;
+
+  status)
+    echo "HealthWatch MS Environment Status"
+    echo "================================="
+    compose_cmd="$(detect_compose)"
+    echo "Container runtime : ${compose_cmd:-none detected}"
+    if is_db_ready; then
+      echo "PostgreSQL (5432) : RUNNING"
+    else
+      echo "PostgreSQL (5432) : STOPPED"
+    fi
+    if curl -s -f http://localhost:8000/api/v1/utils/system-info >/dev/null 2>&1; then
+      echo "Backend API (8000): RUNNING"
+    else
+      echo "Backend API (8000): STOPPED"
+    fi
+    if curl -s -f http://localhost:5173/ >/dev/null 2>&1; then
+      echo "Frontend (5173)   : RUNNING"
+    else
+      echo "Frontend (5173)   : STOPPED"
+    fi
+    ;;
+
+  services:up|db:up)
+    compose_cmd="$(detect_compose)"
+    if [ -z "$compose_cmd" ]; then
+      echo "Error: No docker or podman compose tool found." >&2
+      exit 1
+    fi
+    echo "==> Starting db and mailpit via $compose_cmd..."
+    $compose_cmd up -d db mailpit
+    ;;
+
+  services:down|db:down)
+    compose_cmd="$(detect_compose)"
+    if [ -z "$compose_cmd" ]; then
+      echo "Error: No docker or podman compose tool found." >&2
+      exit 1
+    fi
+    echo "==> Stopping db and mailpit via $compose_cmd..."
+    $compose_cmd stop db mailpit
+    ;;
+
   up)
-    docker compose up -d
+    compose_cmd="$(detect_compose)"
+    if [ -z "$compose_cmd" ]; then
+      echo "Error: No docker or podman compose tool found." >&2
+      exit 1
+    fi
+    echo "==> Starting container stack via $compose_cmd..."
+    $compose_cmd up -d "$@"
     ;;
+
   down)
-    docker compose down
+    compose_cmd="$(detect_compose)"
+    if [ -z "$compose_cmd" ]; then
+      echo "Error: No docker or podman compose tool found." >&2
+      exit 1
+    fi
+    echo "==> Stopping container stack via $compose_cmd..."
+    $compose_cmd down "$@"
     ;;
+
   logs)
-    docker compose logs -f "$@"
+    compose_cmd="$(detect_compose)"
+    if [ -z "$compose_cmd" ]; then
+      echo "Error: No docker or podman compose tool found." >&2
+      exit 1
+    fi
+    $compose_cmd logs -f "$@"
     ;;
+
   test)
     echo "==> Running backend tests..."
     b_args=()
     for arg in "$@"; do
       b_args+=("${arg#backend/}")
     done
-    (cd backend && (uv run pytest -q "${b_args[@]}" 2>/dev/null || ./.venv/bin/pytest -q "${b_args[@]}"))
+    run_backend pytest -q "${b_args[@]}"
     echo "==> Running frontend tests..."
-    (cd frontend && bun run test "$@")
+    run_frontend test "$@"
     ;;
+
   test:backend)
     b_args=()
     for arg in "$@"; do
       b_args+=("${arg#backend/}")
     done
-    (cd backend && (uv run pytest -q "${b_args[@]}" 2>/dev/null || ./.venv/bin/pytest -q "${b_args[@]}"))
+    run_backend pytest -q "${b_args[@]}"
     ;;
+
   test:frontend)
-    (cd frontend && bun run test "$@")
+    run_frontend test "$@"
     ;;
+
   lint)
     echo "==> Linting backend..."
-    (cd backend && (uv run ruff check . 2>/dev/null || ./.venv/bin/ruff check .))
+    run_backend ruff check .
     echo "==> Linting frontend..."
-    (cd frontend && bun run lint)
+    run_frontend lint
     ;;
+
   format)
     echo "==> Formatting backend..."
-    (cd backend && (uv run ruff format . 2>/dev/null || ./.venv/bin/ruff format .))
+    run_backend ruff format .
     echo "==> Formatting frontend..."
-    (cd frontend && bun run lint)
+    run_frontend lint
     ;;
+
   client)
     echo "==> Regenerating OpenAPI client..."
-    (cd frontend && bun run generate-client)
+    run_frontend generate-client
     ;;
+
   build)
     echo "==> Building frontend bundle..."
-    (cd frontend && bun run build)
+    run_frontend build
     ;;
+
   migrate)
     echo "==> Running database migrations..."
-    (cd backend && (uv run alembic upgrade head 2>/dev/null || ./.venv/bin/alembic upgrade head))
+    run_backend alembic upgrade head
     ;;
+
   seed)
     echo "==> Seeding database..."
-    (cd backend && (uv run python app/seed_mock_data.py 2>/dev/null || ./.venv/bin/python app/seed_mock_data.py))
+    run_backend python app/seed_mock_data.py
     ;;
+
+  task:start)
+    name="${1:-}"
+    base="${2:-main}"
+    if ! [[ "$name" =~ ^(feat|fix|refactor|chore|docs|test|perf|ci|style)/[a-z0-9][a-z0-9-]*$ ]]; then
+      echo "Usage: ./run task:start <type>/<kebab-name> [base-branch]" >&2
+      echo "Example: ./run task:start feat/e2e-journeys" >&2
+      exit 1
+    fi
+    wt="$PRIMARY/.worktrees/${name//\//-}"
+    if [ -e "$wt" ]; then
+      echo "Error: worktree already exists at $wt" >&2
+      exit 1
+    fi
+    echo "==> Creating worktree $wt on new branch $name (from $base)..."
+    git worktree add "$wt" -b "$name" "$base"
+    for envfile in .env frontend/.env; do
+      if [ -f "$PRIMARY/$envfile" ]; then
+        cp "$PRIMARY/$envfile" "$wt/$envfile"
+        echo "==> Copied $envfile"
+      fi
+    done
+    if [ "${SKIP_INSTALL:-0}" != "1" ]; then
+      echo "==> Installing backend dependencies..."
+      (cd "$wt/backend" && uv sync)
+      echo "==> Installing frontend dependencies..."
+      (cd "$wt/frontend" && bun install --frozen-lockfile)
+    fi
+    echo ""
+    echo "Worktree ready: $wt"
+    echo "All edits, tests and commits for this task belong in that directory."
+    echo "Note: the database and ports (5432, 8000, 5173) are shared with other worktrees."
+    ;;
+
+  task:list)
+    git worktree list
+    ;;
+
+  task:finish)
+    name="${1:-}"
+    if [ -z "$name" ]; then
+      echo "Usage: ./run task:finish <type>/<kebab-name>" >&2
+      exit 1
+    fi
+    wt="$PRIMARY/.worktrees/${name//\//-}"
+    if [ ! -d "$wt" ]; then
+      echo "Error: no worktree at $wt" >&2
+      exit 1
+    fi
+    if [ -n "$(git -C "$wt" status --porcelain)" ]; then
+      echo "Error: uncommitted changes in $wt. Commit them first." >&2
+      git -C "$wt" status --short >&2
+      exit 1
+    fi
+    echo "==> Running quality gates in $wt..."
+    "$wt/run" lint
+    if [ -n "$(git -C "$wt" status --porcelain)" ]; then
+      echo "Error: lint produced changes. Review and commit them, then re-run." >&2
+      git -C "$wt" status --short >&2
+      exit 1
+    fi
+    "$wt/run" test
+    echo ""
+    echo "Gates passed for $name. To land it (from the primary checkout, on main):"
+    echo "  git merge --squash $name"
+    echo "  git commit    # one Conventional Commit summarising the whole change"
+    echo "  ./run task:clean $name"
+    ;;
+
+  task:clean)
+    name="${1:-}"
+    if [ -z "$name" ]; then
+      echo "Usage: ./run task:clean <type>/<kebab-name>" >&2
+      exit 1
+    fi
+    wt="$PRIMARY/.worktrees/${name//\//-}"
+    if [ -d "$wt" ]; then
+      git worktree remove "$wt"
+    fi
+    git worktree prune
+    # Squash merges leave the branch unmerged in git's eyes, so -D is intentional.
+    git branch -D "$name"
+    ;;
+
+  hooks:test)
+    python3 "$DIR/.agents/hooks/test_hooks.py"
+    ;;
+
   clean)
     find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
     find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
@@ -75,24 +346,43 @@ case "$cmd" in
     rm -rf frontend/dist
     echo "Cleaned cache and build artifacts."
     ;;
+
   *)
     echo "HealthWatch MS Command Runner"
     echo "Usage: ./run <command> [args]"
     echo ""
-    echo "Commands:"
-    echo "  dev             Start dev stack with docker compose watch"
-    echo "  up              Start containers in background (docker compose up -d)"
-    echo "  down            Stop and remove containers"
+    echo "Development Workflow:"
+    echo "  dev             Start DB and run backend + frontend concurrently (recommended)"
+    echo "  dev:backend     Start DB and run only backend dev server (FastAPI)"
+    echo "  dev:frontend    Run only frontend dev server (Vite)"
+    echo "  status          Check status of container runtime, DB, API, and frontend"
+    echo ""
+    echo "Service & Container Control (Podman / Docker):"
+    echo "  services:up     Start background services (PostgreSQL + Mailpit)"
+    echo "  services:down   Stop background services"
+    echo "  up              Start entire container stack in background"
+    echo "  down            Stop and tear down container stack"
     echo "  logs [service]  Tail container logs"
-    echo "  test            Run all tests (backend + frontend)"
+    echo ""
+    echo "Testing & Quality Gates:"
+    echo "  test            Run all tests (backend pytest + frontend vitest)"
     echo "  test:backend    Run pytest in backend"
     echo "  test:frontend   Run vitest in frontend"
     echo "  lint            Run Ruff and Biome linters"
     echo "  format          Run Ruff and Biome auto-formatters"
-    echo "  client          Regenerate OpenAPI client from backend"
-    echo "  build           Build frontend production bundle"
+    echo ""
+    echo "Task Isolation (git worktrees under .worktrees/):"
+    echo "  task:start <type>/<name> [base]  Create worktree + branch, copy env, install deps"
+    echo "  task:list                        List worktrees"
+    echo "  task:finish <type>/<name>        Verify clean tree, lint, test; print merge steps"
+    echo "  task:clean <type>/<name>         Remove worktree and delete the branch"
+    echo "  hooks:test                       Run offline tests for the agent hooks"
+    echo ""
+    echo "Database & Client Tooling:"
     echo "  migrate         Run Alembic database migrations"
-    echo "  seed            Seed initial mock data"
-    echo "  clean           Clean pycache, ruff, pytest, and dist artifacts"
+    echo "  seed            Seed initial mock data portfolio"
+    echo "  client          Regenerate TypeScript OpenAPI client from backend"
+    echo "  build           Build frontend production bundle"
+    echo "  clean           Clean cache directories and build artifacts"
     ;;
 esac

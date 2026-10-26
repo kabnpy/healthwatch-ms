@@ -4,6 +4,9 @@
 *.env
 !*.env.example
 
+# Agent task worktrees (see docs/06_git_hygiene.md)
+.worktrees/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -70,3 +73,7 @@ Thumbs.db
 
 # Scratch
 scratch/
+
+# Document Storage
+storage/
+backend/storage/

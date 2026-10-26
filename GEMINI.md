@@ -36,11 +36,12 @@
 ### Git & Commit Hygiene Invariants
 - **Atomic Commits:** Make clean, atomic commits upon completing each logical task, feature step, or phase. Never leave multi-phase uncommitted file drifts across conversations.
 - **Conventional Commits:** All commit messages must strictly comply with the Conventional Commits specification: `<type>(<scope>): <imperative subject>` (e.g., `feat(renewals): implement transition state machine`, `fix(rating): correct minimum premium calculation`). Allowed types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `ci`, `perf`, `style`.
-- **Zero Checkpoint Spam:** Never create commits for task checklist increments (e.g., `conductor(plan): Mark task as complete`). Keep planning artifacts uncommitted until a meaningful feature milestone is reached.
+- **Zero Checkpoint Spam:** Never create commits for task checklist increments (e.g., `chore(plan): mark task as complete`). Keep planning artifacts uncommitted until a meaningful feature milestone is reached.
 - **Secret & Environment Protection:** Real environment files (`.env`, `frontend/.env`, `*.local`) are **never tracked in Git**. Maintain only sanitized `.env.example` templates.
 - **Format Before Commit:** Always run backend formatting (`uv run ruff check --fix` and `uv run ruff format`) and frontend linting (`bun run lint`) before committing.
 - **Branch Discipline:** Name branches descriptively according to their intent (`feat/<name>`, `fix/<name>`, `chore/<name>`). When completing work, squash-merge feature branches into `main` to preserve a clean, linear history. Reference [docs/06_git_hygiene.md](docs/06_git_hygiene.md).
 - **AGY Sandbox Permissions:** In the Antigravity sandbox, `.git` is mounted read-only by default. When running commands that modify `.git` (such as `git add`, `git commit`, `git checkout`, `git branch`), always run with `BypassSandbox: true`.
+- **Task Isolation (Worktrees):** Never edit or commit on `main`. Start every task with `./run task:start <type>/<name>`, which creates `.worktrees/<type>-<name>` on a new branch. Do all edits, tests, and commits inside that directory. Worktrees must live inside the workspace because the sandbox cannot see sibling directories. Never use `git stash`, `--no-verify`, or force-push. Finish with `./run task:finish <type>/<name>`. Reference [docs/06_git_hygiene.md](docs/06_git_hygiene.md).
 
 ---
 
@@ -54,9 +55,11 @@
   - Dev server: `bun run dev`
   - Type-check & build: `bun x tsc -p tsconfig.build.json && bun run build`
   - Lint: `bun run lint`
-- **Infrastructure:** Docker Compose v2 specification:
-  - Local dev: `docker compose up` (merges `compose.yml` + `compose.override.yml`)
-  - Staging/Deploy: `docker compose -f compose.yml -f compose.deploy.yml up`
+- **Infrastructure & Runner:** Unified `./run` runner with automatic Podman and Docker detection:
+  - Local dev stack: `./run dev` (starts DB in Podman/Docker, applies migrations, seeds initial data, runs FastAPI + Vite)
+  - Environment status: `./run status`
+  - Background services: `./run services:up` / `./run services:down`
+  - Full compose: Docker Compose v2 or Podman Compose (merges `compose.yml` + `compose.override.yml`)
 - **Git & Pre-Commit:**
   - Validate hooks across all files: `backend/.venv/bin/prek run -a`
   - Reinstall shims: `backend/.venv/bin/prek install -t pre-commit -t commit-msg`
@@ -66,6 +69,10 @@
 
 ## 3. Workflows & Skills
 
-- **Complex Features & Refactors:** Use the `/conductor` skill ([.agents/skills/conductor/SKILL.md](.agents/skills/conductor/SKILL.md)) for TDD red-green cycles and quality gates.
+- **Complex Features & Refactors:** Work test-first (red, green, refactor) inside a task worktree, and run `./run task:finish <type>/<name>` as the quality gate before merging.
 - **Database Schema Changes:** Use the `/db-migration` skill ([.agents/skills/db-migration/SKILL.md](.agents/skills/db-migration/SKILL.md)) for safe Alembic migrations and rollback testing.
 - **Reviews & Audits:** Delegate independent checks or security audits to subagents via `invoke_subagent`.
+- **Before Claiming Done:** Use the `verify` skill ([.agents/skills/verify/SKILL.md](.agents/skills/verify/SKILL.md)). Show lint, test, and type-check output; never state that something passes without running it. For non-trivial changes, have a read-only verifier subagent check the work.
+- **UI & End-to-End Testing:** Use the `qa-journey` skill ([.agents/skills/qa-journey/SKILL.md](.agents/skills/qa-journey/SKILL.md)) for Playwright specs and browser-level QA.
+- **Domain Invariants Review:** Use the `domain-audit` skill ([.agents/skills/domain-audit/SKILL.md](.agents/skills/domain-audit/SKILL.md)) for any change touching money, policies, risk notes, or payments.
+- **API Schema Changes:** Use the `client-regen` skill ([.agents/skills/client-regen/SKILL.md](.agents/skills/client-regen/SKILL.md)) after backend route or schema changes.

@@ -5,7 +5,7 @@ Adheres strictly to the invariant: Medical policies NEVER use a Risk Note.
 """
 
 import logging
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -39,6 +39,7 @@ def seed_portfolios_and_assets(
     """
     Seed policies, vehicles, risk notes, and endorsements across the client base.
     """
+    today = date.today()
     policies_by_number: dict[str, Policy] = {}
 
     # Helper to create vehicle record if not exists
@@ -86,9 +87,9 @@ def seed_portfolios_and_assets(
     pol_agnes = session.exec(
         select(Policy).where(Policy.policy_number == "010/070/1/012473/2017")
     ).first()
+    start_agnes = today - timedelta(days=120)
+    end_agnes = today + timedelta(days=245)
     if not pol_agnes:
-        start = date(2025, 8, 2)
-        end = date(2026, 8, 1)
         cover_snapshot = {
             "vehicle": {
                 "registration_number": "KCM 780L",
@@ -108,11 +109,11 @@ def seed_portfolios_and_assets(
                 client_id=c_agnes.id,
                 product_id=p_om_motor.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_agnes,
             ),
             cover_snapshot=cover_snapshot,
-            coverage_start=start,
-            coverage_end=end,
+            coverage_start=start_agnes,
+            coverage_end=end_agnes,
         )
         # Endorsement
         new_snap = cover_snapshot.copy()
@@ -131,9 +132,16 @@ def seed_portfolios_and_assets(
             2016,
             Decimal("5000000.00"),
         )
+    else:
+        for rn in pol_agnes.risk_notes:
+            rn.coverage_start = start_agnes
+            rn.coverage_end = end_agnes
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_agnes.policy_number] = pol_agnes
 
     # Client: Dr. David Kiprop Kiptoo (Motor + Medical)
+    # Motor Policy: Expiring in 8 days to trigger high-priority renewal triage
     c_kiptoo = clients["A002849120K"]
     p_jub_motor = products[
         "Jubilee General Insurance Ltd.::Motor Private - Supreme Cover"
@@ -141,9 +149,9 @@ def seed_portfolios_and_assets(
     pol_kiptoo_motor = session.exec(
         select(Policy).where(Policy.policy_number == "JUB/POL/MOT/2024/09124")
     ).first()
+    start_kiptoo_m = today - timedelta(days=357)
+    end_kiptoo_m = today + timedelta(days=8)
     if not pol_kiptoo_motor:
-        start = date(2025, 11, 15)
-        end = date(2026, 11, 14)
         pol_kiptoo_motor = policy_service.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -151,7 +159,7 @@ def seed_portfolios_and_assets(
                 client_id=c_kiptoo.id,
                 product_id=p_jub_motor.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_kiptoo_m,
             ),
             cover_snapshot={
                 "vehicle": {
@@ -162,8 +170,8 @@ def seed_portfolios_and_assets(
                 },
                 "extensions": {"excess_protector": True, "pvt": True},
             },
-            coverage_start=start,
-            coverage_end=end,
+            coverage_start=start_kiptoo_m,
+            coverage_end=end_kiptoo_m,
         )
         ensure_vehicle(
             pol_kiptoo_motor,
@@ -173,6 +181,12 @@ def seed_portfolios_and_assets(
             2018,
             Decimal("2800000.00"),
         )
+    else:
+        for rn in pol_kiptoo_motor.risk_notes:
+            rn.coverage_start = start_kiptoo_m
+            rn.coverage_end = end_kiptoo_m
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_kiptoo_motor.policy_number] = pol_kiptoo_motor
 
     # Dr. Kiptoo Medical Policy (NO Risk Note - Medical invariant!)
@@ -182,9 +196,9 @@ def seed_portfolios_and_assets(
     pol_kiptoo_med = session.exec(
         select(Policy).where(Policy.policy_number == "JUB/MED/FAM/2023/11029")
     ).first()
+    start_kiptoo_med = today - timedelta(days=150)
+    _end_kiptoo_med = today + timedelta(days=215)
     if not pol_kiptoo_med:
-        start = date(2025, 12, 1)
-        end = date(2026, 11, 30)
         pol_kiptoo_med = crud.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -192,12 +206,13 @@ def seed_portfolios_and_assets(
                 client_id=c_kiptoo.id,
                 product_id=p_jub_med.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_kiptoo_med,
             ),
         )
     policies_by_number[pol_kiptoo_med.policy_number] = pol_kiptoo_med
 
     # Client: Grace Wanjiku Kariuki (Motor + Domestic Package)
+    # Motor Policy: Expiring in 15 days
     c_grace = clients["A003928174M"]
     p_brit_motor = products[
         "Britam General Insurance (Kenya) Ltd.::Motor Private - Comprehensive Elite"
@@ -205,9 +220,9 @@ def seed_portfolios_and_assets(
     pol_grace_motor = session.exec(
         select(Policy).where(Policy.policy_number == "BRT/MOT/2024/004812")
     ).first()
+    start_grace_m = today - timedelta(days=350)
+    end_grace_m = today + timedelta(days=15)
     if not pol_grace_motor:
-        start = date(2025, 9, 10)
-        end = date(2026, 9, 9)
         pol_grace_motor = policy_service.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -215,7 +230,7 @@ def seed_portfolios_and_assets(
                 client_id=c_grace.id,
                 product_id=p_brit_motor.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_grace_m,
             ),
             cover_snapshot={
                 "vehicle": {
@@ -226,8 +241,8 @@ def seed_portfolios_and_assets(
                 },
                 "extensions": {"excess_protector": True, "pvt": True},
             },
-            coverage_start=start,
-            coverage_end=end,
+            coverage_start=start_grace_m,
+            coverage_end=end_grace_m,
         )
         ensure_vehicle(
             pol_grace_motor,
@@ -237,6 +252,12 @@ def seed_portfolios_and_assets(
             2017,
             Decimal("3400000.00"),
         )
+    else:
+        for rn in pol_grace_motor.risk_notes:
+            rn.coverage_start = start_grace_m
+            rn.coverage_end = end_grace_m
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_grace_motor.policy_number] = pol_grace_motor
 
     p_brit_dom = products[
@@ -245,9 +266,9 @@ def seed_portfolios_and_assets(
     pol_grace_dom = session.exec(
         select(Policy).where(Policy.policy_number == "BRT/DOM/2024/001924")
     ).first()
+    start_grace_dom = today - timedelta(days=100)
+    end_grace_dom = today + timedelta(days=265)
     if not pol_grace_dom:
-        start = date(2025, 9, 10)
-        end = date(2026, 9, 9)
         pol_grace_dom = crud.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -255,7 +276,7 @@ def seed_portfolios_and_assets(
                 client_id=c_grace.id,
                 product_id=p_brit_dom.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_grace_dom,
             ),
         )
         # Domestic policy gets a Risk Note
@@ -271,9 +292,9 @@ def seed_portfolios_and_assets(
             risk_note_number=generate_risk_note_number(),
             transaction_type=TransactionType.NEW_BUSINESS,
             status=RiskNoteStatus.ISSUED,
-            effective_date=start,
-            coverage_start=start,
-            coverage_end=end,
+            effective_date=start_grace_dom,
+            coverage_start=start_grace_dom,
+            coverage_end=end_grace_dom,
             net_premium=net_prem,
             commission_amount=comm,
             total_amount=total,
@@ -285,25 +306,32 @@ def seed_portfolios_and_assets(
             },
         )
         crud.create_risk_note(session=session, risk_note_in=rn_in)
+    else:
+        for rn in pol_grace_dom.risk_notes:
+            rn.coverage_start = start_grace_dom
+            rn.coverage_end = end_grace_dom
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_grace_dom.policy_number] = pol_grace_dom
 
     # Client: Brian Otieno Onyango (Motor)
+    # Lapsed Policy (Expired 15 days ago - Populates Lapsed Count)
     c_brian = clients["A004819231P"]
     p_cic_motor = products["CIC General Insurance Ltd.::Motor Private - Prestige Cover"]
     pol_brian = session.exec(
         select(Policy).where(Policy.policy_number == "CIC/MOT/PVT/2025/08412")
     ).first()
+    start_brian = today - timedelta(days=380)
+    end_brian = today - timedelta(days=15)
     if not pol_brian:
-        start = date(2026, 1, 15)
-        end = date(2027, 1, 14)
         pol_brian = policy_service.create_policy(
             session=session,
             policy_in=PolicyCreate(
                 policy_number="CIC/MOT/PVT/2025/08412",
                 client_id=c_brian.id,
                 product_id=p_cic_motor.id,
-                status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                status=PolicyStatus.EXPIRED,
+                inception_date=start_brian,
             ),
             cover_snapshot={
                 "vehicle": {
@@ -314,8 +342,8 @@ def seed_portfolios_and_assets(
                 },
                 "extensions": {"excess_protector": True},
             },
-            coverage_start=start,
-            coverage_end=end,
+            coverage_start=start_brian,
+            coverage_end=end_brian,
         )
         ensure_vehicle(
             pol_brian,
@@ -325,9 +353,18 @@ def seed_portfolios_and_assets(
             2017,
             Decimal("1750000.00"),
         )
+    else:
+        pol_brian.status = PolicyStatus.EXPIRED
+        session.add(pol_brian)
+        for rn in pol_brian.risk_notes:
+            rn.coverage_start = start_brian
+            rn.coverage_end = end_brian
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_brian.policy_number] = pol_brian
 
     # Client: Dr. Amina Fatuma Hassan (Motor + Family Medical)
+    # Motor Policy: Lapsed 25 days ago (Populates Lapsed Count)
     c_amina = clients["A005928104T"]
     p_icea_motor = products[
         "ICEA LION General Insurance Ltd.::Motor Private - Executive Cover"
@@ -335,17 +372,17 @@ def seed_portfolios_and_assets(
     pol_amina_motor = session.exec(
         select(Policy).where(Policy.policy_number == "ICEA/MOT/2025/11094")
     ).first()
+    start_amina_m = today - timedelta(days=390)
+    end_amina_m = today - timedelta(days=25)
     if not pol_amina_motor:
-        start = date(2026, 2, 1)
-        end = date(2027, 1, 31)
         pol_amina_motor = policy_service.create_policy(
             session=session,
             policy_in=PolicyCreate(
                 policy_number="ICEA/MOT/2025/11094",
                 client_id=c_amina.id,
                 product_id=p_icea_motor.id,
-                status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                status=PolicyStatus.EXPIRED,
+                inception_date=start_amina_m,
             ),
             cover_snapshot={
                 "vehicle": {
@@ -356,8 +393,8 @@ def seed_portfolios_and_assets(
                 },
                 "extensions": {"excess_protector": True, "pvt": True},
             },
-            coverage_start=start,
-            coverage_end=end,
+            coverage_start=start_amina_m,
+            coverage_end=end_amina_m,
         )
         ensure_vehicle(
             pol_amina_motor,
@@ -367,17 +404,26 @@ def seed_portfolios_and_assets(
             2019,
             Decimal("3800000.00"),
         )
+    else:
+        pol_amina_motor.status = PolicyStatus.EXPIRED
+        session.add(pol_amina_motor)
+        for rn in pol_amina_motor.risk_notes:
+            rn.coverage_start = start_amina_m
+            rn.coverage_end = end_amina_m
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_amina_motor.policy_number] = pol_amina_motor
 
+    # Dr. Amina Medical Policy: Expiring in 25 days
     p_om_med = products[
         "Old Mutual General Insurance Kenya Ltd.::Afya Imara Family Health"
     ]
     pol_amina_med = session.exec(
         select(Policy).where(Policy.policy_number == "OM/MED/2024/09841")
     ).first()
+    start_amina_med = today - timedelta(days=340)
+    _end_amina_med = today + timedelta(days=25)
     if not pol_amina_med:
-        start = date(2025, 11, 1)
-        end = date(2026, 10, 31)
         pol_amina_med = crud.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -385,20 +431,21 @@ def seed_portfolios_and_assets(
                 client_id=c_amina.id,
                 product_id=p_om_med.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_amina_med,
             ),
         )
     policies_by_number[pol_amina_med.policy_number] = pol_amina_med
 
     # Client: Kevin Mutua Musyoka (Motor)
+    # Motor Policy: Expiring in 3 days (Urgent renewal triage)
     c_kevin = clients["A006192847B"]
     pol_kevin_motor = session.exec(
         select(Policy).where(Policy.policy_number == "APA/MOT/2024/007812")
     ).first()
     p_apa_motor = products["APA Insurance Ltd.::Motor Private - Drive Sure"]
+    start_kevin = today - timedelta(days=362)
+    end_kevin = today + timedelta(days=3)
     if not pol_kevin_motor:
-        start = date(2025, 10, 20)
-        end = date(2026, 10, 19)
         pol_kevin_motor = policy_service.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -406,7 +453,7 @@ def seed_portfolios_and_assets(
                 client_id=c_kevin.id,
                 product_id=p_apa_motor.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_kevin,
             ),
             cover_snapshot={
                 "vehicle": {
@@ -417,8 +464,8 @@ def seed_portfolios_and_assets(
                 },
                 "extensions": {"excess_protector": True},
             },
-            coverage_start=start,
-            coverage_end=end,
+            coverage_start=start_kevin,
+            coverage_end=end_kevin,
         )
         ensure_vehicle(
             pol_kevin_motor,
@@ -428,6 +475,12 @@ def seed_portfolios_and_assets(
             2018,
             Decimal("2600000.00"),
         )
+    else:
+        for rn in pol_kevin_motor.risk_notes:
+            rn.coverage_start = start_kevin
+            rn.coverage_end = end_kevin
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_kevin_motor.policy_number] = pol_kevin_motor
 
     # Client: Faith Chebet Koech (Motor)
@@ -435,9 +488,9 @@ def seed_portfolios_and_assets(
     pol_faith_motor = session.exec(
         select(Policy).where(Policy.policy_number == "JUB/MOT/2025/01928")
     ).first()
+    start_faith = today - timedelta(days=60)
+    end_faith = today + timedelta(days=305)
     if not pol_faith_motor:
-        start = date(2026, 3, 1)
-        end = date(2027, 2, 28)
         pol_faith_motor = policy_service.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -445,7 +498,7 @@ def seed_portfolios_and_assets(
                 client_id=c_faith.id,
                 product_id=p_jub_motor.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_faith,
             ),
             cover_snapshot={
                 "vehicle": {
@@ -456,8 +509,8 @@ def seed_portfolios_and_assets(
                 },
                 "extensions": {"excess_protector": True, "pvt": True},
             },
-            coverage_start=start,
-            coverage_end=end,
+            coverage_start=start_faith,
+            coverage_end=end_faith,
         )
         ensure_vehicle(
             pol_faith_motor,
@@ -467,6 +520,12 @@ def seed_portfolios_and_assets(
             2018,
             Decimal("2900000.00"),
         )
+    else:
+        for rn in pol_faith_motor.risk_notes:
+            rn.coverage_start = start_faith
+            rn.coverage_end = end_faith
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_faith_motor.policy_number] = pol_faith_motor
 
     # Client: Samuel Ndung'u Githinji (Motor + Domestic)
@@ -474,9 +533,9 @@ def seed_portfolios_and_assets(
     pol_sam_motor = session.exec(
         select(Policy).where(Policy.policy_number == "OM/MOT/2025/04819")
     ).first()
+    start_sam = today - timedelta(days=80)
+    end_sam = today + timedelta(days=285)
     if not pol_sam_motor:
-        start = date(2025, 11, 28)
-        end = date(2026, 11, 27)
         pol_sam_motor = policy_service.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -484,7 +543,7 @@ def seed_portfolios_and_assets(
                 client_id=c_sam.id,
                 product_id=p_om_motor.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_sam,
             ),
             cover_snapshot={
                 "vehicle": {
@@ -495,8 +554,8 @@ def seed_portfolios_and_assets(
                 },
                 "extensions": {"excess_protector": True, "pvt": True},
             },
-            coverage_start=start,
-            coverage_end=end,
+            coverage_start=start_sam,
+            coverage_end=end_sam,
         )
         ensure_vehicle(
             pol_sam_motor,
@@ -506,6 +565,12 @@ def seed_portfolios_and_assets(
             2019,
             Decimal("3500000.00"),
         )
+    else:
+        for rn in pol_sam_motor.risk_notes:
+            rn.coverage_start = start_sam
+            rn.coverage_end = end_sam
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_sam_motor.policy_number] = pol_sam_motor
 
     # Client: Sarah Akinyi Ochieng (Medical)
@@ -516,9 +581,9 @@ def seed_portfolios_and_assets(
     pol_sarah_med = session.exec(
         select(Policy).where(Policy.policy_number == "BRT/MED/2025/00189")
     ).first()
+    start_sarah = today - timedelta(days=45)
+    _end_sarah = today + timedelta(days=320)
     if not pol_sarah_med:
-        start = date(2026, 1, 1)
-        end = date(2026, 12, 31)
         pol_sarah_med = crud.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -526,7 +591,7 @@ def seed_portfolios_and_assets(
                 client_id=c_sarah.id,
                 product_id=p_brit_med.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_sarah,
             ),
         )
     policies_by_number[pol_sarah_med.policy_number] = pol_sarah_med
@@ -536,13 +601,14 @@ def seed_portfolios_and_assets(
     # ==========================================
 
     # Client: Ambassador Michael K. Mutiso (3 Vehicles + Luxury Domestic + Executive Medical)
+    # Motor Policy 1: Expiring in 22 days (Changes requested stage)
     c_mutiso = clients["A016892014Y"]
     pol_mutiso_v1 = session.exec(
         select(Policy).where(Policy.policy_number == "ICEA/MOT/2024/00091")
     ).first()
+    start_mutiso_v1 = today - timedelta(days=343)
+    end_mutiso_v1 = today + timedelta(days=22)
     if not pol_mutiso_v1:
-        start = date(2025, 10, 1)
-        end = date(2026, 9, 30)
         pol_mutiso_v1 = policy_service.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -550,7 +616,7 @@ def seed_portfolios_and_assets(
                 client_id=c_mutiso.id,
                 product_id=p_icea_motor.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_mutiso_v1,
             ),
             cover_snapshot={
                 "vehicle": {
@@ -561,8 +627,8 @@ def seed_portfolios_and_assets(
                 },
                 "extensions": {"excess_protector": True, "pvt": True},
             },
-            coverage_start=start,
-            coverage_end=end,
+            coverage_start=start_mutiso_v1,
+            coverage_end=end_mutiso_v1,
         )
         ensure_vehicle(
             pol_mutiso_v1,
@@ -572,14 +638,20 @@ def seed_portfolios_and_assets(
             2022,
             Decimal("11500000.00"),
         )
+    else:
+        for rn in pol_mutiso_v1.risk_notes:
+            rn.coverage_start = start_mutiso_v1
+            rn.coverage_end = end_mutiso_v1
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_mutiso_v1.policy_number] = pol_mutiso_v1
 
     pol_mutiso_v2 = session.exec(
         select(Policy).where(Policy.policy_number == "ICEA/MOT/2024/00092")
     ).first()
+    start_mutiso_v2 = today - timedelta(days=70)
+    end_mutiso_v2 = today + timedelta(days=295)
     if not pol_mutiso_v2:
-        start = date(2025, 10, 1)
-        end = date(2026, 9, 30)
         pol_mutiso_v2 = policy_service.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -587,7 +659,7 @@ def seed_portfolios_and_assets(
                 client_id=c_mutiso.id,
                 product_id=p_icea_motor.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_mutiso_v2,
             ),
             cover_snapshot={
                 "vehicle": {
@@ -598,8 +670,8 @@ def seed_portfolios_and_assets(
                 },
                 "extensions": {"excess_protector": True, "pvt": True},
             },
-            coverage_start=start,
-            coverage_end=end,
+            coverage_start=start_mutiso_v2,
+            coverage_end=end_mutiso_v2,
         )
         ensure_vehicle(
             pol_mutiso_v2,
@@ -609,6 +681,12 @@ def seed_portfolios_and_assets(
             2021,
             Decimal("6500000.00"),
         )
+    else:
+        for rn in pol_mutiso_v2.risk_notes:
+            rn.coverage_start = start_mutiso_v2
+            rn.coverage_end = end_mutiso_v2
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_mutiso_v2.policy_number] = pol_mutiso_v2
 
     # Mutiso Karen Estate Domestic Package
@@ -618,9 +696,9 @@ def seed_portfolios_and_assets(
     pol_mutiso_dom = session.exec(
         select(Policy).where(Policy.policy_number == "JUB/DOM/2024/00812")
     ).first()
+    start_mutiso_dom = today - timedelta(days=95)
+    end_mutiso_dom = today + timedelta(days=270)
     if not pol_mutiso_dom:
-        start = date(2025, 10, 1)
-        end = date(2026, 9, 30)
         pol_mutiso_dom = crud.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -628,7 +706,7 @@ def seed_portfolios_and_assets(
                 client_id=c_mutiso.id,
                 product_id=p_jub_dom.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_mutiso_dom,
             ),
         )
         net_prem = Decimal("95000.00")
@@ -643,9 +721,9 @@ def seed_portfolios_and_assets(
             risk_note_number=generate_risk_note_number(),
             transaction_type=TransactionType.NEW_BUSINESS,
             status=RiskNoteStatus.ISSUED,
-            effective_date=start,
-            coverage_start=start,
-            coverage_end=end,
+            effective_date=start_mutiso_dom,
+            coverage_start=start_mutiso_dom,
+            coverage_end=end_mutiso_dom,
             net_premium=net_prem,
             commission_amount=comm,
             total_amount=total,
@@ -657,6 +735,12 @@ def seed_portfolios_and_assets(
             },
         )
         crud.create_risk_note(session=session, risk_note_in=rn_in)
+    else:
+        for rn in pol_mutiso_dom.risk_notes:
+            rn.coverage_start = start_mutiso_dom
+            rn.coverage_end = end_mutiso_dom
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_mutiso_dom.policy_number] = pol_mutiso_dom
 
     # ==========================================
@@ -671,9 +755,9 @@ def seed_portfolios_and_assets(
     pol_rv_truck1 = session.exec(
         select(Policy).where(Policy.policy_number == "OM/COMM/2024/01192")
     ).first()
+    start_rv_t1 = today - timedelta(days=110)
+    end_rv_t1 = today + timedelta(days=255)
     if not pol_rv_truck1:
-        start = date(2025, 11, 10)
-        end = date(2026, 11, 9)
         pol_rv_truck1 = policy_service.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -681,7 +765,7 @@ def seed_portfolios_and_assets(
                 client_id=c_rv.id,
                 product_id=p_om_comm.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_rv_t1,
             ),
             cover_snapshot={
                 "vehicle": {
@@ -692,8 +776,8 @@ def seed_portfolios_and_assets(
                 },
                 "extensions": {"pvt": True},
             },
-            coverage_start=start,
-            coverage_end=end,
+            coverage_start=start_rv_t1,
+            coverage_end=end_rv_t1,
         )
         ensure_vehicle(
             pol_rv_truck1,
@@ -703,14 +787,20 @@ def seed_portfolios_and_assets(
             2020,
             Decimal("5200000.00"),
         )
+    else:
+        for rn in pol_rv_truck1.risk_notes:
+            rn.coverage_start = start_rv_t1
+            rn.coverage_end = end_rv_t1
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_rv_truck1.policy_number] = pol_rv_truck1
 
     pol_rv_truck2 = session.exec(
         select(Policy).where(Policy.policy_number == "OM/COMM/2024/01193")
     ).first()
+    start_rv_t2 = today - timedelta(days=110)
+    end_rv_t2 = today + timedelta(days=255)
     if not pol_rv_truck2:
-        start = date(2025, 11, 10)
-        end = date(2026, 11, 9)
         pol_rv_truck2 = policy_service.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -718,7 +808,7 @@ def seed_portfolios_and_assets(
                 client_id=c_rv.id,
                 product_id=p_om_comm.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_rv_t2,
             ),
             cover_snapshot={
                 "vehicle": {
@@ -729,8 +819,8 @@ def seed_portfolios_and_assets(
                 },
                 "extensions": {"pvt": True},
             },
-            coverage_start=start,
-            coverage_end=end,
+            coverage_start=start_rv_t2,
+            coverage_end=end_rv_t2,
         )
         ensure_vehicle(
             pol_rv_truck2,
@@ -740,6 +830,12 @@ def seed_portfolios_and_assets(
             2021,
             Decimal("5800000.00"),
         )
+    else:
+        for rn in pol_rv_truck2.risk_notes:
+            rn.coverage_start = start_rv_t2
+            rn.coverage_end = end_rv_t2
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_rv_truck2.policy_number] = pol_rv_truck2
 
     # RV Hauliers WIBA Policy
@@ -747,9 +843,9 @@ def seed_portfolios_and_assets(
     pol_rv_wiba = session.exec(
         select(Policy).where(Policy.policy_number == "JUB/WIBA/2024/00341")
     ).first()
+    start_rv_wiba = today - timedelta(days=140)
+    end_rv_wiba = today + timedelta(days=225)
     if not pol_rv_wiba:
-        start = date(2025, 11, 10)
-        end = date(2026, 11, 9)
         pol_rv_wiba = crud.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -757,7 +853,7 @@ def seed_portfolios_and_assets(
                 client_id=c_rv.id,
                 product_id=p_jub_wiba.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_rv_wiba,
             ),
         )
         net_prem = Decimal("145000.00")
@@ -772,9 +868,9 @@ def seed_portfolios_and_assets(
             risk_note_number=generate_risk_note_number(),
             transaction_type=TransactionType.NEW_BUSINESS,
             status=RiskNoteStatus.ISSUED,
-            effective_date=start,
-            coverage_start=start,
-            coverage_end=end,
+            effective_date=start_rv_wiba,
+            coverage_start=start_rv_wiba,
+            coverage_end=end_rv_wiba,
             net_premium=net_prem,
             commission_amount=comm,
             total_amount=total,
@@ -785,6 +881,12 @@ def seed_portfolios_and_assets(
             },
         )
         crud.create_risk_note(session=session, risk_note_in=rn_in)
+    else:
+        for rn in pol_rv_wiba.risk_notes:
+            rn.coverage_start = start_rv_wiba
+            rn.coverage_end = end_rv_wiba
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_rv_wiba.policy_number] = pol_rv_wiba
 
     # Client: Savanna Safari Tours & Travel Ltd. (Tour Cruisers)
@@ -792,9 +894,9 @@ def seed_portfolios_and_assets(
     pol_sav_van1 = session.exec(
         select(Policy).where(Policy.policy_number == "CIC/COMM/2024/00912")
     ).first()
+    start_sav = today - timedelta(days=160)
+    end_sav = today + timedelta(days=205)
     if not pol_sav_van1:
-        start = date(2025, 12, 15)
-        end = date(2026, 12, 14)
         pol_sav_van1 = policy_service.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -802,7 +904,7 @@ def seed_portfolios_and_assets(
                 client_id=c_savanna.id,
                 product_id=p_om_comm.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_sav,
             ),
             cover_snapshot={
                 "vehicle": {
@@ -813,8 +915,8 @@ def seed_portfolios_and_assets(
                 },
                 "extensions": {"pvt": True, "passenger_liability": True},
             },
-            coverage_start=start,
-            coverage_end=end,
+            coverage_start=start_sav,
+            coverage_end=end_sav,
         )
         ensure_vehicle(
             pol_sav_van1,
@@ -824,6 +926,12 @@ def seed_portfolios_and_assets(
             2019,
             Decimal("4200000.00"),
         )
+    else:
+        for rn in pol_sav_van1.risk_notes:
+            rn.coverage_start = start_sav
+            rn.coverage_end = end_sav
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_sav_van1.policy_number] = pol_sav_van1
 
     # Client: Blue Nile Trading (Commercial Fire & Perils)
@@ -832,9 +940,9 @@ def seed_portfolios_and_assets(
     pol_bluenile_fire = session.exec(
         select(Policy).where(Policy.policy_number == "CIC/FIRE/2025/00234")
     ).first()
+    start_bn = today - timedelta(days=30)
+    end_bn = today + timedelta(days=335)
     if not pol_bluenile_fire:
-        start = date(2026, 2, 1)
-        end = date(2027, 1, 31)
         pol_bluenile_fire = crud.create_policy(
             session=session,
             policy_in=PolicyCreate(
@@ -842,7 +950,7 @@ def seed_portfolios_and_assets(
                 client_id=c_bluenile.id,
                 product_id=p_cic_fire.id,
                 status=PolicyStatus.ACTIVE,
-                inception_date=start,
+                inception_date=start_bn,
             ),
         )
         net_prem = Decimal("185000.00")
@@ -857,9 +965,9 @@ def seed_portfolios_and_assets(
             risk_note_number=generate_risk_note_number(),
             transaction_type=TransactionType.NEW_BUSINESS,
             status=RiskNoteStatus.ISSUED,
-            effective_date=start,
-            coverage_start=start,
-            coverage_end=end,
+            effective_date=start_bn,
+            coverage_start=start_bn,
+            coverage_end=end_bn,
             net_premium=net_prem,
             commission_amount=comm,
             total_amount=total,
@@ -870,6 +978,61 @@ def seed_portfolios_and_assets(
             },
         )
         crud.create_risk_note(session=session, risk_note_in=rn_in)
+    else:
+        for rn in pol_bluenile_fire.risk_notes:
+            rn.coverage_start = start_bn
+            rn.coverage_end = end_bn
+            session.add(rn)
+        session.commit()
     policies_by_number[pol_bluenile_fire.policy_number] = pol_bluenile_fire
+
+    # ==========================================
+    # 4. Draft Renewal Policy (Populates Draft Renewals on Command Deck)
+    # ==========================================
+    pol_draft_renewal = session.exec(
+        select(Policy).where(Policy.policy_number == "OM/MOT/DRAFT/2026/001")
+    ).first()
+    start_d = today
+    end_d = today + timedelta(days=10)
+    if not pol_draft_renewal:
+        pol_draft_renewal = crud.create_policy(
+            session=session,
+            policy_in=PolicyCreate(
+                policy_number="OM/MOT/DRAFT/2026/001",
+                client_id=c_sam.id,
+                product_id=p_om_motor.id,
+                status=PolicyStatus.ACTIVE,
+                inception_date=start_d,
+            ),
+        )
+        rn_draft = RiskNoteCreate(
+            policy_id=pol_draft_renewal.id,
+            risk_note_number=generate_risk_note_number(),
+            transaction_type=TransactionType.RENEWAL,
+            status=RiskNoteStatus.DRAFT,
+            effective_date=start_d,
+            coverage_start=start_d,
+            coverage_end=end_d,
+            net_premium=Decimal("65000.00"),
+            commission_amount=Decimal("6500.00"),
+            total_amount=Decimal("65332.50"),
+            cover_snapshot={
+                "vehicle": {
+                    "registration_number": "KDA 812Y",
+                    "make": "Toyota",
+                    "year_of_manufacture": 2019,
+                    "sum_insured": 3300000.0,
+                },
+                "extensions": {"excess_protector": True},
+            },
+        )
+        crud.create_risk_note(session=session, risk_note_in=rn_draft)
+    else:
+        for rn in pol_draft_renewal.risk_notes:
+            rn.coverage_start = start_d
+            rn.coverage_end = end_d
+            session.add(rn)
+        session.commit()
+    policies_by_number[pol_draft_renewal.policy_number] = pol_draft_renewal
 
     return policies_by_number

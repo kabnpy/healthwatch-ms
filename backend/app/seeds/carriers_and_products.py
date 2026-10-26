@@ -632,6 +632,173 @@ PRODUCTS_DATA: list[dict[str, Any]] = [
         "default_excesses": "10% of value minimum KES 5,000.",
         "default_special_clauses": "Worldwide coverage with unattended vehicle exclusion.",
     },
+    # 11. Heritage Insurance Company Ltd.
+    {
+        "insurer_name": "Heritage Insurance Company Ltd.",
+        "name": "Heritage Auto Prestige Comprehensive",
+        "class_of_insurance": "Motor Private",
+        "pricing_strategy": PricingStrategy.FIXED_TIERED,
+        "default_commission_rate": 10.0,
+        "product_details": {
+            "vehicle_details": {
+                "registration_number": "<<text>>",
+                "make": "<<text>>",
+                "year_of_manufacture": "<<number>>",
+                "sum_insured": "<<number>>",
+            },
+            "added_benefits": {
+                "pvt": "<<boolean>>",
+                "excess_protector": "<<boolean>>",
+                "courtesy_car": "<<boolean>>",
+            },
+            "excesses": {
+                "Own Damage": "2.5% of value minimum KES 15,000",
+                "Third Party Property": "KES 5,000",
+                "Total Theft": "10% of value minimum KES 20,000",
+            },
+            "special_clauses": [
+                "Geographical limits: Kenya, Uganda, Tanzania",
+                "Subject to approved tracker installation above KES 3,000,000",
+            ],
+        },
+        "pricing_rules": {
+            "tiers": [
+                {"max": 2000000, "rate": 4.5, "min": 55000},
+                {"max": 4000000, "rate": 3.75, "min": 85000},
+                {"max": None, "rate": 3.25, "min": 120000},
+            ],
+            "high_end_threshold": 3000000,
+        },
+        "default_benefits_and_limits": "Comprehensive private cover, Windscreen KES 50,000, Radio KES 30,000, Towing KES 35,000.",
+        "default_excesses": "Own Damage 2.5% (min KES 15,000). Third Party Property KES 5,000.",
+        "default_special_clauses": "Approved tracking device required for vehicles valued above KES 3M.",
+    },
+    {
+        "insurer_name": "Heritage Insurance Company Ltd.",
+        "name": "Heritage Commercial Transporter",
+        "class_of_insurance": "Motor Commercial",
+        "pricing_strategy": PricingStrategy.PERCENTAGE,
+        "default_commission_rate": 10.0,
+        "product_details": {
+            "excesses": {
+                "Own Damage": "5.0% of vehicle value minimum KES 30,000",
+                "Third Party Property": "KES 10,000",
+            },
+            "special_clauses": [
+                "Carriage of goods warranty",
+                "Fitted with certified speed governor",
+            ],
+        },
+        "pricing_rules": {
+            "rate": 5.5,
+            "minimum_premium": 60000,
+        },
+        "default_benefits_and_limits": "Commercial goods vehicle comprehensive indemnity, third party liability up to KES 5,000,000.",
+        "default_excesses": "Own damage 5% minimum KES 30,000. Third party property KES 10,000.",
+        "default_special_clauses": "Certified driver and valid speed governor warranties.",
+    },
+    {
+        "insurer_name": "Heritage Insurance Company Ltd.",
+        "name": "Heritage First Domestic Package",
+        "class_of_insurance": "Domestic Package",
+        "pricing_strategy": PricingStrategy.PERCENTAGE,
+        "default_commission_rate": 17.5,
+        "product_details": {
+            "excesses": {
+                "Buildings & Contents": "KES 5,000 each and every loss",
+                "All Risks": "10% minimum KES 2,500",
+            },
+        },
+        "pricing_rules": {
+            "building_rate": 0.12,
+            "contents_rate": 0.75,
+            "all_risks_rate": 1.5,
+            "minimum_premium": 10000,
+        },
+        "default_benefits_and_limits": "Private residential dwelling, contents against fire and burglary, domestic servant WIBA.",
+        "default_excesses": "KES 5,000 on sections A & B.",
+        "default_special_clauses": "First loss basis on contents, average clause applicable on buildings.",
+    },
+    # 12. GA Insurance Ltd.
+    {
+        "insurer_name": "GA Insurance Ltd.",
+        "name": "GA Motor Extra Comprehensive",
+        "class_of_insurance": "Motor Private",
+        "pricing_strategy": PricingStrategy.FIXED_TIERED,
+        "default_commission_rate": 10.0,
+        "product_details": {
+            "vehicle_details": {
+                "registration_number": "<<text>>",
+                "make": "<<text>>",
+                "year_of_manufacture": "<<number>>",
+                "sum_insured": "<<number>>",
+            },
+            "added_benefits": {
+                "pvt": "<<boolean>>",
+                "excess_protector": "<<boolean>>",
+            },
+            "excesses": {
+                "Own Damage": "2.5% of value minimum KES 15,000",
+                "Third Party Property": "KES 5,000",
+                "Theft": "10% of value minimum KES 20,000",
+            },
+        },
+        "pricing_rules": {
+            "tiers": [
+                {"max": 1500000, "rate": 4.75, "min": 50000},
+                {"max": 3000000, "rate": 4.0, "min": 70000},
+                {"max": None, "rate": 3.25, "min": 100000},
+            ],
+            "high_end_threshold": 3000000,
+        },
+        "default_benefits_and_limits": "Comprehensive private cover, Windscreen KES 50,000, Towing KES 30,000.",
+        "default_excesses": "Own damage 2.5% minimum KES 15,000.",
+        "default_special_clauses": "Geographical limits Kenya. Annual valuation warranty.",
+    },
+    {
+        "insurer_name": "GA Insurance Ltd.",
+        "name": "GA Corporate WIBA Scheme",
+        "class_of_insurance": "WIBA / Employers Liability",
+        "pricing_strategy": PricingStrategy.PERCENTAGE,
+        "default_commission_rate": 15.0,
+        "product_details": {
+            "excesses": {
+                "Each claim": "Nil",
+            },
+            "special_clauses": [
+                "Work Injury Benefits Act (WIBA 2007) compliance",
+                "Subject to annual wage roll declaration and audit",
+            ],
+        },
+        "pricing_rules": {
+            "clerical_rate": 0.35,
+            "manual_rate": 1.25,
+            "minimum_premium": 25000,
+        },
+        "default_benefits_and_limits": "Statutory WIBA benefits: 8 years earnings for death / permanent total disability, medical expenses KES 100,000.",
+        "default_excesses": "Nil statutory.",
+        "default_special_clauses": "Wage roll adjustment clause at policy expiry.",
+    },
+    {
+        "insurer_name": "GA Insurance Ltd.",
+        "name": "GA Fire & Industrial Perils",
+        "class_of_insurance": "Fire & Perils",
+        "pricing_strategy": PricingStrategy.PERCENTAGE,
+        "default_commission_rate": 17.5,
+        "product_details": {
+            "excesses": {
+                "Fire and Lightning": "Nil",
+                "Special Perils / Storm / Flood": "10% of loss minimum KES 25,000",
+            },
+        },
+        "pricing_rules": {
+            "rate": 0.20,
+            "minimum_premium": 15000,
+        },
+        "default_benefits_and_limits": "Commercial buildings and warehouse stock against fire, lightning, explosion, and allied special perils.",
+        "default_excesses": "Special perils 10% minimum KES 25,000.",
+        "default_special_clauses": "Fire extinguishing appliances warranty and pro-rata average clause.",
+    },
 ]
 
 

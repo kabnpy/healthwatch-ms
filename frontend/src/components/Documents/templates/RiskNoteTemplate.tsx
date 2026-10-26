@@ -10,6 +10,7 @@ import type {
 } from "@/types/insurance"
 import { formatCurrency } from "@/utils"
 import { BaseDocument } from "../BaseDocument"
+import { OfficialAgencyStamp } from "../OfficialAgencyStamp"
 import { RiskNoteTable } from "./RiskNote/RiskNoteTable"
 
 interface RiskNoteTemplateProps {
@@ -18,6 +19,7 @@ interface RiskNoteTemplateProps {
   policy: EnhancedPolicy
   isEditable?: boolean
   onSave?: (updatedSnapshot: any) => void
+  includeDigitalStamp?: boolean
 }
 
 export const RiskNoteTemplate = ({
@@ -26,6 +28,7 @@ export const RiskNoteTemplate = ({
   policy,
   isEditable = false,
   onSave,
+  includeDigitalStamp = false,
 }: RiskNoteTemplateProps) => {
   const [localRiskDetails, setLocalRiskDetails] = useState<Record<string, any>>(
     riskNote.cover_snapshot || {},
@@ -261,21 +264,39 @@ export const RiskNoteTemplate = ({
       name: "AUTHENTICATION",
       content: (
         <div className="flex justify-between items-center text-black uppercase">
-          <span className="font-bold tracking-tight text-[11px]">
-            {invoice
-              ? `Invoiced: ${invoice.invoice_number}`
-              : "Pending Invoicing"}
-          </span>
-          <span className="font-mono text-[12px] font-bold">
-            [Risk Note Issued:{" "}
-            {new Date(riskNote.created_at || "").toLocaleDateString()}]
-          </span>
+          <div className="flex flex-col">
+            <span className="font-bold tracking-tight text-[11px]">
+              {invoice
+                ? `Invoiced: ${invoice.invoice_number}`
+                : "Pending Invoicing"}
+            </span>
+            <span className="font-mono text-[10px] text-slate-700 font-semibold mt-0.5">
+              Issued: {new Date(riskNote.created_at || "").toLocaleDateString()}
+            </span>
+          </div>
+          {includeDigitalStamp ? (
+            <div className="py-0.5">
+              <OfficialAgencyStamp
+                date={new Date(riskNote.created_at || "")
+                  .toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })
+                  .toUpperCase()}
+              />
+            </div>
+          ) : (
+            <span className="font-mono text-[11px] font-bold text-slate-700">
+              [Authorized Broker Cover Slip]
+            </span>
+          )}
         </div>
       ),
     })
 
     return sections
-  }, [client, policy, riskNote, localRiskDetails])
+  }, [client, policy, riskNote, localRiskDetails, includeDigitalStamp])
 
   const handleUpdateSection = (sectionName: string, updatedContent: any) => {
     setLocalRiskDetails({

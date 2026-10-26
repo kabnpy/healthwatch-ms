@@ -19,6 +19,7 @@ function getClientQueryOptions(clientId: string) {
     queryFn: async () =>
       (await ClientsService.readClient({ path: { id: clientId } })).data,
     queryKey: ["clients", clientId],
+    staleTime: 1000 * 60 * 2,
   }
 }
 

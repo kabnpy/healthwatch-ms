@@ -68,6 +68,7 @@ function RiskNotePrintContent({ id }: { id: string }) {
           riskNote={riskNote as EnhancedRiskNote}
           client={client}
           policy={policy as EnhancedPolicy}
+          includeDigitalStamp={true}
         />
 
         <div className="fixed bottom-8 right-8 print:hidden flex flex-col gap-2">

@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { claimsCreateClaimData, claimsCreateClaimErrors, claimsCreateClaimResponses, claimsDeleteClaimData, claimsDeleteClaimErrors, claimsDeleteClaimResponses, claimsReadClaimData, claimsReadClaimErrors, claimsReadClaimResponses, claimsReadClaimsData, claimsReadClaimsErrors, claimsReadClaimsResponses, claimsUpdateClaimData, claimsUpdateClaimErrors, claimsUpdateClaimResponses, clientsCreateClientCorrespondenceData, clientsCreateClientCorrespondenceErrors, clientsCreateClientCorrespondenceResponses, clientsCreateClientData, clientsCreateClientErrors, clientsCreateClientResponses, clientsDeleteClientData, clientsDeleteClientErrors, clientsDeleteClientResponses, clientsReadClientCorrespondencesData, clientsReadClientCorrespondencesErrors, clientsReadClientCorrespondencesResponses, clientsReadClientData, clientsReadClientErrors, clientsReadClientResponses, clientsReadClientsData, clientsReadClientsErrors, clientsReadClientsResponses, clientsUpdateClientData, clientsUpdateClientErrors, clientsUpdateClientResponses, documentsDownloadDocumentData, documentsDownloadDocumentErrors, documentsDownloadDocumentResponses, documentsReadDocumentByIdData, documentsReadDocumentByIdErrors, documentsReadDocumentByIdResponses, documentsReadDocumentsData, documentsReadDocumentsErrors, documentsReadDocumentsResponses, documentsRemoveDocumentData, documentsRemoveDocumentErrors, documentsRemoveDocumentResponses, documentsUploadDocumentData, documentsUploadDocumentErrors, documentsUploadDocumentResponses, financialsAllocateReceiptData, financialsAllocateReceiptErrors, financialsAllocateReceiptResponses, financialsCreateBulkInvoiceData, financialsCreateBulkInvoiceErrors, financialsCreateBulkInvoiceResponses, financialsCreateNewInvoiceData, financialsCreateNewInvoiceErrors, financialsCreateNewInvoiceResponses, financialsCreateNewReceiptData, financialsCreateNewReceiptErrors, financialsCreateNewReceiptResponses, financialsDeleteReceiptData, financialsDeleteReceiptErrors, financialsDeleteReceiptResponses, financialsReadInvoiceData, financialsReadInvoiceErrors, financialsReadInvoiceResponses, financialsReadInvoicesData, financialsReadInvoicesErrors, financialsReadInvoicesResponses, financialsReadReceiptByIdData, financialsReadReceiptByIdErrors, financialsReadReceiptByIdResponses, financialsReadReceiptsData, financialsReadReceiptsErrors, financialsReadReceiptsResponses, insurersCreateInsurerData, insurersCreateInsurerErrors, insurersCreateInsurerResponses, insurersDeleteInsurerData, insurersDeleteInsurerErrors, insurersDeleteInsurerResponses, insurersReadInsurerData, insurersReadInsurerErrors, insurersReadInsurerResponses, insurersReadInsurersData, insurersReadInsurersErrors, insurersReadInsurersResponses, insurersUpdateInsurerData, insurersUpdateInsurerErrors, insurersUpdateInsurerResponses, loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordHtmlContentData, loginRecoverPasswordHtmlContentErrors, loginRecoverPasswordHtmlContentResponses, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, policiesCreateEndorsementData, policiesCreateEndorsementErrors, policiesCreateEndorsementResponses, policiesCreatePolicyData, policiesCreatePolicyErrors, policiesCreatePolicyResponses, policiesDeletePolicyData, policiesDeletePolicyErrors, policiesDeletePolicyResponses, policiesGetPolicyQuoteData, policiesGetPolicyQuoteErrors, policiesGetPolicyQuoteResponses, policiesReadPoliciesData, policiesReadPoliciesErrors, policiesReadPoliciesResponses, policiesReadPolicyData, policiesReadPolicyErrors, policiesReadPolicyResponses, policiesReadPolicyRiskNotesData, policiesReadPolicyRiskNotesErrors, policiesReadPolicyRiskNotesResponses, policiesUpdatePolicyData, policiesUpdatePolicyErrors, policiesUpdatePolicyResponses, privateCreateUserData, privateCreateUserErrors, privateCreateUserResponses, productsCreateProductData, productsCreateProductErrors, productsCreateProductResponses, productsDeleteProductData, productsDeleteProductErrors, productsDeleteProductResponses, productsReadProductData, productsReadProductErrors, productsReadProductResponses, productsReadProductsData, productsReadProductsErrors, productsReadProductsResponses, productsUpdateProductData, productsUpdateProductErrors, productsUpdateProductResponses, riskNotesCreateRiskNoteData, riskNotesCreateRiskNoteErrors, riskNotesCreateRiskNoteResponses, riskNotesDeleteRiskNoteData, riskNotesDeleteRiskNoteErrors, riskNotesDeleteRiskNoteResponses, riskNotesReadRiskNoteData, riskNotesReadRiskNoteErrors, riskNotesReadRiskNoteResponses, riskNotesReadRiskNotesData, riskNotesReadRiskNotesErrors, riskNotesReadRiskNotesResponses, riskNotesUpdateRiskNoteData, riskNotesUpdateRiskNoteErrors, riskNotesUpdateRiskNoteResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
+import type { activitiesCreateActivityData, activitiesCreateActivityErrors, activitiesCreateActivityResponses, activitiesReadActivitiesData, activitiesReadActivitiesErrors, activitiesReadActivitiesResponses, calculationsCreateCalculationData, calculationsCreateCalculationErrors, calculationsCreateCalculationResponses, calculationsQuotePreviewData, calculationsQuotePreviewErrors, calculationsQuotePreviewResponses, calculationsReadCalculationData, calculationsReadCalculationErrors, calculationsReadCalculationResponses, calculationsReadCalculationsData, calculationsReadCalculationsErrors, calculationsReadCalculationsResponses, calculationsSelectCalculationData, calculationsSelectCalculationErrors, calculationsSelectCalculationResponses, claimsCreateClaimData, claimsCreateClaimErrors, claimsCreateClaimResponses, claimsDeleteClaimData, claimsDeleteClaimErrors, claimsDeleteClaimResponses, claimsGetPolicyClaimsAdvocacySummaryData, claimsGetPolicyClaimsAdvocacySummaryErrors, claimsGetPolicyClaimsAdvocacySummaryResponses, claimsReadClaimData, claimsReadClaimErrors, claimsReadClaimResponses, claimsReadClaimsData, claimsReadClaimsErrors, claimsReadClaimsResponses, claimsUpdateClaimData, claimsUpdateClaimErrors, claimsUpdateClaimResponses, clientsCreateClientCorrespondenceData, clientsCreateClientCorrespondenceErrors, clientsCreateClientCorrespondenceResponses, clientsCreateClientData, clientsCreateClientErrors, clientsCreateClientResponses, clientsDeleteClientData, clientsDeleteClientErrors, clientsDeleteClientResponses, clientsReadClientCorrespondencesData, clientsReadClientCorrespondencesErrors, clientsReadClientCorrespondencesResponses, clientsReadClientData, clientsReadClientErrors, clientsReadClientResponses, clientsReadClientsData, clientsReadClientsErrors, clientsReadClientsResponses, clientsUpdateClientData, clientsUpdateClientErrors, clientsUpdateClientResponses, commissionsCalculateRemittanceData, commissionsCalculateRemittanceErrors, commissionsCalculateRemittanceResponses, commissionsCreateCommissionScheduleData, commissionsCreateCommissionScheduleErrors, commissionsCreateCommissionScheduleResponses, commissionsReadCommissionSchedulesData, commissionsReadCommissionSchedulesErrors, commissionsReadCommissionSchedulesResponses, documentJobsEnqueueDocumentJobData, documentJobsEnqueueDocumentJobErrors, documentJobsEnqueueDocumentJobResponses, documentJobsProcessDocumentJobData, documentJobsProcessDocumentJobErrors, documentJobsProcessDocumentJobResponses, documentJobsReadDocumentJobData, documentJobsReadDocumentJobErrors, documentJobsReadDocumentJobResponses, documentJobsReadDocumentJobsData, documentJobsReadDocumentJobsErrors, documentJobsReadDocumentJobsResponses, documentsDownloadDocumentData, documentsDownloadDocumentErrors, documentsDownloadDocumentResponses, documentsReadDocumentByIdData, documentsReadDocumentByIdErrors, documentsReadDocumentByIdResponses, documentsReadDocumentsData, documentsReadDocumentsErrors, documentsReadDocumentsResponses, documentsRemoveDocumentData, documentsRemoveDocumentErrors, documentsRemoveDocumentResponses, documentsUploadDocumentData, documentsUploadDocumentErrors, documentsUploadDocumentResponses, financialsAllocateReceiptData, financialsAllocateReceiptErrors, financialsAllocateReceiptResponses, financialsCreateBulkInvoiceData, financialsCreateBulkInvoiceErrors, financialsCreateBulkInvoiceResponses, financialsCreateNewInvoiceData, financialsCreateNewInvoiceErrors, financialsCreateNewInvoiceResponses, financialsCreateNewReceiptData, financialsCreateNewReceiptErrors, financialsCreateNewReceiptResponses, financialsDeleteReceiptData, financialsDeleteReceiptErrors, financialsDeleteReceiptResponses, financialsReadInvoiceData, financialsReadInvoiceErrors, financialsReadInvoiceResponses, financialsReadInvoicesData, financialsReadInvoicesErrors, financialsReadInvoicesResponses, financialsReadReceiptByIdData, financialsReadReceiptByIdErrors, financialsReadReceiptByIdResponses, financialsReadReceiptsData, financialsReadReceiptsErrors, financialsReadReceiptsResponses, insurersCreateInsurerData, insurersCreateInsurerErrors, insurersCreateInsurerResponses, insurersDeleteInsurerData, insurersDeleteInsurerErrors, insurersDeleteInsurerResponses, insurersReadInsurerData, insurersReadInsurerErrors, insurersReadInsurerResponses, insurersReadInsurersData, insurersReadInsurersErrors, insurersReadInsurersResponses, insurersUpdateInsurerData, insurersUpdateInsurerErrors, insurersUpdateInsurerResponses, invoiceBatchesCreateMonthlyBatchData, invoiceBatchesCreateMonthlyBatchErrors, invoiceBatchesCreateMonthlyBatchResponses, invoiceBatchesReadInvoiceBatchData, invoiceBatchesReadInvoiceBatchErrors, invoiceBatchesReadInvoiceBatchesData, invoiceBatchesReadInvoiceBatchesErrors, invoiceBatchesReadInvoiceBatchesResponses, invoiceBatchesReadInvoiceBatchResponses, ipfCreateIpfAgreementData, ipfCreateIpfAgreementErrors, ipfCreateIpfAgreementResponses, ipfReadIpfAgreementData, ipfReadIpfAgreementErrors, ipfReadIpfAgreementResponses, ipfReadIpfAgreementsData, ipfReadIpfAgreementsErrors, ipfReadIpfAgreementsResponses, ipfUpdateIpfAgreementData, ipfUpdateIpfAgreementErrors, ipfUpdateIpfAgreementResponses, loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordHtmlContentData, loginRecoverPasswordHtmlContentErrors, loginRecoverPasswordHtmlContentResponses, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, paymentAllocationsReadPaymentAllocationData, paymentAllocationsReadPaymentAllocationErrors, paymentAllocationsReadPaymentAllocationResponses, paymentAllocationsReadPaymentAllocationsData, paymentAllocationsReadPaymentAllocationsErrors, paymentAllocationsReadPaymentAllocationsResponses, paymentAllocationsReversePaymentAllocationData, paymentAllocationsReversePaymentAllocationErrors, paymentAllocationsReversePaymentAllocationResponses, paymentRecordsAllocatePaymentToInvoiceData, paymentRecordsAllocatePaymentToInvoiceErrors, paymentRecordsAllocatePaymentToInvoiceResponses, paymentRecordsCreatePaymentRecordData, paymentRecordsCreatePaymentRecordErrors, paymentRecordsCreatePaymentRecordResponses, paymentRecordsReadPaymentAllocationsForRecordData, paymentRecordsReadPaymentAllocationsForRecordErrors, paymentRecordsReadPaymentAllocationsForRecordResponses, paymentRecordsReadPaymentRecordData, paymentRecordsReadPaymentRecordErrors, paymentRecordsReadPaymentRecordResponses, paymentRecordsReadPaymentRecordsData, paymentRecordsReadPaymentRecordsErrors, paymentRecordsReadPaymentRecordsResponses, paymentRecordsReversePaymentRecordData, paymentRecordsReversePaymentRecordErrors, paymentRecordsReversePaymentRecordResponses, policiesCreateEndorsementData, policiesCreateEndorsementErrors, policiesCreateEndorsementResponses, policiesCreatePolicyData, policiesCreatePolicyErrors, policiesCreatePolicyResponses, policiesDeletePolicyData, policiesDeletePolicyErrors, policiesDeletePolicyResponses, policiesGetPolicyQuoteData, policiesGetPolicyQuoteErrors, policiesGetPolicyQuoteResponses, policiesReadPoliciesData, policiesReadPoliciesErrors, policiesReadPoliciesResponses, policiesReadPolicyData, policiesReadPolicyErrors, policiesReadPolicyResponses, policiesReadPolicyRiskNotesData, policiesReadPolicyRiskNotesErrors, policiesReadPolicyRiskNotesResponses, policiesUpdatePolicyData, policiesUpdatePolicyErrors, policiesUpdatePolicyResponses, privateCreateUserData, privateCreateUserErrors, privateCreateUserResponses, productsCreateProductData, productsCreateProductErrors, productsCreateProductResponses, productsDeleteProductData, productsDeleteProductErrors, productsDeleteProductResponses, productsReadProductData, productsReadProductErrors, productsReadProductResponses, productsReadProductsData, productsReadProductsErrors, productsReadProductsResponses, productsUpdateProductData, productsUpdateProductErrors, productsUpdateProductResponses, rateTablesAddMedicalTierData, rateTablesAddMedicalTierErrors, rateTablesAddMedicalTierResponses, rateTablesAddRateBenefitData, rateTablesAddRateBenefitErrors, rateTablesAddRateBenefitResponses, rateTablesAddRateBracketData, rateTablesAddRateBracketErrors, rateTablesAddRateBracketResponses, rateTablesCreateRateTableData, rateTablesCreateRateTableErrors, rateTablesCreateRateTableResponses, rateTablesReadRateTableData, rateTablesReadRateTableErrors, rateTablesReadRateTableResponses, rateTablesReadRateTablesData, rateTablesReadRateTablesErrors, rateTablesReadRateTablesResponses, rateTablesUpdateRateTableData, rateTablesUpdateRateTableErrors, rateTablesUpdateRateTableResponses, renewalsCreateRenewalData, renewalsCreateRenewalErrors, renewalsCreateRenewalResponses, renewalsReadRenewalData, renewalsReadRenewalErrors, renewalsReadRenewalResponses, renewalsReadRenewalsData, renewalsReadRenewalsErrors, renewalsReadRenewalsResponses, renewalsTransitionRenewalData, renewalsTransitionRenewalErrors, renewalsTransitionRenewalResponses, renewalsUpdateRenewalData, renewalsUpdateRenewalErrors, renewalsUpdateRenewalResponses, riskNotesCreateRiskNoteData, riskNotesCreateRiskNoteErrors, riskNotesCreateRiskNoteResponses, riskNotesDeleteRiskNoteData, riskNotesDeleteRiskNoteErrors, riskNotesDeleteRiskNoteResponses, riskNotesReadRiskNoteData, riskNotesReadRiskNoteErrors, riskNotesReadRiskNoteResponses, riskNotesReadRiskNotesData, riskNotesReadRiskNotesErrors, riskNotesReadRiskNotesResponses, riskNotesUpdateRiskNoteData, riskNotesUpdateRiskNoteErrors, riskNotesUpdateRiskNoteResponses, statementsGetClientStatementData, statementsGetClientStatementErrors, statementsGetClientStatementResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses, vehiclesCreateVehicleData, vehiclesCreateVehicleErrors, vehiclesCreateVehicleResponses, vehiclesDeleteVehicleData, vehiclesDeleteVehicleErrors, vehiclesDeleteVehicleResponses, vehiclesReadVehicleData, vehiclesReadVehicleErrors, vehiclesReadVehicleResponses, vehiclesReadVehiclesData, vehiclesReadVehiclesErrors, vehiclesReadVehiclesResponses, vehiclesUpdateVehicleData, vehiclesUpdateVehicleErrors, vehiclesUpdateVehicleResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -839,6 +839,86 @@ export class PoliciesService {
     }
 }
 
+export class VehiclesService {
+    /**
+     * Read Vehicles
+     *
+     * Retrieve motor vehicles with optional policy filter.
+     */
+    public static readVehicles<ThrowOnError extends boolean = true>(options?: Options<vehiclesReadVehiclesData, ThrowOnError>) {
+        return (options?.client ?? client).get<vehiclesReadVehiclesResponses, vehiclesReadVehiclesErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/vehicles/',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Vehicle
+     *
+     * Register a motor vehicle asset against a policy.
+     */
+    public static createVehicle<ThrowOnError extends boolean = true>(options: Options<vehiclesCreateVehicleData, ThrowOnError>) {
+        return (options.client ?? client).post<vehiclesCreateVehicleResponses, vehiclesCreateVehicleErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/vehicles/',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Delete Vehicle
+     *
+     * Soft delete a vehicle record.
+     */
+    public static deleteVehicle<ThrowOnError extends boolean = true>(options: Options<vehiclesDeleteVehicleData, ThrowOnError>) {
+        return (options.client ?? client).delete<vehiclesDeleteVehicleResponses, vehiclesDeleteVehicleErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/vehicles/{id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Read Vehicle
+     *
+     * Get single vehicle details.
+     */
+    public static readVehicle<ThrowOnError extends boolean = true>(options: Options<vehiclesReadVehicleData, ThrowOnError>) {
+        return (options.client ?? client).get<vehiclesReadVehicleResponses, vehiclesReadVehicleErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/vehicles/{id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Update Vehicle
+     *
+     * Update vehicle registration or asset parameters.
+     */
+    public static updateVehicle<ThrowOnError extends boolean = true>(options: Options<vehiclesUpdateVehicleData, ThrowOnError>) {
+        return (options.client ?? client).patch<vehiclesUpdateVehicleResponses, vehiclesUpdateVehicleErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/vehicles/{id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+}
+
 export class RiskNotesService {
     /**
      * Read Risk Notes
@@ -1063,11 +1143,157 @@ export class FinancialsService {
     }
 }
 
+export class PaymentRecordsService {
+    /**
+     * Read Payment Records
+     *
+     * List payment records with pagination and client filter.
+     */
+    public static recordsReadPaymentRecords<ThrowOnError extends boolean = true>(options?: Options<paymentRecordsReadPaymentRecordsData, ThrowOnError>) {
+        return (options?.client ?? client).get<paymentRecordsReadPaymentRecordsResponses, paymentRecordsReadPaymentRecordsErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/payment-records/',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Payment Record
+     *
+     * Record a gross payment instrument/event from a client.
+     */
+    public static recordsCreatePaymentRecord<ThrowOnError extends boolean = true>(options: Options<paymentRecordsCreatePaymentRecordData, ThrowOnError>) {
+        return (options.client ?? client).post<paymentRecordsCreatePaymentRecordResponses, paymentRecordsCreatePaymentRecordErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/payment-records/',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read Payment Record
+     *
+     * Get single payment record details.
+     */
+    public static recordsReadPaymentRecord<ThrowOnError extends boolean = true>(options: Options<paymentRecordsReadPaymentRecordData, ThrowOnError>) {
+        return (options.client ?? client).get<paymentRecordsReadPaymentRecordResponses, paymentRecordsReadPaymentRecordErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/payment-records/{id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Read Payment Allocations For Record
+     *
+     * List all allocations funded by this payment record.
+     */
+    public static recordsReadPaymentAllocationsForRecord<ThrowOnError extends boolean = true>(options: Options<paymentRecordsReadPaymentAllocationsForRecordData, ThrowOnError>) {
+        return (options.client ?? client).get<paymentRecordsReadPaymentAllocationsForRecordResponses, paymentRecordsReadPaymentAllocationsForRecordErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/payment-records/{id}/allocations',
+            ...options
+        });
+    }
+    
+    /**
+     * Allocate Payment To Invoice
+     *
+     * Allocate funds from a payment record to an invoice.
+     */
+    public static recordsAllocatePaymentToInvoice<ThrowOnError extends boolean = true>(options: Options<paymentRecordsAllocatePaymentToInvoiceData, ThrowOnError>) {
+        return (options.client ?? client).post<paymentRecordsAllocatePaymentToInvoiceResponses, paymentRecordsAllocatePaymentToInvoiceErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/payment-records/{id}/allocations',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Reverse Payment Record
+     *
+     * Atomically reverse a payment record and cascade reversal to all linked allocations.
+     */
+    public static recordsReversePaymentRecord<ThrowOnError extends boolean = true>(options: Options<paymentRecordsReversePaymentRecordData, ThrowOnError>) {
+        return (options.client ?? client).post<paymentRecordsReversePaymentRecordResponses, paymentRecordsReversePaymentRecordErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/payment-records/{id}/reverse',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+}
+
+export class PaymentAllocationsService {
+    /**
+     * Read Payment Allocations
+     *
+     * List payment allocations with optional filters.
+     */
+    public static allocationsReadPaymentAllocations<ThrowOnError extends boolean = true>(options?: Options<paymentAllocationsReadPaymentAllocationsData, ThrowOnError>) {
+        return (options?.client ?? client).get<paymentAllocationsReadPaymentAllocationsResponses, paymentAllocationsReadPaymentAllocationsErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/payment-allocations/',
+            ...options
+        });
+    }
+    
+    /**
+     * Read Payment Allocation
+     *
+     * Get single allocation details.
+     */
+    public static allocationsReadPaymentAllocation<ThrowOnError extends boolean = true>(options: Options<paymentAllocationsReadPaymentAllocationData, ThrowOnError>) {
+        return (options.client ?? client).get<paymentAllocationsReadPaymentAllocationResponses, paymentAllocationsReadPaymentAllocationErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/payment-allocations/{id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Reverse Payment Allocation
+     *
+     * Reverse an individual payment allocation and restore the invoice balance.
+     */
+    public static allocationsReversePaymentAllocation<ThrowOnError extends boolean = true>(options: Options<paymentAllocationsReversePaymentAllocationData, ThrowOnError>) {
+        return (options.client ?? client).post<paymentAllocationsReversePaymentAllocationResponses, paymentAllocationsReversePaymentAllocationErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/payment-allocations/{id}/reverse',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+}
+
 export class ClaimsService {
     /**
      * Read Claims
      *
-     * Retrieve claims.
+     * Retrieve claims with optional policy filter.
      */
     public static readClaims<ThrowOnError extends boolean = true>(options?: Options<claimsReadClaimsData, ThrowOnError>) {
         return (options?.client ?? client).get<claimsReadClaimsResponses, claimsReadClaimsErrors, ThrowOnError>({
@@ -1081,7 +1307,7 @@ export class ClaimsService {
     /**
      * Create Claim
      *
-     * Create new claim.
+     * Create a new insurance claim with initial estimated reserve and details.
      */
     public static createClaim<ThrowOnError extends boolean = true>(options: Options<claimsCreateClaimData, ThrowOnError>) {
         return (options.client ?? client).post<claimsCreateClaimResponses, claimsCreateClaimErrors, ThrowOnError>({
@@ -1093,6 +1319,20 @@ export class ClaimsService {
                 'Content-Type': 'application/json',
                 ...options.headers
             }
+        });
+    }
+    
+    /**
+     * Get Policy Claims Advocacy Summary
+     *
+     * Compute claims advocacy summary and loss ratio for policy renewal negotiations.
+     */
+    public static getPolicyClaimsAdvocacySummary<ThrowOnError extends boolean = true>(options: Options<claimsGetPolicyClaimsAdvocacySummaryData, ThrowOnError>) {
+        return (options.client ?? client).get<claimsGetPolicyClaimsAdvocacySummaryResponses, claimsGetPolicyClaimsAdvocacySummaryErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/claims/policy/{policy_id}/advocacy-summary',
+            ...options
         });
     }
     
@@ -1113,7 +1353,7 @@ export class ClaimsService {
     /**
      * Read Claim
      *
-     * Get claim by ID.
+     * Get single claim by ID.
      */
     public static readClaim<ThrowOnError extends boolean = true>(options: Options<claimsReadClaimData, ThrowOnError>) {
         return (options.client ?? client).get<claimsReadClaimResponses, claimsReadClaimErrors, ThrowOnError>({
@@ -1127,7 +1367,7 @@ export class ClaimsService {
     /**
      * Update Claim
      *
-     * Update a claim.
+     * Update claim advocacy details and progress lifecycle states.
      */
     public static updateClaim<ThrowOnError extends boolean = true>(options: Options<claimsUpdateClaimData, ThrowOnError>) {
         return (options.client ?? client).put<claimsUpdateClaimResponses, claimsUpdateClaimErrors, ThrowOnError>({
@@ -1139,6 +1379,569 @@ export class ClaimsService {
                 'Content-Type': 'application/json',
                 ...options.headers
             }
+        });
+    }
+}
+
+export class RenewalsService {
+    /**
+     * Read Renewals
+     *
+     * Retrieve renewals portfolio with status and policy filtering.
+     */
+    public static readRenewals<ThrowOnError extends boolean = true>(options?: Options<renewalsReadRenewalsData, ThrowOnError>) {
+        return (options?.client ?? client).get<renewalsReadRenewalsResponses, renewalsReadRenewalsErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/renewals/',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Renewal
+     *
+     * Initiate an annual renewal for a policy (enforces single active renewal invariant).
+     */
+    public static createRenewal<ThrowOnError extends boolean = true>(options: Options<renewalsCreateRenewalData, ThrowOnError>) {
+        return (options.client ?? client).post<renewalsCreateRenewalResponses, renewalsCreateRenewalErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/renewals/',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read Renewal
+     *
+     * Get single renewal details by ID.
+     */
+    public static readRenewal<ThrowOnError extends boolean = true>(options: Options<renewalsReadRenewalData, ThrowOnError>) {
+        return (options.client ?? client).get<renewalsReadRenewalResponses, renewalsReadRenewalErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/renewals/{id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Update Renewal
+     *
+     * Update renewal metadata with OCC verification.
+     */
+    public static updateRenewal<ThrowOnError extends boolean = true>(options: Options<renewalsUpdateRenewalData, ThrowOnError>) {
+        return (options.client ?? client).patch<renewalsUpdateRenewalResponses, renewalsUpdateRenewalErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/renewals/{id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Transition Renewal
+     *
+     * Execute a workflow state transition under Optimistic Concurrency Control (OCC).
+     * Returns 409 Conflict if renewal version differs from expected version.
+     */
+    public static transitionRenewal<ThrowOnError extends boolean = true>(options: Options<renewalsTransitionRenewalData, ThrowOnError>) {
+        return (options.client ?? client).patch<renewalsTransitionRenewalResponses, renewalsTransitionRenewalErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/renewals/{id}/transition',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+}
+
+export class ActivitiesService {
+    /**
+     * Read Activities
+     *
+     * Retrieve operational timeline activities for a client, policy, or renewal.
+     */
+    public static readActivities<ThrowOnError extends boolean = true>(options?: Options<activitiesReadActivitiesData, ThrowOnError>) {
+        return (options?.client ?? client).get<activitiesReadActivitiesResponses, activitiesReadActivitiesErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/activities/',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Activity
+     *
+     * Append a communication note, call, meeting, or reminder to the operational history.
+     */
+    public static createActivity<ThrowOnError extends boolean = true>(options: Options<activitiesCreateActivityData, ThrowOnError>) {
+        return (options.client ?? client).post<activitiesCreateActivityResponses, activitiesCreateActivityErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/activities/',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+}
+
+export class RateTablesService {
+    /**
+     * Read Rate Tables
+     *
+     * Retrieve advisory rate table versions with optional filters.
+     */
+    public static tablesReadRateTables<ThrowOnError extends boolean = true>(options?: Options<rateTablesReadRateTablesData, ThrowOnError>) {
+        return (options?.client ?? client).get<rateTablesReadRateTablesResponses, rateTablesReadRateTablesErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/rate-tables/',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Rate Table
+     *
+     * Create a new rate table version.
+     */
+    public static tablesCreateRateTable<ThrowOnError extends boolean = true>(options: Options<rateTablesCreateRateTableData, ThrowOnError>) {
+        return (options.client ?? client).post<rateTablesCreateRateTableResponses, rateTablesCreateRateTableErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/rate-tables/',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read Rate Table
+     *
+     * Get single rate table version details with brackets, benefits, and tiers.
+     */
+    public static tablesReadRateTable<ThrowOnError extends boolean = true>(options: Options<rateTablesReadRateTableData, ThrowOnError>) {
+        return (options.client ?? client).get<rateTablesReadRateTableResponses, rateTablesReadRateTableErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/rate-tables/{id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Update Rate Table
+     *
+     * Update a rate table version (e.g. activate, archive, update dates).
+     */
+    public static tablesUpdateRateTable<ThrowOnError extends boolean = true>(options: Options<rateTablesUpdateRateTableData, ThrowOnError>) {
+        return (options.client ?? client).patch<rateTablesUpdateRateTableResponses, rateTablesUpdateRateTableErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/rate-tables/{id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Add Rate Bracket
+     *
+     * Add a pricing bracket to a rate table version.
+     */
+    public static tablesAddRateBracket<ThrowOnError extends boolean = true>(options: Options<rateTablesAddRateBracketData, ThrowOnError>) {
+        return (options.client ?? client).post<rateTablesAddRateBracketResponses, rateTablesAddRateBracketErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/rate-tables/{id}/brackets',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Add Rate Benefit
+     *
+     * Add a benefit/rider rule to a rate table version.
+     */
+    public static tablesAddRateBenefit<ThrowOnError extends boolean = true>(options: Options<rateTablesAddRateBenefitData, ThrowOnError>) {
+        return (options.client ?? client).post<rateTablesAddRateBenefitResponses, rateTablesAddRateBenefitErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/rate-tables/{id}/benefits',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Add Medical Tier
+     *
+     * Add a medical census tier to a rate table version.
+     */
+    public static tablesAddMedicalTier<ThrowOnError extends boolean = true>(options: Options<rateTablesAddMedicalTierData, ThrowOnError>) {
+        return (options.client ?? client).post<rateTablesAddMedicalTierResponses, rateTablesAddMedicalTierErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/rate-tables/{id}/medical-tiers',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+}
+
+export class CalculationsService {
+    /**
+     * Quote Preview
+     *
+     * Calculate an advisory quote preview with full breakdown and taxes without persisting.
+     */
+    public static quotePreview<ThrowOnError extends boolean = true>(options: Options<calculationsQuotePreviewData, ThrowOnError>) {
+        return (options.client ?? client).post<calculationsQuotePreviewResponses, calculationsQuotePreviewErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/calculations/quote',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read Calculations
+     *
+     * Retrieve advisory premium calculations with policy or renewal filter.
+     */
+    public static readCalculations<ThrowOnError extends boolean = true>(options?: Options<calculationsReadCalculationsData, ThrowOnError>) {
+        return (options?.client ?? client).get<calculationsReadCalculationsResponses, calculationsReadCalculationsErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/calculations/',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Calculation
+     *
+     * Calculate and persist an immutable advisory PremiumCalculation snapshot.
+     */
+    public static createCalculation<ThrowOnError extends boolean = true>(options: Options<calculationsCreateCalculationData, ThrowOnError>) {
+        return (options.client ?? client).post<calculationsCreateCalculationResponses, calculationsCreateCalculationErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/calculations/',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read Calculation
+     *
+     * Get single calculation by ID.
+     */
+    public static readCalculation<ThrowOnError extends boolean = true>(options: Options<calculationsReadCalculationData, ThrowOnError>) {
+        return (options.client ?? client).get<calculationsReadCalculationResponses, calculationsReadCalculationErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/calculations/{id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Select Calculation
+     *
+     * Select this calculation as agreed calculation for policy / renewal.
+     */
+    public static selectCalculation<ThrowOnError extends boolean = true>(options: Options<calculationsSelectCalculationData, ThrowOnError>) {
+        return (options.client ?? client).post<calculationsSelectCalculationResponses, calculationsSelectCalculationErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/calculations/{id}/select',
+            ...options
+        });
+    }
+}
+
+export class IpfService {
+    /**
+     * Read Ipf Agreements
+     *
+     * Retrieve IPF agreements with optional client or policy filters.
+     */
+    public static readIpfAgreements<ThrowOnError extends boolean = true>(options?: Options<ipfReadIpfAgreementsData, ThrowOnError>) {
+        return (options?.client ?? client).get<ipfReadIpfAgreementsResponses, ipfReadIpfAgreementsErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/ipf/',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Ipf Agreement
+     *
+     * Create a new tripartite Insurance Premium Financing facility.
+     */
+    public static createIpfAgreement<ThrowOnError extends boolean = true>(options: Options<ipfCreateIpfAgreementData, ThrowOnError>) {
+        return (options.client ?? client).post<ipfCreateIpfAgreementResponses, ipfCreateIpfAgreementErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/ipf/',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read Ipf Agreement
+     *
+     * Get single IPF agreement by ID.
+     */
+    public static readIpfAgreement<ThrowOnError extends boolean = true>(options: Options<ipfReadIpfAgreementData, ThrowOnError>) {
+        return (options.client ?? client).get<ipfReadIpfAgreementResponses, ipfReadIpfAgreementErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/ipf/{id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Update Ipf Agreement
+     *
+     * Update IPF status or attach commitment letter document.
+     */
+    public static updateIpfAgreement<ThrowOnError extends boolean = true>(options: Options<ipfUpdateIpfAgreementData, ThrowOnError>) {
+        return (options.client ?? client).patch<ipfUpdateIpfAgreementResponses, ipfUpdateIpfAgreementErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/ipf/{id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+}
+
+export class CommissionsService {
+    /**
+     * Read Commission Schedules
+     *
+     * Retrieve insurer commission schedules.
+     */
+    public static readCommissionSchedules<ThrowOnError extends boolean = true>(options?: Options<commissionsReadCommissionSchedulesData, ThrowOnError>) {
+        return (options?.client ?? client).get<commissionsReadCommissionSchedulesResponses, commissionsReadCommissionSchedulesErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/commissions/',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Commission Schedule
+     *
+     * Create a new commission schedule for an insurer and product line.
+     */
+    public static createCommissionSchedule<ThrowOnError extends boolean = true>(options: Options<commissionsCreateCommissionScheduleData, ThrowOnError>) {
+        return (options.client ?? client).post<commissionsCreateCommissionScheduleResponses, commissionsCreateCommissionScheduleErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/commissions/',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Calculate Remittance
+     *
+     * Calculate gross commission, 5% WHT deduction, net commission, and net carrier remittance.
+     */
+    public static calculateRemittance<ThrowOnError extends boolean = true>(options: Options<commissionsCalculateRemittanceData, ThrowOnError>) {
+        return (options.client ?? client).post<commissionsCalculateRemittanceResponses, commissionsCalculateRemittanceErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/commissions/calculate',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+}
+
+export class StatementsService {
+    /**
+     * Get Client Statement
+     *
+     * Retrieve reconciled financial statement and ledger for a client.
+     */
+    public static getClientStatement<ThrowOnError extends boolean = true>(options: Options<statementsGetClientStatementData, ThrowOnError>) {
+        return (options.client ?? client).get<statementsGetClientStatementResponses, statementsGetClientStatementErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/statements/client/{client_id}',
+            ...options
+        });
+    }
+}
+
+export class InvoiceBatchesService {
+    /**
+     * Read Invoice Batches
+     *
+     * Retrieve monthly consolidated invoice batches.
+     */
+    public static batchesReadInvoiceBatches<ThrowOnError extends boolean = true>(options?: Options<invoiceBatchesReadInvoiceBatchesData, ThrowOnError>) {
+        return (options?.client ?? client).get<invoiceBatchesReadInvoiceBatchesResponses, invoiceBatchesReadInvoiceBatchesErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/invoice-batches/',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Monthly Batch
+     *
+     * Consolidate monthly client invoices into a single batch enforcing UNIQUE(client_id, billing_month).
+     */
+    public static batchesCreateMonthlyBatch<ThrowOnError extends boolean = true>(options: Options<invoiceBatchesCreateMonthlyBatchData, ThrowOnError>) {
+        return (options.client ?? client).post<invoiceBatchesCreateMonthlyBatchResponses, invoiceBatchesCreateMonthlyBatchErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/invoice-batches/',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read Invoice Batch
+     *
+     * Get single invoice batch by ID.
+     */
+    public static batchesReadInvoiceBatch<ThrowOnError extends boolean = true>(options: Options<invoiceBatchesReadInvoiceBatchData, ThrowOnError>) {
+        return (options.client ?? client).get<invoiceBatchesReadInvoiceBatchResponses, invoiceBatchesReadInvoiceBatchErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/invoice-batches/{id}',
+            ...options
+        });
+    }
+}
+
+export class DocumentJobsService {
+    /**
+     * Read Document Jobs
+     *
+     * Retrieve document generation jobs.
+     */
+    public static jobsReadDocumentJobs<ThrowOnError extends boolean = true>(options?: Options<documentJobsReadDocumentJobsData, ThrowOnError>) {
+        return (options?.client ?? client).get<documentJobsReadDocumentJobsResponses, documentJobsReadDocumentJobsErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/document-jobs/',
+            ...options
+        });
+    }
+    
+    /**
+     * Enqueue Document Job
+     *
+     * Enqueue an asynchronous document generation job (202 Accepted).
+     */
+    public static jobsEnqueueDocumentJob<ThrowOnError extends boolean = true>(options: Options<documentJobsEnqueueDocumentJobData, ThrowOnError>) {
+        return (options.client ?? client).post<documentJobsEnqueueDocumentJobResponses, documentJobsEnqueueDocumentJobErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/document-jobs/',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read Document Job
+     *
+     * Poll document job processing status and retrieve generated artifact storage key.
+     */
+    public static jobsReadDocumentJob<ThrowOnError extends boolean = true>(options: Options<documentJobsReadDocumentJobData, ThrowOnError>) {
+        return (options.client ?? client).get<documentJobsReadDocumentJobResponses, documentJobsReadDocumentJobErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/document-jobs/{id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Process Document Job
+     *
+     * Trigger background worker processing for an enqueued document job.
+     */
+    public static jobsProcessDocumentJob<ThrowOnError extends boolean = true>(options: Options<documentJobsProcessDocumentJobData, ThrowOnError>) {
+        return (options.client ?? client).post<documentJobsProcessDocumentJobResponses, documentJobsProcessDocumentJobErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/document-jobs/{id}/process',
+            ...options
         });
     }
 }

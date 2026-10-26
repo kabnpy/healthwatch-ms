@@ -228,6 +228,19 @@ class DocumentType(str, Enum):
     POLICE_ABSTRACT = "PoliceAbstract"
     RECEIPT = "Receipt"
     OTHER = "Other"
+    # Document Presets for UI consistency
+    KRA_PIN_CERTIFICATE = "KRA PIN Certificate"
+    NATIONAL_ID_PASSPORT = "National ID / Passport"
+    CERTIFICATE_OF_INCORPORATION = "Certificate of Incorporation"
+    UTILITY_BILL = "Utility Bill"
+    POLICY_SCHEDULE = "Policy Schedule"
+    COVER_NOTE = "Cover Note"
+    ACCIDENT_PHOTOS = "Accident Photos"
+    REPAIR_ESTIMATE = "Repair Estimate"
+    CLAIM_FORM = "Claim Form"
+    POLICE_REPORT = "Police Report"
+    BANK_SLIP = "Bank Slip"
+    MPESA_SCREENSHOT = "M-Pesa Screenshot"
 
 
 class PricingStrategy(str, Enum):
@@ -400,7 +413,10 @@ class ProductPublic(ProductBase):
 
 class Product(ProductBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    insurer: Insurer = Relationship(back_populates="products")
+    insurer: Insurer = Relationship(
+        back_populates="products",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
     policies: list[Policy] = Relationship(back_populates="product")
 
     def validate_risk_details(self, risk_details: dict[str, Any]) -> dict[str, Any]:
@@ -887,8 +903,6 @@ class ReceiptAllocationsPublic(SQLModel):
 
 class InvoiceLineItemPublic(InvoiceLineItemBase):
     id: uuid.UUID
-    risk_note: RiskNotePublic | None = None
-    invoice: InvoicePublic | None = None
 
 
 class InvoicePublic(InvoiceBase):

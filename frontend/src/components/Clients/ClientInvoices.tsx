@@ -1,17 +1,24 @@
-import { FilePlus, FileText, Plus, Receipt } from "lucide-react"
-import { Suspense, useCallback, useMemo, useState } from "react"
-import type { InvoicePublic, ReceiptPublic } from "@/client"
+import {
+  CreditCard,
+  FilePlus,
+  FileText,
+  Plus,
+  Receipt,
+  RotateCcw,
+  ShieldAlert,
+} from "lucide-react"
+import { Suspense, useMemo, useState } from "react"
+import type { PaymentRecordPublic } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
 import { DocumentViewerModal } from "@/components/Common/DocumentViewerModal"
 import { EmptyState } from "@/components/Common/EmptyState"
 import { DocumentViewer } from "@/components/Documents/DocumentViewer"
-import { AddReceiptForm } from "@/components/Financials/AddReceiptForm"
-import { AllocationDialog } from "@/components/Financials/AllocationDialog"
-import { AllocationHistory } from "@/components/Financials/AllocationHistory"
+import { ClientStatementView } from "@/components/Financials/ClientStatementView"
 import { InvoicesSkeleton } from "@/components/Financials/InvoicesSkeleton"
 import { InvoiceWizard } from "@/components/Financials/InvoiceWizard"
-import { getReceiptColumns } from "@/components/Financials/ReceiptColumns"
+import { RecordPaymentModal } from "@/components/Financials/RecordPaymentModal"
 import { getColumns as getInvoiceColumns } from "@/components/Invoices/columns"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -21,48 +28,119 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useFinancialSummary, useVoidReceipt } from "@/hooks/useFinancials"
+import { Textarea } from "@/components/ui/textarea"
+import { useInvoices } from "@/hooks/useFinancials"
+import {
+  useAllocatePayment,
+  usePaymentRecords,
+  useReversePaymentRecord,
+} from "@/hooks/usePayments"
+import { formatCurrency } from "@/utils"
 
 interface ClientInvoicesProps {
   clientId: string
 }
 
 export function ClientInvoices({ clientId }: ClientInvoicesProps) {
-  const { invoices, receipts, isLoading } = useFinancialSummary(clientId)
-  const voidMutation = useVoidReceipt()
+  const { data: invoicesData, isLoading: isLoadingInvoices } =
+    useInvoices(clientId)
+  const { data: paymentsData, isLoading: isLoadingPayments } =
+    usePaymentRecords(clientId)
+  const allocateMutation = useAllocatePayment()
+  const reversalMutation = useReversePaymentRecord()
 
+  const invoices = invoicesData?.data || []
+  const paymentRecords = paymentsData?.data || []
+
+  // Modals state
   const [viewerOpen, setViewerOpen] = useState(false)
-  const [selectedDoc, setSelectedDoc] = useState<{
-    id: string
-    type: "invoice" | "receipt"
-  } | null>(null)
-
-  const [isAddReceiptOpen, setIsAddReceiptOpen] = useState(false)
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
+  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false)
   const [isInvoiceWizardOpen, setIsInvoiceWizardOpen] = useState(false)
-  const [selectedReceipt, setSelectedReceipt] = useState<ReceiptPublic | null>(
-    null,
+
+  // Allocation modal state
+  const [allocationModalOpen, setAllocationModalOpen] = useState(false)
+  const [selectedRecordForAllocation, setSelectedRecordForAllocation] =
+    useState<PaymentRecordPublic | null>(null)
+  const [targetInvoiceId, setTargetInvoiceId] = useState<string>("")
+  const [allocationAmount, setAllocationAmount] = useState<string>("")
+
+  // Reversal modal state
+  const [reversalModalOpen, setReversalModalOpen] = useState(false)
+  const [selectedRecordForReversal, setSelectedRecordForReversal] =
+    useState<PaymentRecordPublic | null>(null)
+  const [reversalReason, setReversalReason] = useState<string>("")
+
+  const openInvoices = useMemo(
+    () => invoices.filter((inv) => Number(inv.balance_due || 0) > 0),
+    [invoices],
   )
-  const [isAllocationOpen, setIsAllocationOpen] = useState(false)
-  const [receiptToVoid, setReceiptToVoid] = useState<ReceiptPublic | null>(null)
 
-  const [historyTarget, setHistoryTarget] = useState<{
-    type: "invoice" | "receipt"
-    item: InvoicePublic | ReceiptPublic
-  } | null>(null)
+  const handleOpenAllocation = (record: PaymentRecordPublic) => {
+    setSelectedRecordForAllocation(record)
+    const unallocated = Number(record.unallocated_amount || 0)
+    if (openInvoices.length > 0) {
+      const firstInv = openInvoices[0]
+      setTargetInvoiceId(firstInv.id)
+      const maxAllocatable = Math.min(
+        unallocated,
+        Number(firstInv.balance_due || 0),
+      )
+      setAllocationAmount(String(maxAllocatable))
+    } else {
+      setTargetInvoiceId("")
+      setAllocationAmount(String(unallocated))
+    }
+    setAllocationModalOpen(true)
+  }
 
-  const handleAllocate = useCallback((receipt: ReceiptPublic) => {
-    setSelectedReceipt(receipt)
-    setIsAllocationOpen(true)
-  }, [])
+  const handleConfirmAllocation = async () => {
+    if (!selectedRecordForAllocation || !targetInvoiceId || !allocationAmount)
+      return
+    const amountNum = Number.parseFloat(allocationAmount)
+    if (Number.isNaN(amountNum) || amountNum <= 0) return
 
-  const handleVoid = async () => {
-    if (!receiptToVoid) return
     try {
-      await voidMutation.mutateAsync(receiptToVoid.id)
-      setReceiptToVoid(null)
-    } catch (_error) {
-      // toast is already in mutation
+      await allocateMutation.mutateAsync({
+        id: selectedRecordForAllocation.id,
+        data: {
+          payment_record_id: selectedRecordForAllocation.id,
+          invoice_id: targetInvoiceId,
+          amount: amountNum,
+        },
+      })
+      setAllocationModalOpen(false)
+      setSelectedRecordForAllocation(null)
+    } catch (_err) {
+      // toast is handled in mutation
+    }
+  }
+
+  const handleConfirmReversal = async () => {
+    if (!selectedRecordForReversal || !reversalReason.trim()) return
+
+    try {
+      await reversalMutation.mutateAsync({
+        id: selectedRecordForReversal.id,
+        data: {
+          reversal_reason: reversalReason.trim(),
+        },
+      })
+      setReversalModalOpen(false)
+      setSelectedRecordForReversal(null)
+      setReversalReason("")
+    } catch (_err) {
+      // toast is handled in mutation
     }
   }
 
@@ -70,63 +148,67 @@ export function ClientInvoices({ clientId }: ClientInvoicesProps) {
     () =>
       getInvoiceColumns(
         (invoice) => {
-          setSelectedDoc({ id: invoice.id, type: "invoice" })
+          setSelectedDocId(invoice.id)
           setViewerOpen(true)
         },
-        (invoice) => setHistoryTarget({ type: "invoice", item: invoice }),
+        () => {},
       ),
     [],
   )
 
-  const receiptColumns = useMemo(
-    () =>
-      getReceiptColumns(
-        handleAllocate,
-        (receipt) => setHistoryTarget({ type: "receipt", item: receipt }),
-        (receipt) => setReceiptToVoid(receipt),
-        (receipt) => {
-          setSelectedDoc({ id: receipt.id, type: "receipt" })
-          setViewerOpen(true)
-        },
-      ),
-    [handleAllocate],
-  )
-
-  if (isLoading) return <InvoicesSkeleton />
+  if (isLoadingInvoices || isLoadingPayments) {
+    return <InvoicesSkeleton />
+  }
 
   return (
     <div className="space-y-6 pt-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight text-primary">
-          Invoices
-        </h2>
+      {/* Header with Actions */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-foreground">
+            Client Invoicing & Payment Ledger
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Debtor invoices, cleared funds cashiering, and non-destructive
+            allocations.
+          </p>
+        </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
-            className="gap-2"
+            className="gap-2 h-9 text-xs"
             onClick={() => setIsInvoiceWizardOpen(true)}
           >
             <FilePlus className="size-4" />
             Generate Invoice
           </Button>
-          <Button className="gap-2" onClick={() => setIsAddReceiptOpen(true)}>
-            <Plus className="size-4" />
-            Log Payment
+          <Button
+            className="gap-2 h-9 text-xs bg-primary text-primary-foreground font-medium"
+            onClick={() => setIsRecordPaymentOpen(true)}
+          >
+            <CreditCard className="size-4" />
+            Record Cleared Payment
           </Button>
         </div>
       </div>
 
       <Tabs defaultValue="invoices" className="w-full">
         <TabsList>
-          <TabsTrigger value="invoices">Invoices</TabsTrigger>
-          <TabsTrigger value="receipts">Receipts / Payments</TabsTrigger>
+          <TabsTrigger value="invoices">
+            Invoices ({invoices.length})
+          </TabsTrigger>
+          <TabsTrigger value="payments">
+            Payment Records ({paymentRecords.length})
+          </TabsTrigger>
+          <TabsTrigger value="statement">Account Statement</TabsTrigger>
         </TabsList>
 
+        {/* TAB 1: INVOICES */}
         <TabsContent value="invoices" className="pt-4">
           {invoices.length === 0 ? (
             <EmptyState
               title="No invoices found"
-              description="There are no invoices for this client yet. Use the wizard to generate one from pending risk notes."
+              description="There are no invoices for this client yet. Use the wizard to generate one from issued risk notes."
               icon={FileText}
               action={{
                 label: "Generate Invoice",
@@ -143,142 +225,330 @@ export function ClientInvoices({ clientId }: ClientInvoicesProps) {
           )}
         </TabsContent>
 
-        <TabsContent value="receipts" className="pt-4">
-          {receipts.length === 0 ? (
+        {/* TAB 2: PAYMENT RECORDS */}
+        <TabsContent value="payments" className="pt-4 space-y-4">
+          {paymentRecords.length === 0 ? (
             <EmptyState
-              title="No receipts found"
-              description="No payments have been logged for this client yet."
+              title="No payment records found"
+              description="No cleared deposits have been recorded for this client yet."
               icon={Receipt}
               action={{
-                label: "Log First Payment",
-                onClick: () => setIsAddReceiptOpen(true),
+                label: "Record Cleared Payment",
+                onClick: () => setIsRecordPaymentOpen(true),
                 icon: Plus,
               }}
             />
           ) : (
-            <DataTable
-              columns={receiptColumns}
-              data={receipts}
-              searchPlaceholder="Search receipts..."
-            />
+            <div className="border rounded-lg bg-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead className="bg-muted/50 border-b font-medium text-muted-foreground uppercase tracking-wider text-[11px]">
+                    <tr>
+                      <th className="py-2.5 px-3">Payment Reference</th>
+                      <th className="py-2.5 px-3">Method</th>
+                      <th className="py-2.5 px-3">Date Received</th>
+                      <th className="py-2.5 px-3 text-right">Gross Amount</th>
+                      <th className="py-2.5 px-3 text-right">
+                        Unallocated Funds
+                      </th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {paymentRecords.map((rec) => {
+                      const unalloc = Number(rec.unallocated_amount || 0)
+                      const isReversed = rec.status === "reversed"
+
+                      return (
+                        <tr
+                          key={rec.id}
+                          className="hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="py-2 px-3 font-mono text-xs font-semibold text-foreground">
+                            {rec.reference_number || "—"}
+                          </td>
+                          <td className="py-2 px-3">
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] uppercase font-mono"
+                            >
+                              {rec.payment_method?.replace(/_/g, " ")}
+                            </Badge>
+                          </td>
+                          <td className="py-2 px-3 text-muted-foreground">
+                            {rec.payment_date || "—"}
+                          </td>
+                          <td className="py-2 px-3 font-mono tabular-nums text-right font-medium">
+                            {formatCurrency(rec.amount)}
+                          </td>
+                          <td className="py-2 px-3 font-mono tabular-nums text-right">
+                            {unalloc > 0 ? (
+                              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                {formatCurrency(unalloc)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                KES 0.00
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3">
+                            <Badge
+                              variant="outline"
+                              className={
+                                isReversed
+                                  ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
+                                  : unalloc > 0
+                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
+                                    : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                              }
+                            >
+                              {isReversed
+                                ? "Reversed"
+                                : unalloc > 0
+                                  ? "Partially Allocated"
+                                  : "Fully Allocated"}
+                            </Badge>
+                          </td>
+                          <td className="py-2 px-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {unalloc > 0 && !isReversed && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleOpenAllocation(rec)}
+                                  className="h-7 text-xs border-primary/30 text-primary hover:bg-primary/5"
+                                >
+                                  Allocate Funds
+                                </Button>
+                              )}
+                              {!isReversed && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedRecordForReversal(rec)
+                                    setReversalReason("")
+                                    setReversalModalOpen(true)
+                                  }}
+                                  className="h-7 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                                >
+                                  <RotateCcw className="size-3 mr-1" />
+                                  Reverse
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
+        </TabsContent>
+
+        {/* TAB 3: ACCOUNT STATEMENT & RUNNING LEDGER */}
+        <TabsContent value="statement" className="pt-4">
+          <ClientStatementView clientId={clientId} />
         </TabsContent>
       </Tabs>
 
-      {/* MODALS */}
-      <Dialog open={isAddReceiptOpen} onOpenChange={setIsAddReceiptOpen}>
-        <DialogContent>
+      {/* RECORD PAYMENT MODAL */}
+      <RecordPaymentModal
+        open={isRecordPaymentOpen}
+        onOpenChange={setIsRecordPaymentOpen}
+        initialClientId={clientId}
+      />
+
+      {/* ALLOCATION DIALOG */}
+      <Dialog open={allocationModalOpen} onOpenChange={setAllocationModalOpen}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Log Payment for Client</DialogTitle>
-            <DialogDescription>
-              Record a new receipt in the system.
+            <DialogTitle>Allocate Cleared Payment Funds</DialogTitle>
+            <DialogDescription className="text-xs">
+              Apply unallocated credit funds from reference{" "}
+              <span className="font-mono font-semibold text-foreground">
+                {selectedRecordForAllocation?.reference_number || "—"}
+              </span>{" "}
+              against open debtor invoices.
             </DialogDescription>
           </DialogHeader>
-          <AddReceiptForm
-            initialClientId={clientId}
-            onSuccess={() => setIsAddReceiptOpen(false)}
-            onCancel={() => setIsAddReceiptOpen(false)}
-          />
+
+          <div className="space-y-4 py-2 text-xs">
+            <div className="p-3 rounded-lg border bg-muted/30 flex justify-between items-center">
+              <span className="text-muted-foreground">
+                Available Credit Pool
+              </span>
+              <span className="font-mono tabular-nums text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(
+                  selectedRecordForAllocation?.unallocated_amount,
+                )}
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Target Debtor Invoice
+              </Label>
+              {openInvoices.length === 0 ? (
+                <p className="text-xs text-amber-600 font-medium">
+                  No open invoices with positive balances found for this client.
+                </p>
+              ) : (
+                <Select
+                  value={targetInvoiceId}
+                  onValueChange={(val) => {
+                    setTargetInvoiceId(val)
+                    const inv = openInvoices.find((i) => i.id === val)
+                    if (inv && selectedRecordForAllocation) {
+                      const maxPossible = Math.min(
+                        Number(
+                          selectedRecordForAllocation.unallocated_amount || 0,
+                        ),
+                        Number(inv.balance_due || 0),
+                      )
+                      setAllocationAmount(String(maxPossible))
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Select Invoice" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {openInvoices.map((inv) => (
+                      <SelectItem key={inv.id} value={inv.id}>
+                        {inv.invoice_number} • Due:{" "}
+                        {formatCurrency(inv.balance_due)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Allocation Amount (KES)
+              </Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0.01"
+                max={Number(
+                  selectedRecordForAllocation?.unallocated_amount || 0,
+                )}
+                value={allocationAmount}
+                onChange={(e) => setAllocationAmount(e.target.value)}
+                className="font-mono text-sm h-9"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAllocationModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleConfirmAllocation}
+              disabled={
+                allocateMutation.isPending ||
+                !targetInvoiceId ||
+                !allocationAmount ||
+                Number(allocationAmount) <= 0
+              }
+              className="bg-primary text-primary-foreground font-medium"
+            >
+              {allocateMutation.isPending
+                ? "Allocating..."
+                : "Apply Allocation"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {selectedReceipt && (
-        <AllocationDialog
-          receipt={selectedReceipt}
-          isOpen={isAllocationOpen}
-          onClose={() => setIsAllocationOpen(false)}
-        />
-      )}
+      {/* REVERSAL DIALOG */}
+      <Dialog open={reversalModalOpen} onOpenChange={setReversalModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2 text-destructive">
+              <ShieldAlert className="size-5" />
+              <DialogTitle>Authorized Payment Reversal</DialogTitle>
+            </div>
+            <DialogDescription className="text-xs">
+              Reverse payment record{" "}
+              <span className="font-mono font-semibold text-foreground">
+                {selectedRecordForReversal?.reference_number || "—"}
+              </span>
+              . This creates an append-only audit reversal and reinstates
+              balances on all allocated invoices.
+            </DialogDescription>
+          </DialogHeader>
 
+          <div className="space-y-3 py-2 text-xs">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Audit Justification / Reversal Reason *
+              </Label>
+              <Textarea
+                value={reversalReason}
+                onChange={(e) => setReversalReason(e.target.value)}
+                placeholder="e.g. Bank chargeback, cheque dishonor, or Paybill duplicate correction..."
+                rows={3}
+                className="text-xs"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setReversalModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleConfirmReversal}
+              disabled={reversalMutation.isPending || !reversalReason.trim()}
+            >
+              {reversalMutation.isPending ? "Reversing..." : "Confirm Reversal"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* INVOICE WIZARD */}
       <InvoiceWizard
         clientId={clientId}
         isOpen={isInvoiceWizardOpen}
         onClose={() => setIsInvoiceWizardOpen(false)}
       />
 
-      {selectedDoc && (
+      {/* DOCUMENT VIEWER MODAL */}
+      {selectedDocId && (
         <DocumentViewerModal
           isOpen={viewerOpen}
           onClose={() => {
             setViewerOpen(false)
-            setSelectedDoc(null)
+            setSelectedDocId(null)
           }}
-          title={`${selectedDoc.type === "invoice" ? "Invoice" : "Receipt"} Details`}
+          title="Invoice Details"
         >
           <Suspense fallback={<InvoicesSkeleton />}>
-            <DocumentViewer id={selectedDoc.id} type={selectedDoc.type} />
+            <DocumentViewer id={selectedDocId} type="invoice" />
           </Suspense>
         </DocumentViewerModal>
       )}
-
-      {/* HISTORY DIALOG */}
-      <Dialog
-        open={!!historyTarget}
-        onOpenChange={(open) => !open && setHistoryTarget(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {historyTarget?.type === "invoice"
-                ? "Payment History"
-                : "Allocation History"}
-            </DialogTitle>
-            <DialogDescription>
-              {historyTarget?.type === "invoice"
-                ? `Receipts applied to Invoice ${(historyTarget.item as InvoicePublic).invoice_number}`
-                : `Invoices paid by Receipt ${(historyTarget?.item as ReceiptPublic)?.receipt_number}`}
-            </DialogDescription>
-          </DialogHeader>
-          {historyTarget && (
-            <AllocationHistory
-              allocations={historyTarget.item.allocations || []}
-              type={historyTarget.type}
-            />
-          )}
-          <div className="flex justify-end pt-4">
-            <Button variant="outline" onClick={() => setHistoryTarget(null)}>
-              Close
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* VOID CONFIRMATION */}
-      <Dialog
-        open={!!receiptToVoid}
-        onOpenChange={(open) => !open && setReceiptToVoid(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-destructive">
-              Void Receipt {receiptToVoid?.receipt_number}
-            </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to void this payment? This will:
-              <ul className="list-disc pl-6 pt-2 space-y-1">
-                <li>Reverse all allocations made from this receipt</li>
-                <li>Increase the balance due on all affected invoices</li>
-                <li>Mark this receipt as "Voided"</li>
-              </ul>
-              <p className="pt-2 font-semibold">
-                This action cannot be undone.
-              </p>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReceiptToVoid(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleVoid}
-              disabled={voidMutation.isPending}
-            >
-              {voidMutation.isPending ? "Voiding..." : "Confirm Void"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

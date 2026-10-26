@@ -2,7 +2,15 @@
   "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "files": {
-    "includes": ["**", "!**/dist", "!**/routeTree.gen.ts", "!**/src/client"]
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/routeTree.gen.ts",
+      "!**/src/client",
+      "!**/playwright-report",
+      "!**/test-results",
+      "!**/blob-report"
+    ]
   },
   "formatter": {
     "enabled": true,

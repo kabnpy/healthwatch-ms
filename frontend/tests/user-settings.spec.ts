@@ -41,7 +41,7 @@ test.describe("Edit user full name and email successfully", () => {
     await page.getByRole("button", { name: "Edit" }).click()
     await page.getByLabel("Full name").fill(updatedName)
     await page.getByRole("button", { name: "Save" }).click()
-    await expect(page.getByText("User updated successfully")).toBeVisible()
+    await expect(page.getByText("Profile Updated")).toBeVisible()
     // Check if the new name is displayed on the page
     await expect(
       page.locator("form").getByText(updatedName, { exact: true }),
@@ -63,7 +63,7 @@ test.describe("Edit user full name and email successfully", () => {
     await page.getByRole("button", { name: "Edit" }).click()
     await page.getByLabel("Email").fill(updatedEmail)
     await page.getByRole("button", { name: "Save" }).click()
-    await expect(page.getByText("User updated successfully")).toBeVisible()
+    await expect(page.getByText("Profile Updated")).toBeVisible()
     await expect(
       page.locator("form").getByText(updatedEmail, { exact: true }),
     ).toBeVisible()

@@ -12,6 +12,7 @@ import { z } from "zod"
 
 import { ProductsService } from "@/client"
 import PendingItems from "@/components/Pending/PendingItems"
+import { PricingRulesInspector } from "@/components/Products/PricingRulesInspector"
 import { ProductForm } from "@/components/Products/ProductForm"
 import { SchemaBuilder } from "@/components/Products/SchemaBuilder"
 import { Button } from "@/components/ui/button"
@@ -140,9 +141,7 @@ function ProductDetailContent({ productId }: { productId: string }) {
           <TabsList>
             <TabsTrigger value="general">General Settings</TabsTrigger>
             <TabsTrigger value="schema">Form Schema</TabsTrigger>
-            <TabsTrigger value="pricing" disabled>
-              Pricing Rules
-            </TabsTrigger>
+            <TabsTrigger value="pricing">Pricing Rules</TabsTrigger>
           </TabsList>
           <div className="mt-6">
             <TabsContent value="general">
@@ -158,6 +157,9 @@ function ProductDetailContent({ productId }: { productId: string }) {
             </TabsContent>
             <TabsContent value="schema">
               <SchemaBuilder />
+            </TabsContent>
+            <TabsContent value="pricing">
+              <PricingRulesInspector product={product} />
             </TabsContent>
           </div>
         </Tabs>

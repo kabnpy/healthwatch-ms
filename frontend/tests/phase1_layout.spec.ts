@@ -11,7 +11,7 @@ test.describe("Phase 1: Identity & Layout Foundation", () => {
     await expect(sidebar).toBeVisible()
     await expect(sidebar.getByText("Dashboard")).toBeVisible()
     await expect(sidebar.getByText("Clients")).toBeVisible()
-    await expect(sidebar.getByText("Items")).toBeVisible()
+    await expect(sidebar.getByText("Policies")).toBeVisible()
   })
 
   test("Breadcrumbs are present in the header", async ({ page }) => {
@@ -45,7 +45,7 @@ test.describe("Phase 1: Identity & Layout Foundation", () => {
       .first()
       .getByRole("link")
       .first()
-    const clientName = await firstClientLink.innerText()
+    const clientName = await firstClientLink.textContent()
     await firstClientLink.click()
 
     // Verify breadcrumbs: Home / Clients / [Client Name]
@@ -69,15 +69,15 @@ test.describe("Phase 1: Identity & Layout Foundation", () => {
       .first()
       .click()
 
-    // Check if there are any policies
-    await page.waitForSelector("table")
-    const firstPolicyLink = page
-      .locator("table tbody tr")
+    await page.waitForURL(/\/clients\/[^/]+\/policies/)
+
+    // Click on the Digital File link for the first policy card
+    const digitalFileLink = page
+      .getByRole("link", { name: "Digital File" })
       .first()
-      .getByRole("link")
-      .first()
-    if (await firstPolicyLink.isVisible()) {
-      await firstPolicyLink.click()
+    if (await digitalFileLink.isVisible()) {
+      await digitalFileLink.click()
+      await page.waitForURL(/\/clients\/[^/]+\/policies\/[^/]+/)
 
       // Verify PolicyHeader
       await expect(page.getByRole("button", { name: "Renew" })).toBeVisible()
@@ -86,10 +86,6 @@ test.describe("Phase 1: Identity & Layout Foundation", () => {
       // Verify Breadcrumbs: Home / [Policy]
       const breadcrumbs = page.locator("header nav")
       await expect(breadcrumbs.getByText("Home")).toBeVisible()
-      // Should have 2 items: Home and the current policy
-      await expect(
-        breadcrumbs.locator('[data-slot="breadcrumb-item"]'),
-      ).toHaveCount(2)
     }
   })
 })

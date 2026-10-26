@@ -50,13 +50,22 @@ test("User can reset password successfully using the link", async ({
     timeout: 5000,
   })
 
-  await page.goto(
-    `${process.env.MAILCATCHER_HOST}/messages/${emailData.id}.html`,
-  )
+  let url = ""
+  if (emailData.html) {
+    const match = emailData.html.match(
+      /href="([^"]*reset-password\?token=[^"]*)"/,
+    )
+    if (match) {
+      url = match[1]
+    }
+  }
 
-  const selector = 'a[href*="/reset-password?token="]'
-
-  let url = await page.getAttribute(selector, "href")
+  if (!url) {
+    const host = process.env.MAILCATCHER_HOST || "http://localhost:1080"
+    await page.goto(`${host}/messages/${emailData.id}.html`)
+    const selector = 'a[href*="/reset-password?token="]'
+    url = (await page.getAttribute(selector, "href")) || ""
+  }
 
   // TODO: update var instead of doing a replace
   url = url!.replace("http://localhost/", "http://localhost:5173/")
@@ -105,12 +114,23 @@ test("Weak new password validation", async ({ page, request }) => {
     timeout: 5000,
   })
 
-  await page.goto(
-    `${process.env.MAILCATCHER_HOST}/messages/${emailData.id}.html`,
-  )
+  let url = ""
+  if (emailData.html) {
+    const match = emailData.html.match(
+      /href="([^"]*reset-password\?token=[^"]*)"/,
+    )
+    if (match) {
+      url = match[1]
+    }
+  }
 
-  const selector = 'a[href*="/reset-password?token="]'
-  let url = await page.getAttribute(selector, "href")
+  if (!url) {
+    const host = process.env.MAILCATCHER_HOST || "http://localhost:1080"
+    await page.goto(`${host}/messages/${emailData.id}.html`)
+    const selector = 'a[href*="/reset-password?token="]'
+    url = (await page.getAttribute(selector, "href")) || ""
+  }
+
   url = url!.replace("http://localhost/", "http://localhost:5173/")
 
   // Set a weak new password

@@ -30,7 +30,7 @@ Every commit message must follow the Conventional Commits specification:
 ### Rules & Formatting
 - **Subject line:** Use imperative mood, lowercase first letter after colon, no trailing period (e.g., `feat(ui): add policy print button`, not `feat(ui): Added policy print button.`).
 - **Atomic Commits:** Each commit should represent one cohesive, testable change. Avoid mixing formatting changes with business logic.
-- **No Checkpoint Spam:** Do not make git commits for task checklist increments (e.g. `conductor(plan): Mark task as complete`). Keep planning artifacts uncommitted until the track or feature milestone is reached.
+- **No Checkpoint Spam:** Do not make git commits for task checklist increments (e.g. `chore(plan): mark task as complete`). Keep planning artifacts uncommitted until the track or feature milestone is reached.
 
 ---
 
@@ -70,3 +70,30 @@ backend/.venv/bin/prek install -t pre-commit -t commit-msg
 # Run pre-commit checks manually across all files
 backend/.venv/bin/prek run -a
 ```
+
+---
+
+## 5. Task Isolation with Git Worktrees
+
+Each task gets one branch, one worktree, and one agent. This keeps parallel work from colliding and keeps `main` clean.
+
+```bash
+./run task:start feat/e2e-journeys      # creates .worktrees/feat-e2e-journeys
+cd .worktrees/feat-e2e-journeys         # all edits, tests, and commits happen here
+./run task:finish feat/e2e-journeys     # clean tree + lint + tests, then prints merge steps
+./run task:clean feat/e2e-journeys      # remove worktree and branch after the squash merge
+```
+
+### Rules
+- Worktrees live in `.worktrees/` inside the repository (git-ignored). The Antigravity sandbox cannot see sibling directories, so do not create worktrees outside the workspace.
+- Never use `git stash` (the stash is shared by every worktree), `--no-verify`, or force-push.
+- Never run `git checkout` or `git switch` inside a worktree.
+- Worktrees isolate files only. The database and ports 5432, 8000, and 5173 are shared. Run only one e2e or dev stack at a time until per-worktree ports are added.
+- Parallel tasks should touch disjoint directories. Regenerate `openapi.json` and `frontend/src/client` in one task at a time.
+
+### Agent Enforcement Hooks
+[.agents/hooks.json](../.agents/hooks.json) defines two hooks. Both ship disabled until verified:
+- `git-guard` (PreToolUse): denies file edits and `git commit`, `merge`, `push`, `rebase`, `reset --hard` on `main`; denies `git stash`, `--no-verify`, and force-push.
+- `commit-gate` (Stop): blocks the agent from finishing while any checkout or worktree has uncommitted changes. It releases after two attempts so a session can never be trapped.
+
+Verify offline with `./run hooks:test`, then set `"enabled": true` for each hook. Hook scripts fail open on internal errors so a script bug cannot lock the agent out. A pass-through must print nothing and exit 0: an empty `{}` is rejected as invalid output and blocks every tool call, and `{"decision": "allow"}` would override your approval settings.
