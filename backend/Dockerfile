@@ -11,7 +11,7 @@ ARG VITE_API_URL=
 RUN bun run build
 
 # Stage 2: Python Backend with Embedded Frontend
-FROM python:3.14
+FROM python:3.15
 
 ENV PYTHONUNBUFFERED=1
 
