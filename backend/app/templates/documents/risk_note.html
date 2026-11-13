@@ -24,6 +24,15 @@
       background: #ffffff;
       -webkit-font-smoothing: antialiased;
     }
+    @media screen and (min-width: 641px) {
+      body {
+        max-width: 49.6rem;
+        margin: 0 auto;
+        padding: 2.25rem 2.5rem;
+        border: none;
+        box-shadow: none;
+      }
+    }
 
     /* Header & Letterhead */
     .agency-header {
@@ -45,12 +54,10 @@
       width: 2.25rem;
       height: 2.25rem;
       flex-shrink: 0;
-      background: #0f172a;
-      border-radius: 0.375rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #ffffff;
+      color: #0f172a;
     }
     .brand-title {
       font-size: 1.125rem;
@@ -96,16 +103,18 @@
       gap: 0.5rem;
     }
     .doc-title-main {
-      font-size: 1rem;
+      font-size: 1.25rem;
       font-weight: 800;
-      letter-spacing: -0.015em;
+      letter-spacing: -0.02em;
       color: #0f172a;
       margin: 0;
+      line-height: 1.25;
     }
     .doc-subtitle {
       font-size: 0.75rem;
       color: #475569;
       margin-top: 0.25rem;
+      text-wrap: pretty;
     }
     .badge {
       display: inline-block;
@@ -171,6 +180,12 @@
       align-items: baseline;
       gap: 0.75rem;
       font-size: 0.75rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 0.0625rem dotted #cbd5e1;
+    }
+    .kv-row:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
     }
     .kv-label {
       color: #475569;
@@ -288,9 +303,12 @@
       page-break-inside: avoid;
       break-inside: avoid;
     }
+    .nowrap {
+      white-space: nowrap;
+    }
     .financial-table td {
       padding: 0.375rem 0.75rem;
-      border-bottom: 0.0625rem solid #e2e8f0;
+      border-bottom: 0.0625rem dotted #cbd5e1;
       color: #1e293b;
     }
     .financial-table td.amount {
@@ -300,18 +318,30 @@
       font-weight: 600;
       color: #0f172a;
     }
+    .financial-table tr.benefit-subrow td {
+      color: #475569;
+      font-size: 0.6875rem;
+      background: #f8fafc;
+    }
+    .financial-table tr.benefit-subrow td.benefit-label {
+      padding-left: 1.5rem;
+    }
+    .financial-table tr.benefit-subrow td.benefit-amount {
+      color: #475569;
+      font-weight: 500;
+    }
     .financial-table tr.total-row td {
       background: #f1f5f9;
       color: #0f172a;
-      font-size: 0.8125rem;
+      font-size: 1.0625rem;
       font-weight: 800;
       border-top: 0.125rem solid #0f172a;
       border-bottom: none;
-      padding: 0.5rem 0.75rem;
+      padding: 0.625rem 0.75rem;
     }
     .financial-table tr.total-row td.amount {
       color: #0f172a;
-      font-size: 0.875rem;
+      font-size: 1.125rem;
       font-weight: 800;
     }
 
@@ -325,8 +355,6 @@
       font-size: 0.75rem;
       line-height: 1.5;
       color: #1e293b;
-      page-break-inside: avoid;
-      break-inside: avoid;
     }
     .markdown-clause h1,
     .markdown-clause h2,
@@ -350,6 +378,8 @@
     }
     .markdown-clause li {
       margin-bottom: 0.125rem;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .markdown-clause strong {
       color: #0f172a;
@@ -378,6 +408,29 @@
     .signatory-details strong {
       color: #0f172a;
     }
+    .certification-line {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.625rem;
+    }
+    .cert-badge {
+      display: inline-block;
+      font-size: 0.625rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 0.125rem 0.4375rem;
+      border-radius: 0.1875rem;
+      background: #0f172a;
+      color: #ffffff;
+      border: 0.0625rem solid #0f172a;
+    }
+    .cert-text {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: #334155;
+    }
     .signature-line {
       margin-top: 1.25rem;
       width: 11.25rem;
@@ -387,9 +440,6 @@
       font-weight: 600;
       color: #334155;
     }
-    .official-seal-wrapper {
-      text-align: right;
-    }
 
     /* Legal Notice Footer */
     .legal-notice {
@@ -398,6 +448,7 @@
       line-height: 1.45;
       border-top: 0.0625rem solid #cbd5e1;
       padding-top: 0.5rem;
+      text-wrap: pretty;
     }
     .legal-notice strong {
       color: #0f172a;
@@ -415,11 +466,57 @@
       .grid-2 {
         grid-template-columns: 1fr;
       }
+      .fleet-table-wrap {
+        border: none;
+        border-radius: 0;
+        overflow: visible;
+      }
+      .fleet-table,
+      .fleet-table tbody,
+      .fleet-table tr,
+      .fleet-table td {
+        display: block;
+        width: 100%;
+      }
+      .fleet-table thead {
+        display: none;
+      }
+      .fleet-table tr {
+        border: 0.0625rem solid #cbd5e1;
+        border-radius: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.5rem;
+        background: #ffffff;
+      }
+      .fleet-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 0.75rem;
+        padding: 0.25rem 0;
+        border-bottom: 0.0625rem dotted #e2e8f0;
+        text-align: right !important;
+      }
+      .fleet-table td:last-child {
+        border-bottom: none;
+      }
+      .fleet-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #475569;
+        text-align: left;
+        flex-shrink: 0;
+      }
     }
 
     /* Strict Print Overrides (docs/02_design_system.md Section 6) */
     @media print {
       body {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
         color: #000000 !important;
         background: #ffffff !important;
       }
@@ -435,12 +532,18 @@
       .markdown-clause,
       .auth-container,
       .badge,
+      .cert-badge,
       .data-table th,
+      .financial-table tr.benefit-subrow td,
       .financial-table tr.total-row td {
         background: #ffffff !important;
         color: #000000 !important;
         border-color: #111111 !important;
       }
+      .cert-badge {
+        border: 0.5pt solid #000000 !important;
+      }
+      .kv-row,
       .section-title,
       .data-table th,
       .data-table td,
@@ -453,6 +556,7 @@
       .financial-table tr.total-row td {
         border-top: 1pt solid #000000 !important;
       }
+      .brand-symbol,
       .brand-sub,
       .agency-credentials,
       .doc-subtitle,
@@ -460,8 +564,10 @@
       .kv-label,
       .period-label,
       .signatory-details,
+      .cert-text,
       .signature-line,
-      .legal-notice {
+      .legal-notice,
+      .financial-table tr.benefit-subrow td.benefit-amount {
         color: #000000 !important;
       }
       table, tr {
@@ -477,9 +583,9 @@
   <header class="agency-header">
     <div class="brand-block">
       <div class="brand-symbol" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          <path d="M9 12l2 2 4-4"/>
+        <svg width="34" height="34" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 3L31 8V18C31 25.5 25.4 31.2 18 33C10.6 31.2 5 25.5 5 18V8L18 3Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+          <path d="M12.5 12V24M23.5 12V24M12.5 18H23.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
         </svg>
       </div>
       <div>
@@ -551,10 +657,6 @@
           <span class="kv-label">Product</span>
           <span class="kv-val">{{ product.name if product else "General Insurance" }}</span>
         </div>
-        <div class="kv-row">
-          <span class="kv-label">Agency</span>
-          <span class="kv-val">HealthWatch Insurance Agency</span>
-        </div>
       </div>
     </div>
 
@@ -574,8 +676,8 @@
     <!-- 5. ASSET DETAILS (VEHICLE / FLEET) -->
     {% if vehicles and vehicles|length > 1 %}
     <h2 class="section-title">Insured Vehicle Schedule ({{ vehicles|length }} Vehicles)</h2>
-    <div class="table-wrap">
-      <table class="data-table">
+    <div class="table-wrap fleet-table-wrap">
+      <table class="data-table fleet-table">
         <thead>
           <tr>
             <th style="width: 6%;">#</th>
@@ -589,12 +691,12 @@
         <tbody>
           {% for v in vehicles %}
           <tr>
-            <td class="kv-val mono" style="text-align: left; color: #475569;">{{ loop.index }}</td>
-            <td class="kv-val mono bold" style="text-align: left;">{{ v.registration_number or v.reg_no or v.registration or "—" }}</td>
-            <td><strong>{{ v.make or "" }}</strong> {{ v.model or "" }}</td>
-            <td class="center">{{ v.year_of_manufacture or v.year or "—" }}</td>
-            <td>{{ v.body_type or "Motor Vehicle" }}</td>
-            <td class="amount">{{ ("KES\u00a0" ~ (v.sum_insured | kes)) if v.sum_insured else "—" }}</td>
+            <td class="kv-val mono" data-label="#" style="text-align: left; color: #475569;">{{ loop.index }}</td>
+            <td class="kv-val mono bold nowrap" data-label="Registration" style="text-align: left;">{{ v.registration_number or v.reg_no or v.registration or "—" }}</td>
+            <td data-label="Make &amp; Model"><strong>{{ v.make or "" }}</strong> {{ v.model or "" }}</td>
+            <td class="center nowrap" data-label="Year">{{ v.year_of_manufacture or v.year or "—" }}</td>
+            <td data-label="Body Type">{{ v.body_type or "Motor Vehicle" }}</td>
+            <td class="amount nowrap" data-label="Sum Insured (KES)">{{ ("KES\u00a0" ~ (v.sum_insured | kes)) if v.sum_insured else "—" }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -647,9 +749,9 @@
             <td class="amount" style="width: 35%;">KES&nbsp;{{ (risk_note.net_premium or 0) | kes }}</td>
           </tr>
           {% for benefit in benefits or [] %}
-          <tr>
-            <td>{{ benefit.name or benefit.description or 'Extension Benefit' }}</td>
-            <td class="amount">KES&nbsp;{{ (benefit.premium or benefit.amount or 0) | kes }}</td>
+          <tr class="benefit-subrow">
+            <td class="benefit-label">{{ benefit.name or benefit.description or 'Extension Benefit' }}</td>
+            <td class="amount benefit-amount">KES&nbsp;{{ (benefit.premium or benefit.amount or 0) | kes }} (Included)</td>
           </tr>
           {% endfor %}
 
@@ -687,24 +789,15 @@
     <div class="auth-container">
       <div class="signatory-details">
         <div>Issued by: <strong>HealthWatch Insurance Agency</strong></div>
-        <div>Issue Date: <strong>{{ stamp_date or generated_at or "18 October 2026" }}</strong></div>
+        <div>Issue Date: <strong>{{ stamp_date or generated_at or "Pending Issue" }}</strong></div>
+        {% if risk_note.status != 'Draft' and include_digital_stamp %}
+        <div class="certification-line">
+          <span class="cert-badge">CERTIFIED OFFICIAL</span>
+          <span class="cert-text">Digitally Authenticated — Agency Operations</span>
+        </div>
+        {% endif %}
         <div class="signature-line">Authorized Signatory</div>
       </div>
-
-      {% if include_digital_stamp %}
-      <div class="official-seal-wrapper">
-        <svg viewBox="0 0 200 100" width="160" height="80" role="img" aria-label="Certified Official Seal of HealthWatch Insurance Agency" xmlns="http://www.w3.org/2000/svg">
-          <ellipse cx="100" cy="50" rx="94" ry="46" stroke="#1e3a8a" stroke-width="2" stroke-dasharray="6 3" fill="none" opacity="0.85" />
-          <ellipse cx="100" cy="50" rx="88" ry="40" stroke="#1e3a8a" stroke-width="1.2" fill="#eff6ff" fill-opacity="0.2" />
-          <text x="100" y="26" text-anchor="middle" font-size="7.5" font-family="-apple-system, sans-serif" font-weight="900" letter-spacing="1.2" fill="#1e3a8a">HEALTHWATCH INSURANCE</text>
-          <text x="100" y="36" text-anchor="middle" font-size="6" font-family="-apple-system, sans-serif" font-weight="700" letter-spacing="0.8" fill="#1e40af">AGENCY OPERATIONS</text>
-          <rect x="25" y="42" width="150" height="15" rx="3" fill="#1e3a8a" />
-          <text x="100" y="52.5" text-anchor="middle" font-size="7.5" font-family="-apple-system, sans-serif" font-weight="900" letter-spacing="1" fill="#ffffff">CERTIFIED OFFICIAL</text>
-          <text x="100" y="68" text-anchor="middle" font-size="7" font-family="ui-monospace, monospace" font-weight="800" letter-spacing="0.8" fill="#1e3a8a">{{ stamp_date or "18 October 2026" }}</text>
-          <text x="100" y="78" text-anchor="middle" font-size="6" font-family="-apple-system, sans-serif" font-weight="700" letter-spacing="1" fill="#475569">NAIROBI, KENYA</text>
-        </svg>
-      </div>
-      {% endif %}
     </div>
   </main>
 
