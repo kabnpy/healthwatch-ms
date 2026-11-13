@@ -16,6 +16,7 @@ from app.models import (
     Product,
     RiskNote,
     RiskNoteCreate,
+    RiskNoteRevisionCreate,
     RiskNoteStatus,
     TransactionType,
 )
@@ -335,6 +336,51 @@ class PolicyService:
         risk_note = crud.create_risk_note(session=session, risk_note_in=risk_note_in)
 
         return risk_note
+
+    @staticmethod
+    def create_risk_note_revision(
+        *,
+        session: Session,
+        risk_note_id: uuid.UUID,
+        revision_in: RiskNoteRevisionCreate,
+        created_by_id: uuid.UUID,
+    ) -> RiskNote:
+        """Append a non-financial clause revision and mark the prior risk note as REPLACED."""
+        current_rn = session.get(RiskNote, risk_note_id)
+        if not current_rn:
+            raise HTTPException(status_code=404, detail="Risk note not found")
+        if current_rn.status == RiskNoteStatus.REPLACED:
+            raise HTTPException(
+                status_code=400, detail="Risk note has already been replaced"
+            )
+
+        risk_note_in = RiskNoteCreate(
+            policy_id=current_rn.policy_id,
+            transaction_type=current_rn.transaction_type,
+            status=RiskNoteStatus.ISSUED,
+            previous_risk_note_id=current_rn.id,
+            effective_date=current_rn.effective_date,
+            coverage_start=current_rn.coverage_start,
+            coverage_end=current_rn.coverage_end,
+            net_premium=current_rn.net_premium,
+            financial_breakdown=current_rn.financial_breakdown,
+            commission_amount=current_rn.commission_amount,
+            total_amount=current_rn.total_amount,
+            cover_snapshot=(
+                revision_in.cover_snapshot
+                if revision_in.cover_snapshot is not None
+                else current_rn.cover_snapshot
+            ),
+            special_clauses=revision_in.special_clauses,
+            created_by_id=created_by_id,
+        )
+
+        current_rn.status = RiskNoteStatus.REPLACED
+        session.add(current_rn)
+
+        return PolicyService._create_risk_note(
+            session=session, risk_note_in=risk_note_in
+        )
 
 
 policy_service = PolicyService()

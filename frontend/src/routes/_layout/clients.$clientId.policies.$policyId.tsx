@@ -483,7 +483,6 @@ function PolicyDashboardContent({
           </DialogHeader>
           <RiskNoteForm
             policyId={policyId}
-            riskNoteId={editingRiskNoteId}
             initialTransactionType={transactionType}
             onSuccess={() => setRiskNoteFormOpen(false)}
             onCancel={() => setRiskNoteFormOpen(false)}

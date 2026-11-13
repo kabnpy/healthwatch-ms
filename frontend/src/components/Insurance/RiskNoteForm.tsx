@@ -27,14 +27,12 @@ import useCustomToast from "@/hooks/useCustomToast"
 import {
   useCreateEndorsement,
   usePolicy,
-  useRiskNote,
 } from "@/hooks/usePolicies"
 import { handleError } from "@/utils"
 import type { AdvisoryRatingResult } from "@/utils/ratingCalculator"
 
 interface RiskNoteFormProps {
   policyId: string
-  riskNoteId?: string // If provided, we are editing an existing (likely draft) risk note
   initialTransactionType?: string
   onSuccess?: () => void
   onCancel?: () => void
@@ -42,16 +40,12 @@ interface RiskNoteFormProps {
 
 export const RiskNoteForm = ({
   policyId,
-  riskNoteId,
   initialTransactionType = "Endorsement",
   onSuccess,
   onCancel,
 }: RiskNoteFormProps) => {
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const { data: policy, isLoading: isLoadingPolicy } = usePolicy(policyId)
-  const { data: existingRiskNote, isLoading: isLoadingRiskNote } = useRiskNote(
-    riskNoteId || "",
-  )
   const createEndorsement = useCreateEndorsement()
   const [ratingCalcOpen, setRatingCalcOpen] = useState(false)
 
@@ -167,7 +161,7 @@ export const RiskNoteForm = ({
     )
   }
 
-  if (isLoadingPolicy || (riskNoteId && isLoadingRiskNote)) {
+  if (isLoadingPolicy) {
     return (
       <div className="p-8 text-center text-xs text-muted-foreground">
         Loading transaction details...
