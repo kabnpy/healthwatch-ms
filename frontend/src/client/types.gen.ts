@@ -567,6 +567,86 @@ export type ClientPublic = {
 };
 
 /**
+ * ClientStatement
+ */
+export type ClientStatement = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Kra Pin
+     */
+    kra_pin: string | null;
+    /**
+     * Total Invoiced
+     */
+    total_invoiced: string;
+    /**
+     * Total Allocated
+     */
+    total_allocated: string;
+    /**
+     * Net Outstanding Balance
+     */
+    net_outstanding_balance: string;
+    /**
+     * Invoice Count
+     */
+    invoice_count: number;
+    /**
+     * Allocation Count
+     */
+    allocation_count: number;
+    /**
+     * Ledger Entries
+     */
+    ledger_entries: Array<ClientStatementEntry>;
+};
+
+/**
+ * ClientStatementEntry
+ */
+export type ClientStatementEntry = {
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * Type
+     */
+    type: string;
+    /**
+     * Reference
+     */
+    reference: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Debit
+     */
+    debit: string;
+    /**
+     * Credit
+     */
+    credit: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Running Balance
+     */
+    running_balance?: string;
+};
+
+/**
  * ClientUpdate
  */
 export type ClientUpdate = {
@@ -756,108 +836,6 @@ export type CommissionSchedulesPublic = {
 };
 
 /**
- * CorrespondenceCreate
- */
-export type CorrespondenceCreate = {
-    /**
-     * Created At
-     */
-    created_at?: string;
-    /**
-     * Updated At
-     */
-    updated_at?: string;
-    /**
-     * Deleted At
-     */
-    deleted_at?: string | null;
-    /**
-     * Deleted By Id
-     */
-    deleted_by_id?: string | null;
-    /**
-     * Client Id
-     */
-    client_id: string;
-    /**
-     * Subject
-     */
-    subject: string;
-    /**
-     * Summary
-     */
-    summary?: string | null;
-    /**
-     * File Path
-     */
-    file_path: string;
-    /**
-     * Date Logged
-     */
-    date_logged?: string;
-};
-
-/**
- * CorrespondencePublic
- */
-export type CorrespondencePublic = {
-    /**
-     * Created At
-     */
-    created_at?: string;
-    /**
-     * Updated At
-     */
-    updated_at?: string;
-    /**
-     * Deleted At
-     */
-    deleted_at?: string | null;
-    /**
-     * Deleted By Id
-     */
-    deleted_by_id?: string | null;
-    /**
-     * Client Id
-     */
-    client_id: string;
-    /**
-     * Subject
-     */
-    subject: string;
-    /**
-     * Summary
-     */
-    summary?: string | null;
-    /**
-     * File Path
-     */
-    file_path: string;
-    /**
-     * Date Logged
-     */
-    date_logged?: string;
-    /**
-     * Id
-     */
-    id: string;
-};
-
-/**
- * CorrespondencesPublic
- */
-export type CorrespondencesPublic = {
-    /**
-     * Data
-     */
-    data: Array<CorrespondencePublic>;
-    /**
-     * Count
-     */
-    count: number;
-};
-
-/**
  * DocumentEntityType
  */
 export type DocumentEntityType = 'Client' | 'Policy' | 'Renewal' | 'Claim' | 'User' | 'RiskNote' | 'Payment';
@@ -1011,7 +989,7 @@ export type DocumentPublic = {
 /**
  * DocumentType
  */
-export type DocumentType = 'insurer_receipt' | 'proof_of_payment' | 'carrier_renewal_notice' | 'kyc_document' | 'valuation_report' | 'Logbook' | 'ID' | 'Valuation' | 'PoliceAbstract' | 'Receipt' | 'Other' | 'KRA PIN Certificate' | 'National ID / Passport' | 'Certificate of Incorporation' | 'Utility Bill' | 'Policy Schedule' | 'Cover Note' | 'Accident Photos' | 'Repair Estimate' | 'Claim Form' | 'Police Report' | 'Bank Slip' | 'M-Pesa Screenshot';
+export type DocumentType = 'insurer_receipt' | 'proof_of_payment' | 'carrier_renewal_notice' | 'kyc_document' | 'valuation_report' | 'Logbook' | 'ID' | 'Valuation' | 'PoliceAbstract' | 'Other' | 'KRA PIN Certificate' | 'National ID / Passport' | 'Certificate of Incorporation' | 'Utility Bill' | 'Policy Schedule' | 'Cover Note' | 'Accident Photos' | 'Repair Estimate' | 'Claim Form' | 'Police Report' | 'Bank Slip' | 'M-Pesa Screenshot';
 
 /**
  * DocumentsPublic
@@ -1581,10 +1559,6 @@ export type InvoicePublic = {
      * Line Items
      */
     line_items?: Array<InvoiceLineItemPublic>;
-    /**
-     * Allocations
-     */
-    allocations?: Array<ReceiptAllocationBase>;
 };
 
 /**
@@ -2773,195 +2747,6 @@ export type RateTableVersionsPublic = {
      * Data
      */
     data: Array<RateTableVersionPublic>;
-    /**
-     * Count
-     */
-    count: number;
-};
-
-/**
- * ReceiptAllocationBase
- */
-export type ReceiptAllocationBase = {
-    /**
-     * Receipt Id
-     */
-    receipt_id: string;
-    /**
-     * Invoice Id
-     */
-    invoice_id: string;
-    /**
-     * Risk Note Id
-     */
-    risk_note_id?: string | null;
-    /**
-     * Amount Allocated
-     */
-    amount_allocated: string;
-};
-
-/**
- * ReceiptAllocationCreate
- */
-export type ReceiptAllocationCreate = {
-    /**
-     * Receipt Id
-     */
-    receipt_id: string;
-    /**
-     * Invoice Id
-     */
-    invoice_id: string;
-    /**
-     * Risk Note Id
-     */
-    risk_note_id?: string | null;
-    /**
-     * Amount Allocated
-     */
-    amount_allocated: number | string;
-};
-
-/**
- * ReceiptCreate
- */
-export type ReceiptCreate = {
-    /**
-     * Created At
-     */
-    created_at?: string;
-    /**
-     * Updated At
-     */
-    updated_at?: string;
-    /**
-     * Deleted At
-     */
-    deleted_at?: string | null;
-    /**
-     * Deleted By Id
-     */
-    deleted_by_id?: string | null;
-    /**
-     * Receipt Number
-     */
-    receipt_number: string;
-    /**
-     * Client Id
-     */
-    client_id: string;
-    /**
-     * Date Received
-     */
-    date_received: string;
-    /**
-     * Amount
-     */
-    amount: number | string;
-    /**
-     * Unallocated Amount
-     */
-    unallocated_amount?: number | string;
-    /**
-     * Mode
-     */
-    mode: string;
-    /**
-     * Reference
-     */
-    reference: string;
-    /**
-     * Notes
-     */
-    notes?: string | null;
-    status?: ReceiptStatus;
-    /**
-     * Created By Id
-     */
-    created_by_id?: string | null;
-};
-
-/**
- * ReceiptPublic
- */
-export type ReceiptPublic = {
-    /**
-     * Created At
-     */
-    created_at?: string;
-    /**
-     * Updated At
-     */
-    updated_at?: string;
-    /**
-     * Deleted At
-     */
-    deleted_at?: string | null;
-    /**
-     * Deleted By Id
-     */
-    deleted_by_id?: string | null;
-    /**
-     * Receipt Number
-     */
-    receipt_number: string;
-    /**
-     * Client Id
-     */
-    client_id: string;
-    /**
-     * Date Received
-     */
-    date_received: string;
-    /**
-     * Amount
-     */
-    amount: string;
-    /**
-     * Unallocated Amount
-     */
-    unallocated_amount?: string;
-    /**
-     * Mode
-     */
-    mode: string;
-    /**
-     * Reference
-     */
-    reference: string;
-    /**
-     * Notes
-     */
-    notes?: string | null;
-    status?: ReceiptStatus;
-    /**
-     * Created By Id
-     */
-    created_by_id?: string | null;
-    /**
-     * Id
-     */
-    id: string;
-    /**
-     * Allocations
-     */
-    allocations?: Array<ReceiptAllocationBase>;
-};
-
-/**
- * ReceiptStatus
- */
-export type ReceiptStatus = 'Active' | 'Voided';
-
-/**
- * ReceiptsPublic
- */
-export type ReceiptsPublic = {
-    /**
-     * Data
-     */
-    data: Array<ReceiptPublic>;
     /**
      * Count
      */
@@ -4460,66 +4245,6 @@ export type clientsUpdateClientResponses = {
 
 export type clientsUpdateClientResponse = clientsUpdateClientResponses[keyof clientsUpdateClientResponses];
 
-export type clientsReadClientCorrespondencesData = {
-    body?: never;
-    path: {
-        /**
-         * Id
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/clients/{id}/correspondences';
-};
-
-export type clientsReadClientCorrespondencesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HTTPValidationError;
-};
-
-export type clientsReadClientCorrespondencesError = clientsReadClientCorrespondencesErrors[keyof clientsReadClientCorrespondencesErrors];
-
-export type clientsReadClientCorrespondencesResponses = {
-    /**
-     * Successful Response
-     */
-    200: CorrespondencesPublic;
-};
-
-export type clientsReadClientCorrespondencesResponse = clientsReadClientCorrespondencesResponses[keyof clientsReadClientCorrespondencesResponses];
-
-export type clientsCreateClientCorrespondenceData = {
-    body: CorrespondenceCreate;
-    path: {
-        /**
-         * Id
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/clients/{id}/correspondences';
-};
-
-export type clientsCreateClientCorrespondenceErrors = {
-    /**
-     * Validation Error
-     */
-    422: HTTPValidationError;
-};
-
-export type clientsCreateClientCorrespondenceError = clientsCreateClientCorrespondenceErrors[keyof clientsCreateClientCorrespondenceErrors];
-
-export type clientsCreateClientCorrespondenceResponses = {
-    /**
-     * Successful Response
-     */
-    200: CorrespondencePublic;
-};
-
-export type clientsCreateClientCorrespondenceResponse = clientsCreateClientCorrespondenceResponses[keyof clientsCreateClientCorrespondenceResponses];
-
 export type insurersReadInsurersData = {
     body?: never;
     path?: never;
@@ -5436,159 +5161,6 @@ export type financialsCreateBulkInvoiceResponses = {
 };
 
 export type financialsCreateBulkInvoiceResponse = financialsCreateBulkInvoiceResponses[keyof financialsCreateBulkInvoiceResponses];
-
-export type financialsReadReceiptsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Skip
-         */
-        skip?: number;
-        /**
-         * Limit
-         */
-        limit?: number;
-        /**
-         * Client Id
-         */
-        client_id?: string | null;
-    };
-    url: '/api/v1/financials/receipts/';
-};
-
-export type financialsReadReceiptsErrors = {
-    /**
-     * Validation Error
-     */
-    422: HTTPValidationError;
-};
-
-export type financialsReadReceiptsError = financialsReadReceiptsErrors[keyof financialsReadReceiptsErrors];
-
-export type financialsReadReceiptsResponses = {
-    /**
-     * Successful Response
-     */
-    200: ReceiptsPublic;
-};
-
-export type financialsReadReceiptsResponse = financialsReadReceiptsResponses[keyof financialsReadReceiptsResponses];
-
-export type financialsCreateNewReceiptData = {
-    body: ReceiptCreate;
-    path?: never;
-    query?: never;
-    url: '/api/v1/financials/receipts/';
-};
-
-export type financialsCreateNewReceiptErrors = {
-    /**
-     * Validation Error
-     */
-    422: HTTPValidationError;
-};
-
-export type financialsCreateNewReceiptError = financialsCreateNewReceiptErrors[keyof financialsCreateNewReceiptErrors];
-
-export type financialsCreateNewReceiptResponses = {
-    /**
-     * Successful Response
-     */
-    200: ReceiptPublic;
-};
-
-export type financialsCreateNewReceiptResponse = financialsCreateNewReceiptResponses[keyof financialsCreateNewReceiptResponses];
-
-export type financialsDeleteReceiptData = {
-    body?: never;
-    path: {
-        /**
-         * Id
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/financials/receipts/{id}';
-};
-
-export type financialsDeleteReceiptErrors = {
-    /**
-     * Validation Error
-     */
-    422: HTTPValidationError;
-};
-
-export type financialsDeleteReceiptError = financialsDeleteReceiptErrors[keyof financialsDeleteReceiptErrors];
-
-export type financialsDeleteReceiptResponses = {
-    /**
-     * Successful Response
-     */
-    200: ReceiptPublic;
-};
-
-export type financialsDeleteReceiptResponse = financialsDeleteReceiptResponses[keyof financialsDeleteReceiptResponses];
-
-export type financialsReadReceiptByIdData = {
-    body?: never;
-    path: {
-        /**
-         * Id
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/financials/receipts/{id}';
-};
-
-export type financialsReadReceiptByIdErrors = {
-    /**
-     * Validation Error
-     */
-    422: HTTPValidationError;
-};
-
-export type financialsReadReceiptByIdError = financialsReadReceiptByIdErrors[keyof financialsReadReceiptByIdErrors];
-
-export type financialsReadReceiptByIdResponses = {
-    /**
-     * Successful Response
-     */
-    200: ReceiptPublic;
-};
-
-export type financialsReadReceiptByIdResponse = financialsReadReceiptByIdResponses[keyof financialsReadReceiptByIdResponses];
-
-export type financialsAllocateReceiptData = {
-    body: ReceiptAllocationCreate;
-    path: {
-        /**
-         * Id
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/financials/receipts/{id}/allocations';
-};
-
-export type financialsAllocateReceiptErrors = {
-    /**
-     * Validation Error
-     */
-    422: HTTPValidationError;
-};
-
-export type financialsAllocateReceiptError = financialsAllocateReceiptErrors[keyof financialsAllocateReceiptErrors];
-
-export type financialsAllocateReceiptResponses = {
-    /**
-     * Successful Response
-     */
-    200: Message;
-};
-
-export type financialsAllocateReceiptResponse = financialsAllocateReceiptResponses[keyof financialsAllocateReceiptResponses];
 
 export type paymentRecordsReadPaymentRecordsData = {
     body?: never;
@@ -6906,12 +6478,12 @@ export type statementsGetClientStatementError = statementsGetClientStatementErro
 
 export type statementsGetClientStatementResponses = {
     /**
-     * Response Statements-Get Client Statement
-     *
      * Successful Response
      */
-    200: unknown;
+    200: ClientStatement;
 };
+
+export type statementsGetClientStatementResponse = statementsGetClientStatementResponses[keyof statementsGetClientStatementResponses];
 
 export type invoiceBatchesReadInvoiceBatchesData = {
     body?: never;
