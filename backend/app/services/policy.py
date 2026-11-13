@@ -1,7 +1,7 @@
 import logging
 import uuid
 from datetime import date
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from fastapi import HTTPException
@@ -254,8 +254,10 @@ class PolicyService:
 
         delta_net = (
             (new_result.net_premium - old_result.net_premium) * prorata_factor
-        ).quantize(Decimal("0.01"))
-        delta_comm = ((new_comm - old_comm) * prorata_factor).quantize(Decimal("0.01"))
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        delta_comm = ((new_comm - old_comm) * prorata_factor).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
 
         new_levies = {
             "Training Levy": new_result.training_levy,
@@ -272,7 +274,7 @@ class PolicyService:
             k: (
                 (new_levies.get(k, Decimal("0")) - old_levies.get(k, Decimal("0")))
                 * prorata_factor
-            ).quantize(Decimal("0.01"))
+            ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             for k in all_levy_keys
         }
 
