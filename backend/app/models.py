@@ -419,65 +419,6 @@ class Product(ProductBase, table=True):
     )
     policies: list[Policy] = Relationship(back_populates="product")
 
-    def validate_risk_details(self, risk_details: dict[str, Any]) -> dict[str, Any]:
-        class_name = self.class_of_insurance.lower()
-        if "motor private" in class_name:
-            from app.schemas import MotorPrivateRiskDetails
-
-            validated = MotorPrivateRiskDetails(**risk_details)
-            return validated.model_dump(mode="python")
-        elif "domestic" in class_name and any(
-            k in risk_details
-            for k in (
-                "buildings_sum_insured",
-                "contents_sum_insured",
-                "all_risks_valuables",
-            )
-        ):
-            from app.schemas import DomesticPackageRiskDetails
-
-            validated = DomesticPackageRiskDetails(**risk_details)
-            return validated.model_dump(mode="python")
-        elif "wiba" in class_name and any(
-            k in risk_details
-            for k in ("clerical_payroll", "artisan_payroll", "hazardous_payroll")
-        ):
-            from app.schemas import WIBARiskDetails
-
-            validated = WIBARiskDetails(**risk_details)
-            return validated.model_dump(mode="python")
-        elif "fire" in class_name and any(
-            k in risk_details
-            for k in (
-                "buildings_sum_insured",
-                "plant_machinery_sum_insured",
-                "stock_sum_insured",
-            )
-        ):
-            from app.schemas import FirePerilsRiskDetails
-
-            validated = FirePerilsRiskDetails(**risk_details)
-            return validated.model_dump(mode="python")
-        elif "marine" in class_name and "cif_value" in risk_details:
-            from app.schemas import MarineCargoRiskDetails
-
-            validated = MarineCargoRiskDetails(**risk_details)
-            return validated.model_dump(mode="python")
-        elif "medical" in class_name and any(
-            k in risk_details for k in ("inpatient_limit", "principal_age")
-        ):
-            from app.schemas import MedicalRiskDetails
-
-            validated = MedicalRiskDetails(**risk_details)
-            return validated.model_dump(mode="python")
-        return risk_details
-
-    def calculate_premium(self, risk_details: dict[str, Any]) -> Decimal:
-        from app.services.rating import RatingService
-
-        breakdown = RatingService.calculate_breakdown(self, risk_details)
-        return breakdown.net_premium
-
 
 class ProductsPublic(SQLModel):
     data: list[ProductPublic]

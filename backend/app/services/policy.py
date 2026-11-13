@@ -30,6 +30,56 @@ def generate_risk_note_number() -> str:
 
 class PolicyService:
     @staticmethod
+    def validate_risk_details(
+        class_of_insurance: str, risk_details: dict[str, Any]
+    ) -> dict[str, Any]:
+        class_name = class_of_insurance.lower()
+        if "motor private" in class_name:
+            from app.schemas import MotorPrivateRiskDetails
+
+            return MotorPrivateRiskDetails(**risk_details).model_dump(mode="python")
+        if "domestic" in class_name and any(
+            k in risk_details
+            for k in (
+                "buildings_sum_insured",
+                "contents_sum_insured",
+                "all_risks_valuables",
+            )
+        ):
+            from app.schemas import DomesticPackageRiskDetails
+
+            return DomesticPackageRiskDetails(**risk_details).model_dump(mode="python")
+        if "wiba" in class_name and any(
+            k in risk_details
+            for k in ("clerical_payroll", "artisan_payroll", "hazardous_payroll")
+        ):
+            from app.schemas import WIBARiskDetails
+
+            return WIBARiskDetails(**risk_details).model_dump(mode="python")
+        if "fire" in class_name and any(
+            k in risk_details
+            for k in (
+                "buildings_sum_insured",
+                "plant_machinery_sum_insured",
+                "stock_sum_insured",
+            )
+        ):
+            from app.schemas import FirePerilsRiskDetails
+
+            return FirePerilsRiskDetails(**risk_details).model_dump(mode="python")
+        if "marine" in class_name and "cif_value" in risk_details:
+            from app.schemas import MarineCargoRiskDetails
+
+            return MarineCargoRiskDetails(**risk_details).model_dump(mode="python")
+        if "medical" in class_name and any(
+            k in risk_details for k in ("inpatient_limit", "principal_age")
+        ):
+            from app.schemas import MedicalRiskDetails
+
+            return MedicalRiskDetails(**risk_details).model_dump(mode="python")
+        return risk_details
+
+    @staticmethod
     def normalize_rating_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
         """Flatten nested vehicle.sum_insured when top-level sum_insured is absent."""
         normalized = dict(inputs)
@@ -72,7 +122,9 @@ class PolicyService:
             raise HTTPException(status_code=404, detail="Product not found")
 
         try:
-            validated_risk = product.validate_risk_details(effective_snapshot)
+            validated_risk = PolicyService.validate_risk_details(
+                product.class_of_insurance, effective_snapshot
+            )
             result = calculate_premium(
                 inputs=PolicyService.normalize_rating_inputs(validated_risk),
                 product=product,
@@ -171,7 +223,9 @@ class PolicyService:
             raise HTTPException(status_code=400, detail="No active risk note found")
 
         try:
-            validated_risk = policy.product.validate_risk_details(effective_snapshot)
+            validated_risk = PolicyService.validate_risk_details(
+                policy.product.class_of_insurance, effective_snapshot
+            )
             new_inputs = PolicyService.normalize_rating_inputs(validated_risk)
             new_result = calculate_premium(
                 inputs=new_inputs,
