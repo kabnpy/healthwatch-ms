@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -29,9 +30,9 @@ from app.models import (
     RiskNotePublic,
     RiskNotesPublic,
 )
-from app.schemas import QuoteRequest, QuoteResponse
-from app.services.policy import policy_service
-from app.services.rating import RatingService
+from app.schemas import BaseFinancialBreakdown, QuoteRequest, QuoteResponse
+from app.services.policy import PolicyService, policy_service
+from app.services.premium_calculation import RatingValidationError, calculate_premium
 
 router = APIRouter()
 
@@ -82,8 +83,26 @@ def get_policy_quote(
         raise HTTPException(status_code=404, detail="Product not found")
 
     try:
-        breakdown = RatingService.calculate_breakdown(product, quote_in.risk_details)
+        rating_inputs = PolicyService.normalize_rating_inputs(quote_in.risk_details)
+        result = calculate_premium(
+            inputs=rating_inputs,
+            product=product,
+            session=session,
+            manual_net_premium=rating_inputs.get("manual_net_premium"),
+        )
+        breakdown = BaseFinancialBreakdown(
+            net_premium=result.net_premium,
+            taxes={
+                "Training Levy": result.training_levy,
+                "PHCF": result.phcf,
+                "Stamp Duty": result.stamp_duty,
+            },
+            commission_amount=result.commission_amount or Decimal("0.00"),
+            total_amount=result.total_premium,
+        )
         return QuoteResponse(breakdown=breakdown)
+    except RatingValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
