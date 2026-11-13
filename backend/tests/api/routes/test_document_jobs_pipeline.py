@@ -2,10 +2,22 @@ import uuid
 from datetime import date
 from decimal import Decimal
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.core.config import settings
+from app.services.document_renderer import DocumentRenderer
+
+
+@pytest.fixture(autouse=True)
+def stub_pdf_rasterizer(monkeypatch):
+    class StubPdfRasterizer:
+        def render(self, html_content: str) -> bytes:
+            assert html_content
+            return b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n" + (b"0" * 100) + b"\n%%EOF\n"
+
+    monkeypatch.setattr(DocumentRenderer, "pdf_rasterizer", StubPdfRasterizer())
 from app.models import (
     Client,
     DocumentJobResourceType,
@@ -309,3 +321,37 @@ def test_document_job_idempotency_key_deduplication(
         select(DocumentJob).where(DocumentJob.idempotency_key == idem_key)
     ).all()
     assert len(rows) == 1
+def test_document_job_process_failure_marks_job_failed(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    monkeypatch,
+) -> None:
+    class FailingPdfRasterizer:
+        def render(self, html_content: str) -> bytes:
+            raise RuntimeError("Playwright browser launch failed")
+
+    monkeypatch.setattr(DocumentRenderer, "pdf_rasterizer", FailingPdfRasterizer())
+
+    r_enq = client.post(
+        f"{settings.API_V1_STR}/document-jobs/",
+        headers=superuser_token_headers,
+        json={"resource_type": DocumentJobResourceType.STATEMENT.value},
+    )
+    assert r_enq.status_code == 202
+    job_id = r_enq.json()["id"]
+
+    with pytest.raises(RuntimeError, match="Playwright browser launch failed"):
+        client.post(
+            f"{settings.API_V1_STR}/document-jobs/{job_id}/process",
+            headers=superuser_token_headers,
+        )
+
+    r_job = client.get(
+        f"{settings.API_V1_STR}/document-jobs/{job_id}",
+        headers=superuser_token_headers,
+    )
+    assert r_job.status_code == 200
+    job_data = r_job.json()
+    assert job_data["status"] == DocumentJobStatus.FAILED.value
+    assert job_data["attempt_count"] == 1
+    assert "Playwright browser launch failed" in job_data["error_message"]
