@@ -5,7 +5,7 @@ import type { MotorFinancialBreakdown } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LoadingButton } from "@/components/ui/loading-button"
-import { useProducts, useQuoteQuery } from "@/hooks/useInsurance"
+import { useProducts, useQuoteQuery } from "@/hooks/usePolicies"
 import type { EnhancedProduct, WizardState } from "@/types/insurance"
 
 interface StepReviewProps {

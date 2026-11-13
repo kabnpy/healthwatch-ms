@@ -42,7 +42,7 @@ import {
   useCreateRenewal,
   useTransitionRenewal,
   useUpdateRenewal,
-} from "@/hooks/useInsurance"
+} from "@/hooks/useRenewals"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/utils"
 import type { AdvisoryRatingResult } from "@/utils/ratingCalculator"

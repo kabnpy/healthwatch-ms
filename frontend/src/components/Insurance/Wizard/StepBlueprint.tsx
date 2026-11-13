@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { useProducts } from "@/hooks/useInsurance"
+import { useProducts } from "@/hooks/usePolicies"
 import type { EnhancedProduct } from "@/types/insurance"
 import { extractWizardFields } from "@/utils/documentData"
 

@@ -22,8 +22,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { useDeleteClient, useUpdateClient } from "@/hooks/useClients"
 import useCustomToast from "@/hooks/useCustomToast"
-import { useDeleteClient, useUpdateClient } from "@/hooks/useInsurance"
 import { handleError } from "@/utils"
 
 function getClientQueryOptions(clientId: string) {

@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
-import { useActivities, useCreateActivity } from "@/hooks/useInsurance"
+import { useActivities, useCreateActivity } from "@/hooks/usePolicies"
 import { cn } from "@/lib/utils"
 
 interface ActivityTimelineProps {

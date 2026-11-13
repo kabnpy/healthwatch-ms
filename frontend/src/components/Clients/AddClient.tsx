@@ -11,8 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useCreateClient } from "@/hooks/useClients"
 import useCustomToast from "@/hooks/useCustomToast"
-import { useCreateClient } from "@/hooks/useInsurance"
 import { handleError } from "@/utils"
 import { ClientForm } from "./ClientForm"
 

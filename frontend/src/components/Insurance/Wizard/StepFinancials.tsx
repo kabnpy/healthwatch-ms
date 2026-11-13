@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { useProducts, useQuote } from "@/hooks/useInsurance"
+import { useProducts, useQuote } from "@/hooks/usePolicies"
 import type {
   EnhancedProduct,
   WizardExtensions,

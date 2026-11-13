@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useCreateBulkInvoice } from "@/hooks/useFinancials"
-import { useRiskNotes } from "@/hooks/useInsurance"
+import { useRiskNotes } from "@/hooks/usePolicies"
 import { getPolicyDisplayName } from "@/utils"
 
 interface InvoiceWizardProps {

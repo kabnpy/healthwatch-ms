@@ -29,7 +29,7 @@ import {
   usePolicy,
   useRiskNote,
   useUpdateRiskNote,
-} from "@/hooks/useInsurance"
+} from "@/hooks/usePolicies"
 import { handleError } from "@/utils"
 import type { AdvisoryRatingResult } from "@/utils/ratingCalculator"
 

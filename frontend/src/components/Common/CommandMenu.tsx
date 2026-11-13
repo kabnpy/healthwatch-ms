@@ -26,9 +26,10 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command"
+import { useClients } from "@/hooks/useClients"
 import { useInvoices } from "@/hooks/useFinancials"
-import { useClients, usePolicies } from "@/hooks/useInsurance"
 import { usePaymentRecords } from "@/hooks/usePayments"
+import { usePolicies } from "@/hooks/usePolicies"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 export function CommandMenu() {

@@ -27,7 +27,7 @@ import {
   useEnqueueDocumentJob,
   useProcessDocumentJob,
 } from "@/hooks/useDocumentJobs"
-import { useUpdateRiskNote } from "@/hooks/useInsurance"
+import { useUpdateRiskNote } from "@/hooks/usePolicies"
 import type { EnhancedPolicy, EnhancedRiskNote } from "@/types/insurance"
 import { CanonicalDocumentViewer } from "./CanonicalDocumentViewer"
 

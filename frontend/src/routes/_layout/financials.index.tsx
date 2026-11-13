@@ -35,9 +35,9 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { useClients } from "@/hooks/useClients"
 import useCustomToast from "@/hooks/useCustomToast"
 import { useFinancialSummary, useInvoices } from "@/hooks/useFinancials"
-import { useClients } from "@/hooks/useInsurance"
 import {
   useAllocatePayment,
   usePaymentAllocations,

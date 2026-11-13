@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import useCustomToast from "@/hooks/useCustomToast"
-import { useCreatePolicy, useProducts } from "@/hooks/useInsurance"
+import { useCreatePolicy, useProducts } from "@/hooks/usePolicies"
 import { handleError } from "@/utils"
 
 const formSchema = z.object({

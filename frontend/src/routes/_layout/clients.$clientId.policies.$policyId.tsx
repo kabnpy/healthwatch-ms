@@ -25,7 +25,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useClient, usePolicyDashboard } from "@/hooks/useInsurance"
+import { useClient } from "@/hooks/useClients"
+import { usePolicyDashboard } from "@/hooks/usePolicies"
 import { queryClient } from "@/queryClient"
 import type { EnhancedPolicy, EnhancedRiskNote } from "@/types/insurance"
 import { formatCurrency } from "@/utils"

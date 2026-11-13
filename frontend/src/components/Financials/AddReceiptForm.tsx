@@ -20,9 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useClients } from "@/hooks/useClients"
 import { useUploadDocument } from "@/hooks/useDocuments"
 import { useCreateReceipt } from "@/hooks/useFinancials"
-import { useClients } from "@/hooks/useInsurance"
 
 const formSchema = z.object({
   client_id: z.string().min(1, "Please select a client"),

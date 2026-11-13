@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useProducts } from "@/hooks/useInsurance"
+import { useProducts } from "@/hooks/usePolicies"
 
 interface StepAssetProps {
   defaultValues: { product_id: string; policy_number: string }

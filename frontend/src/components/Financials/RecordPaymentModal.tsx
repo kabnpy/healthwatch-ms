@@ -21,10 +21,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { useClients } from "@/hooks/useClients"
 import useCustomToast from "@/hooks/useCustomToast"
 import { useUploadDocument } from "@/hooks/useDocuments"
 import { useInvoices } from "@/hooks/useFinancials"
-import { useClients } from "@/hooks/useInsurance"
 import { useAllocatePayment, useCreatePaymentRecord } from "@/hooks/usePayments"
 import { parsePaymentConfirmation } from "@/utils/paymentParser"
 

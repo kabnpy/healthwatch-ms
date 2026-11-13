@@ -19,8 +19,10 @@ import { RenewalTransitionSheet } from "@/components/Renewals/RenewalTransitionS
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import useAuth from "@/hooks/useAuth"
+import { useClients } from "@/hooks/useClients"
 import { useFinancialSummary } from "@/hooks/useFinancials"
-import { useClients, usePolicies, useRenewals } from "@/hooks/useInsurance"
+import { usePolicies } from "@/hooks/usePolicies"
+import { useRenewals } from "@/hooks/useRenewals"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 export const Route = createFileRoute("/_layout/")({

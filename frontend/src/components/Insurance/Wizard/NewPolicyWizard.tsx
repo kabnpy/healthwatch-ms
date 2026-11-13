@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import useCustomToast from "@/hooks/useCustomToast"
-import { useCreatePolicy, useProducts } from "@/hooks/useInsurance"
+import { useCreatePolicy, useProducts } from "@/hooks/usePolicies"
 import { cn } from "@/lib/utils"
 import type { EnhancedProduct, WizardState } from "@/types/insurance"
 import { injectWizardData } from "@/utils/documentData"
