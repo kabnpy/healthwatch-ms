@@ -343,3 +343,56 @@ def test_product_resolution_selects_latest_published_within_effective_dates(
     assert result.rate_table_version_id == rt_v1.id
     assert result.net_premium == Decimal("50000.00")
     assert result.commission_amount == Decimal("5000.00")
+
+
+def test_calculate_premium_normalizes_and_validates_by_default() -> None:
+    """calculate_premium normalizes nested inputs and validates risk details by default, with validate_inputs=False opt-out."""
+    rt = RateTableVersion(
+        insurer_id=uuid.uuid4(),
+        class_of_insurance="Motor Private",
+        pricing_method=PricingMethod.BRACKETED_PERCENTAGE,
+        version=1,
+        effective_from=date(2025, 1, 1),
+        effective_to=None,
+        is_published=True,
+    )
+    rt.brackets = [
+        RateBracket(
+            rate_table_version_id=rt.id,
+            min_value=Decimal("500000.00"),
+            max_value=Decimal("2000000.00"),
+            rate_percent=Decimal("0.0400"),
+            minimum_premium=Decimal("30000.00"),
+            display_label="500k - 2M",
+        )
+    ]
+
+    # Nested vehicle.sum_insured without registration_number fails validation by default
+    with pytest.raises(RatingValidationError):
+        calculate_premium(
+            rate_table=rt,
+            inputs={"vehicle": {"sum_insured": "1000000.00"}},
+        )
+
+    # With valid Motor Private risk details, nested vehicle.sum_insured is normalized and rated
+    valid_result = calculate_premium(
+        rate_table=rt,
+        inputs={
+            "vehicle": {
+                "registration_number": "KAA 123A",
+                "make": "Toyota",
+                "model": "Corolla",
+                "year_of_manufacture": 2020,
+                "sum_insured": "1000000.00",
+            },
+        },
+    )
+    assert valid_result.net_premium == Decimal("40000.00")
+
+    # With validate_inputs=False, historical snapshot without registration_number still normalizes and rates
+    historical_result = calculate_premium(
+        rate_table=rt,
+        inputs={"vehicle": {"sum_insured": "1000000.00"}},
+        validate_inputs=False,
+    )
+    assert historical_result.net_premium == Decimal("40000.00")

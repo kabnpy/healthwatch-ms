@@ -83,14 +83,10 @@ def get_policy_quote(
         raise HTTPException(status_code=404, detail="Product not found")
 
     try:
-        from app.services.premium_calculation import normalize_rating_inputs
-
-        rating_inputs = normalize_rating_inputs(quote_in.risk_details)
         result = calculate_premium(
-            inputs=rating_inputs,
+            inputs=quote_in.risk_details,
             product=product,
             session=session,
-            manual_net_premium=rating_inputs.get("manual_net_premium"),
         )
         breakdown = BaseFinancialBreakdown(
             net_premium=result.net_premium,
