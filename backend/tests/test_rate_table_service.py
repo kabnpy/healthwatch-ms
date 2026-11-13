@@ -5,8 +5,12 @@ import pytest
 from sqlmodel import Session
 
 from app.models import (
+    BenefitCalculationType,
     Insurer,
+    MedicalTierCreate,
     PricingMethod,
+    RateBenefitCreate,
+    RateBracketCreate,
     RateTableStatus,
     RateTableVersionCreate,
     RateTableVersionUpdate,
@@ -172,3 +176,70 @@ def test_update_version_transitions_and_draft_only_guards(db: Session) -> None:
         service.update_version(
             uuid.uuid4(), RateTableVersionUpdate(source_reference="Missing")
         )
+
+
+def test_add_children_enforces_draft_only_mutability(db: Session) -> None:
+    insurer = _create_insurer(db)
+    service = RateTableService(db)
+    rt = service.create_version(
+        RateTableVersionCreate(
+            insurer_id=insurer.id,
+            class_of_insurance="Motor Private",
+            pricing_method=PricingMethod.BRACKETED_PERCENTAGE,
+            currency="KES",
+            version_number=1,
+            source_reference="Tariff 2026",
+        )
+    )
+
+    bracket_in = RateBracketCreate(
+        rate_table_version_id=uuid.uuid4(),  # should be overridden by service
+        min_value=0.0,
+        max_value=1500000.0,
+        rate_percent=0.05,
+        minimum_premium=60000.0,
+        display_label="0 - 1.5M",
+    )
+    benefit_in = RateBenefitCreate(
+        rate_table_version_id=uuid.uuid4(),
+        code="PVT",
+        name="Political Violence & Terrorism",
+        calculation_type=BenefitCalculationType.PERCENTAGE,
+        rate_value=0.0025,
+    )
+    tier_in = MedicalTierCreate(
+        rate_table_version_id=uuid.uuid4(),
+        tier_code="M+1",
+        tier_name="M+1",
+        min_age=18,
+        max_age=65,
+        family_size=2,
+        premium=45000.0,
+    )
+
+    # Draft version allows adding children and binds rate_table_version_id
+    b = service.add_bracket(rt.id, bracket_in)
+    assert b.rate_table_version_id == rt.id
+    ben = service.add_benefit(rt.id, benefit_in)
+    assert ben.rate_table_version_id == rt.id
+    tier = service.add_medical_tier(rt.id, tier_in)
+    assert tier.rate_table_version_id == rt.id
+
+    # Missing rate table raises RateTableNotFoundError
+    with pytest.raises(RateTableNotFoundError):
+        service.add_bracket(uuid.uuid4(), bracket_in)
+    with pytest.raises(RateTableNotFoundError):
+        service.add_benefit(uuid.uuid4(), benefit_in)
+    with pytest.raises(RateTableNotFoundError):
+        service.add_medical_tier(uuid.uuid4(), tier_in)
+
+    # Non-draft (published) raises RateTableConflictError
+    service.update_version(
+        rt.id, RateTableVersionUpdate(status=RateTableStatus.PUBLISHED)
+    )
+    with pytest.raises(RateTableConflictError):
+        service.add_bracket(rt.id, bracket_in)
+    with pytest.raises(RateTableConflictError):
+        service.add_benefit(rt.id, benefit_in)
+    with pytest.raises(RateTableConflictError):
+        service.add_medical_tier(rt.id, tier_in)
