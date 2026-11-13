@@ -5,7 +5,7 @@ from datetime import date
 from decimal import Decimal
 
 from pydantic import BaseModel
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from app import crud
 from app.models import (
@@ -13,6 +13,10 @@ from app.models import (
     Invoice,
     InvoiceBatch,
     InvoiceBatchCreate,
+    InvoiceBulkCreate,
+    InvoiceCreate,
+    InvoiceLineItem,
+    InvoiceLineItemCreate,
     InvoiceStatus,
     PaymentAllocation,
     PaymentAllocationCreate,
@@ -20,6 +24,8 @@ from app.models import (
     PaymentRecord,
     PaymentRecordCreate,
     PaymentStatus,
+    Policy,
+    RiskNote,
 )
 
 logger = logging.getLogger(__name__)
@@ -419,3 +425,69 @@ class ClientLedgerService:
         session.commit()
         session.refresh(db_batch)
         return db_batch
+
+    @staticmethod
+    def create_bulk_invoice(
+        *,
+        session: Session,
+        bulk_in: InvoiceBulkCreate,
+    ) -> Invoice:
+        if not bulk_in.risk_note_ids:
+            raise LedgerValidationError(
+                "At least one RiskNote ID is required to create a bulk invoice."
+            )
+
+        requested_ids = list(dict.fromkeys(bulk_in.risk_note_ids))
+        risk_notes = session.exec(
+            select(RiskNote).where(col(RiskNote.id).in_(requested_ids))
+        ).all()
+        if len(risk_notes) != len(requested_ids):
+            found_ids = {rn.id for rn in risk_notes}
+            missing = [str(rid) for rid in requested_ids if rid not in found_ids]
+            raise LedgerNotFoundError(
+                f"RiskNote(s) not found: {', '.join(missing)}"
+            )
+
+        policy_ids = {rn.policy_id for rn in risk_notes}
+        policies = session.exec(
+            select(Policy).where(col(Policy.id).in_(policy_ids))
+        ).all()
+        policy_client_by_id = {p.id: p.client_id for p in policies}
+        mismatched = [
+            str(rn.id)
+            for rn in risk_notes
+            if policy_client_by_id.get(rn.policy_id) != bulk_in.client_id
+        ]
+        if mismatched:
+            raise LedgerValidationError(
+                f"RiskNote(s) do not belong to client {bulk_in.client_id}: {', '.join(mismatched)}"
+            )
+
+        total_amount = sum(
+            (rn.total_amount for rn in risk_notes), Decimal("0.00")
+        )
+        invoice_in = InvoiceCreate(
+            invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
+            client_id=bulk_in.client_id,
+            date_issued=bulk_in.date_issued,
+            total_amount=total_amount,
+            balance_due=total_amount,
+            notes=bulk_in.notes,
+            status=InvoiceStatus.UNPAID,
+        )
+        invoice = Invoice.model_validate(invoice_in)
+        session.add(invoice)
+        session.flush()
+
+        for rn in risk_notes:
+            line_item_in = InvoiceLineItemCreate(
+                invoice_id=invoice.id,
+                risk_note_id=rn.id,
+                amount=rn.total_amount,
+                description=f"{rn.transaction_type} - RN {rn.risk_note_number}",
+            )
+            session.add(InvoiceLineItem.model_validate(line_item_in))
+
+        session.commit()
+        session.refresh(invoice)
+        return invoice

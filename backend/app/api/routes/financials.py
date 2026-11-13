@@ -6,7 +6,6 @@ from fastapi import APIRouter, HTTPException
 from app.api.deps import CurrentUser, SessionDep, StaffUser
 from app.crud import (
     create_invoice,
-    create_invoice_bulk,
     get_invoice,
     get_invoices,
 )
@@ -15,6 +14,11 @@ from app.models import (
     InvoiceCreate,
     InvoicePublic,
     InvoicesPublic,
+)
+from app.services.client_ledger import (
+    ClientLedgerService,
+    LedgerNotFoundError,
+    LedgerValidationError,
 )
 
 router = APIRouter()
@@ -76,7 +80,14 @@ def create_bulk_invoice(
     """
     Create an invoice from multiple Risk Notes.
     """
-    return create_invoice_bulk(session=session, bulk_in=bulk_in)
+    try:
+        return ClientLedgerService.create_bulk_invoice(
+            session=session, bulk_in=bulk_in
+        )
+    except LedgerNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except LedgerValidationError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 # ==========================================
