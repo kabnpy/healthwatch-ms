@@ -12,7 +12,12 @@ from app.models import (
     PremiumCalculationPublic,
     PremiumCalculationsPublic,
 )
-from app.services.premium_calculation import RatingValidationError, calculate_premium
+from app.services.premium_calculation import (
+    RatingValidationError,
+    calculate_premium,
+    create_premium_calculation,
+    select_premium_calculation,
+)
 
 router = APIRouter()
 
@@ -100,12 +105,9 @@ def create_calculation(
         total_premium=result.total_premium,
         is_selected=request.is_selected,
     )
-    db_calc = crud.create_premium_calculation(
+    return create_premium_calculation(
         session=session, calc_in=calc_in, user_id=_current_user.id
     )
-    if request.is_selected:
-        crud.select_premium_calculation(session=session, calc_id=db_calc.id)
-    return db_calc
 
 
 @router.get("/", response_model=PremiumCalculationsPublic)
@@ -154,4 +156,4 @@ def select_calculation(
     calc = crud.get_premium_calculation(session=session, calc_id=id)
     if not calc:
         raise HTTPException(status_code=404, detail="Premium calculation not found")
-    return crud.select_premium_calculation(session=session, calc_id=id)
+    return select_premium_calculation(session=session, calc_id=id)

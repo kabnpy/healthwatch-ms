@@ -19,9 +19,6 @@ from app.models import (
     ClientUpdate,
     CommissionSchedule,
     CommissionScheduleCreate,
-    Correspondence,
-    CorrespondenceCreate,
-    CorrespondenceUpdate,
     Document,
     DocumentCreate,
     DocumentEntityType,
@@ -36,11 +33,9 @@ from app.models import (
     Invoice,
     InvoiceBatch,
     InvoiceBatchCreate,
-    InvoiceBulkCreate,
     InvoiceCreate,
     InvoiceLineItem,
     InvoiceLineItemCreate,
-    InvoiceStatus,
     InvoiceUpdate,
     IPFAgreement,
     IPFAgreementCreate,
@@ -67,11 +62,6 @@ from app.models import (
     RateTableVersion,
     RateTableVersionCreate,
     RateTableVersionUpdate,
-    Receipt,
-    ReceiptAllocation,
-    ReceiptAllocationCreate,
-    ReceiptCreate,
-    ReceiptStatus,
     Renewal,
     RenewalCreate,
     RenewalStatus,
@@ -295,62 +285,6 @@ def count_clients(session: Session) -> int:
 def delete_client(session: Session, *, db_client: Client) -> None:
     db_client.deleted_at = get_datetime_utc()
     session.add(db_client)
-    session.commit()
-
-
-def create_correspondence(
-    *, session: Session, correspondence_in: CorrespondenceCreate
-) -> Correspondence:
-    db_obj = Correspondence.model_validate(correspondence_in)
-    session.add(db_obj)
-    session.commit()
-    session.refresh(db_obj)
-    return db_obj
-
-
-def update_correspondence(
-    *,
-    session: Session,
-    db_correspondence: Correspondence,
-    correspondence_in: CorrespondenceUpdate,
-) -> Correspondence:
-    correspondence_data = correspondence_in.model_dump(exclude_unset=True)
-    db_correspondence.sqlmodel_update(correspondence_data)
-    session.add(db_correspondence)
-    session.commit()
-    session.refresh(db_correspondence)
-    return db_correspondence
-
-
-def get_correspondences(
-    session: Session,
-    *,
-    skip: int = 0,
-    limit: int = 100,
-    client_id: uuid.UUID | None = None,
-) -> list[Correspondence]:
-    statement = select(Correspondence).where(Correspondence.deleted_at == None)
-    if client_id:
-        statement = statement.where(Correspondence.client_id == client_id)
-    statement = statement.offset(skip).limit(limit)
-    return list(session.exec(statement).all())
-
-
-def count_correspondences(
-    session: Session, *, client_id: uuid.UUID | None = None
-) -> int:
-    statement = select(Correspondence).where(Correspondence.deleted_at == None)
-    if client_id:
-        statement = statement.where(Correspondence.client_id == client_id)
-    count_statement = select(func.count()).select_from(statement.subquery())
-    return session.exec(count_statement).one()
-
-
-def delete_correspondence(
-    session: Session, *, db_correspondence: Correspondence
-) -> None:
-    db_correspondence.deleted_at = get_datetime_utc()
-    session.add(db_correspondence)
     session.commit()
 
 
@@ -644,93 +578,10 @@ def update_invoice(
     return db_invoice
 
 
-def create_invoice_bulk(*, session: Session, bulk_in: InvoiceBulkCreate) -> Invoice:
-    risk_notes = session.exec(
-        select(RiskNote).where(col(RiskNote.id).in_(bulk_in.risk_note_ids))
-    ).all()
-    total_amount = sum(rn.total_amount for rn in risk_notes)
-    invoice_in = InvoiceCreate(
-        invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
-        client_id=bulk_in.client_id,
-        date_issued=bulk_in.date_issued,
-        total_amount=total_amount,
-        balance_due=total_amount,
-        notes=bulk_in.notes,
-        status=InvoiceStatus.UNPAID,
-    )
-    invoice = create_invoice(session=session, invoice_in=invoice_in)
-    for rn in risk_notes:
-        line_item_in = InvoiceLineItemCreate(
-            invoice_id=invoice.id,
-            risk_note_id=rn.id,
-            amount=rn.total_amount,
-            description=f"{rn.transaction_type} - RN {rn.risk_note_number}",
-        )
-        create_invoice_line_item(session=session, line_item_in=line_item_in)
-        session.add(rn)
-    session.commit()
-    session.refresh(invoice)
-    return invoice
-
-
 def create_invoice_line_item(
     *, session: Session, line_item_in: InvoiceLineItemCreate
 ) -> InvoiceLineItem:
     db_obj = InvoiceLineItem.model_validate(line_item_in)
-    session.add(db_obj)
-    session.commit()
-    session.refresh(db_obj)
-    return db_obj
-
-
-def create_receipt(*, session: Session, receipt_in: ReceiptCreate) -> Receipt:
-    db_obj = Receipt.model_validate(receipt_in)
-    session.add(db_obj)
-    session.commit()
-    session.refresh(db_obj)
-    return db_obj
-
-
-def get_receipt(session: Session, *, id: uuid.UUID) -> Receipt | None:
-    statement = (
-        select(Receipt)
-        .where(Receipt.id == id)
-        .where(Receipt.deleted_at == None)
-        .options(selectinload(cast(Any, Receipt.allocations)))
-    )
-    return session.exec(statement).first()
-
-
-def get_receipts(
-    session: Session,
-    *,
-    skip: int = 0,
-    limit: int = 100,
-    client_id: uuid.UUID | None = None,
-) -> list[Receipt]:
-    statement = (
-        select(Receipt)
-        .where(Receipt.deleted_at == None)
-        .options(selectinload(cast(Any, Receipt.allocations)))
-    )
-    if client_id:
-        statement = statement.where(Receipt.client_id == client_id)
-    statement = statement.offset(skip).limit(limit)
-    return list(session.exec(statement).all())
-
-
-def void_receipt(*, session: Session, db_receipt: Receipt) -> Receipt:
-    db_receipt.status = ReceiptStatus.VOIDED
-    session.add(db_receipt)
-    session.commit()
-    session.refresh(db_receipt)
-    return db_receipt
-
-
-def create_receipt_allocation(
-    *, session: Session, allocation_in: ReceiptAllocationCreate
-) -> ReceiptAllocation:
-    db_obj = ReceiptAllocation.model_validate(allocation_in)
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)
@@ -1339,49 +1190,6 @@ def count_premium_calculations(
         statement = statement.where(PremiumCalculation.renewal_id == renewal_id)
     count_statement = select(func.count()).select_from(statement.subquery())
     return session.exec(count_statement).one()
-
-
-def select_premium_calculation(
-    session: Session, *, calc_id: uuid.UUID
-) -> PremiumCalculation:
-    calc = session.get(PremiumCalculation, calc_id)
-    if not calc:
-        raise ValueError("Calculation not found")
-
-    # Unselect all other calculations for this policy/renewal
-    if calc.renewal_id:
-        other_calcs = session.exec(
-            select(PremiumCalculation).where(
-                PremiumCalculation.renewal_id == calc.renewal_id,
-                PremiumCalculation.id != calc.id,
-            )
-        ).all()
-    else:
-        other_calcs = session.exec(
-            select(PremiumCalculation).where(
-                PremiumCalculation.policy_id == calc.policy_id,
-                PremiumCalculation.id != calc.id,
-            )
-        ).all()
-
-    for other in other_calcs:
-        other.is_selected = False
-        session.add(other)
-
-    calc.is_selected = True
-    session.add(calc)
-
-    # If linked to a renewal, update the renewal's agreed_premium and selected_calculation_id
-    if calc.renewal_id:
-        renewal = session.get(Renewal, calc.renewal_id)
-        if renewal:
-            renewal.selected_calculation_id = calc.id
-            renewal.proposed_premium = calc.total_premium
-            session.add(renewal)
-
-    session.commit()
-    session.refresh(calc)
-    return calc
 
 
 # ==========================================

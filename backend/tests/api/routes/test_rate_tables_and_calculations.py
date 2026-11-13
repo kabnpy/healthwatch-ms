@@ -334,3 +334,204 @@ def test_calculation_out_of_range_inputs_return_400(
     )
     assert resp.status_code == 400
     assert "outside" in resp.json()["detail"].lower()
+
+
+def test_calculation_selection_scopes_and_atomic_create(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    from datetime import date
+    from decimal import Decimal
+
+    from app.models import Client, Policy, PolicyStatus, Renewal
+
+    suffix = uuid.uuid4().hex[:8]
+    client_obj = Client(
+        name=f"Selection Scope Client {suffix}",
+        email=f"selscope-{suffix}@client.co.ke",
+        phone=f"+2547{suffix[:8]}",
+        kra_pin=f"A{suffix[:9]}",
+    )
+    insurer = Insurer(name=f"Selection Scope Insurer {suffix}", contact_email=f"selscope-{suffix}@ins.co.ke")
+    db.add(client_obj)
+    db.add(insurer)
+    db.commit()
+    db.refresh(client_obj)
+    db.refresh(insurer)
+
+    policy_a = Policy(
+        policy_number=f"POL-SEL-A-{suffix}",
+        client_id=client_obj.id,
+        insurer_id=insurer.id,
+        class_of_insurance="Motor Private",
+        inception_date=date(2026, 1, 1),
+        expiry_date=date(2026, 12, 31),
+        status=PolicyStatus.ACTIVE,
+        net_premium=Decimal("10000.00"),
+        gross_premium=Decimal("10085.00"),
+        commission_amount=Decimal("1000.00"),
+    )
+    policy_b = Policy(
+        policy_number=f"POL-SEL-B-{suffix}",
+        client_id=client_obj.id,
+        insurer_id=insurer.id,
+        class_of_insurance="Motor Private",
+        inception_date=date(2026, 1, 1),
+        expiry_date=date(2026, 12, 31),
+        status=PolicyStatus.ACTIVE,
+        net_premium=Decimal("10000.00"),
+        gross_premium=Decimal("10085.00"),
+        commission_amount=Decimal("1000.00"),
+    )
+    db.add(policy_a)
+    db.add(policy_b)
+    db.commit()
+    db.refresh(policy_a)
+    db.refresh(policy_b)
+
+    renewal = Renewal(
+        policy_id=policy_a.id,
+        renewal_period_start=date(2027, 1, 1),
+        renewal_period_end=date(2027, 12, 31),
+    )
+    db.add(renewal)
+    db.commit()
+    db.refresh(renewal)
+
+    rt = client.post(
+        f"{settings.API_V1_STR}/rate-tables/",
+        headers=superuser_token_headers,
+        json={
+            "insurer_id": str(insurer.id),
+            "class_of_insurance": "Motor Private",
+            "pricing_method": PricingMethod.FIXED_TIER.value,
+            "currency": "KES",
+            "version_number": 1,
+            "source_reference": "Sel Scope 2026",
+        },
+    ).json()
+    rt_id = rt["id"]
+    client.post(
+        f"{settings.API_V1_STR}/rate-tables/{rt_id}/brackets",
+        headers=superuser_token_headers,
+        json={
+            "rate_table_version_id": rt_id,
+            "min_value": 0.00,
+            "max_value": None,
+            "rate_percent": 0.00,
+            "minimum_premium": 5000.00,
+            "display_label": "Fixed Tier",
+        },
+    )
+
+    # 1. Policy-scoped selection (without Renewal) does not unselect other policies
+    c_a1 = client.post(
+        f"{settings.API_V1_STR}/calculations/",
+        headers=superuser_token_headers,
+        json={
+            "rate_table_id": rt_id,
+            "policy_id": str(policy_a.id),
+            "inputs": {"fixed_amount": 5000.00},
+            "is_selected": True,
+        },
+    )
+    assert c_a1.status_code == 201
+    c_a1_id = c_a1.json()["id"]
+    assert c_a1.json()["is_selected"] is True
+
+    c_b1 = client.post(
+        f"{settings.API_V1_STR}/calculations/",
+        headers=superuser_token_headers,
+        json={
+            "rate_table_id": rt_id,
+            "policy_id": str(policy_b.id),
+            "inputs": {"fixed_amount": 6000.00},
+            "is_selected": True,
+        },
+    )
+    assert c_b1.status_code == 201
+    c_b1_id = c_b1.json()["id"]
+
+    # Create second calc on policy_a with is_selected=True (atomic create+select)
+    c_a2 = client.post(
+        f"{settings.API_V1_STR}/calculations/",
+        headers=superuser_token_headers,
+        json={
+            "rate_table_id": rt_id,
+            "policy_id": str(policy_a.id),
+            "inputs": {"fixed_amount": 7000.00},
+            "is_selected": True,
+        },
+    )
+    assert c_a2.status_code == 201
+    c_a2_id = c_a2.json()["id"]
+    assert c_a2.json()["is_selected"] is True
+
+    # c_a1 should now be unselected, c_b1 should remain selected
+    assert client.get(f"{settings.API_V1_STR}/calculations/{c_a1_id}", headers=superuser_token_headers).json()["is_selected"] is False
+    assert client.get(f"{settings.API_V1_STR}/calculations/{c_b1_id}", headers=superuser_token_headers).json()["is_selected"] is True
+
+    # 2. Renewal-scoped selection unselects sibling renewal calcs and updates renewal atomically
+    c_r1 = client.post(
+        f"{settings.API_V1_STR}/calculations/",
+        headers=superuser_token_headers,
+        json={
+            "rate_table_id": rt_id,
+            "policy_id": str(policy_a.id),
+            "renewal_id": str(renewal.id),
+            "inputs": {"fixed_amount": 8000.00},
+            "is_selected": True,
+        },
+    )
+    assert c_r1.status_code == 201
+    c_r1_id = c_r1.json()["id"]
+    db.refresh(renewal)
+    assert renewal.selected_calculation_id == uuid.UUID(c_r1_id)
+    assert renewal.proposed_premium == Decimal(str(c_r1.json()["total_premium"]))
+
+    c_r2 = client.post(
+        f"{settings.API_V1_STR}/calculations/",
+        headers=superuser_token_headers,
+        json={
+            "rate_table_id": rt_id,
+            "policy_id": str(policy_a.id),
+            "renewal_id": str(renewal.id),
+            "inputs": {"fixed_amount": 9000.00},
+            "is_selected": False,
+        },
+    )
+    assert c_r2.status_code == 201
+    c_r2_id = c_r2.json()["id"]
+
+    sel_r2 = client.post(
+        f"{settings.API_V1_STR}/calculations/{c_r2_id}/select",
+        headers=superuser_token_headers,
+    )
+    assert sel_r2.status_code == 200
+    assert sel_r2.json()["is_selected"] is True
+    assert client.get(f"{settings.API_V1_STR}/calculations/{c_r1_id}", headers=superuser_token_headers).json()["is_selected"] is False
+
+    db.refresh(renewal)
+    assert renewal.selected_calculation_id == uuid.UUID(c_r2_id)
+    assert renewal.proposed_premium == Decimal(str(c_r2.json()["total_premium"]))
+
+
+def test_standalone_calculation_selection_does_not_unselect_others() -> None:
+    from decimal import Decimal
+    from unittest.mock import MagicMock
+
+    from app.models import PremiumCalculation
+    from app.services.premium_calculation import _apply_selection
+
+    session = MagicMock()
+    standalone_calc = PremiumCalculation(
+        id=uuid.uuid4(),
+        policy_id=None,  # type: ignore[arg-type]
+        renewal_id=None,
+        total_premium=Decimal("5000.00"),
+        is_selected=False,
+    )
+    _apply_selection(session, standalone_calc)
+
+    assert standalone_calc.is_selected is True
+    session.exec.assert_not_called()
+    session.add.assert_called_once_with(standalone_calc)
