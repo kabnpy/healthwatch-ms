@@ -4,11 +4,6 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 
 from app.api.deps import CurrentUser, SessionDep, StaffUser
-from app.crud import (
-    create_invoice,
-    get_invoice,
-    get_invoices,
-)
 from app.models import (
     InvoiceBulkCreate,
     InvoiceCreate,
@@ -46,10 +41,11 @@ def read_invoices(
         except ValueError:
             pass
 
-    invoices = get_invoices(
+    invoices = ClientLedgerService.get_invoices(
         session=session, skip=skip, limit=limit, client_id=client_uuid
     )
-    return InvoicesPublic(data=invoices, count=len(invoices))
+    count = ClientLedgerService.count_invoices(session=session, client_id=client_uuid)
+    return InvoicesPublic(data=invoices, count=count)
 
 
 @router.get("/invoices/{id}", response_model=InvoicePublic)
@@ -57,7 +53,7 @@ def read_invoice(session: SessionDep, _current_user: CurrentUser, id: uuid.UUID)
     """
     Get invoice by ID.
     """
-    invoice = get_invoice(session=session, id=id)
+    invoice = ClientLedgerService.get_invoice(session=session, invoice_id=id)
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
     return invoice
@@ -70,7 +66,14 @@ def create_new_invoice(
     """
     Create new invoice.
     """
-    return create_invoice(session=session, invoice_in=invoice_in)
+    try:
+        return ClientLedgerService.create_invoice(
+            session=session, invoice_in=invoice_in
+        )
+    except LedgerNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except LedgerValidationError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @router.post("/bulk-invoices/", response_model=InvoicePublic)

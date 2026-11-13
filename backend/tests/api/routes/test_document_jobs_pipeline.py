@@ -7,17 +7,6 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.core.config import settings
-from app.services.document_renderer import DocumentRenderer
-
-
-@pytest.fixture(autouse=True)
-def stub_pdf_rasterizer(monkeypatch):
-    class StubPdfRasterizer:
-        def render(self, html_content: str) -> bytes:
-            assert html_content
-            return b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n" + (b"0" * 100) + b"\n%%EOF\n"
-
-    monkeypatch.setattr(DocumentRenderer, "pdf_rasterizer", StubPdfRasterizer())
 from app.models import (
     Client,
     DocumentJobResourceType,
@@ -30,6 +19,17 @@ from app.models import (
     RiskNoteStatus,
     TransactionType,
 )
+from app.services.document_renderer import DocumentRenderer
+
+
+@pytest.fixture(autouse=True)
+def stub_pdf_rasterizer(monkeypatch):
+    class StubPdfRasterizer:
+        def render(self, html_content: str) -> bytes:
+            assert html_content
+            return b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n" + (b"0" * 100) + b"\n%%EOF\n"
+
+    monkeypatch.setattr(DocumentRenderer, "pdf_rasterizer", StubPdfRasterizer())
 
 
 def test_document_job_risk_note_pipeline(

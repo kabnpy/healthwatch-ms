@@ -1,16 +1,63 @@
+import uuid
 from datetime import date, timedelta
+from decimal import Decimal
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.core.config import settings
-from tests.utils.insurance import create_random_policy
+from app.models import (
+    Client,
+    Insurer,
+    Policy,
+    PolicyStatus,
+    Product,
+)
 
 
-def test_create_renewal(
+def _create_policy(db: Session) -> Policy:
+    client = Client(
+        name=f"Client-{uuid.uuid4().hex[:6]}",
+        email=f"client-{uuid.uuid4().hex[:6]}@example.com",
+        phone="0700000000",
+        kra_pin=f"A{uuid.uuid4().hex[:9].upper()}Z",
+    )
+    db.add(client)
+
+    insurer = Insurer(
+        name=f"Insurer-{uuid.uuid4().hex[:6]}",
+        email=f"insurer-{uuid.uuid4().hex[:6]}@example.com",
+    )
+    db.add(insurer)
+    db.flush()
+
+    product = Product(
+        insurer_id=insurer.id,
+        name=f"Product-{uuid.uuid4().hex[:6]}",
+        class_of_insurance="Motor Private",
+        default_commission_rate=Decimal("10.00"),
+    )
+    db.add(product)
+    db.flush()
+
+    policy = Policy(
+        policy_number=f"POL-{uuid.uuid4().hex[:8].upper()}",
+        client_id=client.id,
+        product_id=product.id,
+        status=PolicyStatus.ACTIVE,
+        coverage_start=date.today(),
+        coverage_end=date.today() + timedelta(days=365),
+    )
+    db.add(policy)
+    db.commit()
+    db.refresh(policy)
+    return policy
+
+
+def test_create_and_read_renewals(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    policy = create_random_policy(db)
+    policy = _create_policy(db)
     payload = {
         "policy_id": str(policy.id),
         "renewal_period_start": str(date.today() + timedelta(days=365)),
@@ -30,11 +77,38 @@ def test_create_renewal(
     assert data["version"] == 1
     assert data["proposed_premium"] == "50000.00"
 
+    renewal_id = data["id"]
+
+    # GET single renewal
+    get_res = client.get(
+        f"{settings.API_V1_STR}/renewals/{renewal_id}",
+        headers=superuser_token_headers,
+    )
+    assert get_res.status_code == 200
+    assert get_res.json()["id"] == renewal_id
+
+    # GET list filtered by policy_id
+    list_res = client.get(
+        f"{settings.API_V1_STR}/renewals/",
+        headers=superuser_token_headers,
+        params={"policy_id": str(policy.id)},
+    )
+    assert list_res.status_code == 200
+    assert list_res.json()["count"] == 1
+    assert list_res.json()["data"][0]["id"] == renewal_id
+
+    # GET missing renewal returns 404
+    missing_res = client.get(
+        f"{settings.API_V1_STR}/renewals/{uuid.uuid4()}",
+        headers=superuser_token_headers,
+    )
+    assert missing_res.status_code == 404
+
 
 def test_single_active_renewal_invariant(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    policy = create_random_policy(db)
+    policy = _create_policy(db)
     payload = {
         "policy_id": str(policy.id),
         "renewal_period_start": str(date.today() + timedelta(days=365)),
@@ -61,7 +135,7 @@ def test_single_active_renewal_invariant(
 def test_renewal_transition_lifecycle(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    policy = create_random_policy(db)
+    policy = _create_policy(db)
     create_payload = {
         "policy_id": str(policy.id),
         "renewal_period_start": str(date.today() + timedelta(days=365)),
@@ -122,7 +196,7 @@ def test_renewal_transition_lifecycle(
 def test_invalid_renewal_transition(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    policy = create_random_policy(db)
+    policy = _create_policy(db)
     create_payload = {
         "policy_id": str(policy.id),
         "renewal_period_start": str(date.today() + timedelta(days=365)),
@@ -148,7 +222,7 @@ def test_invalid_renewal_transition(
 def test_occ_conflict_on_transition_and_update(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    policy = create_random_policy(db)
+    policy = _create_policy(db)
     create_payload = {
         "policy_id": str(policy.id),
         "renewal_period_start": str(date.today() + timedelta(days=365)),

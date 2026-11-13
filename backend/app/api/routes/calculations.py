@@ -4,7 +4,6 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
-from app import crud
 from app.api.deps import CurrentUser, SessionDep, StaffUser
 from app.models import (
     BusinessEvent,
@@ -15,7 +14,11 @@ from app.models import (
 from app.services.premium_calculation import (
     RatingValidationError,
     calculate_premium,
+    count_premium_calculations,
     create_premium_calculation,
+    get_premium_calculation,
+    get_premium_calculations,
+    get_rate_table_version,
     select_premium_calculation,
 )
 
@@ -46,7 +49,7 @@ def quote_preview(
     request: AdvisoryQuoteRequest,
 ) -> Any:
     """Calculate an advisory quote preview with full breakdown and taxes without persisting."""
-    rate_table = crud.get_rate_table_version(
+    rate_table = get_rate_table_version(
         session=session, rate_table_id=request.rate_table_id
     )
     if not rate_table:
@@ -80,7 +83,7 @@ def create_calculation(
     request: PersistQuoteRequest,
 ) -> Any:
     """Calculate and persist an immutable advisory PremiumCalculation snapshot."""
-    rate_table = crud.get_rate_table_version(
+    rate_table = get_rate_table_version(
         session=session, rate_table_id=request.rate_table_id
     )
     if not rate_table:
@@ -120,14 +123,14 @@ def read_calculations(
     renewal_id: uuid.UUID | None = None,
 ) -> Any:
     """Retrieve advisory premium calculations with policy or renewal filter."""
-    calcs = crud.get_premium_calculations(
+    calcs = get_premium_calculations(
         session=session,
         skip=skip,
         limit=limit,
         policy_id=policy_id,
         renewal_id=renewal_id,
     )
-    count = crud.count_premium_calculations(
+    count = count_premium_calculations(
         session=session, policy_id=policy_id, renewal_id=renewal_id
     )
     return PremiumCalculationsPublic(data=calcs, count=count)
@@ -140,7 +143,7 @@ def read_calculation(
     _current_user: CurrentUser,
 ) -> Any:
     """Get single calculation by ID."""
-    calc = crud.get_premium_calculation(session=session, calc_id=id)
+    calc = get_premium_calculation(session=session, calc_id=id)
     if not calc:
         raise HTTPException(status_code=404, detail="Premium calculation not found")
     return calc
@@ -153,7 +156,7 @@ def select_calculation(
     _current_user: StaffUser,
 ) -> Any:
     """Select this calculation as agreed calculation for policy / renewal."""
-    calc = crud.get_premium_calculation(session=session, calc_id=id)
+    calc = get_premium_calculation(session=session, calc_id=id)
     if not calc:
         raise HTTPException(status_code=404, detail="Premium calculation not found")
     return select_premium_calculation(session=session, calc_id=id)

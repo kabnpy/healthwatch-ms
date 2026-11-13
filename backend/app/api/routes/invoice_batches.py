@@ -4,7 +4,6 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
-from app import crud
 from app.api.deps import CurrentUser, SessionDep, StaffUser
 from app.models import (
     InvoiceBatchesPublic,
@@ -33,10 +32,12 @@ def read_invoice_batches(
     client_id: uuid.UUID | None = None,
 ) -> Any:
     """Retrieve monthly consolidated invoice batches."""
-    batches = crud.get_invoice_batches(
+    batches = ClientLedgerService.get_invoice_batches(
         session=session, skip=skip, limit=limit, client_id=client_id
     )
-    count = crud.count_invoice_batches(session=session, client_id=client_id)
+    count = ClientLedgerService.count_invoice_batches(
+        session=session, client_id=client_id
+    )
     return InvoiceBatchesPublic(data=batches, count=count)
 
 
@@ -47,7 +48,7 @@ def read_invoice_batch(
     _current_user: CurrentUser,
 ) -> Any:
     """Get single invoice batch by ID."""
-    batch = crud.get_invoice_batch(session=session, batch_id=id)
+    batch = ClientLedgerService.get_invoice_batch(session=session, batch_id=id)
     if not batch:
         raise HTTPException(status_code=404, detail="Invoice batch not found")
     return batch

@@ -4,27 +4,17 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 
 from app.api.deps import CurrentUser, SessionDep, StaffUser
-from app.crud import (
-    count_clients,
-    get_client_by_kra_pin,
-    get_clients,
-)
-from app.crud import (
-    create_client as crud_create_client,
-)
-from app.crud import (
-    delete_client as crud_delete_client,
-)
-from app.crud import (
-    update_client as crud_update_client,
-)
 from app.models import (
-    Client,
     ClientCreate,
     ClientPublic,
     ClientsPublic,
     ClientUpdate,
     Message,
+)
+from app.services.portfolio import (
+    PortfolioConflictError,
+    PortfolioNotFoundError,
+    portfolio_service,
 )
 
 router = APIRouter()
@@ -37,8 +27,9 @@ def read_clients(
     """
     Retrieve clients.
     """
-    count = count_clients(session=session)
-    clients = get_clients(session=session, skip=skip, limit=limit)
+    clients, count = portfolio_service.list_clients(
+        session=session, skip=skip, limit=limit
+    )
     return ClientsPublic(data=clients, count=count)
 
 
@@ -47,10 +38,10 @@ def read_client(session: SessionDep, _current_user: CurrentUser, id: uuid.UUID) 
     """
     Get client by ID.
     """
-    client = session.get(Client, id)
-    if not client:
-        raise HTTPException(status_code=404, detail="Client not found")
-    return client
+    try:
+        return portfolio_service.get_client_or_raise(session=session, client_id=id)
+    except PortfolioNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
 
 @router.post("/", response_model=ClientPublic)
@@ -60,15 +51,10 @@ def create_client(
     """
     Create new client.
     """
-    existing_client = get_client_by_kra_pin(session=session, kra_pin=client_in.kra_pin)
-    if existing_client:
-        raise HTTPException(
-            status_code=400,
-            detail="The client with this KRA PIN already exists in the system.",
-        )
-
-    client = crud_create_client(session=session, client_in=client_in)
-    return client
+    try:
+        return portfolio_service.create_client(session=session, client_in=client_in)
+    except PortfolioConflictError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.put("/{id}", response_model=ClientPublic)
@@ -82,12 +68,12 @@ def update_client(
     """
     Update a client.
     """
-    client = session.get(Client, id)
-    if not client:
-        raise HTTPException(status_code=404, detail="Client not found")
-
-    client = crud_update_client(session=session, db_client=client, client_in=client_in)
-    return client
+    try:
+        return portfolio_service.update_client(
+            session=session, client_id=id, client_in=client_in
+        )
+    except PortfolioNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
 
 @router.delete("/{id}", response_model=Message)
@@ -95,8 +81,8 @@ def delete_client(session: SessionDep, _current_user: StaffUser, id: uuid.UUID) 
     """
     Delete a client.
     """
-    client = session.get(Client, id)
-    if not client:
-        raise HTTPException(status_code=404, detail="Client not found")
-    crud_delete_client(session=session, db_client=client)
+    try:
+        portfolio_service.delete_client(session=session, client_id=id)
+    except PortfolioNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
     return Message(message="Client deleted successfully")

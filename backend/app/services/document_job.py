@@ -4,7 +4,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from app.core.db import engine
 from app.core.storage import storage
@@ -22,7 +22,42 @@ from app.services.document_renderer import DocumentRenderer
 logger = logging.getLogger(__name__)
 
 
+class DocumentJobNotFoundError(LookupError):
+    """Raised when a DocumentJob record cannot be found."""
+
+
+class DocumentJobConflictError(ValueError):
+    """Raised when a DocumentJob cannot transition from its current status."""
+
+
 class DocumentJobService:
+    @staticmethod
+    def create_job(*, session: Session, job_in: DocumentJobCreate) -> DocumentJob:
+        """Persist a new DocumentJob record atomically."""
+        db_job = DocumentJob.model_validate(job_in)
+        session.add(db_job)
+        session.commit()
+        session.refresh(db_job)
+        return db_job
+
+    @staticmethod
+    def get_job(*, session: Session, job_id: uuid.UUID) -> DocumentJob | None:
+        """Fetch a DocumentJob by primary key."""
+        return session.get(DocumentJob, job_id)
+
+    @staticmethod
+    def list_jobs(
+        *,
+        session: Session,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> tuple[list[DocumentJob], int]:
+        """Return paginated DocumentJobs ordered newest-first and their total count."""
+        statement = select(DocumentJob).order_by(DocumentJob.created_at.desc())
+        count = session.exec(select(func.count()).select_from(DocumentJob)).one()
+        items = list(session.exec(statement.offset(skip).limit(limit)).all())
+        return items, count
+
     @staticmethod
     def enqueue_job(
         session: Session,
@@ -163,6 +198,18 @@ class DocumentJobService:
             session.commit()
             session.refresh(job)
             raise
+
+    @classmethod
+    def retry_job(cls, *, session: Session, job_id: uuid.UUID) -> DocumentJob:
+        """Retry processing for a FAILED or stuck PENDING DocumentJob."""
+        job = cls.get_job(session=session, job_id=job_id)
+        if not job:
+            raise DocumentJobNotFoundError("Document job not found")
+        if job.status not in {DocumentJobStatus.FAILED, DocumentJobStatus.PENDING}:
+            raise DocumentJobConflictError(
+                f"Document job in status '{job.status.value}' cannot be manually processed"
+            )
+        return cls.process_job(session=session, job_id=job_id)
 
     @staticmethod
     def resolve_download_artifact(

@@ -4,27 +4,17 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 
 from app.api.deps import CurrentUser, SessionDep, StaffUser
-from app.crud import (
-    count_insurers,
-    get_insurer_by_name,
-    get_insurers,
-)
-from app.crud import (
-    create_insurer as crud_create_insurer,
-)
-from app.crud import (
-    delete_insurer as crud_delete_insurer,
-)
-from app.crud import (
-    update_insurer as crud_update_insurer,
-)
 from app.models import (
-    Insurer,
     InsurerCreate,
     InsurerPublic,
     InsurersPublic,
     InsurerUpdate,
     Message,
+)
+from app.services.catalog import (
+    CatalogConflictError,
+    CatalogNotFoundError,
+    catalog_service,
 )
 
 router = APIRouter()
@@ -37,8 +27,9 @@ def read_insurers(
     """
     Retrieve insurers.
     """
-    count = count_insurers(session=session)
-    insurers = get_insurers(session=session, skip=skip, limit=limit)
+    insurers, count = catalog_service.list_insurers(
+        session=session, skip=skip, limit=limit
+    )
     return InsurersPublic(data=insurers, count=count)
 
 
@@ -47,10 +38,10 @@ def read_insurer(session: SessionDep, _current_user: CurrentUser, id: uuid.UUID)
     """
     Get insurer by ID.
     """
-    insurer = session.get(Insurer, id)
-    if not insurer:
-        raise HTTPException(status_code=404, detail="Insurer not found")
-    return insurer
+    try:
+        return catalog_service.get_insurer_or_raise(session=session, insurer_id=id)
+    except CatalogNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
 
 @router.post("/", response_model=InsurerPublic)
@@ -60,15 +51,10 @@ def create_insurer(
     """
     Create new insurer.
     """
-    existing_insurer = get_insurer_by_name(session=session, name=insurer_in.name)
-    if existing_insurer:
-        raise HTTPException(
-            status_code=400,
-            detail="The insurer with this name already exists in the system.",
-        )
-
-    insurer = crud_create_insurer(session=session, insurer_in=insurer_in)
-    return insurer
+    try:
+        return catalog_service.create_insurer(session=session, insurer_in=insurer_in)
+    except CatalogConflictError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.put("/{id}", response_model=InsurerPublic)
@@ -82,14 +68,12 @@ def update_insurer(
     """
     Update an insurer.
     """
-    insurer = session.get(Insurer, id)
-    if not insurer:
-        raise HTTPException(status_code=404, detail="Insurer not found")
-
-    insurer = crud_update_insurer(
-        session=session, db_insurer=insurer, insurer_in=insurer_in
-    )
-    return insurer
+    try:
+        return catalog_service.update_insurer(
+            session=session, insurer_id=id, insurer_in=insurer_in
+        )
+    except CatalogNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
 
 @router.delete("/{id}", response_model=Message)
@@ -97,8 +81,8 @@ def delete_insurer(session: SessionDep, _current_user: StaffUser, id: uuid.UUID)
     """
     Delete an insurer.
     """
-    insurer = session.get(Insurer, id)
-    if not insurer:
-        raise HTTPException(status_code=404, detail="Insurer not found")
-    crud_delete_insurer(session=session, db_insurer=insurer)
+    try:
+        catalog_service.delete_insurer(session=session, insurer_id=id)
+    except CatalogNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
     return Message(message="Insurer deleted successfully")

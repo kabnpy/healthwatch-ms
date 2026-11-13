@@ -1,12 +1,13 @@
 import logging
 import uuid
 
-from fastapi import HTTPException, status
-from sqlmodel import Session
+from sqlmodel import Session, col, func, select
 
-from app import crud
 from app.models import (
+    Invitation,
+    InvitationCreate,
     Policy,
+    PremiumCalculation,
     Renewal,
     RenewalCreate,
     RenewalStatus,
@@ -16,6 +17,34 @@ from app.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class RenewalError(Exception):
+    """Base domain error for Renewal and Invitation operations."""
+
+
+class RenewalNotFoundError(RenewalError):
+    """Raised when a requested renewal, policy, or calculation does not exist."""
+
+
+class RenewalValidationError(RenewalError):
+    """Raised when a renewal invariant or state transition is invalid."""
+
+
+class RenewalConflictError(RenewalError):
+    """Raised on optimistic concurrency version mismatch."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        current_version: int,
+        provided_version: int,
+    ) -> None:
+        super().__init__(message)
+        self.current_version = current_version
+        self.provided_version = provided_version
+
 
 # Valid state machine transitions
 ALLOWED_TRANSITIONS: dict[RenewalStatus, set[RenewalStatus]] = {
@@ -44,8 +73,81 @@ ALLOWED_TRANSITIONS: dict[RenewalStatus, set[RenewalStatus]] = {
     RenewalStatus.CANCELLED: set(),  # Terminal
 }
 
+TERMINAL_STATUSES = [RenewalStatus.COMPLETED, RenewalStatus.CANCELLED]
+
 
 class RenewalService:
+    @staticmethod
+    def _get_active_renewal_row(
+        *, session: Session, renewal_id: uuid.UUID
+    ) -> Renewal:
+        statement = select(Renewal).where(
+            Renewal.id == renewal_id,
+            Renewal.deleted_at.is_(None),
+        )
+        renewal = session.exec(statement).first()
+        if not renewal:
+            raise RenewalNotFoundError("Renewal not found")
+        return renewal
+
+    @staticmethod
+    def get_renewal(*, session: Session, renewal_id: uuid.UUID) -> Renewal:
+        """Retrieve a non-deleted renewal by ID or raise RenewalNotFoundError."""
+        return RenewalService._get_active_renewal_row(
+            session=session, renewal_id=renewal_id
+        )
+
+    @staticmethod
+    def get_active_renewal_by_policy(
+        *, session: Session, policy_id: uuid.UUID
+    ) -> Renewal | None:
+        """Return the active (non-terminal, non-deleted) renewal for a policy, if any."""
+        statement = (
+            select(Renewal)
+            .where(Renewal.policy_id == policy_id)
+            .where(col(Renewal.status).notin_(TERMINAL_STATUSES))
+            .where(Renewal.deleted_at.is_(None))
+        )
+        return session.exec(statement).first()
+
+    @staticmethod
+    def get_renewals(
+        *,
+        session: Session,
+        skip: int = 0,
+        limit: int = 100,
+        policy_id: uuid.UUID | None = None,
+        status: RenewalStatus | None = None,
+    ) -> list[Renewal]:
+        """List non-deleted renewals with optional policy and status filtering."""
+        statement = select(Renewal).where(Renewal.deleted_at.is_(None))
+        if policy_id:
+            statement = statement.where(Renewal.policy_id == policy_id)
+        if status:
+            statement = statement.where(Renewal.status == status)
+        statement = (
+            statement.order_by(Renewal.renewal_period_start.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        return list(session.exec(statement).all())
+
+    @staticmethod
+    def count_renewals(
+        *,
+        session: Session,
+        policy_id: uuid.UUID | None = None,
+        status: RenewalStatus | None = None,
+    ) -> int:
+        """Count non-deleted renewals matching optional policy and status filters."""
+        statement = select(Renewal).where(Renewal.deleted_at.is_(None))
+        if policy_id:
+            statement = statement.where(Renewal.policy_id == policy_id)
+        if status:
+            statement = statement.where(Renewal.status == status)
+        count_statement = select(func.count()).select_from(statement.subquery())
+        return session.exec(count_statement).one()
+
     @staticmethod
     def create_renewal(
         *,
@@ -53,20 +155,29 @@ class RenewalService:
         renewal_in: RenewalCreate,
     ) -> Renewal:
         """Create a new renewal enforcing the single-active-renewal invariant."""
-        policy = session.get(Policy, renewal_in.policy_id)
+        policy = session.exec(
+            select(Policy).where(
+                Policy.id == renewal_in.policy_id,
+                Policy.deleted_at.is_(None),
+            )
+        ).first()
         if not policy:
-            raise HTTPException(status_code=404, detail="Policy not found")
+            raise RenewalNotFoundError("Policy not found")
 
-        active_renewal = crud.get_active_renewal_by_policy(
-            session, policy_id=renewal_in.policy_id
+        active_renewal = RenewalService.get_active_renewal_by_policy(
+            session=session, policy_id=renewal_in.policy_id
         )
         if active_renewal:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Policy {policy.policy_number} already has an active renewal ({active_renewal.id}) in state '{active_renewal.status}'.",
+            raise RenewalValidationError(
+                f"Policy {policy.policy_number} already has an active renewal "
+                f"({active_renewal.id}) in state '{active_renewal.status}'."
             )
 
-        return crud.create_renewal(session=session, renewal_in=renewal_in)
+        db_renewal = Renewal.model_validate(renewal_in)
+        session.add(db_renewal)
+        session.commit()
+        session.refresh(db_renewal)
+        return db_renewal
 
     @staticmethod
     def transition_renewal(
@@ -75,35 +186,26 @@ class RenewalService:
         renewal_id: uuid.UUID,
         transition_in: RenewalTransition,
     ) -> Renewal:
-        """
-        Transition a renewal to a new status under Optimistic Concurrency Control (OCC).
-        """
-        renewal = crud.get_renewal(session=session, renewal_id=renewal_id)
-        if not renewal:
-            raise HTTPException(status_code=404, detail="Renewal not found")
+        """Transition a renewal to a new status under Optimistic Concurrency Control."""
+        renewal = RenewalService._get_active_renewal_row(
+            session=session, renewal_id=renewal_id
+        )
 
-        # 1. Optimistic Concurrency Control Check
         if renewal.version != transition_in.version:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "error": "renewal_modified_concurrently",
-                    "message": "Renewal was modified concurrently by another process. Please reload and try again.",
-                    "current_version": renewal.version,
-                    "provided_version": transition_in.version,
-                },
+            raise RenewalConflictError(
+                "Renewal was modified concurrently by another process. Please reload and try again.",
+                current_version=renewal.version,
+                provided_version=transition_in.version,
             )
 
-        # 2. State Machine Validation
         target = transition_in.target_status
         allowed = ALLOWED_TRANSITIONS.get(renewal.status, set())
         if target not in allowed:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid renewal transition from '{renewal.status}' to '{target}'. Permitted: {[s.value for s in allowed]}",
+            raise RenewalValidationError(
+                f"Invalid renewal transition from '{renewal.status}' to '{target}'. "
+                f"Permitted: {[s.value for s in allowed]}"
             )
 
-        # 3. Apply state and tracking timestamps
         now = get_datetime_utc()
         renewal.status = target
         renewal.version += 1
@@ -140,21 +242,57 @@ class RenewalService:
         renewal_in: RenewalUpdate,
     ) -> Renewal:
         """Update renewal metadata with OCC verification."""
-        renewal = crud.get_renewal(session=session, renewal_id=renewal_id)
-        if not renewal:
-            raise HTTPException(status_code=404, detail="Renewal not found")
+        renewal = RenewalService._get_active_renewal_row(
+            session=session, renewal_id=renewal_id
+        )
 
         if renewal.version != renewal_in.version:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "error": "renewal_modified_concurrently",
-                    "message": "Renewal was modified concurrently. Please reload.",
-                    "current_version": renewal.version,
-                    "provided_version": renewal_in.version,
-                },
+            raise RenewalConflictError(
+                "Renewal was modified concurrently. Please reload.",
+                current_version=renewal.version,
+                provided_version=renewal_in.version,
             )
 
-        return crud.update_renewal(
-            session=session, db_renewal=renewal, renewal_in=renewal_in
+        update_data = renewal_in.model_dump(exclude_unset=True, exclude={"version"})
+        renewal.sqlmodel_update(update_data)
+        renewal.version += 1
+        session.add(renewal)
+        session.commit()
+        session.refresh(renewal)
+        return renewal
+
+    @staticmethod
+    def create_invitation(
+        *,
+        session: Session,
+        invitation_in: InvitationCreate,
+        user_id: uuid.UUID | None = None,
+    ) -> Invitation:
+        """Create a renewal invitation linked to an existing renewal and calculation."""
+        RenewalService._get_active_renewal_row(
+            session=session, renewal_id=invitation_in.renewal_id
         )
+        calculation = session.get(PremiumCalculation, invitation_in.calculation_id)
+        if not calculation:
+            raise RenewalNotFoundError("Premium calculation not found")
+
+        invitation_data = invitation_in.model_dump()
+        db_invitation = Invitation(**invitation_data, created_by_id=user_id)
+        session.add(db_invitation)
+        session.commit()
+        session.refresh(db_invitation)
+        return db_invitation
+
+    @staticmethod
+    def get_invitations_for_renewal(
+        *,
+        session: Session,
+        renewal_id: uuid.UUID,
+    ) -> list[Invitation]:
+        """List invitations for a renewal ordered by most recently generated."""
+        statement = (
+            select(Invitation)
+            .where(Invitation.renewal_id == renewal_id)
+            .order_by(Invitation.generated_at.desc())
+        )
+        return list(session.exec(statement).all())

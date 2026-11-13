@@ -8,17 +8,12 @@ from fastapi.responses import FileResponse
 
 from app.api.deps import SecurityDep, SessionDep, StaffUser
 from app.core.storage import storage
-from app.crud import (
-    count_documents,
-    create_document,
-    delete_document,
-    get_documents,
-)
 from app.models import (
     DocumentCreate,
     DocumentPublic,
     DocumentsPublic,
 )
+from app.services.document import DocumentNotFoundError, DocumentService
 
 router = APIRouter()
 
@@ -35,15 +30,12 @@ def read_documents(
     """
     Retrieve documents.
     """
-    documents = get_documents(
+    documents, count = DocumentService.list_documents(
         session=session,
         skip=skip,
         limit=limit,
         entity_id=entity_id,
         entity_type=entity_type,
-    )
-    count = count_documents(
-        session=session, entity_id=entity_id, entity_type=entity_type
     )
     return DocumentsPublic(data=documents, count=count)
 
@@ -88,7 +80,7 @@ async def upload_document(
             doc_metadata=metadata,
         )
 
-        return create_document(session=session, document_in=document_in)
+        return DocumentService.create_document(session=session, document_in=document_in)
 
     except Exception as e:
         raise HTTPException(
@@ -106,9 +98,7 @@ def read_document_by_id(
     """
     Get document by ID.
     """
-    from app.models import Document
-
-    document = session.get(Document, id)
+    document = DocumentService.get_document(session=session, document_id=id)
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     return document
@@ -124,9 +114,7 @@ def remove_document(
     """
     Delete a document.
     """
-    from app.models import Document
-
-    document = session.get(Document, id)
+    document = DocumentService.get_document(session=session, document_id=id)
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -134,8 +122,10 @@ def remove_document(
     storage.delete_file(document.file_path)
 
     # Delete from DB
-    delete_document(session=session, db_document=document)
-    return document
+    try:
+        return DocumentService.delete_document(session=session, document_id=id)
+    except DocumentNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get("/{id}/download")
@@ -148,9 +138,7 @@ def download_document(
     """
     Download/View a document.
     """
-    from app.models import Document
-
-    document = session.get(Document, id)
+    document = DocumentService.get_document(session=session, document_id=id)
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 

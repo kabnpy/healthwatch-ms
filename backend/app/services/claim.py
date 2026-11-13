@@ -2,12 +2,34 @@ import uuid
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
-from app.models import Claim, ClaimStatus, RiskNote
+from app.models import (
+    Claim,
+    ClaimCreate,
+    ClaimEvent,
+    ClaimEventCreate,
+    ClaimStatus,
+    ClaimUpdate,
+    Policy,
+    RiskNote,
+    get_datetime_utc,
+)
 
 
-class ClaimAdvocacyService:
+class ClaimError(Exception):
+    """Base domain error for Claim operations."""
+
+
+class ClaimNotFoundError(ClaimError):
+    """Raised when a requested Claim does not exist or is soft-deleted."""
+
+
+class ClaimValidationError(ClaimError, ValueError):
+    """Raised when a Claim invariant or status transition fails."""
+
+
+class ClaimService:
     ALLOWED_TRANSITIONS: dict[ClaimStatus, set[ClaimStatus]] = {
         ClaimStatus.INTIMATED: {
             ClaimStatus.DOCUMENTS_PENDING,
@@ -48,12 +70,88 @@ class ClaimAdvocacyService:
     }
 
     @staticmethod
+    def get_claim(*, session: Session, claim_id: uuid.UUID) -> Claim:
+        claim = session.exec(
+            select(Claim).where(
+                Claim.id == claim_id,
+                Claim.deleted_at.is_(None),  # type: ignore[union-attr]
+            )
+        ).first()
+        if not claim:
+            raise ClaimNotFoundError("Claim not found")
+        return claim
+
+    @staticmethod
+    def list_claims(
+        *,
+        session: Session,
+        skip: int = 0,
+        limit: int = 100,
+        policy_id: uuid.UUID | None = None,
+        client_id: uuid.UUID | None = None,
+    ) -> tuple[list[Claim], int]:
+        statement = select(Claim).where(Claim.deleted_at.is_(None))  # type: ignore[union-attr]
+        if policy_id:
+            statement = statement.where(Claim.policy_id == policy_id)
+        if client_id:
+            statement = statement.join(Policy).where(Policy.client_id == client_id)
+
+        count_statement = select(func.count()).select_from(statement.subquery())
+        count = session.exec(count_statement).one()
+        claims = list(session.exec(statement.offset(skip).limit(limit)).all())
+        return claims, count
+
+    @staticmethod
+    def create_claim(*, session: Session, claim_in: ClaimCreate) -> Claim:
+        db_obj = Claim.model_validate(claim_in)
+        session.add(db_obj)
+        session.commit()
+        session.refresh(db_obj)
+        return db_obj
+
+    @staticmethod
+    def update_claim(
+        *, session: Session, claim_id: uuid.UUID, claim_in: ClaimUpdate
+    ) -> Claim:
+        db_claim = ClaimService.get_claim(session=session, claim_id=claim_id)
+        if claim_in.status is not None and claim_in.status != db_claim.status:
+            if not ClaimService.validate_transition(db_claim.status, claim_in.status):
+                raise ClaimValidationError(
+                    f"Invalid claim status transition from {db_claim.status.value} to {claim_in.status.value}"
+                )
+
+        claim_data = claim_in.model_dump(exclude_unset=True)
+        db_claim.sqlmodel_update(claim_data)
+        session.add(db_claim)
+        session.commit()
+        session.refresh(db_claim)
+        return db_claim
+
+    @staticmethod
+    def delete_claim(*, session: Session, claim_id: uuid.UUID) -> None:
+        db_claim = ClaimService.get_claim(session=session, claim_id=claim_id)
+        db_claim.deleted_at = get_datetime_utc()
+        session.add(db_claim)
+        session.commit()
+
+    @staticmethod
+    def create_claim_event(
+        *, session: Session, claim_event_in: ClaimEventCreate
+    ) -> ClaimEvent:
+        ClaimService.get_claim(session=session, claim_id=claim_event_in.claim_id)
+        db_obj = ClaimEvent.model_validate(claim_event_in)
+        session.add(db_obj)
+        session.commit()
+        session.refresh(db_obj)
+        return db_obj
+
+    @staticmethod
     def validate_transition(
         current_status: ClaimStatus, target_status: ClaimStatus
     ) -> bool:
         if current_status == target_status:
             return True
-        allowed = ClaimAdvocacyService.ALLOWED_TRANSITIONS.get(current_status, set())
+        allowed = ClaimService.ALLOWED_TRANSITIONS.get(current_status, set())
         return target_status in allowed
 
     @staticmethod
@@ -74,7 +172,12 @@ class ClaimAdvocacyService:
         )
 
         # 2. Claims aggregation
-        claims = session.exec(select(Claim).where(Claim.policy_id == policy_id)).all()
+        claims = session.exec(
+            select(Claim).where(
+                Claim.policy_id == policy_id,
+                Claim.deleted_at.is_(None),  # type: ignore[union-attr]
+            )
+        ).all()
 
         total_settled = Decimal("0.00")
         total_open_reserves = Decimal("0.00")
@@ -131,3 +234,6 @@ class ClaimAdvocacyService:
             "advocacy_rating": advocacy_rating,
             "advocacy_note": advocacy_note,
         }
+
+
+ClaimAdvocacyService = ClaimService

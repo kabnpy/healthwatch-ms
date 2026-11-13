@@ -3,11 +3,13 @@ import logging
 import uuid
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any, cast
 
 from pydantic import BaseModel
+from sqlalchemy import func
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, select
 
-from app import crud
 from app.models import (
     Client,
     Invoice,
@@ -118,6 +120,123 @@ def _month_date_range(billing_month: str) -> tuple[date, date]:
 
 class ClientLedgerService:
     @staticmethod
+    def create_invoice(
+        *,
+        session: Session,
+        invoice_in: InvoiceCreate,
+        policy_id: uuid.UUID | None = None,
+    ) -> Invoice:
+        """Create a single invoice after validating client, optional policy ownership, and number uniqueness."""
+        client = session.exec(
+            select(Client).where(
+                Client.id == invoice_in.client_id,
+                Client.deleted_at.is_(None),
+            )
+        ).first()
+        if not client:
+            raise LedgerNotFoundError(f"Client {invoice_in.client_id} not found")
+
+        if policy_id is not None:
+            policy = session.exec(
+                select(Policy).where(
+                    Policy.id == policy_id,
+                    Policy.deleted_at.is_(None),
+                )
+            ).first()
+            if not policy:
+                raise LedgerNotFoundError(f"Policy {policy_id} not found")
+            if policy.client_id != invoice_in.client_id:
+                raise LedgerValidationError(
+                    f"Policy {policy_id} does not belong to client {invoice_in.client_id}."
+                )
+
+        existing = session.exec(
+            select(Invoice).where(
+                Invoice.invoice_number == invoice_in.invoice_number
+            )
+        ).first()
+        if existing:
+            raise LedgerValidationError(
+                f"Invoice number '{invoice_in.invoice_number}' already exists."
+            )
+
+        db_invoice = Invoice.model_validate(invoice_in)
+        session.add(db_invoice)
+        session.commit()
+        session.refresh(db_invoice)
+        return db_invoice
+
+    @staticmethod
+    def get_invoice(*, session: Session, invoice_id: uuid.UUID) -> Invoice | None:
+        statement = (
+            select(Invoice)
+            .where(Invoice.id == invoice_id, col(Invoice.deleted_at).is_(None))
+            .options(
+                selectinload(cast(Any, Invoice.payment_allocations)),
+                selectinload(cast(Any, Invoice.line_items)),
+            )
+        )
+        return session.exec(statement).first()
+
+    @staticmethod
+    def get_invoices(
+        *,
+        session: Session,
+        skip: int = 0,
+        limit: int = 100,
+        client_id: uuid.UUID | None = None,
+    ) -> list[Invoice]:
+        statement = (
+            select(Invoice)
+            .where(col(Invoice.deleted_at).is_(None))
+            .options(
+                selectinload(cast(Any, Invoice.payment_allocations)),
+                selectinload(cast(Any, Invoice.line_items)),
+            )
+        )
+        if client_id is not None:
+            statement = statement.where(Invoice.client_id == client_id)
+        statement = statement.offset(skip).limit(limit)
+        return list(session.exec(statement).all())
+
+    @staticmethod
+    def count_invoices(
+        *,
+        session: Session,
+        client_id: uuid.UUID | None = None,
+    ) -> int:
+        statement = select(Invoice).where(col(Invoice.deleted_at).is_(None))
+        if client_id is not None:
+            statement = statement.where(Invoice.client_id == client_id)
+        count_statement = select(func.count()).select_from(statement.subquery())
+        return session.exec(count_statement).one()
+
+    @staticmethod
+    def create_invoice_line_item(
+        *, session: Session, line_item_in: InvoiceLineItemCreate
+    ) -> InvoiceLineItem:
+        invoice = session.exec(
+            select(Invoice).where(
+                Invoice.id == line_item_in.invoice_id,
+                col(Invoice.deleted_at).is_(None),
+            )
+        ).first()
+        if not invoice:
+            raise LedgerNotFoundError(f"Invoice {line_item_in.invoice_id} not found")
+
+        risk_note = session.get(RiskNote, line_item_in.risk_note_id)
+        if not risk_note:
+            raise LedgerNotFoundError(
+                f"RiskNote {line_item_in.risk_note_id} not found"
+            )
+
+        db_item = InvoiceLineItem.model_validate(line_item_in)
+        session.add(db_item)
+        session.commit()
+        session.refresh(db_item)
+        return db_item
+
+    @staticmethod
     def record_payment(
         *,
         session: Session,
@@ -125,7 +244,68 @@ class ClientLedgerService:
     ) -> PaymentRecord:
         if payment_in.amount <= Decimal("0.00"):
             raise LedgerValidationError("Payment amount must be greater than zero.")
-        return crud.create_payment_record(session=session, payment_in=payment_in)
+        client = session.exec(
+            select(Client).where(
+                Client.id == payment_in.client_id,
+                col(Client.deleted_at).is_(None),
+            )
+        ).first()
+        if not client:
+            raise LedgerNotFoundError(f"Client {payment_in.client_id} not found")
+
+        db_payment = PaymentRecord(
+            client_id=payment_in.client_id,
+            amount=payment_in.amount,
+            unallocated_amount=payment_in.amount,
+            payment_date=payment_in.payment_date,
+            payment_method=payment_in.payment_method,
+            reference_number=payment_in.reference_number,
+            payer_name=payment_in.payer_name,
+            proof_document_id=payment_in.proof_document_id,
+        )
+        session.add(db_payment)
+        session.commit()
+        session.refresh(db_payment)
+        return db_payment
+
+    @staticmethod
+    def get_payment_record(
+        *, session: Session, payment_id: uuid.UUID
+    ) -> PaymentRecord | None:
+        return session.exec(
+            select(PaymentRecord).where(
+                PaymentRecord.id == payment_id,
+                col(PaymentRecord.deleted_at).is_(None),
+            )
+        ).first()
+
+    @staticmethod
+    def get_payment_records(
+        *,
+        session: Session,
+        skip: int = 0,
+        limit: int = 100,
+        client_id: uuid.UUID | None = None,
+    ) -> list[PaymentRecord]:
+        statement = select(PaymentRecord).where(col(PaymentRecord.deleted_at).is_(None))
+        if client_id is not None:
+            statement = statement.where(PaymentRecord.client_id == client_id)
+        statement = (
+            statement.order_by(col(PaymentRecord.payment_date).desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        return list(session.exec(statement).all())
+
+    @staticmethod
+    def count_payment_records(
+        *, session: Session, client_id: uuid.UUID | None = None
+    ) -> int:
+        statement = select(PaymentRecord).where(col(PaymentRecord.deleted_at).is_(None))
+        if client_id is not None:
+            statement = statement.where(PaymentRecord.client_id == client_id)
+        count_statement = select(func.count()).select_from(statement.subquery())
+        return session.exec(count_statement).one()
 
     @staticmethod
     def allocate_payment(
@@ -179,9 +359,9 @@ class ClientLedgerService:
                 f"Allocation amount ({allocation_in.amount}) exceeds invoice balance due ({current_balance})."
             )
 
-        allocation = crud.create_payment_allocation(
-            session=session, allocation_in=allocation_in
-        )
+        allocation = PaymentAllocation.model_validate(allocation_in)
+        session.add(allocation)
+        session.flush()
 
         payment.unallocated_amount = (
             payment.unallocated_amount - allocation_in.amount
@@ -193,6 +373,52 @@ class ClientLedgerService:
         session.commit()
         session.refresh(allocation)
         return allocation
+
+    @staticmethod
+    def get_payment_allocation(
+        *, session: Session, allocation_id: uuid.UUID
+    ) -> PaymentAllocation | None:
+        return session.get(PaymentAllocation, allocation_id)
+
+    @staticmethod
+    def get_payment_allocations(
+        *,
+        session: Session,
+        skip: int = 0,
+        limit: int = 100,
+        payment_record_id: uuid.UUID | None = None,
+        invoice_id: uuid.UUID | None = None,
+    ) -> list[PaymentAllocation]:
+        statement = select(PaymentAllocation)
+        if payment_record_id is not None:
+            statement = statement.where(
+                PaymentAllocation.payment_record_id == payment_record_id
+            )
+        if invoice_id is not None:
+            statement = statement.where(PaymentAllocation.invoice_id == invoice_id)
+        statement = (
+            statement.order_by(col(PaymentAllocation.allocated_at).desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        return list(session.exec(statement).all())
+
+    @staticmethod
+    def count_payment_allocations(
+        *,
+        session: Session,
+        payment_record_id: uuid.UUID | None = None,
+        invoice_id: uuid.UUID | None = None,
+    ) -> int:
+        statement = select(PaymentAllocation)
+        if payment_record_id is not None:
+            statement = statement.where(
+                PaymentAllocation.payment_record_id == payment_record_id
+            )
+        if invoice_id is not None:
+            statement = statement.where(PaymentAllocation.invoice_id == invoice_id)
+        count_statement = select(func.count()).select_from(statement.subquery())
+        return session.exec(count_statement).one()
 
     @staticmethod
     def reverse_allocation(
@@ -441,6 +667,42 @@ class ClientLedgerService:
         return db_batch
 
     @staticmethod
+    def get_invoice_batch(
+        *, session: Session, batch_id: uuid.UUID
+    ) -> InvoiceBatch | None:
+        return session.get(InvoiceBatch, batch_id)
+
+    @staticmethod
+    def get_invoice_batches(
+        *,
+        session: Session,
+        skip: int = 0,
+        limit: int = 100,
+        client_id: uuid.UUID | None = None,
+    ) -> list[InvoiceBatch]:
+        statement = select(InvoiceBatch)
+        if client_id is not None:
+            statement = statement.where(InvoiceBatch.client_id == client_id)
+        statement = (
+            statement.order_by(col(InvoiceBatch.generated_at).desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        return list(session.exec(statement).all())
+
+    @staticmethod
+    def count_invoice_batches(
+        *,
+        session: Session,
+        client_id: uuid.UUID | None = None,
+    ) -> int:
+        statement = select(InvoiceBatch)
+        if client_id is not None:
+            statement = statement.where(InvoiceBatch.client_id == client_id)
+        count_statement = select(func.count()).select_from(statement.subquery())
+        return session.exec(count_statement).one()
+
+    @staticmethod
     def create_bulk_invoice(
         *,
         session: Session,
@@ -453,7 +715,10 @@ class ClientLedgerService:
 
         requested_ids = list(dict.fromkeys(bulk_in.risk_note_ids))
         risk_notes = session.exec(
-            select(RiskNote).where(col(RiskNote.id).in_(requested_ids))
+            select(RiskNote).where(
+                col(RiskNote.id).in_(requested_ids),
+                RiskNote.deleted_at.is_(None),
+            )
         ).all()
         if len(risk_notes) != len(requested_ids):
             found_ids = {rn.id for rn in risk_notes}
@@ -464,7 +729,10 @@ class ClientLedgerService:
 
         policy_ids = {rn.policy_id for rn in risk_notes}
         policies = session.exec(
-            select(Policy).where(col(Policy.id).in_(policy_ids))
+            select(Policy).where(
+                col(Policy.id).in_(policy_ids),
+                Policy.deleted_at.is_(None),
+            )
         ).all()
         policy_client_by_id = {p.id: p.client_id for p in policies}
         mismatched = [

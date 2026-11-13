@@ -11,7 +11,6 @@ from typing import Any
 
 from sqlmodel import Session, select
 
-from app import crud
 from app.models import (
     Client,
     Insurer,
@@ -26,6 +25,7 @@ from app.models import (
     VehicleCreate,
 )
 from app.services.policy import generate_risk_note_number, policy_service
+from app.services.portfolio import portfolio_service
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +60,8 @@ def seed_portfolios_and_assets(
             )
         ).first()
         if not v:
-            v = crud.create_vehicle(
-                session,
+            v = portfolio_service.create_vehicle(
+                session=session,
                 vehicle_in=VehicleCreate(
                     policy_id=pol.id,
                     registration_number=reg_no,
@@ -199,7 +199,7 @@ def seed_portfolios_and_assets(
     start_kiptoo_med = today - timedelta(days=150)
     _end_kiptoo_med = today + timedelta(days=215)
     if not pol_kiptoo_med:
-        pol_kiptoo_med = crud.create_policy(
+        pol_kiptoo_med = policy_service.create_policy_container(
             session=session,
             policy_in=PolicyCreate(
                 policy_number="JUB/MED/FAM/2023/11029",
@@ -269,7 +269,7 @@ def seed_portfolios_and_assets(
     start_grace_dom = today - timedelta(days=100)
     end_grace_dom = today + timedelta(days=265)
     if not pol_grace_dom:
-        pol_grace_dom = crud.create_policy(
+        pol_grace_dom = policy_service.create_policy_container(
             session=session,
             policy_in=PolicyCreate(
                 policy_number="BRT/DOM/2024/001924",
@@ -305,7 +305,7 @@ def seed_portfolios_and_assets(
                 "domestic_servants_count": 2,
             },
         )
-        crud.create_risk_note(session=session, risk_note_in=rn_in)
+        policy_service.create_risk_note(session=session, risk_note_in=rn_in)
     else:
         for rn in pol_grace_dom.risk_notes:
             rn.coverage_start = start_grace_dom
@@ -424,7 +424,7 @@ def seed_portfolios_and_assets(
     start_amina_med = today - timedelta(days=340)
     _end_amina_med = today + timedelta(days=25)
     if not pol_amina_med:
-        pol_amina_med = crud.create_policy(
+        pol_amina_med = policy_service.create_policy_container(
             session=session,
             policy_in=PolicyCreate(
                 policy_number="OM/MED/2024/09841",
@@ -584,7 +584,7 @@ def seed_portfolios_and_assets(
     start_sarah = today - timedelta(days=45)
     _end_sarah = today + timedelta(days=320)
     if not pol_sarah_med:
-        pol_sarah_med = crud.create_policy(
+        pol_sarah_med = policy_service.create_policy_container(
             session=session,
             policy_in=PolicyCreate(
                 policy_number="BRT/MED/2025/00189",
@@ -699,7 +699,7 @@ def seed_portfolios_and_assets(
     start_mutiso_dom = today - timedelta(days=95)
     end_mutiso_dom = today + timedelta(days=270)
     if not pol_mutiso_dom:
-        pol_mutiso_dom = crud.create_policy(
+        pol_mutiso_dom = policy_service.create_policy_container(
             session=session,
             policy_in=PolicyCreate(
                 policy_number="JUB/DOM/2024/00812",
@@ -734,7 +734,7 @@ def seed_portfolios_and_assets(
                 "domestic_servants_count": 4,
             },
         )
-        crud.create_risk_note(session=session, risk_note_in=rn_in)
+        policy_service.create_risk_note(session=session, risk_note_in=rn_in)
     else:
         for rn in pol_mutiso_dom.risk_notes:
             rn.coverage_start = start_mutiso_dom
@@ -846,7 +846,7 @@ def seed_portfolios_and_assets(
     start_rv_wiba = today - timedelta(days=140)
     end_rv_wiba = today + timedelta(days=225)
     if not pol_rv_wiba:
-        pol_rv_wiba = crud.create_policy(
+        pol_rv_wiba = policy_service.create_policy_container(
             session=session,
             policy_in=PolicyCreate(
                 policy_number="JUB/WIBA/2024/00341",
@@ -880,7 +880,7 @@ def seed_portfolios_and_assets(
                 "driver_count": 18,
             },
         )
-        crud.create_risk_note(session=session, risk_note_in=rn_in)
+        policy_service.create_risk_note(session=session, risk_note_in=rn_in)
     else:
         for rn in pol_rv_wiba.risk_notes:
             rn.coverage_start = start_rv_wiba
@@ -943,7 +943,7 @@ def seed_portfolios_and_assets(
     start_bn = today - timedelta(days=30)
     end_bn = today + timedelta(days=335)
     if not pol_bluenile_fire:
-        pol_bluenile_fire = crud.create_policy(
+        pol_bluenile_fire = policy_service.create_policy_container(
             session=session,
             policy_in=PolicyCreate(
                 policy_number="CIC/FIRE/2025/00234",
@@ -977,7 +977,7 @@ def seed_portfolios_and_assets(
                 "stock_sum_insured": "40000000",
             },
         )
-        crud.create_risk_note(session=session, risk_note_in=rn_in)
+        policy_service.create_risk_note(session=session, risk_note_in=rn_in)
     else:
         for rn in pol_bluenile_fire.risk_notes:
             rn.coverage_start = start_bn
@@ -995,7 +995,7 @@ def seed_portfolios_and_assets(
     start_d = today
     end_d = today + timedelta(days=10)
     if not pol_draft_renewal:
-        pol_draft_renewal = crud.create_policy(
+        pol_draft_renewal = policy_service.create_policy_container(
             session=session,
             policy_in=PolicyCreate(
                 policy_number="OM/MOT/DRAFT/2026/001",
@@ -1026,7 +1026,7 @@ def seed_portfolios_and_assets(
                 "extensions": {"excess_protector": True},
             },
         )
-        crud.create_risk_note(session=session, risk_note_in=rn_draft)
+        policy_service.create_risk_note(session=session, risk_note_in=rn_draft)
     else:
         for rn in pol_draft_renewal.risk_notes:
             rn.coverage_start = start_d

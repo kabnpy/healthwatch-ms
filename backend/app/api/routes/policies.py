@@ -5,33 +5,20 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 
 from app.api.deps import CurrentUser, SessionDep, StaffUser
-from app.api.utils import prepare_policy_public
-from app.crud import (
-    count_policies,
-    get_policies,
-    get_policy,
-    get_policy_by_policy_number,
-)
-from app.crud import (
-    delete_policy as crud_delete_policy,
-)
-from app.crud import (
-    update_policy as crud_update_policy,
-)
+from app.api.utils import prepare_policy_public, raise_policy_http_error
 from app.models import (
     EndorsementCreate,
     Message,
     PoliciesPublic,
-    Policy,
     PolicyCreateExtended,
     PolicyPublic,
     PolicyUpdate,
-    Product,
     RiskNotePublic,
     RiskNotesPublic,
 )
 from app.schemas import BaseFinancialBreakdown, QuoteRequest, QuoteResponse
-from app.services.policy import policy_service
+from app.services.catalog import CatalogNotFoundError, catalog_service
+from app.services.policy import PolicyError, policy_service
 from app.services.premium_calculation import RatingValidationError, calculate_premium
 
 router = APIRouter()
@@ -48,8 +35,7 @@ def read_policies(
     """
     Retrieve policies.
     """
-    count = count_policies(session=session, client_id=client_id)
-    policies = get_policies(
+    policies, count = policy_service.list_policies(
         session=session, skip=skip, limit=limit, client_id=client_id
     )
     return PoliciesPublic(
@@ -62,9 +48,10 @@ def read_policy(session: SessionDep, _current_user: CurrentUser, id: uuid.UUID) 
     """
     Get policy by ID.
     """
-    policy = get_policy(session=session, id=id)
-    if not policy:
-        raise HTTPException(status_code=404, detail="Policy not found")
+    try:
+        policy = policy_service.get_policy(session=session, policy_id=id)
+    except PolicyError as exc:
+        raise_policy_http_error(exc)
     return prepare_policy_public(policy)
 
 
@@ -78,9 +65,12 @@ def get_policy_quote(
     """
     Get a non-persistent premium quote breakdown.
     """
-    product = session.get(Product, quote_in.product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+    try:
+        product = catalog_service.get_product_or_raise(
+            session=session, product_id=quote_in.product_id
+        )
+    except CatalogNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     try:
         result = calculate_premium(
@@ -116,24 +106,17 @@ def create_policy(
     """
     Create new policy with initial risk note.
     """
-    existing_policy = get_policy_by_policy_number(
-        session=session, policy_number=policy_in.policy_number
-    )
-    if existing_policy:
-        raise HTTPException(
-            status_code=400,
-            detail="The policy with this number already exists in the system.",
+    try:
+        policy = policy_service.create_policy(
+            session=session,
+            policy_in=policy_in,
+            cover_snapshot=policy_in.risk_details,
+            coverage_start=policy_in.coverage_start,
+            coverage_end=policy_in.coverage_end,
+            current_user_id=current_user.id,
         )
-
-    policy = policy_service.create_policy(
-        session=session,
-        policy_in=policy_in,
-        cover_snapshot=policy_in.risk_details,
-        coverage_start=policy_in.coverage_start,
-        coverage_end=policy_in.coverage_end,
-        current_user_id=current_user.id,
-    )
-    session.refresh(policy)
+    except PolicyError as exc:
+        raise_policy_http_error(exc)
     return prepare_policy_public(policy)
 
 
@@ -148,16 +131,17 @@ def create_endorsement(
     """
     Create a policy endorsement.
     """
-    res = policy_service.create_endorsement(
-        session=session,
-        policy_id=id,
-        updated_cover_snapshot=endorsement_in.updated_risk_details,
-        change_description=endorsement_in.change_description,
-        effective_date=endorsement_in.effective_date,
-        current_user_id=current_user.id,
-    )
-    session.refresh(res)
-    return res
+    try:
+        return policy_service.create_endorsement(
+            session=session,
+            policy_id=id,
+            updated_cover_snapshot=endorsement_in.updated_risk_details,
+            change_description=endorsement_in.change_description,
+            effective_date=endorsement_in.effective_date,
+            current_user_id=current_user.id,
+        )
+    except PolicyError as exc:
+        raise_policy_http_error(exc)
 
 
 @router.put("/{id}", response_model=PolicyPublic)
@@ -171,11 +155,12 @@ def update_policy(
     """
     Update a policy container.
     """
-    policy = session.get(Policy, id)
-    if not policy:
-        raise HTTPException(status_code=404, detail="Policy not found")
-
-    policy = crud_update_policy(session=session, db_policy=policy, policy_in=policy_in)
+    try:
+        policy = policy_service.update_policy(
+            session=session, policy_id=id, policy_in=policy_in
+        )
+    except PolicyError as exc:
+        raise_policy_http_error(exc)
     return prepare_policy_public(policy)
 
 
@@ -184,10 +169,10 @@ def delete_policy(session: SessionDep, _current_user: StaffUser, id: uuid.UUID) 
     """
     Delete a policy.
     """
-    policy = session.get(Policy, id)
-    if not policy:
-        raise HTTPException(status_code=404, detail="Policy not found")
-    crud_delete_policy(session=session, db_policy=policy)
+    try:
+        policy_service.delete_policy(session=session, policy_id=id)
+    except PolicyError as exc:
+        raise_policy_http_error(exc)
     return Message(message="Policy deleted successfully")
 
 
@@ -198,8 +183,5 @@ def read_policy_risk_notes(
     """
     Get risk notes for a policy.
     """
-    from app.crud import count_risk_notes, get_risk_notes
-
-    count = count_risk_notes(session=session, policy_id=id)
-    risk_notes = get_risk_notes(session=session, policy_id=id)
+    risk_notes, count = policy_service.list_risk_notes(session=session, policy_id=id)
     return RiskNotesPublic(data=risk_notes, count=count)

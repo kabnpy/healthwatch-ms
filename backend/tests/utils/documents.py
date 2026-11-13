@@ -2,8 +2,8 @@ import uuid
 
 from sqlmodel import Session
 
-from app import crud
 from app.models import Document, DocumentCreate, DocumentEntityType, DocumentType
+from app.services.document import DocumentService
 
 
 def create_random_document(
@@ -25,4 +25,4 @@ def create_random_document(
         mime_type="application/pdf",
         doc_metadata={"test": True},
     )
-    return crud.create_document(session=db, document_in=document_in)
+    return DocumentService.create_document(session=db, document_in=document_in)

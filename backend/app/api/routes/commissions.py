@@ -5,7 +5,6 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
-from app import crud
 from app.api.deps import CurrentUser, SessionDep, StaffUser
 from app.models import (
     CommissionScheduleCreate,
@@ -13,7 +12,7 @@ from app.models import (
     CommissionSchedulesPublic,
     ProductLine,
 )
-from app.services.commission import CommissionService
+from app.services.commission import CommissionService, CommissionValidationError
 
 router = APIRouter()
 
@@ -34,10 +33,9 @@ def read_commission_schedules(
     insurer_id: uuid.UUID | None = None,
 ) -> Any:
     """Retrieve insurer commission schedules."""
-    schedules = crud.get_commission_schedules(
+    schedules, count = CommissionService.list_commission_schedules(
         session=session, skip=skip, limit=limit, insurer_id=insurer_id
     )
-    count = crud.count_commission_schedules(session=session, insurer_id=insurer_id)
     return CommissionSchedulesPublic(data=schedules, count=count)
 
 
@@ -51,7 +49,9 @@ def create_commission_schedule(
     schedule_in: CommissionScheduleCreate,
 ) -> Any:
     """Create a new commission schedule for an insurer and product line."""
-    return crud.create_commission_schedule(session=session, schedule_in=schedule_in)
+    return CommissionService.create_commission_schedule(
+        session=session, schedule_in=schedule_in
+    )
 
 
 @router.post("/calculate")
@@ -67,5 +67,5 @@ def calculate_remittance(
             commission_rate=request.commission_rate,
             product_line=request.product_line,
         )
-    except ValueError as e:
+    except CommissionValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))

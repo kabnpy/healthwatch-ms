@@ -1,20 +1,16 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.api.deps import CurrentUser, SessionDep, StaffUser
-from app.crud import (
-    count_risk_notes,
-    get_risk_notes,
-)
+from app.api.utils import raise_policy_http_error
 from app.models import (
-    RiskNote,
     RiskNotePublic,
     RiskNoteRevisionCreate,
     RiskNotesPublic,
 )
-from app.services.policy import policy_service
+from app.services.policy import PolicyError, policy_service
 
 router = APIRouter()
 
@@ -32,13 +28,7 @@ def read_risk_notes(
     """
     Retrieve risk notes.
     """
-    count = count_risk_notes(
-        session=session,
-        policy_id=policy_id,
-        client_id=client_id,
-        uninvoiced_only=uninvoiced_only,
-    )
-    risk_notes = get_risk_notes(
+    risk_notes, count = policy_service.list_risk_notes(
         session=session,
         skip=skip,
         limit=limit,
@@ -56,10 +46,10 @@ def read_risk_note(
     """
     Get risk note by ID.
     """
-    risk_note = session.get(RiskNote, id)
-    if not risk_note:
-        raise HTTPException(status_code=404, detail="Risk note not found")
-    return risk_note
+    try:
+        return policy_service.get_risk_note(session=session, risk_note_id=id)
+    except PolicyError as exc:
+        raise_policy_http_error(exc)
 
 
 @router.post("/{id}/revisions", response_model=RiskNotePublic)
@@ -74,9 +64,12 @@ def create_risk_note_revision(
     Append a non-financial clause revision for an existing risk note.
     Preserves financial amounts and marks the prior risk note as REPLACED.
     """
-    return policy_service.create_risk_note_revision(
-        session=session,
-        risk_note_id=id,
-        revision_in=revision_in,
-        created_by_id=_current_user.id,
-    )
+    try:
+        return policy_service.create_risk_note_revision(
+            session=session,
+            risk_note_id=id,
+            revision_in=revision_in,
+            created_by_id=_current_user.id,
+        )
+    except PolicyError as exc:
+        raise_policy_http_error(exc)

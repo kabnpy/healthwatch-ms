@@ -3,9 +3,9 @@ from datetime import date, timedelta
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app import crud
 from app.core.config import settings
-from app.models import Product
+from app.models import InsurerCreate, Product
+from app.services.catalog import catalog_service
 from tests.utils.client import create_random_client
 from tests.utils.utils import random_lower_string
 
@@ -14,8 +14,9 @@ def test_motor_private_validation_fails_with_missing_fields(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     # 1. Create a Motor Private product
-    insurer_in = {"name": random_lower_string()}
-    insurer = crud.create_insurer(session=db, insurer_in=insurer_in)
+    insurer = catalog_service.create_insurer(
+        session=db, insurer_in=InsurerCreate(name=random_lower_string())
+    )
     product = Product(
         insurer_id=insurer.id, name="Motor Private", class_of_insurance="Motor Private"
     )
@@ -50,8 +51,9 @@ def test_motor_private_validation_passes_with_correct_fields(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     # 1. Create a Motor Private product
-    insurer_in = {"name": random_lower_string()}
-    insurer = crud.create_insurer(session=db, insurer_in=insurer_in)
+    insurer = catalog_service.create_insurer(
+        session=db, insurer_in=InsurerCreate(name=random_lower_string())
+    )
     product = Product(
         insurer_id=insurer.id, name="Motor Private", class_of_insurance="Motor Private"
     )

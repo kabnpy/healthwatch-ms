@@ -1,7 +1,26 @@
+import uuid
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
-from app.models import ProductLine
+from sqlmodel import Session, func, select
+
+from app.models import (
+    CommissionSchedule,
+    CommissionScheduleCreate,
+    ProductLine,
+)
+
+
+class CommissionError(Exception):
+    """Base domain error for Commission operations."""
+
+
+class CommissionNotFoundError(CommissionError):
+    """Raised when a CommissionSchedule does not exist."""
+
+
+class CommissionValidationError(CommissionError, ValueError):
+    """Raised when Commission calculation or schedule validation fails."""
 
 
 class CommissionService:
@@ -24,6 +43,50 @@ class CommissionService:
     }
 
     @staticmethod
+    def get_commission_schedule(
+        *, session: Session, schedule_id: uuid.UUID
+    ) -> CommissionSchedule:
+        schedule = session.get(CommissionSchedule, schedule_id)
+        if not schedule:
+            raise CommissionNotFoundError("Commission schedule not found")
+        return schedule
+
+    @staticmethod
+    def list_commission_schedules(
+        *,
+        session: Session,
+        skip: int = 0,
+        limit: int = 100,
+        insurer_id: uuid.UUID | None = None,
+    ) -> tuple[list[CommissionSchedule], int]:
+        statement = select(CommissionSchedule).where(
+            CommissionSchedule.is_active.is_(True)  # type: ignore[attr-defined]
+        )
+        if insurer_id:
+            statement = statement.where(CommissionSchedule.insurer_id == insurer_id)
+
+        count_statement = select(func.count()).select_from(statement.subquery())
+        count = session.exec(count_statement).one()
+        schedules = list(
+            session.exec(
+                statement.order_by(CommissionSchedule.effective_from.desc())  # type: ignore[attr-defined]
+                .offset(skip)
+                .limit(limit)
+            ).all()
+        )
+        return schedules, count
+
+    @staticmethod
+    def create_commission_schedule(
+        *, session: Session, schedule_in: CommissionScheduleCreate
+    ) -> CommissionSchedule:
+        db_schedule = CommissionSchedule.model_validate(schedule_in)
+        session.add(db_schedule)
+        session.commit()
+        session.refresh(db_schedule)
+        return db_schedule
+
+    @staticmethod
     def calculate_commission(
         net_base_premium: Decimal,
         gross_invoice_total: Decimal,
@@ -36,9 +99,9 @@ class CommissionService:
         and net carrier remittance amount with strict Decimal precision.
         """
         if net_base_premium < 0:
-            raise ValueError("Net base premium must be non-negative.")
+            raise CommissionValidationError("Net base premium must be non-negative.")
         if gross_invoice_total < net_base_premium:
-            raise ValueError(
+            raise CommissionValidationError(
                 "Gross invoice total cannot be less than net base premium."
             )
 

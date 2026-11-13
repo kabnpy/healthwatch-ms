@@ -1,4 +1,25 @@
+from typing import NoReturn
+
+from fastapi import HTTPException
+
 from app.models import Policy, PolicyPublic
+from app.services.policy import (
+    PolicyConflictError,
+    PolicyError,
+    PolicyNotFoundError,
+    PolicyValidationError,
+)
+
+
+def raise_policy_http_error(exc: PolicyError) -> NoReturn:
+    """Map domain PolicyError subclasses to HTTP status codes."""
+    if isinstance(exc, PolicyNotFoundError):
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    if isinstance(exc, PolicyConflictError):
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    if isinstance(exc, PolicyValidationError):
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 def prepare_policy_public(policy: Policy) -> PolicyPublic:

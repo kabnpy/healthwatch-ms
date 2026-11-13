@@ -3,7 +3,6 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
 
-from app import crud
 from app.api.deps import CurrentUser, SessionDep, StaffUser
 from app.models import (
     MedicalTierCreate,
@@ -19,6 +18,16 @@ from app.models import (
     RateTableVersionsPublic,
     RateTableVersionUpdate,
 )
+from app.services.premium_calculation import (
+    count_rate_table_versions,
+    create_medical_tier,
+    create_rate_benefit,
+    create_rate_bracket,
+    create_rate_table_version,
+    get_rate_table_version,
+    get_rate_table_versions,
+    update_rate_table_version,
+)
 
 router = APIRouter()
 
@@ -32,7 +41,7 @@ _ALLOWED_STATUS_TRANSITIONS: dict[RateTableStatus, set[RateTableStatus]] = {
 def _get_rate_table_or_404(
     session: SessionDep, rate_table_id: uuid.UUID
 ) -> RateTableVersion:
-    db_rate_table = crud.get_rate_table_version(
+    db_rate_table = get_rate_table_version(
         session=session, rate_table_id=rate_table_id
     )
     if not db_rate_table or db_rate_table.deleted_at is not None:
@@ -66,7 +75,7 @@ def read_rate_tables(
     status: RateTableStatus | None = None,
 ) -> Any:
     """Retrieve advisory rate table versions with optional filters."""
-    rate_tables = crud.get_rate_table_versions(
+    rate_tables = get_rate_table_versions(
         session=session,
         skip=skip,
         limit=limit,
@@ -74,7 +83,7 @@ def read_rate_tables(
         class_of_insurance=class_of_insurance,
         status=status,
     )
-    count = crud.count_rate_table_versions(
+    count = count_rate_table_versions(
         session=session,
         insurer_id=insurer_id,
         class_of_insurance=class_of_insurance,
@@ -90,8 +99,8 @@ def read_rate_table(
     _current_user: CurrentUser,
 ) -> Any:
     """Get single rate table version details with brackets, benefits, and tiers."""
-    rate_table = crud.get_rate_table_version(session=session, rate_table_id=id)
-    if not rate_table or rate_table.deleted_at is not None:
+    rate_table = get_rate_table_version(session=session, rate_table_id=id)
+    if not rate_table:
         raise HTTPException(status_code=404, detail="Rate table version not found")
     return rate_table
 
@@ -106,7 +115,7 @@ def create_rate_table(
     rate_table_in: RateTableVersionCreate,
 ) -> Any:
     """Create a new rate table version."""
-    return crud.create_rate_table_version(session=session, rate_table_in=rate_table_in)
+    return create_rate_table_version(session=session, rate_table_in=rate_table_in)
 
 
 @router.patch("/{id}", response_model=RateTableVersionPublic)
@@ -143,7 +152,7 @@ def update_rate_table(
             ),
         )
 
-    return crud.update_rate_table_version(
+    return update_rate_table_version(
         session=session, db_rate_table=db_rate_table, rate_table_in=rate_table_in
     )
 
@@ -163,7 +172,7 @@ def add_rate_bracket(
     """Add a pricing bracket to a rate table version."""
     _get_draft_rate_table_or_409(session, id)
     bracket_in.rate_table_version_id = id
-    return crud.create_rate_bracket(session=session, bracket_in=bracket_in)
+    return create_rate_bracket(session=session, bracket_in=bracket_in)
 
 
 @router.post(
@@ -181,7 +190,7 @@ def add_rate_benefit(
     """Add a benefit/rider rule to a rate table version."""
     _get_draft_rate_table_or_409(session, id)
     benefit_in.rate_table_version_id = id
-    return crud.create_rate_benefit(session=session, benefit_in=benefit_in)
+    return create_rate_benefit(session=session, benefit_in=benefit_in)
 
 
 @router.post(
@@ -199,4 +208,4 @@ def add_medical_tier(
     """Add a medical census tier to a rate table version."""
     _get_draft_rate_table_or_409(session, id)
     tier_in.rate_table_version_id = id
-    return crud.create_medical_tier(session=session, tier_in=tier_in)
+    return create_medical_tier(session=session, tier_in=tier_in)

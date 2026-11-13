@@ -1,17 +1,18 @@
 import logging
 import uuid
+from collections.abc import Sequence
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any
+from typing import Any, cast
 
-from fastapi import HTTPException
-from sqlmodel import Session
+from sqlalchemy.orm import selectinload
+from sqlmodel import Session, func, select
 
-from app import crud
 from app.models import (
     BusinessEvent,
     Policy,
     PolicyCreate,
+    PolicyUpdate,
     PremiumCalculation,
     Product,
     RiskNote,
@@ -19,6 +20,7 @@ from app.models import (
     RiskNoteRevisionCreate,
     RiskNoteStatus,
     TransactionType,
+    get_datetime_utc,
 )
 from app.services.premium_calculation import (
     PremiumCalculationResult,
@@ -26,6 +28,22 @@ from app.services.premium_calculation import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class PolicyError(Exception):
+    """Base domain error for Policy and RiskNote operations."""
+
+
+class PolicyNotFoundError(PolicyError):
+    """Raised when a requested policy, product, or risk note does not exist."""
+
+
+class PolicyConflictError(PolicyError):
+    """Raised when a policy operation conflicts with existing state or uniqueness."""
+
+
+class PolicyValidationError(PolicyError):
+    """Raised when policy or risk note input or rating validation fails."""
 
 
 def generate_risk_note_number() -> str:
@@ -134,14 +152,22 @@ class PolicyService:
         current_user_id: uuid.UUID | None = None,
     ) -> Policy:
         """
-        Create a Policy with an initial Risk Note (New Business).
+        Create a Policy with an initial Risk Note (New Business) in a single atomic transaction.
         """
+        existing = PolicyService.get_policy_by_policy_number(
+            session=session, policy_number=policy_in.policy_number
+        )
+        if existing:
+            raise PolicyConflictError(
+                "The policy with this number already exists in the system."
+            )
+
         effective_snapshot = (
             cover_snapshot if cover_snapshot is not None else (risk_details or {})
         )
         product = session.get(Product, policy_in.product_id)
-        if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+        if not product or product.deleted_at is not None:
+            raise PolicyNotFoundError("Product not found")
 
         try:
             result = calculate_premium(
@@ -152,12 +178,13 @@ class PolicyService:
             )
         except Exception as e:
             logger.exception("Validation or Rating failure")
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid risk details for {product.class_of_insurance}: {str(e)}",
-            )
+            raise PolicyValidationError(
+                f"Invalid risk details for {product.class_of_insurance}: {str(e)}"
+            ) from e
 
-        policy = crud.create_policy(session=session, policy_in=policy_in)
+        policy = Policy.model_validate(policy_in)
+        session.add(policy)
+        session.flush()
 
         financial_breakdown = PolicyService.to_numeric_dict(
             {
@@ -188,7 +215,7 @@ class PolicyService:
             created_by_id=current_user_id,
         )
 
-        PolicyService._create_risk_note(session=session, risk_note_in=risk_note_in)
+        PolicyService._add_risk_note(session=session, risk_note_in=risk_note_in)
 
         calc = PremiumCalculation(
             policy_id=policy.id,
@@ -204,8 +231,99 @@ class PolicyService:
         )
         session.add(calc)
         session.commit()
+        session.refresh(policy)
 
         return policy
+
+    @staticmethod
+    def create_policy_container(*, session: Session, policy_in: PolicyCreate) -> Policy:
+        """Persist a Policy container without rating or RiskNote generation (e.g., Medical or seeded policies)."""
+        existing = PolicyService.get_policy_by_policy_number(
+            session=session, policy_number=policy_in.policy_number
+        )
+        if existing:
+            raise PolicyConflictError(
+                "The policy with this number already exists in the system."
+            )
+        policy = Policy.model_validate(policy_in)
+        session.add(policy)
+        session.commit()
+        session.refresh(policy)
+        return policy
+
+    @staticmethod
+    def get_policy(*, session: Session, policy_id: uuid.UUID) -> Policy:
+        statement = (
+            select(Policy)
+            .where(Policy.id == policy_id)
+            .where(Policy.deleted_at == None)
+            .options(selectinload(cast(Any, Policy.product)))
+        )
+        policy = session.exec(statement).first()
+        if not policy:
+            raise PolicyNotFoundError("Policy not found")
+        return policy
+
+    @staticmethod
+    def get_policies_by_client_id(
+        *, session: Session, client_id: uuid.UUID
+    ) -> Sequence[Policy]:
+        statement = (
+            select(Policy)
+            .where(Policy.client_id == client_id)
+            .where(Policy.deleted_at == None)
+            .options(selectinload(cast(Any, Policy.product)))
+        )
+        return session.exec(statement).all()
+
+    @staticmethod
+    def list_policies(
+        *,
+        session: Session,
+        skip: int = 0,
+        limit: int = 100,
+        client_id: uuid.UUID | None = None,
+    ) -> tuple[list[Policy], int]:
+        base = select(Policy).where(Policy.deleted_at == None)
+        if client_id:
+            base = base.where(Policy.client_id == client_id)
+        count_stmt = select(func.count()).select_from(base.subquery())
+        count = session.exec(count_stmt).one()
+        items_stmt = (
+            base.options(selectinload(cast(Any, Policy.product)))
+            .offset(skip)
+            .limit(limit)
+        )
+        items = list(session.exec(items_stmt).all())
+        return items, count
+
+    @staticmethod
+    def update_policy(
+        *, session: Session, policy_id: uuid.UUID, policy_in: PolicyUpdate
+    ) -> Policy:
+        db_policy = PolicyService.get_policy(session=session, policy_id=policy_id)
+        policy_data = policy_in.model_dump(exclude_unset=True)
+        new_number = policy_data.get("policy_number")
+        if new_number and new_number != db_policy.policy_number:
+            existing = PolicyService.get_policy_by_policy_number(
+                session=session, policy_number=new_number
+            )
+            if existing and existing.id != db_policy.id:
+                raise PolicyConflictError(
+                    "The policy with this number already exists in the system."
+                )
+        db_policy.sqlmodel_update(policy_data)
+        session.add(db_policy)
+        session.commit()
+        session.refresh(db_policy)
+        return db_policy
+
+    @staticmethod
+    def delete_policy(*, session: Session, policy_id: uuid.UUID) -> None:
+        db_policy = PolicyService.get_policy(session=session, policy_id=policy_id)
+        db_policy.deleted_at = get_datetime_utc()
+        session.add(db_policy)
+        session.commit()
 
     @staticmethod
     def create_endorsement(
@@ -219,11 +337,16 @@ class PolicyService:
         current_user_id: uuid.UUID | None = None,
     ) -> RiskNote:
         """
-        Create a mid-term modification (Endorsement) using a full updated snapshot.
+        Create a mid-term modification (Endorsement) using a full updated snapshot in a single atomic transaction.
         """
-        policy = session.get(Policy, policy_id)
+        policy = session.exec(
+            select(Policy)
+            .where(Policy.id == policy_id)
+            .where(Policy.deleted_at == None)
+            .options(selectinload(cast(Any, Policy.product)))
+        ).first()
         if not policy or not policy.product:
-            raise HTTPException(status_code=404, detail="Policy or Product not found")
+            raise PolicyNotFoundError("Policy or Product not found")
 
         effective_snapshot = (
             updated_cover_snapshot
@@ -235,10 +358,15 @@ class PolicyService:
         # but we re-verify here for service-layer safety.
         effective_date = effective_date or date.today()
         current_rn = next(
-            (rn for rn in policy.risk_notes if rn.status == RiskNoteStatus.ISSUED), None
+            (
+                rn
+                for rn in policy.risk_notes
+                if rn.status == RiskNoteStatus.ISSUED and rn.deleted_at is None
+            ),
+            None,
         )
         if not current_rn:
-            raise HTTPException(status_code=400, detail="No active risk note found")
+            raise PolicyValidationError("No active risk note found")
 
         try:
             new_result = calculate_premium(
@@ -255,7 +383,7 @@ class PolicyService:
                 validate_inputs=False,
             )
         except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            raise PolicyValidationError(str(e)) from e
 
         prorata = calculate_endorsement_prorata(
             old_result=old_result,
@@ -285,7 +413,7 @@ class PolicyService:
         current_rn.status = RiskNoteStatus.REPLACED
         session.add(current_rn)
 
-        endorsement_rn = PolicyService._create_risk_note(
+        endorsement_rn = PolicyService._add_risk_note(
             session=session, risk_note_in=risk_note_in
         )
 
@@ -305,11 +433,23 @@ class PolicyService:
         )
         session.add(endorsement_calc)
         session.commit()
+        session.refresh(endorsement_rn)
 
         return endorsement_rn
 
     @staticmethod
-    def _create_risk_note(
+    def get_policy_by_policy_number(
+        *, session: Session, policy_number: str
+    ) -> Policy | None:
+        statement = (
+            select(Policy)
+            .where(Policy.policy_number == policy_number)
+            .where(Policy.deleted_at == None)
+        )
+        return session.exec(statement).first()
+
+    @staticmethod
+    def _add_risk_note(
         *,
         session: Session,
         risk_note_in: RiskNoteCreate,
@@ -317,13 +457,63 @@ class PolicyService:
     ) -> RiskNote:
         if created_by_id:
             risk_note_in.created_by_id = created_by_id
-
         if not risk_note_in.risk_note_number:
             risk_note_in.risk_note_number = generate_risk_note_number()
 
-        risk_note = crud.create_risk_note(session=session, risk_note_in=risk_note_in)
-
+        risk_note = RiskNote.model_validate(risk_note_in)
+        session.add(risk_note)
         return risk_note
+
+    @staticmethod
+    def create_risk_note(
+        *,
+        session: Session,
+        risk_note_in: RiskNoteCreate,
+        created_by_id: uuid.UUID | None = None,
+    ) -> RiskNote:
+        """Persist a standalone RiskNote and commit atomically."""
+        risk_note = PolicyService._add_risk_note(
+            session=session, risk_note_in=risk_note_in, created_by_id=created_by_id
+        )
+        session.commit()
+        session.refresh(risk_note)
+        return risk_note
+
+    @staticmethod
+    def get_risk_note(*, session: Session, risk_note_id: uuid.UUID) -> RiskNote:
+        risk_note = session.exec(
+            select(RiskNote)
+            .where(RiskNote.id == risk_note_id)
+            .where(RiskNote.deleted_at == None)
+        ).first()
+        if not risk_note:
+            raise PolicyNotFoundError("Risk note not found")
+        return risk_note
+
+    @staticmethod
+    def list_risk_notes(
+        *,
+        session: Session,
+        skip: int = 0,
+        limit: int = 100,
+        policy_id: uuid.UUID | None = None,
+        client_id: uuid.UUID | None = None,
+        uninvoiced_only: bool = False,
+    ) -> tuple[list[RiskNote], int]:
+        statement = select(RiskNote).where(RiskNote.deleted_at == None)
+        if policy_id:
+            statement = statement.where(RiskNote.policy_id == policy_id)
+        if client_id:
+            statement = statement.join(Policy).where(
+                Policy.client_id == client_id, Policy.deleted_at == None
+            )
+        if uninvoiced_only:
+            statement = statement.where(~RiskNote.invoice_line_items.any())  # type: ignore[attr-defined]
+            statement = statement.where(RiskNote.status != RiskNoteStatus.DRAFT)
+        count_stmt = select(func.count()).select_from(statement.subquery())
+        count = session.exec(count_stmt).one()
+        items = list(session.exec(statement.offset(skip).limit(limit)).all())
+        return items, count
 
     @staticmethod
     def create_risk_note_revision(
@@ -333,14 +523,12 @@ class PolicyService:
         revision_in: RiskNoteRevisionCreate,
         created_by_id: uuid.UUID,
     ) -> RiskNote:
-        """Append a non-financial clause revision and mark the prior risk note as REPLACED."""
-        current_rn = session.get(RiskNote, risk_note_id)
-        if not current_rn:
-            raise HTTPException(status_code=404, detail="Risk note not found")
+        """Append a non-financial clause revision and mark the prior risk note as REPLACED atomically."""
+        current_rn = PolicyService.get_risk_note(
+            session=session, risk_note_id=risk_note_id
+        )
         if current_rn.status == RiskNoteStatus.REPLACED:
-            raise HTTPException(
-                status_code=400, detail="Risk note has already been replaced"
-            )
+            raise PolicyValidationError("Risk note has already been replaced")
 
         risk_note_in = RiskNoteCreate(
             policy_id=current_rn.policy_id,
@@ -366,9 +554,12 @@ class PolicyService:
         current_rn.status = RiskNoteStatus.REPLACED
         session.add(current_rn)
 
-        return PolicyService._create_risk_note(
+        revised_rn = PolicyService._add_risk_note(
             session=session, risk_note_in=risk_note_in
         )
+        session.commit()
+        session.refresh(revised_rn)
+        return revised_rn
 
 
 policy_service = PolicyService()

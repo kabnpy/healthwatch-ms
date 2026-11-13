@@ -8,8 +8,8 @@ import logging
 
 from sqlmodel import Session, select
 
-from app import crud
 from app.models import Activity, ActivityCreate, ActivityType, Client, Policy, Renewal
+from app.services.portfolio import portfolio_service
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ def seed_activities(
         if existing:
             return existing
 
-        act = crud.create_activity(
+        act = portfolio_service.create_activity(
             session=session,
             activity_in=ActivityCreate(
                 client_id=client.id,

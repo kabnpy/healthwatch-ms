@@ -4,9 +4,9 @@ from decimal import Decimal
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app import crud
 from app.core.config import settings
 from app.models import InvoiceCreate, InvoiceStatus
+from app.services.client_ledger import ClientLedgerService
 from tests.utils.client import create_random_client
 
 
@@ -52,7 +52,7 @@ def test_payment_allocation_ledger_invariants(
     client_obj = create_random_client(db)
 
     # Create Invoice for 60,000.00
-    inv = crud.create_invoice(
+    inv = ClientLedgerService.create_invoice(
         session=db,
         invoice_in=InvoiceCreate(
             invoice_number="INV-TEST-001",
@@ -135,7 +135,7 @@ def test_reverse_allocation_and_payment_cascade(
 ) -> None:
     client_obj = create_random_client(db)
 
-    inv = crud.create_invoice(
+    inv = ClientLedgerService.create_invoice(
         session=db,
         invoice_in=InvoiceCreate(
             invoice_number="INV-CASCADE-001",

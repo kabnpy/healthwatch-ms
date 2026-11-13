@@ -3,7 +3,6 @@ from datetime import date, timedelta
 
 from sqlmodel import Session
 
-from app import crud
 from app.models import (
     Claim,
     ClaimCreate,
@@ -16,6 +15,9 @@ from app.models import (
     Product,
     ProductCreate,
 )
+from app.services.catalog import catalog_service
+from app.services.claim import ClaimService
+from app.services.client_ledger import ClientLedgerService
 from app.services.policy import policy_service
 from tests.utils.client import create_random_client
 from tests.utils.utils import random_email, random_lower_string
@@ -25,7 +27,7 @@ def create_random_insurer(db: Session) -> Insurer:
     name = random_lower_string()
     email = random_email()
     insurer_in = InsurerCreate(name=name, email=email)
-    return crud.create_insurer(session=db, insurer_in=insurer_in)
+    return catalog_service.create_insurer(session=db, insurer_in=insurer_in)
 
 
 def create_random_product(
@@ -40,7 +42,7 @@ def create_random_product(
     product_in = ProductCreate(
         insurer_id=insurer_id, name=name, class_of_insurance=class_of_insurance
     )
-    return crud.create_product(session=db, product_in=product_in)
+    return catalog_service.create_product(session=db, product_in=product_in)
 
 
 def create_random_policy(
@@ -84,7 +86,7 @@ def create_random_invoice(db: Session, client_id: uuid.UUID | None = None) -> In
         balance_due=5000.0,
         status="Unpaid",
     )
-    return crud.create_invoice(session=db, invoice_in=invoice_in)
+    return ClientLedgerService.create_invoice(session=db, invoice_in=invoice_in)
 
 
 def create_random_claim(db: Session, policy_id: uuid.UUID | None = None) -> Claim:
@@ -99,4 +101,4 @@ def create_random_claim(db: Session, policy_id: uuid.UUID | None = None) -> Clai
         date_of_loss=date.today(),
         description="Fender bender",
     )
-    return crud.create_claim(session=db, claim_in=claim_in)
+    return ClaimService.create_claim(session=db, claim_in=claim_in)

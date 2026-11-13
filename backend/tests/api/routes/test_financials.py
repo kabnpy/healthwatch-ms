@@ -18,7 +18,6 @@ from tests.utils.client import create_random_client
 from tests.utils.insurance import (
     create_random_invoice,
     create_random_product,
-    create_random_receipt,
 )
 
 
@@ -58,9 +57,9 @@ def test_create_invoice(
 
 
 def test_retired_receipt_endpoints_return_404(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+    client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
-    receipt = create_random_receipt(db)
+    receipt_id = uuid.uuid4()
     assert (
         client.get(
             f"{settings.API_V1_STR}/financials/receipts/",
@@ -78,7 +77,7 @@ def test_retired_receipt_endpoints_return_404(
     )
     assert (
         client.post(
-            f"{settings.API_V1_STR}/financials/receipts/{receipt.id}/allocations",
+            f"{settings.API_V1_STR}/financials/receipts/{receipt_id}/allocations",
             headers=superuser_token_headers,
             json={},
         ).status_code
@@ -199,3 +198,66 @@ def test_create_bulk_invoice_happy_path(
     ).all()
     assert len(line_items) == 2
     assert {li.risk_note_id for li in line_items} == {rn1.id, rn2.id}
+
+
+
+def test_create_invoice_missing_client_returns_404(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    response = client.post(
+        f"{settings.API_V1_STR}/financials/invoices/",
+        headers=superuser_token_headers,
+        json={
+            "invoice_number": f"INV-{uuid.uuid4().hex[:8].upper()}",
+            "client_id": str(uuid.uuid4()),
+            "total_amount": "1000.00",
+            "balance_due": "1000.00",
+            "status": "Unpaid",
+        },
+    )
+    assert response.status_code == 404
+
+
+def test_create_invoice_duplicate_number_returns_422(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    db_client = create_random_client(db)
+    inv_num = f"INV-{uuid.uuid4().hex[:8].upper()}"
+    payload = {
+        "invoice_number": inv_num,
+        "client_id": str(db_client.id),
+        "total_amount": "1000.00",
+        "balance_due": "1000.00",
+        "status": "Unpaid",
+    }
+    first = client.post(
+        f"{settings.API_V1_STR}/financials/invoices/",
+        headers=superuser_token_headers,
+        json=payload,
+    )
+    assert first.status_code == 200
+
+    dup = client.post(
+        f"{settings.API_V1_STR}/financials/invoices/",
+        headers=superuser_token_headers,
+        json=payload,
+    )
+    assert dup.status_code == 422
+
+
+def test_read_invoice_by_id_and_missing_returns_404(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    inv = create_random_invoice(db)
+    ok = client.get(
+        f"{settings.API_V1_STR}/financials/invoices/{inv.id}",
+        headers=superuser_token_headers,
+    )
+    assert ok.status_code == 200
+    assert ok.json()["id"] == str(inv.id)
+
+    missing = client.get(
+        f"{settings.API_V1_STR}/financials/invoices/{uuid.uuid4()}",
+        headers=superuser_token_headers,
+    )
+    assert missing.status_code == 404

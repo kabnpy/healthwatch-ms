@@ -3,7 +3,6 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
 
-from app import crud
 from app.api.deps import CurrentUser, SessionDep, StaffUser
 from app.models import (
     PaymentAllocationCreate,
@@ -38,10 +37,12 @@ def read_payment_records(
     client_id: uuid.UUID | None = None,
 ) -> Any:
     """List payment records with pagination and client filter."""
-    records = crud.get_payment_records(
+    records = ClientLedgerService.get_payment_records(
         session=session, skip=skip, limit=limit, client_id=client_id
     )
-    count = crud.count_payment_records(session=session, client_id=client_id)
+    count = ClientLedgerService.count_payment_records(
+        session=session, client_id=client_id
+    )
     return PaymentRecordsPublic(data=records, count=count)
 
 
@@ -52,7 +53,7 @@ def read_payment_record(
     _current_user: CurrentUser,
 ) -> Any:
     """Get single payment record details."""
-    record = crud.get_payment_record(session=session, payment_id=id)
+    record = ClientLedgerService.get_payment_record(session=session, payment_id=id)
     if not record:
         raise HTTPException(status_code=404, detail="Payment record not found")
     return record
@@ -115,10 +116,12 @@ def read_payment_allocations_for_record(
     limit: int = 100,
 ) -> Any:
     """List all allocations funded by this payment record."""
-    allocations = crud.get_payment_allocations(
+    allocations = ClientLedgerService.get_payment_allocations(
         session=session, skip=skip, limit=limit, payment_record_id=id
     )
-    count = crud.count_payment_allocations(session=session, payment_record_id=id)
+    count = ClientLedgerService.count_payment_allocations(
+        session=session, payment_record_id=id
+    )
     return PaymentAllocationsPublic(data=allocations, count=count)
 
 
@@ -156,14 +159,14 @@ def read_payment_allocations(
     invoice_id: uuid.UUID | None = None,
 ) -> Any:
     """List payment allocations with optional filters."""
-    allocations = crud.get_payment_allocations(
+    allocations = ClientLedgerService.get_payment_allocations(
         session=session,
         skip=skip,
         limit=limit,
         payment_record_id=payment_record_id,
         invoice_id=invoice_id,
     )
-    count = crud.count_payment_allocations(
+    count = ClientLedgerService.count_payment_allocations(
         session=session,
         payment_record_id=payment_record_id,
         invoice_id=invoice_id,
@@ -178,7 +181,9 @@ def read_payment_allocation(
     _current_user: CurrentUser,
 ) -> Any:
     """Get single allocation details."""
-    allocation = crud.get_payment_allocation(session=session, allocation_id=id)
+    allocation = ClientLedgerService.get_payment_allocation(
+        session=session, allocation_id=id
+    )
     if not allocation:
         raise HTTPException(status_code=404, detail="Payment allocation not found")
     return allocation

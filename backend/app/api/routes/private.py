@@ -1,14 +1,14 @@
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.api.deps import SessionDep
-from app.core.security import get_password_hash
 from app.models import (
-    User,
+    UserCreate,
     UserPublic,
 )
+from app.services.user import UserConflictError, user_service
 
 router = APIRouter(tags=["private"], prefix="/private")
 
@@ -25,14 +25,12 @@ def create_user(user_in: PrivateUserCreate, session: SessionDep) -> Any:
     """
     Create a new user.
     """
-
-    user = User(
+    user_create = UserCreate(
         email=user_in.email,
+        password=user_in.password,
         full_name=user_in.full_name,
-        hashed_password=get_password_hash(user_in.password),
     )
-
-    session.add(user)
-    session.commit()
-
-    return user
+    try:
+        return user_service.create_user(session=session, user_create=user_create)
+    except UserConflictError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc

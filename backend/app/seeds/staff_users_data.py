@@ -9,8 +9,8 @@ from typing import Any
 
 from sqlmodel import Session, select
 
-from app import crud
 from app.models import User, UserCreate, UserRole
+from app.services.user import user_service
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ def seed_staff_users(session: Session) -> dict[str, User]:
                 is_superuser=u_data["is_superuser"],
                 password=u_data["password"],
             )
-            user = crud.create_user(session=session, user_create=user_in)
+            user = user_service.create_user(session=session, user_create=user_in)
             logger.info(f"Created staff user: {user.full_name} ({user.role.value})")
         else:
             user.full_name = u_data["full_name"]

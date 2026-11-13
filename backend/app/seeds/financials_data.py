@@ -14,7 +14,6 @@ from typing import Any
 
 from sqlmodel import Session, select
 
-from app import crud
 from app.models import (
     Client,
     Invoice,
@@ -28,7 +27,7 @@ from app.models import (
     PaymentRecordCreate,
     Policy,
 )
-from app.services.payment import PaymentService
+from app.services.client_ledger import ClientLedgerService
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +56,7 @@ def seed_financials(
             select(Invoice).where(Invoice.invoice_number == invoice_number)
         ).first()
         if not inv:
-            inv = crud.create_invoice(
+            inv = ClientLedgerService.create_invoice(
                 session=session,
                 invoice_in=InvoiceCreate(
                     invoice_number=invoice_number,
@@ -69,11 +68,12 @@ def seed_financials(
                     status=InvoiceStatus.UNPAID,
                     notes=notes,
                 ),
+                policy_id=policy.id,
             )
             # If policy has risk notes, attach an invoice line item
             if policy.risk_notes:
                 latest_rn = policy.risk_notes[0]
-                crud.create_invoice_line_item(
+                ClientLedgerService.create_invoice_line_item(
                     session=session,
                     line_item_in=InvoiceLineItemCreate(
                         invoice_id=inv.id,
@@ -100,7 +100,7 @@ def seed_financials(
             select(PaymentRecord).where(PaymentRecord.reference_number == ref)
         ).first()
         if not rec:
-            rec = PaymentService.record_payment(
+            rec = ClientLedgerService.record_payment(
                 session=session,
                 payment_in=PaymentRecordCreate(
                     client_id=client.id,
@@ -117,7 +117,7 @@ def seed_financials(
 
             # Process allocations
             for inv, alloc_amt in allocations_plan:
-                PaymentService.allocate_payment(
+                ClientLedgerService.allocate_payment(
                     session=session,
                     allocation_in=PaymentAllocationCreate(
                         payment_record_id=rec.id,

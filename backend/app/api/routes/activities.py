@@ -3,13 +3,13 @@ from typing import Any
 
 from fastapi import APIRouter, status
 
-from app import crud
 from app.api.deps import CurrentUser, SessionDep
 from app.models import (
     ActivitiesPublic,
     ActivityCreate,
     ActivityPublic,
 )
+from app.services.portfolio import portfolio_service
 
 router = APIRouter()
 
@@ -25,16 +25,10 @@ def read_activities(
     renewal_id: uuid.UUID | None = None,
 ) -> Any:
     """Retrieve operational timeline activities for a client, policy, or renewal."""
-    activities = crud.get_activities(
+    activities, count = portfolio_service.list_activities(
         session=session,
         skip=skip,
         limit=limit,
-        client_id=client_id,
-        policy_id=policy_id,
-        renewal_id=renewal_id,
-    )
-    count = crud.count_activities(
-        session=session,
         client_id=client_id,
         policy_id=policy_id,
         renewal_id=renewal_id,
@@ -50,6 +44,6 @@ def create_activity(
     activity_in: ActivityCreate,
 ) -> Any:
     """Append a communication note, call, meeting, or reminder to the operational history."""
-    return crud.create_activity(
+    return portfolio_service.create_activity(
         session=session, activity_in=activity_in, created_by_id=current_user.id
     )

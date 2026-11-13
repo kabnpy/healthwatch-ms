@@ -3,12 +3,13 @@ from decimal import Decimal
 
 from sqlmodel import Session
 
-from app import crud
 from app.models import (
     ClientCreate,
     PolicyCreate,
     RiskNoteCreate,
 )
+from app.services.policy import policy_service
+from app.services.portfolio import portfolio_service
 from tests.utils.utils import random_email, random_lower_string
 
 
@@ -21,13 +22,13 @@ def test_floating_point_precision_error(db: Session) -> None:
         email=random_email(),
         phone=random_lower_string(),
     )
-    client = crud.create_client(session=db, client_in=client_in)
+    client = portfolio_service.create_client(session=db, client_in=client_in)
 
     policy_in = PolicyCreate(
         policy_number=random_lower_string(),
         client_id=client.id,
     )
-    policy = crud.create_policy(session=db, policy_in=policy_in)
+    policy = policy_service.create_policy_container(session=db, policy_in=policy_in)
 
     # We'll use Decimal("0.1") and Decimal("0.2")
     risk_note_in = RiskNoteCreate(
@@ -44,7 +45,7 @@ def test_floating_point_precision_error(db: Session) -> None:
     # With Decimal, this should be exactly 0.3
     assert risk_note_in.total_amount == Decimal("0.3")
 
-    risk_note = crud.create_risk_note(session=db, risk_note_in=risk_note_in)
+    risk_note = policy_service.create_risk_note(session=db, risk_note_in=risk_note_in)
     db.refresh(risk_note)
 
     # It should remain precise after DB roundtrip
@@ -58,13 +59,13 @@ def test_money_should_be_precise(db: Session) -> None:
         email=random_email(),
         phone=random_lower_string(),
     )
-    client = crud.create_client(session=db, client_in=client_in)
+    client = portfolio_service.create_client(session=db, client_in=client_in)
 
     policy_in = PolicyCreate(
         policy_number=random_lower_string(),
         client_id=client.id,
     )
-    policy = crud.create_policy(session=db, policy_in=policy_in)
+    policy = policy_service.create_policy_container(session=db, policy_in=policy_in)
 
     # Adding many small amounts using Decimal
     total = Decimal("0.0")
@@ -84,7 +85,7 @@ def test_money_should_be_precise(db: Session) -> None:
         total_amount=total,
     )
 
-    risk_note = crud.create_risk_note(session=db, risk_note_in=risk_note_in)
+    risk_note = policy_service.create_risk_note(session=db, risk_note_in=risk_note_in)
     db.refresh(risk_note)
 
     # We expect exactly 1.0

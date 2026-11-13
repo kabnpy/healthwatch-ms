@@ -10,7 +10,6 @@ from decimal import Decimal
 
 from sqlmodel import Session, select
 
-from app import crud
 from app.models import (
     Claim,
     ClaimCreate,
@@ -20,6 +19,7 @@ from app.models import (
     Client,
     Policy,
 )
+from app.services.claim import ClaimService
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ def seed_claims(
         ).first()
 
         if not db_claim:
-            db_claim = crud.create_claim(
+            db_claim = ClaimService.create_claim(
                 session=session,
                 claim_in=ClaimCreate(
                     claim_number=claim_number,
@@ -91,7 +91,7 @@ def seed_claims(
             )
             # Add timeline events
             for ev_type, ev_desc in events:
-                crud.create_claim_event(
+                ClaimService.create_claim_event(
                     session=session,
                     claim_event_in=ClaimEventCreate(
                         claim_id=db_claim.id,

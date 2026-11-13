@@ -11,8 +11,8 @@ from decimal import Decimal
 
 from sqlmodel import Session
 
-from app import crud
 from app.models import Policy, Renewal, RenewalCreate, RenewalStatus, get_datetime_utc
+from app.services.renewal import RenewalService
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,9 @@ def seed_renewals(
             logger.warning(f"Policy {policy_number} not found for renewal seeding")
             return None
 
-        existing = crud.get_active_renewal_by_policy(session, policy_id=policy.id)
+        existing = RenewalService.get_active_renewal_by_policy(
+            session=session, policy_id=policy.id
+        )
         if existing:
             existing.renewal_period_start = period_start
             existing.renewal_period_end = period_end
@@ -54,7 +56,7 @@ def seed_renewals(
 
         now = get_datetime_utc()
 
-        renewal = crud.create_renewal(
+        renewal = RenewalService.create_renewal(
             session=session,
             renewal_in=RenewalCreate(
                 policy_id=policy.id,

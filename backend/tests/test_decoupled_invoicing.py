@@ -16,6 +16,7 @@ from app.models import (
     RiskNoteStatus,
     TransactionType,
 )
+from app.services.client_ledger import ClientLedgerService
 from app.services.policy import policy_service
 
 
@@ -176,7 +177,6 @@ def test_get_risk_notes_uninvoiced_filter(db: Session) -> None:
     """
     Test that the uninvoiced_only filter correctly returns risk notes without line items.
     """
-    from app import crud
     from app.models import InvoiceCreate, InvoiceLineItemCreate, InvoiceStatus
 
     insurer = Insurer(name="Filter Insurer")
@@ -241,13 +241,13 @@ def test_get_risk_notes_uninvoiced_filter(db: Session) -> None:
     db.commit()
 
     # Verify both are returned by uninvoiced filter
-    uninvoiced = crud.get_risk_notes(db, uninvoiced_only=True)
+    uninvoiced, _ = policy_service.list_risk_notes(session=db, uninvoiced_only=True)
     rn_ids = [rn.id for rn in uninvoiced]
     assert rn1.id in rn_ids
     assert rn2.id in rn_ids
 
     # Link rn1 to an invoice
-    invoice = crud.create_invoice(
+    invoice = ClientLedgerService.create_invoice(
         session=db,
         invoice_in=InvoiceCreate(
             invoice_number="INV-F-001",
@@ -258,7 +258,7 @@ def test_get_risk_notes_uninvoiced_filter(db: Session) -> None:
             status=InvoiceStatus.UNPAID,
         ),
     )
-    crud.create_invoice_line_item(
+    ClientLedgerService.create_invoice_line_item(
         session=db,
         line_item_in=InvoiceLineItemCreate(
             invoice_id=invoice.id,
@@ -270,7 +270,9 @@ def test_get_risk_notes_uninvoiced_filter(db: Session) -> None:
     db.commit()
 
     # Verify only rn2 is now returned
-    uninvoiced_after = crud.get_risk_notes(db, uninvoiced_only=True)
+    uninvoiced_after, _ = policy_service.list_risk_notes(
+        session=db, uninvoiced_only=True
+    )
     rn_ids_after = [rn.id for rn in uninvoiced_after]
     assert rn1.id not in rn_ids_after
     assert rn2.id in rn_ids_after

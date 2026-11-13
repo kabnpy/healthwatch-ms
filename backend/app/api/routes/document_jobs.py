@@ -5,7 +5,6 @@ from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, status
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 
-from app import crud
 from app.api.deps import CurrentUser, SessionDep, StaffUser
 from app.models import (
     DocumentJobPublic,
@@ -13,7 +12,11 @@ from app.models import (
     DocumentJobsPublic,
     DocumentJobStatus,
 )
-from app.services.document_job import DocumentJobService
+from app.services.document_job import (
+    DocumentJobConflictError,
+    DocumentJobNotFoundError,
+    DocumentJobService,
+)
 from app.services.document_renderer import DocumentRenderer
 
 router = APIRouter()
@@ -66,8 +69,8 @@ def read_document_jobs(
     limit: int = 100,
 ) -> Any:
     """Retrieve document generation jobs."""
-    jobs = crud.get_document_jobs(session=session, skip=skip, limit=limit)
-    return DocumentJobsPublic(data=jobs, count=len(jobs))
+    jobs, count = DocumentJobService.list_jobs(session=session, skip=skip, limit=limit)
+    return DocumentJobsPublic(data=jobs, count=count)
 
 
 @router.get("/preview/html", response_class=HTMLResponse)
@@ -111,7 +114,7 @@ def read_document_job(
     _current_user: CurrentUser,
 ) -> Any:
     """Poll document job processing status and retrieve generated artifact storage key."""
-    job = crud.get_document_job(session=session, job_id=id)
+    job = DocumentJobService.get_job(session=session, job_id=id)
     if not job:
         raise HTTPException(status_code=404, detail="Document job not found")
     return job
@@ -148,15 +151,9 @@ def process_document_job(
     _current_user: StaffUser,
 ) -> Any:
     """Trigger staff retry processing for a FAILED or stuck PENDING document job."""
-    job = crud.get_document_job(session=session, job_id=id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Document job not found")
-    if job.status not in {DocumentJobStatus.FAILED, DocumentJobStatus.PENDING}:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Document job in status '{job.status.value}' cannot be manually processed",
-        )
     try:
-        return DocumentJobService.process_job(session=session, job_id=id)
-    except ValueError as e:
+        return DocumentJobService.retry_job(session=session, job_id=id)
+    except DocumentJobNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except DocumentJobConflictError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
