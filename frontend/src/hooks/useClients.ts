@@ -51,32 +51,3 @@ export const useDeleteClient = () => {
     },
   })
 }
-
-export const useCorrespondences = (clientId: string) => {
-  return useQuery({
-    queryKey: ["correspondences", clientId],
-    queryFn: async () =>
-      (
-        await ClientsService.readClientCorrespondences({
-          path: { id: clientId },
-        })
-      ).data,
-    enabled: !!clientId,
-  })
-}
-
-export const useCreateCorrespondence = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async ({ clientId, data }: { clientId: string; data: any }) =>
-      (
-        await ClientsService.createClientCorrespondence({
-          path: { id: clientId },
-          body: data,
-        })
-      ).data,
-    onSuccess: (_, { clientId }) => {
-      queryClient.invalidateQueries({ queryKey: ["correspondences", clientId] })
-    },
-  })
-}
