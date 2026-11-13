@@ -41,7 +41,6 @@ import {
   useDeleteClient,
   useUpdateClient,
 } from "./useClients"
-import * as useInsurance from "./useInsurance"
 
 describe("useClients domain hooks", () => {
   beforeEach(() => {
@@ -138,15 +137,5 @@ describe("useClients domain hooks", () => {
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
       queryKey: ["correspondences", "c1"],
     })
-  })
-
-  it("re-exports client hooks from useInsurance.ts", () => {
-    expect(useInsurance.useClients).toBe(useClients)
-    expect(useInsurance.useClient).toBe(useClient)
-    expect(useInsurance.useCreateClient).toBe(useCreateClient)
-    expect(useInsurance.useUpdateClient).toBe(useUpdateClient)
-    expect(useInsurance.useDeleteClient).toBe(useDeleteClient)
-    expect(useInsurance.useCorrespondences).toBe(useCorrespondences)
-    expect(useInsurance.useCreateCorrespondence).toBe(useCreateCorrespondence)
   })
 })

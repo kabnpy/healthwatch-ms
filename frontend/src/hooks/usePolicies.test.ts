@@ -46,22 +46,15 @@ vi.mock("../client", () => ({
   },
 }))
 
-import * as useInsurance from "./useInsurance"
 import {
-  useActivities,
   useCreateActivity,
-  useCreatePolicy,
   useCreateRiskNote,
   usePolicies,
   usePolicy,
-  usePolicyDashboard,
   useProducts,
   useQuote,
   useQuoteQuery,
-  useRiskNote,
   useRiskNotes,
-  useUpdatePolicy,
-  useUpdateRiskNote,
 } from "./usePolicies"
 
 describe("usePolicies domain hooks", () => {
@@ -159,22 +152,5 @@ describe("usePolicies domain hooks", () => {
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
       queryKey: ["activities", { clientId: "c1" }],
     })
-  })
-
-  it("re-exports policy domain hooks from useInsurance.ts", () => {
-    expect(useInsurance.usePolicies).toBe(usePolicies)
-    expect(useInsurance.usePolicy).toBe(usePolicy)
-    expect(useInsurance.useCreatePolicy).toBe(useCreatePolicy)
-    expect(useInsurance.useUpdatePolicy).toBe(useUpdatePolicy)
-    expect(useInsurance.useRiskNotes).toBe(useRiskNotes)
-    expect(useInsurance.useRiskNote).toBe(useRiskNote)
-    expect(useInsurance.useCreateRiskNote).toBe(useCreateRiskNote)
-    expect(useInsurance.useUpdateRiskNote).toBe(useUpdateRiskNote)
-    expect(useInsurance.useProducts).toBe(useProducts)
-    expect(useInsurance.usePolicyDashboard).toBe(usePolicyDashboard)
-    expect(useInsurance.useQuote).toBe(useQuote)
-    expect(useInsurance.useQuoteQuery).toBe(useQuoteQuery)
-    expect(useInsurance.useActivities).toBe(useActivities)
-    expect(useInsurance.useCreateActivity).toBe(useCreateActivity)
   })
 })

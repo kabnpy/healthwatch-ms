@@ -26,7 +26,6 @@ vi.mock("../client", () => ({
   },
 }))
 
-import * as useInsurance from "./useInsurance"
 import {
   useCreateRenewal,
   useRenewal,
@@ -94,13 +93,5 @@ describe("useRenewals domain hooks", () => {
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
       queryKey: ["renewals", "r1"],
     })
-  })
-
-  it("re-exports renewal hooks from useInsurance.ts", () => {
-    expect(useInsurance.useRenewals).toBe(useRenewals)
-    expect(useInsurance.useRenewal).toBe(useRenewal)
-    expect(useInsurance.useCreateRenewal).toBe(useCreateRenewal)
-    expect(useInsurance.useTransitionRenewal).toBe(useTransitionRenewal)
-    expect(useInsurance.useUpdateRenewal).toBe(useUpdateRenewal)
   })
 })

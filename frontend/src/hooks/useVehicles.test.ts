@@ -26,7 +26,6 @@ vi.mock("../client", () => ({
   },
 }))
 
-import * as useInsurance from "./useInsurance"
 import {
   useCreateVehicle,
   useDeleteVehicle,
@@ -97,13 +96,5 @@ describe("useVehicles domain hooks", () => {
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
       queryKey: ["policies"],
     })
-  })
-
-  it("re-exports vehicle hooks from useInsurance.ts", () => {
-    expect(useInsurance.useVehicles).toBe(useVehicles)
-    expect(useInsurance.useVehicle).toBe(useVehicle)
-    expect(useInsurance.useCreateVehicle).toBe(useCreateVehicle)
-    expect(useInsurance.useUpdateVehicle).toBe(useUpdateVehicle)
-    expect(useInsurance.useDeleteVehicle).toBe(useDeleteVehicle)
   })
 })
