@@ -87,11 +87,6 @@ class InvoiceStatus(str, Enum):
     CANCELLED = "Cancelled"
 
 
-class ReceiptStatus(str, Enum):
-    ACTIVE = "Active"
-    VOIDED = "Voided"
-
-
 class PaymentMethod(str, Enum):
     MPESA = "mpesa"
     CHEQUE = "cheque"
@@ -226,7 +221,6 @@ class DocumentType(str, Enum):
     ID = "ID"
     VALUATION = "Valuation"
     POLICE_ABSTRACT = "PoliceAbstract"
-    RECEIPT = "Receipt"
     OTHER = "Other"
     # Document Presets for UI consistency
     KRA_PIN_CERTIFICATE = "KRA PIN Certificate"
@@ -469,7 +463,6 @@ class Client(ClientBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     policies: list[Policy] = Relationship(back_populates="client")
     invoices: list[Invoice] = Relationship(back_populates="client")
-    receipts: list[Receipt] = Relationship(back_populates="client")
     activities: list[Activity] = Relationship(
         back_populates="client",
         sa_relationship_kwargs={"lazy": "selectin"},
@@ -675,7 +668,6 @@ class RiskNote(RiskNoteBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     policy: Policy = Relationship(back_populates="risk_notes")
     invoice_line_items: list[InvoiceLineItem] = Relationship(back_populates="risk_note")
-    allocations: list[ReceiptAllocation] = Relationship(back_populates="risk_note")
     financial_breakdown: dict[str, Any] = Field(
         default_factory=dict, sa_column=Column(JSON)
     )
@@ -732,7 +724,6 @@ class Invoice(InvoiceBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     client: Client = Relationship(back_populates="invoices")
     line_items: list[InvoiceLineItem] = Relationship(back_populates="invoice")
-    allocations: list[ReceiptAllocation] = Relationship(back_populates="invoice")
     payment_allocations: list[PaymentAllocation] = Relationship(
         back_populates="invoice"
     )
@@ -755,63 +746,6 @@ class InvoiceLineItem(InvoiceLineItemBase, table=True):
     risk_note: RiskNote = Relationship(back_populates="invoice_line_items")
 
 
-class ReceiptBase(AuditMixin, SQLModel):
-    receipt_number: str = Field(unique=True, index=True)
-    client_id: uuid.UUID = Field(foreign_key="client.id", index=True)
-    date_received: date
-    amount: Decimal = Field(sa_column=Column(Numeric(precision=15, scale=2)))
-    unallocated_amount: Decimal = Field(
-        default=Decimal("0.0"), sa_column=Column(Numeric(precision=15, scale=2))
-    )
-    mode: str
-    reference: str
-    notes: str | None = None
-    status: ReceiptStatus = Field(default=ReceiptStatus.ACTIVE)
-    created_by_id: uuid.UUID | None = Field(
-        default=None, foreign_key="user.id", index=True
-    )
-
-
-class ReceiptCreate(ReceiptBase):
-    pass
-
-
-class ReceiptUpdate(SQLModel):
-    receipt_number: str | None = None
-    date_received: date | None = None
-    amount: Decimal | None = None
-    unallocated_amount: Decimal | None = None
-    mode: str | None = None
-    reference: str | None = None
-    notes: str | None = None
-    status: ReceiptStatus | None = None
-
-
-class ReceiptAllocationBase(SQLModel):
-    receipt_id: uuid.UUID = Field(foreign_key="receipt.id", index=True)
-    invoice_id: uuid.UUID = Field(foreign_key="invoice.id", index=True)
-    risk_note_id: uuid.UUID | None = Field(
-        default=None, foreign_key="risknote.id", index=True
-    )
-    amount_allocated: Decimal = Field(sa_column=Column(Numeric(precision=15, scale=2)))
-
-
-class ReceiptAllocationCreate(ReceiptAllocationBase):
-    pass
-
-
-class ReceiptAllocation(ReceiptAllocationBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    receipt: Receipt = Relationship(back_populates="allocations")
-    invoice: Invoice = Relationship(back_populates="allocations")
-    risk_note: RiskNote = Relationship(back_populates="allocations")
-
-
-class ReceiptAllocationsPublic(SQLModel):
-    data: list[ReceiptAllocationBase]
-    count: int
-
-
 class InvoiceLineItemPublic(InvoiceLineItemBase):
     id: uuid.UUID
 
@@ -819,27 +753,10 @@ class InvoiceLineItemPublic(InvoiceLineItemBase):
 class InvoicePublic(InvoiceBase):
     id: uuid.UUID
     line_items: list[InvoiceLineItemPublic] = []
-    allocations: list[ReceiptAllocationBase] = []
 
 
 class InvoicesPublic(SQLModel):
     data: list[InvoicePublic]
-    count: int
-
-
-class ReceiptPublic(ReceiptBase):
-    id: uuid.UUID
-    allocations: list[ReceiptAllocationBase] = []
-
-
-class Receipt(ReceiptBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    client: Client = Relationship(back_populates="receipts")
-    allocations: list[ReceiptAllocation] = Relationship(back_populates="receipt")
-
-
-class ReceiptsPublic(SQLModel):
-    data: list[ReceiptPublic]
     count: int
 
 
@@ -1628,8 +1545,6 @@ class DocumentJobsPublic(SQLModel):
 InvoiceLineItemPublic.model_rebuild()
 InvoicePublic.model_rebuild()
 InvoicesPublic.model_rebuild()
-ReceiptPublic.model_rebuild()
-ReceiptsPublic.model_rebuild()
 PolicyPublic.model_rebuild()
 PoliciesPublic.model_rebuild()
 RiskNotePublic.model_rebuild()

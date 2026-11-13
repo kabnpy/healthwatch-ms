@@ -8,8 +8,6 @@ from app.models import (
     InsurerCreate,
     PolicyCreate,
     ProductCreate,
-    ReceiptAllocationCreate,
-    ReceiptCreate,
     RiskNoteCreate,
 )
 from tests.utils.utils import random_email, random_lower_string
@@ -97,86 +95,3 @@ def test_create_risk_note(db: Session) -> None:
     assert risk_note.risk_note_number == risk_note_in.risk_note_number
     assert risk_note.policy_id == policy.id
 
-
-def test_create_receipt(db: Session) -> None:
-    client_in = ClientCreate(
-        name=random_lower_string(),
-        kra_pin=random_lower_string(),
-        email=random_email(),
-        phone=random_lower_string(),
-    )
-    client = crud.create_client(session=db, client_in=client_in)
-
-    receipt_in = ReceiptCreate(
-        receipt_number=random_lower_string(),
-        client_id=client.id,
-        date_received=date(2024, 1, 15),
-        amount=1100.0,
-        mode="Cash",
-        reference=random_lower_string(),
-    )
-    receipt = crud.create_receipt(session=db, receipt_in=receipt_in)
-    assert receipt.receipt_number == receipt_in.receipt_number
-    assert receipt.amount == receipt_in.amount
-
-
-def test_create_receipt_allocation(db: Session) -> None:
-    client_in = ClientCreate(
-        name=random_lower_string(),
-        kra_pin=random_lower_string(),
-        email=random_email(),
-        phone=random_lower_string(),
-    )
-    client = crud.create_client(session=db, client_in=client_in)
-
-    policy_in = PolicyCreate(
-        policy_number=random_lower_string(),
-        client_id=client.id,
-    )
-    policy = crud.create_policy(session=db, policy_in=policy_in)
-
-    risk_note_in = RiskNoteCreate(
-        risk_note_number=random_lower_string(),
-        policy_id=policy.id,
-        transaction_type="New Business",
-        coverage_start=date(2024, 1, 1),
-        coverage_end=date(2024, 12, 31),
-        net_premium=1000.0,
-        taxes={},
-        commission_amount=100.0,
-        total_amount=1100.0,
-    )
-    risk_note = crud.create_risk_note(session=db, risk_note_in=risk_note_in)
-
-    receipt_in = ReceiptCreate(
-        receipt_number=random_lower_string(),
-        client_id=client.id,
-        date_received=date(2024, 1, 15),
-        amount=1100.0,
-        mode="Cash",
-        reference=random_lower_string(),
-    )
-    receipt = crud.create_receipt(session=db, receipt_in=receipt_in)
-
-    # We need an invoice for the allocation
-    from app.models import Invoice
-
-    invoice = Invoice(
-        invoice_number=random_lower_string(),
-        client_id=client.id,
-        total_amount=1100.0,
-        balance_due=1100.0,
-    )
-    db.add(invoice)
-    db.commit()
-    db.refresh(invoice)
-
-    allocation_in = ReceiptAllocationCreate(
-        receipt_id=receipt.id,
-        invoice_id=invoice.id,
-        risk_note_id=risk_note.id,
-        amount_allocated=1100.0,
-    )
-    allocation = crud.create_receipt_allocation(session=db, allocation_in=allocation_in)
-    assert allocation.receipt_id == receipt.id
-    assert allocation.risk_note_id == risk_note.id

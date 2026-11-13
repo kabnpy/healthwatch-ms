@@ -90,9 +90,3 @@ def create_bulk_invoice(
         raise HTTPException(status_code=422, detail=str(e))
 
 
-# ==========================================
-# Receipt Routes
-# ==========================================
-
-
-
