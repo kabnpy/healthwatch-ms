@@ -252,7 +252,7 @@ class DocumentRenderer:
             if hasattr(risk_note.coverage_end, "strftime")
             else str(risk_note.coverage_end)
         )
-        stamp_dt = get_datetime_utc().strftime("%d %b %Y").upper()
+        stamp_dt = get_datetime_utc().strftime("%d %B %Y")
         special_conditions = override.get("special_conditions") or (
             risk_note.cover_snapshot.get("special_conditions")
             if risk_note.cover_snapshot
@@ -628,15 +628,20 @@ class DocumentRenderer:
                 "net_outstanding_balance": str(
                     snapshot.get("net_outstanding_balance", "0.00")
                 ),
+                "unallocated_credits": str(snapshot.get("unallocated_credits", "0.00")),
                 "invoice_count": int(snapshot.get("invoice_count", 0)),
                 "allocation_count": int(snapshot.get("allocation_count", 0)),
                 "ledger_entries": snapshot.get("ledger_entries", []),
             }
 
+        has_unallocated_credits = Decimal(
+            str(statement_data.get("unallocated_credits") or "0.00")
+        ) > Decimal("0.00")
         rendered_html = cls.render_template_html(
             "statement.html",
             {
                 "statement": statement_data,
+                "has_unallocated_credits": has_unallocated_credits,
                 "generated_at": get_datetime_utc().strftime("%Y-%m-%d %H:%M:%S UTC"),
             },
         )

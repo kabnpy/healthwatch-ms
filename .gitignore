@@ -81,3 +81,5 @@ backend/storage/
 
 # Better Design local artifacts
 .better-design/
+
+.impeccable/

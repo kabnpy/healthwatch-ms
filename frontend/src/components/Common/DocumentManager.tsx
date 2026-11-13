@@ -5,7 +5,7 @@ import { Suspense, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { DataTable } from "@/components/Common/DataTable"
-import { DocumentViewer } from "@/components/Documents/DocumentViewer"
+import { FileViewer } from "@/components/Documents/FileViewer"
 import PendingItems from "@/components/Pending/PendingItems"
 import { Button } from "@/components/ui/button"
 import {
@@ -263,9 +263,8 @@ export function DocumentManager({
           title="View Document"
         >
           <Suspense fallback={<PendingItems />}>
-            <DocumentViewer
+            <FileViewer
               id={selectedDocId}
-              type="external"
               onClose={() => setSelectedDocId(null)}
             />
           </Suspense>

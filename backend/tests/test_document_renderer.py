@@ -144,6 +144,49 @@ def test_render_invoice_from_db(db: Session) -> None:
     assert result.filename == "Invoice_INV-2026-042.pdf"
 
 
+def test_render_invoice_omits_duplicate_agency_row_and_renders_balance_due_and_remittance(
+    db: Session,
+) -> None:
+    client_rec = Client(
+        name="Savannah Logistics Ltd",
+        email="finance@savannah.co.ke",
+        phone="0722000111",
+        kra_pin="P051999888B",
+    )
+    db.add(client_rec)
+    db.flush()
+
+    invoice = Invoice(
+        invoice_number="INV-2026-104",
+        client_id=client_rec.id,
+        date_issued=date(2026, 3, 10),
+        due_date=date(2026, 4, 9),
+        total_amount=Decimal("125000.00"),
+        amount_paid=Decimal("25000.00"),
+        balance_due=Decimal("100000.00"),
+        status=InvoiceStatus.PARTIAL,
+    )
+    db.add(invoice)
+    db.commit()
+
+    result = DocumentRenderer.render_html(
+        session=db,
+        resource_type=DocumentJobResourceType.INVOICE,
+        resource_id=invoice.id,
+    )
+
+    assert '<span class="kv-label">Agency</span>' not in result.html
+    assert "Balance Due" in result.html
+    assert "125,000.00" in result.html
+    assert "25,000.00" in result.html
+    assert "100,000.00" in result.html
+    assert "522522" in result.html
+    assert "NCBA Bank Kenya" in result.html
+    assert "1002345678" in result.html
+    assert "NCBAKENA" in result.html
+    assert "Quote invoice number <strong>INV-2026-104</strong>" in result.html
+
+
 def test_render_fallback_resource_type(db: Session) -> None:
     result = DocumentRenderer.render_html(
         session=db,
@@ -329,3 +372,227 @@ def test_legacy_pdf_renderer_and_6_tuple_method_removed() -> None:
         importlib.import_module("app.services.pdf_renderer")
 
     assert not hasattr(DocumentJobService, "render_resource_html")
+
+
+def test_render_statement_surfaces_unapplied_funds_when_positive_and_omits_when_zero(
+    db: Session,
+) -> None:
+    from app.models import PaymentMethod, PaymentRecord, PaymentStatus
+
+    client_rec = Client(
+        name="Savannah Imports Ltd",
+        email="savannah@example.com",
+        phone="0722334455",
+        kra_pin="P058887776B",
+    )
+    db.add(client_rec)
+    db.flush()
+
+    payment = PaymentRecord(
+        client_id=client_rec.id,
+        amount=Decimal("12500.00"),
+        unallocated_amount=Decimal("4500.00"),
+        payment_date=date(2026, 4, 10),
+        payment_method=PaymentMethod.MPESA,
+        reference_number="MPESA-SAV-1",
+        status=PaymentStatus.ACTIVE,
+    )
+    db.add(payment)
+    db.commit()
+
+    db_result = DocumentRenderer.render_html(
+        session=db,
+        resource_type=DocumentJobResourceType.STATEMENT,
+        resource_id=client_rec.id,
+    )
+    assert "Unapplied Funds" in db_result.html
+    assert "4,500.00" in db_result.html
+
+    zero_result = DocumentRenderer.render_html(
+        session=db,
+        resource_type=DocumentJobResourceType.STATEMENT,
+        resource_id=None,
+        snapshot_override={
+            "client_name": "Zero Unapplied Client",
+            "unallocated_credits": "0.00",
+        },
+    )
+    assert "Unapplied Funds" not in zero_result.html
+
+
+def test_render_statement_mpesa_invoice_number_ledger_activity_and_date_fallback(
+    db: Session,
+) -> None:
+    result = DocumentRenderer.render_html(
+        session=db,
+        resource_type=DocumentJobResourceType.STATEMENT,
+        resource_id=None,
+        snapshot_override={
+            "client_name": "Rift Valley Builders",
+            "kra_pin": "P051119998C",
+            "total_invoiced": "50000.00",
+            "total_allocated": "20000.00",
+            "net_outstanding_balance": "30000.00",
+            "invoice_count": 2,
+            "allocation_count": 1,
+        },
+    )
+
+    assert "Ledger Activity" in result.html
+    assert "2 Invoices, 1 Payments" in result.html
+    assert "Invoice Number" in result.html
+    assert "Account: <span class=\"kv-val mono bold\">Rift Valley Builders</span>" not in result.html
+    assert "18 October 2026" not in result.html
+
+    no_date_html = DocumentRenderer.render_template_html(
+        "statement.html",
+        {
+            "statement": {
+                "client_name": "No Date Client",
+                "total_invoiced": "0.00",
+                "total_allocated": "0.00",
+                "net_outstanding_balance": "0.00",
+                "invoice_count": 0,
+                "allocation_count": 0,
+                "ledger_entries": [],
+            }
+        },
+    )
+    assert "18 October 2026" not in no_date_html
+    assert 'Statement Date: <span class="doc-ref-number">—</span>' in no_date_html
+
+
+def test_render_risk_note_indents_included_benefits_beneath_net_base_premium(
+    db: Session,
+) -> None:
+    client_rec = Client(
+        name="Savannah Fleet Ltd",
+        email="fleet@example.com",
+        phone="0700333444",
+        kra_pin="P051112224B",
+    )
+    db.add(client_rec)
+    db.flush()
+
+    insurer = Insurer(name="Britam General Insurance")
+    db.add(insurer)
+    db.flush()
+
+    product = Product(
+        insurer_id=insurer.id,
+        name="Motor Commercial",
+        class_of_insurance="Motor",
+    )
+    db.add(product)
+    db.flush()
+
+    policy = Policy(
+        policy_number="POL-RN-BEN-001",
+        client_id=client_rec.id,
+        product_id=product.id,
+        status=PolicyStatus.ACTIVE,
+        inception_date=date(2026, 3, 1),
+    )
+    db.add(policy)
+    db.flush()
+
+    risk_note = RiskNote(
+        risk_note_number="RN-2026-BEN-001",
+        policy_id=policy.id,
+        transaction_type=TransactionType.NEW_BUSINESS,
+        status=RiskNoteStatus.ACTIVE,
+        coverage_start=date(2026, 3, 1),
+        coverage_end=date(2027, 2, 28),
+        net_premium=Decimal("50000.00"),
+        total_amount=Decimal("50265.00"),
+        cover_snapshot={"vehicle": {"registration": "KCB 456C"}},
+        financial_breakdown={
+            "taxes": {
+                "training_levy": "100.00",
+                "pcf": "125.00",
+                "stamp_duty": "40.00",
+            },
+            "benefits": [
+                {"name": "Political Violence & Terrorism", "premium": "5000.00"},
+                {"name": "Excess Protector", "premium": "3500.00"},
+            ],
+        },
+    )
+    db.add(risk_note)
+    db.commit()
+
+    result = DocumentRenderer.render_html(
+        session=db,
+        resource_type=DocumentJobResourceType.RISK_NOTE,
+        resource_id=risk_note.id,
+    )
+
+    assert "Net Base Premium" in result.html
+    assert "Political Violence &amp; Terrorism" in result.html
+    assert "(Included)" in result.html
+    assert "benefit-subrow" in result.html
+
+
+def test_render_risk_note_compact_certification_and_pending_issue_fallback() -> None:
+    issued_html = DocumentRenderer.render_template_html(
+        "risk_note.html",
+        {
+            "risk_note": {
+                "risk_note_number": "RN-2026-CERT-001",
+                "status": "Issued",
+                "transaction_type": "new_business",
+                "net_premium": "25000.00",
+                "total_amount": "25150.00",
+            },
+            "policy": {"policy_number": "POL-CERT-001"},
+            "client": {"name": "Mombasa Logistics Ltd", "kra_pin": "P051234567M"},
+            "product": {"name": "Motor Private"},
+            "insurer": {"name": "Jubilee Insurance"},
+            "vehicles": [],
+            "vehicle": None,
+            "taxes": {},
+            "benefits": [],
+            "special_conditions": None,
+            "coverage_start_formatted": "01 January 2026",
+            "coverage_end_formatted": "31 December 2026",
+            "stamp_date": None,
+            "generated_at": None,
+            "include_digital_stamp": True,
+        },
+    )
+
+    assert "CERTIFIED OFFICIAL" in issued_html
+    assert "Digitally Authenticated — Agency Operations" in issued_html
+    assert 'viewBox="0 0 200 100"' not in issued_html
+    assert "Pending Issue" in issued_html
+    assert "18 October 2026" not in issued_html
+
+    draft_html = DocumentRenderer.render_template_html(
+        "risk_note.html",
+        {
+            "risk_note": {
+                "risk_note_number": "DRAFT",
+                "status": "Draft",
+                "transaction_type": "new_business",
+                "net_premium": "25000.00",
+                "total_amount": "25150.00",
+            },
+            "policy": {"policy_number": "POL-DRAFT-001"},
+            "client": {"name": "Mombasa Logistics Ltd", "kra_pin": "P051234567M"},
+            "product": {"name": "Motor Private"},
+            "insurer": {"name": "Jubilee Insurance"},
+            "vehicles": [],
+            "vehicle": None,
+            "taxes": {},
+            "benefits": [],
+            "special_conditions": None,
+            "coverage_start_formatted": "01 January 2026",
+            "coverage_end_formatted": "31 December 2026",
+            "stamp_date": None,
+            "generated_at": None,
+            "include_digital_stamp": True,
+        },
+    )
+
+    assert "CERTIFIED OFFICIAL" not in draft_html
+    assert "Digitally Authenticated — Agency Operations" not in draft_html

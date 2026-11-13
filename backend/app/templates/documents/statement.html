@@ -6,20 +6,30 @@
   <style>
     @page {
       size: A4 portrait;
-      margin: 12mm 14mm 10mm 14mm;
+      margin: 12mm 15mm;
     }
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
+    html {
+      font-size: 16px;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      font-size: 10px;
-      line-height: 1.45;
+      font-size: 0.75rem;
+      line-height: 1.5;
       color: #0f172a;
       background: #ffffff;
       -webkit-font-smoothing: antialiased;
+    }
+    @media screen and (min-width: 641px) {
+      body {
+        max-width: 49.6rem;
+        margin: 0 auto;
+        padding: 2.25rem 2.5rem;
+      }
     }
 
     /* Header & Letterhead */
@@ -27,127 +37,129 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      padding-bottom: 12px;
-      border-bottom: 2px solid #0f172a;
-      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 0.125rem solid #0f172a;
+      margin-bottom: 1rem;
     }
     .brand-block {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 0.75rem;
     }
     .brand-symbol {
-      width: 36px;
-      height: 36px;
-      background: #0f172a;
-      border-radius: 6px;
+      width: 2.25rem;
+      height: 2.25rem;
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #ffffff;
-      font-weight: 900;
-      font-size: 18px;
+      color: #0f172a;
     }
     .brand-title {
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing: -0.5px;
+      font-size: 1.125rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
       color: #0f172a;
-      text-transform: uppercase;
-      line-height: 1;
+      line-height: 1.2;
     }
     .brand-sub {
-      font-size: 8px;
-      font-weight: 700;
-      color: #64748b;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-      margin-top: 3px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #475569;
+      margin-top: 0.125rem;
     }
     .agency-credentials {
       text-align: right;
-      font-size: 8.5px;
+      font-size: 0.75rem;
       color: #475569;
-      line-height: 1.35;
+      line-height: 1.45;
     }
     .agency-credentials strong {
       color: #0f172a;
+      font-weight: 600;
     }
 
     /* Document Identification Banner */
     .doc-banner {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
       background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-left: 4px solid #0f172a;
-      border-radius: 4px;
-      padding: 8px 12px;
-      margin-bottom: 14px;
+      border: 0.0625rem solid #cbd5e1;
+      border-radius: 0.375rem;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
     }
-    .doc-title-main {
-      font-size: 13px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: -0.2px;
-      color: #0f172a;
+    .doc-title-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .doc-title-main {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+      color: #0f172a;
+      margin: 0;
+    }
+    .doc-subtitle {
+      font-size: 0.75rem;
+      color: #475569;
+      margin-top: 0.25rem;
+      text-wrap: pretty;
     }
     .badge {
-      font-size: 8px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 2px 6px;
-      border-radius: 3px;
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.125rem 0.5rem;
+      border-radius: 0.25rem;
       background: #f1f5f9;
-      color: #334155;
-      border: 1px solid #cbd5e1;
+      color: #1e293b;
+      border: 0.0625rem solid #cbd5e1;
     }
     .doc-banner-meta {
       text-align: right;
-      font-size: 9px;
+      font-size: 0.75rem;
       color: #475569;
+      line-height: 1.45;
     }
     .doc-ref-number {
       font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
       font-weight: 800;
-      font-size: 11px;
+      font-size: 0.875rem;
       color: #0f172a;
     }
 
-    /* Section Cards & Grids */
+    /* Section Headings & Grids */
     .section-title {
-      font-size: 8.5px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: #475569;
-      margin-bottom: 5px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .section-title::after {
-      content: "";
-      flex: 1;
-      height: 1px;
-      background: #e2e8f0;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 0.0625rem solid #cbd5e1;
     }
     .grid-2 {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 14px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
     }
     .grid-col {
-      flex: 1;
       background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 4px;
-      padding: 8px 10px;
+      border: 0.0625rem solid #cbd5e1;
+      border-radius: 0.375rem;
+      padding: 0.75rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
     }
     .grid-col.tinted {
       background: #f8fafc;
@@ -156,78 +168,94 @@
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      padding: 2.5px 0;
-      border-bottom: 1px solid #f1f5f9;
-      font-size: 9.5px;
+      gap: 0.5rem;
+      font-size: 0.75rem;
     }
-    .kv-row:last-child {
-      border-bottom: none;
+    .kv-row::after {
+      content: "";
+      flex: 1;
+      border-bottom: 1px dotted #cbd5e1;
+      order: 1;
+      margin-bottom: 0.2em;
     }
     .kv-label {
-      color: #64748b;
-      font-size: 8.5px;
-      text-transform: uppercase;
-      font-weight: 600;
-      letter-spacing: 0.3px;
+      color: #475569;
+      font-weight: 500;
+      flex-shrink: 0;
+      order: 0;
     }
     .kv-val {
       font-weight: 600;
       color: #0f172a;
       text-align: right;
+      word-break: break-word;
+      order: 2;
     }
     .kv-val.bold {
-      font-weight: 800;
+      font-weight: 700;
     }
     .kv-val.mono {
       font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
     }
 
     /* Summary Financial KPI Cards */
     .kpi-grid {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 14px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(10.25rem, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
     }
     .kpi-card {
-      flex: 1;
-      border: 1px solid #e2e8f0;
-      border-radius: 4px;
-      padding: 8px 10px;
+      border: 0.0625rem solid #cbd5e1;
+      border-radius: 0.375rem;
+      padding: 0.75rem 0.875rem;
       background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.25rem;
     }
     .kpi-card.highlight {
-      background: #0f172a;
+      background: #f1f5f9;
       border-color: #0f172a;
-      color: #ffffff;
+      border-width: 0.125rem;
     }
     .kpi-card .label {
-      font-size: 8px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #64748b;
-      margin-bottom: 3px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #475569;
     }
     .kpi-card.highlight .label {
-      color: #94a3b8;
+      color: #0f172a;
+      font-weight: 700;
     }
     .kpi-card .amount {
-      font-size: 14px;
+      font-size: 1.0625rem;
       font-weight: 800;
       font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       color: #0f172a;
       font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
-    .kpi-card.highlight .amount {
-      color: #38bdf8;
+    .kpi-card .amount.credit {
+      color: #065f46;
     }
 
     /* Ledger Table */
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+      margin-bottom: 1rem;
+      border: 0.0625rem solid #cbd5e1;
+      border-radius: 0.375rem;
+    }
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 14px;
-      font-size: 9px;
+      font-size: 0.75rem;
       page-break-inside: auto;
     }
     .data-table thead {
@@ -239,253 +267,389 @@
     }
     .data-table th {
       background: #f1f5f9;
-      color: #334155;
-      font-size: 8px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 6px 8px;
+      color: #1e293b;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.5rem 0.5rem;
       text-align: left;
-      border-top: 1px solid #cbd5e1;
-      border-bottom: 1px solid #cbd5e1;
+      border-bottom: 0.0625rem solid #cbd5e1;
     }
     .data-table td {
-      padding: 6px 8px;
-      border-bottom: 1px solid #f1f5f9;
+      padding: 0.5rem 0.5rem;
+      border-bottom: 0.0625rem solid #e2e8f0;
       color: #1e293b;
     }
-    .data-table tr:nth-child(even) td {
-      background: #fafafa;
+    .data-table tbody tr:last-child td {
+      border-bottom: none;
     }
-    .data-table th.num, .data-table td.num {
+    .data-table th.center,
+    .data-table td.center {
+      text-align: center;
+    }
+    .data-table th.num,
+    .data-table td.num {
       text-align: right;
       font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .nowrap {
+      white-space: nowrap;
     }
 
     .type-badge {
       display: inline-block;
-      font-size: 7.5px;
-      font-weight: 700;
-      padding: 1.5px 4px;
-      border-radius: 2px;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      white-space: nowrap;
     }
     .type-invoice {
       background: #f1f5f9;
-      color: #475569;
-      border: 1px solid #cbd5e1;
+      color: #334155;
+      border: 0.0625rem solid #cbd5e1;
     }
     .type-payment {
       background: #ecfdf5;
-      color: #047857;
-      border: 1px solid #a7f3d0;
+      color: #065f46;
+      border: 0.0625rem solid #6ee7b7;
     }
 
     /* Settlement Instructions */
     .settlement-card {
       background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-left: 3px solid #0284c7;
-      border-radius: 4px;
-      padding: 8px 12px;
-      margin-bottom: 14px;
+      border: 0.0625rem solid #cbd5e1;
+      border-radius: 0.375rem;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
       page-break-inside: avoid;
       break-inside: avoid;
-      font-size: 8.5px;
+      font-size: 0.75rem;
     }
     .settlement-title {
-      font-size: 8.5px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-size: 0.8125rem;
+      font-weight: 700;
       color: #0f172a;
-      margin-bottom: 4px;
+      margin-bottom: 0.5rem;
     }
     .settlement-grid {
-      display: flex;
-      gap: 16px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
     }
     .settlement-col {
-      flex: 1;
-      line-height: 1.4;
+      line-height: 1.5;
+      color: #334155;
+    }
+    .settlement-col strong {
+      color: #0f172a;
     }
 
     /* Legal Notice */
     .legal-notice {
-      font-size: 7.5px;
-      color: #64748b;
-      line-height: 1.35;
-      border-top: 1px solid #e2e8f0;
-      padding-top: 6px;
-      text-align: justify;
+      font-size: 0.6875rem;
+      color: #334155;
+      line-height: 1.45;
+      border-top: 0.0625rem solid #cbd5e1;
+      padding-top: 0.5rem;
+      text-wrap: pretty;
     }
     .legal-notice strong {
-      color: #334155;
+      color: #0f172a;
+    }
+
+    /* Mobile / Narrow Viewport Adaptation */
+    @media screen and (max-width: 640px) {
+      body {
+        padding: 0.75rem;
+      }
+      .agency-credentials,
+      .doc-banner-meta {
+        text-align: left;
+      }
+      .grid-2,
+      .kpi-grid,
+      .settlement-grid {
+        grid-template-columns: 1fr;
+      }
+      .table-wrap {
+        border: none;
+        border-radius: 0;
+        overflow-x: visible;
+      }
+      .data-table,
+      .data-table tbody,
+      .data-table tr,
+      .data-table td {
+        display: block;
+        width: 100%;
+      }
+      .data-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+      }
+      .data-table tbody tr {
+        border: 0.0625rem solid #cbd5e1;
+        border-radius: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.75rem;
+        background: #ffffff;
+      }
+      .data-table tbody tr:last-child {
+        margin-bottom: 0;
+      }
+      .data-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 0.75rem;
+        padding: 0.25rem 0;
+        border-bottom: 0.0625rem dashed #e2e8f0;
+        text-align: right;
+      }
+      .data-table td:last-child {
+        border-bottom: none;
+      }
+      .data-table td.center,
+      .data-table td.num {
+        text-align: right;
+      }
+      .data-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #475569;
+        text-align: left;
+        flex-shrink: 0;
+      }
+      .data-table td[colspan] {
+        display: block;
+        text-align: center;
+      }
+      .data-table td[colspan]::before {
+        content: none;
+      }
+    }
+
+    /* Strict Print Overrides (docs/02_design_system.md Section 6) */
+    @media print {
+      body {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        color: #000000 !important;
+        background: #ffffff !important;
+      }
+      .kv-row::after {
+        border-bottom-color: #111111 !important;
+      }
+      .agency-header {
+        border-bottom: 1pt solid #000000 !important;
+      }
+      .doc-banner,
+      .grid-col,
+      .grid-col.tinted,
+      .kpi-card,
+      .kpi-card.highlight,
+      .table-wrap,
+      .settlement-card,
+      .badge,
+      .type-badge,
+      .data-table th {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border-color: #111111 !important;
+      }
+      .section-title,
+      .data-table th,
+      .data-table td,
+      .legal-notice {
+        border-color: #111111 !important;
+        border-width: 0.5pt !important;
+        color: #000000 !important;
+      }
+      .brand-sub,
+      .agency-credentials,
+      .doc-subtitle,
+      .doc-banner-meta,
+      .kv-label,
+      .kpi-card .label,
+      .kpi-card .amount.credit,
+      .settlement-col,
+      .legal-notice {
+        color: #000000 !important;
+      }
+      table, tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
     }
   </style>
 </head>
 <body>
 
   <!-- 1. AGENCY LETTERHEAD -->
-  <div class="agency-header">
+  <header class="agency-header">
     <div class="brand-block">
-      <div class="brand-symbol">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="20" x2="18" y2="10"/>
-          <line x1="12" y1="20" x2="12" y2="4"/>
-          <line x1="6" y1="20" x2="6" y2="14"/>
+      <div class="brand-symbol" aria-hidden="true">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1.5" y="1.5" width="33" height="33" rx="6" stroke="currentColor" stroke-width="1.75"/>
+          <path d="M10 11V25M10 18H18M18 11V25" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M21.5 14L23.5 25L26 17L28.5 25L30.5 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
       <div>
-        <div class="brand-title">HealthWatch MS</div>
-        <div class="brand-sub">Client Ledger Operations &bull; Agency Accounts</div>
+        <div class="brand-title">HealthWatch Insurance Agency</div>
+        <div class="brand-sub">Client Ledger &amp; Agency Accounts</div>
       </div>
     </div>
     <div class="agency-credentials">
-      <div>Hughes Building, 4th Floor, Kenyatta Avenue &bull; P.O. Box 45123 - 00100 Nairobi</div>
-      <div>Tel: +254 (0) 20 2212345 &bull; Email: accounts@healthwatch.co.ke</div>
-      <div><strong>KRA PIN:</strong> P051234567Z &bull; <strong>IRA Reg:</strong> IRA/05/2048/2026</div>
+      <div>Hughes Building, 4th Floor, Kenyatta Avenue, P.O. Box 45123 - 00100 Nairobi</div>
+      <div>Tel: +254 (0) 20 2212345, Email: accounts@healthwatch.co.ke</div>
+      <div><strong>KRA PIN:</strong> P051234567Z, <strong>IRA Reg:</strong> IRA/05/2048/2026</div>
     </div>
-  </div>
+  </header>
 
-  <!-- 2. DOCUMENT IDENTIFICATION BANNER -->
-  <div class="doc-banner">
-    <div>
-      <div class="doc-title-main">
-        <span>Statement of Account</span>
-        <span class="badge">Running Balance Ledger</span>
+  <main>
+    <!-- 2. DOCUMENT IDENTIFICATION BANNER -->
+    <section class="doc-banner" aria-label="Statement identification">
+      <div>
+        <div class="doc-title-row">
+          <h1 class="doc-title-main">Statement of Account</h1>
+          <span class="badge">Client Running Balance</span>
+        </div>
+        <p class="doc-subtitle">
+          Chronological summary of issued Invoices and allocated Payment Records
+        </p>
       </div>
-      <div style="font-size: 8.5px; color: #64748b; margin-top: 2px;">
-        Account Chronology &bull; Underwriting Premium Debits &amp; Cleared Remittance Allocations
+      <div class="doc-banner-meta">
+        <div>Statement Date: <span class="doc-ref-number">{{ statement.generated_at or generated_at or "—" }}</span></div>
+        <div>Period: <strong>{{ statement.period_start or 'Inception' }}</strong> to <strong>{{ statement.period_end or 'Present' }}</strong></div>
       </div>
-    </div>
-    <div class="doc-banner-meta">
-      <div>Statement Date:</div>
-      <div class="doc-ref-number">{{ statement.generated_at or "26 OCT 2026" }}</div>
-      <div style="font-size: 8px; color: #64748b;">
-        Period: <strong>{{ statement.period_start or 'Inception' }}</strong> to <strong>{{ statement.period_end or 'Present' }}</strong>
-      </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- 3. CLIENT IDENTITY & ACCOUNT PROFILE -->
-  <div class="section-title">1. Account Holder &amp; Agency Servicing</div>
-  <div class="grid-2">
-    <div class="grid-col">
-      <div class="kv-row">
-        <span class="kv-label">Account Holder</span>
-        <span class="kv-val bold">{{ statement.client_name }}</span>
+    <!-- 3. CLIENT IDENTITY & ACCOUNT PROFILE -->
+    <h2 class="section-title">Client &amp; Ledger Details</h2>
+    <div class="grid-2">
+      <div class="grid-col">
+        <div class="kv-row">
+          <span class="kv-label">Client Name</span>
+          <span class="kv-val bold">{{ statement.client_name }}</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">KRA PIN</span>
+          <span class="kv-val mono">{{ statement.client_kra_pin or statement.kra_pin or "—" }}</span>
+        </div>
       </div>
-      <div class="kv-row">
-        <span class="kv-label">KRA PIN</span>
-        <span class="kv-val mono">{{ statement.client_kra_pin or statement.kra_pin or "N/A" }}</span>
-      </div>
-      <div class="kv-row">
-        <span class="kv-label">Client ID</span>
-        <span class="kv-val mono">{{ (statement.client_id | string | truncate(16, True, '...')) if statement.client_id else "N/A" }}</span>
-      </div>
-    </div>
-    <div class="grid-col tinted">
-      <div class="kv-row">
-        <span class="kv-label">Currency</span>
-        <span class="kv-val bold">KES (Kenya Shillings)</span>
-      </div>
-      <div class="kv-row">
-        <span class="kv-label">Ledger Type</span>
-        <span class="kv-val">FIFO Allocation Bounded Ledger</span>
-      </div>
-      <div class="kv-row">
-        <span class="kv-label">Intermediary</span>
-        <span class="kv-val">HealthWatch Insurance Agency</span>
+      <div class="grid-col tinted">
+        <div class="kv-row">
+          <span class="kv-label">Allocation Method</span>
+          <span class="kv-val">Oldest Invoice First</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-label">Ledger Activity</span>
+          <span class="kv-val">{{ statement.invoice_count or 0 }} Invoices, {{ statement.allocation_count or 0 }} Payments</span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- 4. FINANCIAL SUMMARY CARDS -->
-  <div class="section-title">2. Account Financial Position</div>
-  <div class="kpi-grid">
-    <div class="kpi-card">
-      <div class="label">Total Invoiced Debits</div>
-      <div class="amount">KES {{ (statement.total_invoiced or 0) | kes }}</div>
-    </div>
-    <div class="kpi-card">
-      <div class="label">Total Cleared Allocations</div>
-      <div class="amount" style="color: #047857;">KES {{ (statement.total_paid or statement.total_allocated or 0) | kes }}</div>
-    </div>
-    <div class="kpi-card highlight">
-      <div class="label">Net Outstanding Balance</div>
-      <div class="amount">KES {{ (statement.balance_due or statement.net_outstanding_balance or 0) | kes }}</div>
-    </div>
-  </div>
-
-  <!-- 5. CHRONOLOGICAL RUNNING BALANCE LEDGER -->
-  <div class="section-title">3. Transaction Activity &amp; Running Balance</div>
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th style="width: 12%;">Date</th>
-        <th style="width: 15%;">Reference #</th>
-        <th style="width: 10%;">Type</th>
-        <th style="width: 27%;">Description</th>
-        <th style="width: 12%;" class="num">Debit (KES)</th>
-        <th style="width: 12%;" class="num">Credit (KES)</th>
-        <th style="width: 12%;" class="num">Balance (KES)</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for entry in statement.entries or statement.ledger_entries or [] %}
-      <tr>
-        <td style="font-family: ui-monospace, monospace; color: #64748b;">
-          {{ entry.date.strftime("%d/%m/%Y") if entry.date and entry.date.strftime is defined else (entry.date or "-") }}
-        </td>
-        <td style="font-family: ui-monospace, monospace; font-weight: 700;">
-          {{ entry.reference or "-" }}
-        </td>
-        <td>
-          <span class="type-badge {{ 'type-payment' if entry.type == 'Payment' or entry.type == 'Receipt' else 'type-invoice' }}">
-            {{ entry.type }}
-          </span>
-        </td>
-        <td style="color: #334155;">{{ entry.description or "-" }}</td>
-        <td class="num font-mono">
-          {{ entry.debit | kes if entry.debit else "-" }}
-        </td>
-        <td class="num font-mono" style="color: #047857;">
-          {{ entry.credit | kes if entry.credit else "-" }}
-        </td>
-        <td class="num font-mono" style="font-weight: 700; color: #0f172a;">
-          {{ entry.balance | kes if entry.balance is defined else "-" }}
-        </td>
-      </tr>
-      {% else %}
-      <tr>
-        <td colspan="7" style="text-align: center; color: #94a3b8; padding: 16px;">
-          No transactional activity recorded for this period.
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <!-- 6. REMITTANCE COORDINATES -->
-  <div class="settlement-card">
-    <div class="settlement-title">Settlement Coordinates &amp; Reconciliation Instructions</div>
-    <div class="settlement-grid">
-      <div class="settlement-col">
-        <strong>M-Pesa Mobile Paybill:</strong> Business No: <span style="font-family: ui-monospace, monospace; font-weight: 800;">522522</span> &bull; Account: <span style="font-family: ui-monospace, monospace; font-weight: 800;">{{ statement.client_name }}</span>
+    <!-- 4. FINANCIAL SUMMARY CARDS -->
+    <h2 class="section-title">Account Summary</h2>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="label">Total Invoiced</div>
+        <div class="amount">KES&nbsp;{{ (statement.total_invoiced or 0) | kes }}</div>
       </div>
-      <div class="settlement-col">
-        <strong>Bank Electronic Remittance:</strong> NCBA Bank Kenya PLC &bull; Kenyatta Avenue &bull; A/C: <span style="font-family: ui-monospace, monospace; font-weight: 800;">1002345678</span>
+      <div class="kpi-card">
+        <div class="label">Allocated Payments</div>
+        <div class="amount credit">KES&nbsp;{{ (statement.total_paid or statement.total_allocated or 0) | kes }}</div>
       </div>
+      <div class="kpi-card highlight">
+        <div class="label">Net Outstanding Balance</div>
+        <div class="amount">KES&nbsp;{{ (statement.balance_due or statement.net_outstanding_balance or 0) | kes }}</div>
+      </div>
+      {% if has_unallocated_credits %}
+      <div class="kpi-card">
+        <div class="label">Unapplied Funds</div>
+        <div class="amount credit">KES&nbsp;{{ statement.unallocated_credits | kes }}</div>
+      </div>
+      {% endif %}
     </div>
-  </div>
+
+    <!-- 5. CHRONOLOGICAL RUNNING BALANCE LEDGER -->
+    <h2 class="section-title">Transaction History &amp; Running Balance</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 11%;" class="center">Date</th>
+            <th style="width: 15%;">Reference</th>
+            <th style="width: 9%;" class="center">Type</th>
+            <th style="width: 23%;">Description</th>
+            <th style="width: 14%;" class="num">Debit (KES)</th>
+            <th style="width: 14%;" class="num">Credit (KES)</th>
+            <th style="width: 14%;" class="num">Balance (KES)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in statement.entries or statement.ledger_entries or [] %}
+          {% set row_balance = entry.balance if entry.balance is defined and entry.balance is not none else (entry.running_balance if entry.running_balance is defined and entry.running_balance is not none else none) %}
+          <tr>
+            <td class="center kv-val mono nowrap" data-label="Date" style="color: #475569;">
+              {{ entry.date.strftime("%d/%m/%Y") if entry.date and entry.date.strftime is defined else (entry.date or "—") }}
+            </td>
+            <td class="kv-val mono bold nowrap" data-label="Reference" style="text-align: left;">
+              {{ entry.reference or "—" }}
+            </td>
+            <td class="center" data-label="Type">
+              <span class="type-badge {{ 'type-payment' if entry.type == 'Payment' or entry.type == 'Receipt' or entry.type == 'PAYMENT_ALLOCATION' else 'type-invoice' }}">
+                {{ entry.type }}
+              </span>
+            </td>
+            <td data-label="Description" style="color: #1e293b;">{{ entry.description or "—" }}</td>
+            <td class="num" data-label="Debit (KES)">
+              {{ ("KES\u00a0" ~ (entry.debit | kes)) if entry.debit else "—" }}
+            </td>
+            <td class="num" data-label="Credit (KES)" style="color: #065f46; font-weight: 600;">
+              {{ ("KES\u00a0" ~ (entry.credit | kes)) if entry.credit else "—" }}
+            </td>
+            <td class="num" data-label="Balance (KES)" style="font-weight: 700; color: #0f172a;">
+              {{ ("KES\u00a0" ~ (row_balance | kes)) if row_balance is not none else "—" }}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: #475569; padding: 1rem;">
+              No invoices or payment allocations recorded for this period. Issue an Invoice or record a Payment Allocation to populate this statement.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 6. REMITTANCE COORDINATES -->
+    <section class="settlement-card" aria-label="Payment instructions">
+      <h2 class="settlement-title">Payment &amp; Reconciliation Details</h2>
+      <div class="settlement-grid">
+        <div class="settlement-col">
+          <strong>Mobile Money (M-Pesa):</strong> Paybill <span class="kv-val mono bold">522522</span>, Account: <span class="kv-val mono bold">Invoice Number</span> (quote the specific Invoice Number being settled)
+        </div>
+        <div class="settlement-col">
+          <strong>Bank Transfer:</strong> NCBA Bank Kenya, Kenyatta Avenue, Account: <span class="kv-val mono bold">1002345678</span>
+        </div>
+      </div>
+    </section>
+  </main>
 
   <!-- 7. STATUTORY NOTICE -->
-  <div class="legal-notice">
-    <strong>REGULATORY DISCLOSURE:</strong> This statement reflects chronological debits and remittance allocations maintained on the HealthWatch MS agency ledger. In accordance with Section 156A of the Insurance Act (Cap 487), insurer cover is only active upon cleared remittance. For inquiries or reconciliation adjustments, contact accounts@healthwatch.co.ke.
-  </div>
+  <footer class="legal-notice">
+    <strong>Regulatory Disclosure:</strong> This Statement summarizes chronological Invoices and allocated Payment Records on the HealthWatch Insurance Agency ledger. Under Section 156A of the Insurance Act (Cap 487, Laws of Kenya), insurance cover is active only upon receipt of cleared funds. For reconciliation inquiries, email accounts@healthwatch.co.ke.
+  </footer>
 
 </body>
 </html>
