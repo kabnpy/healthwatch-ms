@@ -134,7 +134,7 @@ export function RenewalTransitionSheet({
   const [ratingCalcOpen, setRatingCalcOpen] = useState<boolean>(false)
 
   const handleApplyRating = (result: QuoteResponse) => {
-    const breakdown = result.breakdown as Record<string, unknown>
+    const { breakdown } = result
     const grossTotal = Number(breakdown.total_amount || 0)
     const netPremium = Number(breakdown.net_premium || 0)
     const totalLevies =

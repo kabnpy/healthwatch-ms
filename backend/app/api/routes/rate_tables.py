@@ -13,6 +13,7 @@ from app.models import (
     RateBracketCreate,
     RateBracketPublic,
     RateTableStatus,
+    RateTableVersion,
     RateTableVersionCreate,
     RateTableVersionPublic,
     RateTableVersionsPublic,
@@ -30,7 +31,7 @@ _ALLOWED_STATUS_TRANSITIONS: dict[RateTableStatus, set[RateTableStatus]] = {
 
 def _get_rate_table_or_404(
     session: SessionDep, rate_table_id: uuid.UUID
-) -> Any:
+) -> RateTableVersion:
     db_rate_table = crud.get_rate_table_version(
         session=session, rate_table_id=rate_table_id
     )
@@ -41,7 +42,7 @@ def _get_rate_table_or_404(
 
 def _get_draft_rate_table_or_409(
     session: SessionDep, rate_table_id: uuid.UUID
-) -> Any:
+) -> RateTableVersion:
     db_rate_table = _get_rate_table_or_404(session, rate_table_id)
     if db_rate_table.status != RateTableStatus.DRAFT:
         raise HTTPException(

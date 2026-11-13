@@ -87,7 +87,7 @@ export function PricingRulesInspector({ product }: PricingRulesInspectorProps) {
         const detailRes = await RateTablesService.tablesReadRateTable({
           path: { id: published.id },
         })
-        return (detailRes.data as RateTableVersionDetail) ?? published
+        return detailRes.data ?? published
       },
     })
 
