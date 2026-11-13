@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 import jinja2
+from fastapi.encoders import jsonable_encoder
 from markdown_it import MarkdownIt
 from sqlmodel import Session
 
@@ -151,6 +152,190 @@ class DocumentRenderer:
         return template.render(**context)
 
     @classmethod
+    def build_snapshot(
+        cls,
+        session: Session,
+        resource_type: DocumentJobResourceType,
+        resource_id: uuid.UUID | None = None,
+        snapshot_override: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Build a JSON-serializable input snapshot for a domain resource.
+
+        Shared between synchronous HTML previews and DocumentJob enqueueing.
+        Statement remains the ADR-0005 exception and is not frozen at enqueue time.
+        """
+        override = dict(snapshot_override or {})
+        if override.get("_frozen") is True:
+            return override
+
+        if resource_type == DocumentJobResourceType.STATEMENT:
+            return override
+
+        if resource_type == DocumentJobResourceType.RISK_NOTE:
+            return cls._build_risk_note_snapshot(
+                session=session,
+                target_id=resource_id,
+                override=override,
+            )
+
+        if resource_type == DocumentJobResourceType.INVOICE:
+            return cls._build_invoice_snapshot(
+                session=session,
+                target_id=resource_id,
+                override=override,
+            )
+
+        # Invitation, InvoiceBatch, or other non-Statement resources
+        return {
+            "_frozen": True,
+            "resource_type": resource_type.value,
+            "resource_id": str(resource_id) if resource_id else None,
+            **jsonable_encoder(override),
+        }
+
+    @classmethod
+    def _build_risk_note_snapshot(
+        cls,
+        *,
+        session: Session,
+        target_id: uuid.UUID | None,
+        override: dict[str, Any],
+    ) -> dict[str, Any]:
+        risk_note = session.get(RiskNote, target_id) if target_id else None
+        if not risk_note:
+            return {
+                "_frozen": True,
+                "found": False,
+                "target_id": str(target_id) if target_id else None,
+                **jsonable_encoder(override),
+            }
+
+        policy = (
+            session.get(Policy, risk_note.policy_id) if risk_note.policy_id else None
+        )
+        client = (
+            session.get(Client, policy.client_id)
+            if policy and policy.client_id
+            else None
+        )
+        product = (
+            session.get(Product, policy.product_id)
+            if policy and policy.product_id
+            else None
+        )
+        insurer = getattr(product, "insurer", None)
+
+        vehicles: list[Any] = []
+        if policy and hasattr(policy, "vehicles") and policy.vehicles:
+            vehicles = list(policy.vehicles)
+        elif risk_note.cover_snapshot:
+            snap = risk_note.cover_snapshot
+            if "vehicles" in snap and isinstance(snap["vehicles"], list):
+                vehicles = snap["vehicles"]
+            elif "vehicle" in snap:
+                vehicles = [snap["vehicle"]]
+            elif "VEHICLE DETAILS" in snap:
+                vehicles = [snap["VEHICLE DETAILS"]]
+
+        vehicle = vehicles[0] if vehicles else None
+        breakdown = risk_note.financial_breakdown or {}
+        taxes = breakdown.get("taxes", {})
+        benefits = breakdown.get("benefits", [])
+
+        cov_start_str = (
+            risk_note.coverage_start.strftime("%d %B %Y")
+            if hasattr(risk_note.coverage_start, "strftime")
+            else str(risk_note.coverage_start)
+        )
+        cov_end_str = (
+            risk_note.coverage_end.strftime("%d %B %Y")
+            if hasattr(risk_note.coverage_end, "strftime")
+            else str(risk_note.coverage_end)
+        )
+        stamp_dt = get_datetime_utc().strftime("%d %b %Y").upper()
+        special_conditions = override.get("special_conditions") or (
+            risk_note.cover_snapshot.get("special_conditions")
+            if risk_note.cover_snapshot
+            else None
+        )
+
+        snapshot: dict[str, Any] = {
+            "_frozen": True,
+            "found": True,
+            "risk_note": jsonable_encoder(risk_note),
+            "policy": jsonable_encoder(policy) if policy else None,
+            "client": jsonable_encoder(client) if client else None,
+            "product": jsonable_encoder(product) if product else None,
+            "insurer": jsonable_encoder(insurer) if insurer else None,
+            "vehicle": jsonable_encoder(vehicle) if vehicle else None,
+            "vehicles": jsonable_encoder(vehicles),
+            "taxes": jsonable_encoder(taxes),
+            "benefits": jsonable_encoder(benefits),
+            "special_conditions": special_conditions,
+            "coverage_start_formatted": cov_start_str,
+            "coverage_end_formatted": cov_end_str,
+            "stamp_date": stamp_dt,
+            "include_digital_stamp": bool(override.get("include_digital_stamp", True)),
+        }
+        for key, value in override.items():
+            if key not in {"_frozen", "found"}:
+                snapshot[key] = jsonable_encoder(value)
+        return snapshot
+
+    @classmethod
+    def _build_invoice_snapshot(
+        cls,
+        *,
+        session: Session,
+        target_id: uuid.UUID | None,
+        override: dict[str, Any],
+    ) -> dict[str, Any]:
+        invoice = session.get(Invoice, target_id) if target_id else None
+        if not invoice:
+            return {
+                "_frozen": True,
+                "found": False,
+                "target_id": str(target_id) if target_id else None,
+                **jsonable_encoder(override),
+            }
+
+        client = session.get(Client, invoice.client_id) if invoice.client_id else None
+        policy = None
+        if hasattr(invoice, "line_items") and invoice.line_items:
+            first_item = invoice.line_items[0]
+            if (
+                hasattr(first_item, "risk_note")
+                and first_item.risk_note
+                and hasattr(first_item.risk_note, "policy")
+            ):
+                policy = first_item.risk_note.policy
+
+        inv_date_str = (
+            invoice.date_issued.strftime("%d %B %Y")
+            if hasattr(invoice.date_issued, "strftime")
+            else str(invoice.date_issued)
+        )
+        due_date_str = (
+            invoice.due_date.strftime("%d %B %Y")
+            if hasattr(invoice.due_date, "strftime")
+            else str(invoice.due_date)
+        )
+
+        snapshot: dict[str, Any] = {
+            "_frozen": True,
+            "found": True,
+            "invoice": jsonable_encoder(invoice),
+            "client": jsonable_encoder(client) if client else None,
+            "policy": jsonable_encoder(policy) if policy else None,
+            "invoice_date_formatted": inv_date_str,
+            "due_date_formatted": due_date_str,
+        }
+        for key, value in override.items():
+            if key not in {"_frozen", "found"}:
+                snapshot[key] = jsonable_encoder(value)
+        return snapshot
+
+    @classmethod
     def render_html(
         cls,
         session: Session,
@@ -192,6 +377,7 @@ class DocumentRenderer:
                 session=session,
                 target_id=target_id,
                 ref_id=ref_id,
+                snapshot=snapshot,
                 filename=filename,
                 entity_type=entity_type,
                 entity_id=entity_id,
@@ -260,8 +446,13 @@ class DocumentRenderer:
         fallback_title: str,
         fallback_lines: list[str],
     ) -> RenderedDocument:
-        risk_note = session.get(RiskNote, target_id) if target_id else None
-        if not risk_note:
+        built = cls.build_snapshot(
+            session=session,
+            resource_type=DocumentJobResourceType.RISK_NOTE,
+            resource_id=target_id,
+            snapshot_override=snapshot,
+        )
+        if not built.get("found") or not built.get("risk_note"):
             rendered_html = (
                 f"<!DOCTYPE html><html><body><h1>Risk Note</h1>"
                 f"<p>ID: {target_id or ref_id}</p></body></html>"
@@ -275,55 +466,20 @@ class DocumentRenderer:
                 fallback_lines=fallback_lines,
             )
 
-        policy = (
-            session.get(Policy, risk_note.policy_id) if risk_note.policy_id else None
-        )
-        client = (
-            session.get(Client, policy.client_id)
-            if policy and policy.client_id
-            else None
-        )
-        product = (
-            session.get(Product, policy.product_id)
-            if policy and policy.product_id
-            else None
-        )
-        insurer = getattr(product, "insurer", None)
-        include_digital_stamp = bool(snapshot.get("include_digital_stamp", True))
-
-        vehicles: list[Any] = []
-        if policy and hasattr(policy, "vehicles") and policy.vehicles:
-            vehicles = list(policy.vehicles)
-        elif risk_note.cover_snapshot:
-            snap = risk_note.cover_snapshot
-            if "vehicles" in snap and isinstance(snap["vehicles"], list):
-                vehicles = snap["vehicles"]
-            elif "vehicle" in snap:
-                vehicles = [snap["vehicle"]]
-            elif "VEHICLE DETAILS" in snap:
-                vehicles = [snap["VEHICLE DETAILS"]]
-
-        vehicle = vehicles[0] if vehicles else None
-        breakdown = risk_note.financial_breakdown or {}
-        taxes = breakdown.get("taxes", {})
-        benefits = breakdown.get("benefits", [])
-
-        cov_start_str = (
-            risk_note.coverage_start.strftime("%d %B %Y")
-            if hasattr(risk_note.coverage_start, "strftime")
-            else str(risk_note.coverage_start)
-        )
-        cov_end_str = (
-            risk_note.coverage_end.strftime("%d %B %Y")
-            if hasattr(risk_note.coverage_end, "strftime")
-            else str(risk_note.coverage_end)
-        )
-        stamp_dt = get_datetime_utc().strftime("%d %b %Y").upper()
-        special_conditions = snapshot.get("special_conditions") or (
-            risk_note.cover_snapshot.get("special_conditions")
-            if risk_note.cover_snapshot
-            else None
-        )
+        risk_note = built["risk_note"]
+        policy = built.get("policy")
+        client = built.get("client")
+        product = built.get("product")
+        insurer = built.get("insurer")
+        vehicle = built.get("vehicle")
+        vehicles = built.get("vehicles", [])
+        taxes = built.get("taxes", {})
+        benefits = built.get("benefits", [])
+        special_conditions = built.get("special_conditions")
+        cov_start_str = built.get("coverage_start_formatted", "")
+        cov_end_str = built.get("coverage_end_formatted", "")
+        stamp_dt = built.get("stamp_date", "")
+        include_digital_stamp = bool(built.get("include_digital_stamp", True))
 
         rendered_html = cls.render_template_html(
             "risk_note.html",
@@ -345,19 +501,21 @@ class DocumentRenderer:
                 "generated_at": get_datetime_utc().strftime("%Y-%m-%d %H:%M:%S UTC"),
             },
         )
+        rn_number = risk_note.get("risk_note_number") or risk_note.get("id")
+        rn_id = uuid.UUID(str(risk_note["id"]))
         fallback_lines.extend(
             [
-                f"Policy Number: {policy.policy_number if policy else 'N/A'}",
-                f"Client: {client.name if client else 'N/A'}",
-                f"Net Premium: KES {risk_note.net_premium}",
+                f"Policy Number: {policy.get('policy_number') if policy else 'N/A'}",
+                f"Client: {client.get('name') if client else 'N/A'}",
+                f"Net Premium: KES {risk_note.get('net_premium')}",
             ]
         )
         return RenderedDocument(
             html=rendered_html,
-            filename=f"RiskNote_{risk_note.risk_note_number or risk_note.id}.pdf",
+            filename=f"RiskNote_{rn_number}.pdf",
             entity_type=DocumentEntityType.RISK_NOTE,
-            entity_id=risk_note.id,
-            fallback_title=f"Risk Note {risk_note.risk_note_number or risk_note.id}",
+            entity_id=rn_id,
+            fallback_title=f"Risk Note {rn_number}",
             fallback_lines=fallback_lines,
         )
 
@@ -368,14 +526,20 @@ class DocumentRenderer:
         session: Session,
         target_id: uuid.UUID | None,
         ref_id: uuid.UUID,
+        snapshot: dict[str, Any],
         filename: str,
         entity_type: DocumentEntityType,
         entity_id: uuid.UUID | None,
         fallback_title: str,
         fallback_lines: list[str],
     ) -> RenderedDocument:
-        invoice = session.get(Invoice, target_id) if target_id else None
-        if not invoice:
+        built = cls.build_snapshot(
+            session=session,
+            resource_type=DocumentJobResourceType.INVOICE,
+            resource_id=target_id,
+            snapshot_override=snapshot,
+        )
+        if not built.get("found") or not built.get("invoice"):
             rendered_html = (
                 f"<!DOCTYPE html><html><body><h1>Invoice</h1>"
                 f"<p>ID: {target_id or ref_id}</p></body></html>"
@@ -389,27 +553,11 @@ class DocumentRenderer:
                 fallback_lines=fallback_lines,
             )
 
-        client = session.get(Client, invoice.client_id) if invoice.client_id else None
-        policy = None
-        if hasattr(invoice, "line_items") and invoice.line_items:
-            first_item = invoice.line_items[0]
-            if (
-                hasattr(first_item, "risk_note")
-                and first_item.risk_note
-                and hasattr(first_item.risk_note, "policy")
-            ):
-                policy = first_item.risk_note.policy
-
-        inv_date_str = (
-            invoice.date_issued.strftime("%d %B %Y")
-            if hasattr(invoice.date_issued, "strftime")
-            else str(invoice.date_issued)
-        )
-        due_date_str = (
-            invoice.due_date.strftime("%d %B %Y")
-            if hasattr(invoice.due_date, "strftime")
-            else str(invoice.due_date)
-        )
+        invoice = built["invoice"]
+        client = built.get("client")
+        policy = built.get("policy")
+        inv_date_str = built.get("invoice_date_formatted", "")
+        due_date_str = built.get("due_date_formatted", "")
 
         rendered_html = cls.render_template_html(
             "invoice.html",
@@ -422,19 +570,22 @@ class DocumentRenderer:
                 "generated_at": get_datetime_utc().strftime("%Y-%m-%d %H:%M:%S UTC"),
             },
         )
+        inv_number = invoice.get("invoice_number") or invoice.get("id")
+        inv_client_id = invoice.get("client_id")
+        inv_id = uuid.UUID(str(invoice["id"]))
         fallback_lines.extend(
             [
-                f"Client: {client.name if client else 'N/A'}",
-                f"Invoice Amount: KES {invoice.total_amount}",
-                f"Status: {invoice.status.value}",
+                f"Client: {client.get('name') if client else 'N/A'}",
+                f"Invoice Amount: KES {invoice.get('total_amount')}",
+                f"Status: {invoice.get('status')}",
             ]
         )
         return RenderedDocument(
             html=rendered_html,
-            filename=f"Invoice_{invoice.invoice_number or invoice.id}.pdf",
+            filename=f"Invoice_{inv_number}.pdf",
             entity_type=DocumentEntityType.CLIENT,
-            entity_id=invoice.client_id or invoice.id,
-            fallback_title=f"Invoice {invoice.invoice_number or invoice.id}",
+            entity_id=uuid.UUID(str(inv_client_id)) if inv_client_id else inv_id,
+            fallback_title=f"Invoice {inv_number}",
             fallback_lines=fallback_lines,
         )
 

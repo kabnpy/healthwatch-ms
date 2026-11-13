@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlmodel import Session, select
 
+from app.core.db import engine
 from app.core.storage import storage
 from app.models import (
     Document,
@@ -33,6 +34,13 @@ class DocumentJobService:
         """
         Enqueues an asynchronous document rendering job with idempotency check.
         """
+        frozen_snapshot = DocumentRenderer.build_snapshot(
+            session=session,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            snapshot_override=snapshot_data,
+        )
+
         if idempotency_key:
             existing = session.exec(
                 select(DocumentJob).where(
@@ -47,7 +55,7 @@ class DocumentJobService:
                 }:
                     return existing
                 existing.status = DocumentJobStatus.PENDING
-                existing.snapshot_data = snapshot_data or {}
+                existing.snapshot_data = frozen_snapshot
                 existing.error_code = None
                 existing.error_message = None
                 existing.updated_at = get_datetime_utc()
@@ -62,7 +70,7 @@ class DocumentJobService:
             resource_type=resource_type,
             resource_id=resource_id,
             idempotency_key=idempotency_key,
-            snapshot_data=snapshot_data or {},
+            snapshot_data=frozen_snapshot,
         )
 
         db_job = DocumentJob.model_validate(job_in)
@@ -71,6 +79,15 @@ class DocumentJobService:
         session.commit()
         session.refresh(db_job)
         return db_job
+
+    @classmethod
+    def process_job_in_background(cls, job_id: uuid.UUID) -> None:
+        """Process a document job in a fresh DB session for FastAPI BackgroundTasks."""
+        with Session(engine) as session:
+            try:
+                cls.process_job(session=session, job_id=job_id)
+            except Exception:
+                logger.exception("Background processing failed for document job %s", job_id)
 
     @classmethod
     def process_job(cls, session: Session, job_id: uuid.UUID) -> DocumentJob:
