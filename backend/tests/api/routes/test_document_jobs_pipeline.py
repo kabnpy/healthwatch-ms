@@ -104,8 +104,8 @@ def test_document_job_risk_note_pipeline(
     assert r_proc.status_code == 200
     processed = r_proc.json()
     assert processed["status"] == DocumentJobStatus.SUCCEEDED.value
-    assert processed["snapshot_data"]["filename"].endswith(".pdf")
-    assert "document_id" in processed["snapshot_data"]
+    assert processed["document_id"] is not None
+    assert processed["snapshot_data"] == {"include_digital_stamp": True}
 
     # 4. Download generated PDF
     r_down = client.get(
@@ -240,3 +240,72 @@ def test_document_job_download_errors(
     )
     assert r_400.status_code == 400
     assert "not ready" in r_400.json()["detail"]
+
+
+def test_document_job_idempotency_key_deduplication(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    from sqlmodel import select
+
+    from app.models import DocumentJob
+
+    idem_key = f"idem-{uuid.uuid4().hex}"
+    payload = {
+        "resource_type": DocumentJobResourceType.STATEMENT.value,
+        "snapshot_data": {"note": "first"},
+    }
+
+    # 1. Enqueue with Idempotency-Key header -> creates PENDING job
+    r1 = client.post(
+        f"{settings.API_V1_STR}/document-jobs/",
+        headers={**superuser_token_headers, "Idempotency-Key": idem_key},
+        json=payload,
+    )
+    assert r1.status_code == 202
+    job1 = r1.json()
+    assert job1["idempotency_key"] == idem_key
+    assert job1["status"] == DocumentJobStatus.PENDING.value
+
+    # 2. Replay with same Idempotency-Key in header -> returns same PENDING job
+    r2 = client.post(
+        f"{settings.API_V1_STR}/document-jobs/",
+        headers={**superuser_token_headers, "Idempotency-Key": idem_key},
+        json=payload,
+    )
+    assert r2.status_code == 202
+    assert r2.json()["id"] == job1["id"]
+
+    # 3. Replay with same idempotency_key in request body when PROCESSING -> returns same job
+    db_job = db.get(DocumentJob, uuid.UUID(job1["id"]))
+    assert db_job is not None
+    db_job.status = DocumentJobStatus.PROCESSING
+    db.add(db_job)
+    db.commit()
+
+    r3 = client.post(
+        f"{settings.API_V1_STR}/document-jobs/",
+        headers=superuser_token_headers,
+        json={**payload, "idempotency_key": idem_key},
+    )
+    assert r3.status_code == 202
+    assert r3.json()["id"] == job1["id"]
+    assert r3.json()["status"] == DocumentJobStatus.PROCESSING.value
+
+    # 4. Replay when SUCCEEDED -> returns same job, no duplicate rows
+    db_job.status = DocumentJobStatus.SUCCEEDED
+    db.add(db_job)
+    db.commit()
+
+    r4 = client.post(
+        f"{settings.API_V1_STR}/document-jobs/",
+        headers={**superuser_token_headers, "Idempotency-Key": idem_key},
+        json=payload,
+    )
+    assert r4.status_code == 202
+    assert r4.json()["id"] == job1["id"]
+    assert r4.json()["status"] == DocumentJobStatus.SUCCEEDED.value
+
+    rows = db.exec(
+        select(DocumentJob).where(DocumentJob.idempotency_key == idem_key)
+    ).all()
+    assert len(rows) == 1
