@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query"
 import { AlertCircle, ExternalLink, Loader2, X } from "lucide-react"
-import { client, DocumentsService } from "@/client"
+import { client } from "@/client"
 import { Button } from "@/components/ui/button"
+import { useFileDocument } from "@/hooks/useFileDocument"
 
 export interface FileViewerProps {
   id?: string
@@ -14,26 +14,7 @@ export function FileViewer({ id, receiptId, onClose }: FileViewerProps) {
     data: document,
     isLoading,
     isError,
-  } = useQuery({
-    queryKey: ["document-metadata", id, receiptId],
-    queryFn: async () => {
-      if (id) {
-        return (await DocumentsService.readDocumentById({ path: { id } })).data
-      }
-      if (receiptId) {
-        const docs = (
-          await DocumentsService.readDocuments({
-            query: {
-              entity_id: receiptId,
-              entity_type: "Receipt",
-            },
-          })
-        ).data
-        return docs.data[0] || null
-      }
-      return null
-    },
-  })
+  } = useFileDocument({ id, receiptId })
 
   if (isLoading) {
     return (

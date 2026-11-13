@@ -70,6 +70,30 @@ export function DocumentPreviewDrawer({
     }
   }
 
+  const previewViewer = (
+    <div className="min-h-[750px] border rounded-xl overflow-hidden shadow-lg bg-slate-100">
+      <CanonicalDocumentViewer
+        resourceType={isRiskNote ? "risk_note" : "invoice"}
+        resourceId={
+          isRiskNote && riskNote
+            ? riskNote.id
+            : target.kind === "invoice"
+              ? target.invoiceId
+              : ""
+        }
+        draftSnapshot={isRiskNote ? draftSnapshot : undefined}
+        title={
+          isRiskNote
+            ? policy?.product?.name || "Official Policy Schedule"
+            : target.kind === "invoice"
+              ? `Invoice - ${target.invoiceNumber || "Debit Note"}`
+              : "Invoice"
+        }
+        hideToolbar
+      />
+    </div>
+  )
+
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-5xl overflow-y-auto p-6 flex flex-col gap-5">
@@ -311,30 +335,11 @@ export function DocumentPreviewDrawer({
                 </div>
               </div>
             ) : (
-              <div className="min-h-[750px] border rounded-xl overflow-hidden shadow-lg bg-slate-100">
-                <CanonicalDocumentViewer
-                  resourceType="risk_note"
-                  resourceId={riskNote.id}
-                  draftSnapshot={draftSnapshot}
-                  title={policy?.product?.name || "Official Policy Schedule"}
-                  hideToolbar
-                />
-              </div>
+              previewViewer
             )}
           </>
         ) : (
-          <div className="min-h-[750px] border rounded-xl overflow-hidden shadow-lg bg-slate-100">
-            <CanonicalDocumentViewer
-              resourceType="invoice"
-              resourceId={target.kind === "invoice" ? target.invoiceId : ""}
-              title={
-                target.kind === "invoice"
-                  ? `Invoice - ${target.invoiceNumber || "Debit Note"}`
-                  : "Invoice"
-              }
-              hideToolbar
-            />
-          </div>
+          previewViewer
         )}
       </SheetContent>
     </Sheet>
