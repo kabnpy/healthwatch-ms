@@ -78,3 +78,6 @@ scratch/
 # Document Storage
 storage/
 backend/storage/
+
+# Better Design local artifacts
+.better-design/
