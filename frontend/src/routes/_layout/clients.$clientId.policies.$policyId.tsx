@@ -86,9 +86,7 @@ function PolicyDashboardContent({
   // State for Risk Note Form
   const [riskNoteFormOpen, setRiskNoteFormOpen] = useState(false)
   const [transactionType, setTransactionType] = useState("Endorsement")
-  const [editingRiskNoteId, setEditingRiskNoteId] = useState<
-    string | undefined
-  >()
+  const [, setEditingRiskNoteId] = useState<string | undefined>()
 
   // Handlers
   const handleViewRiskNote = useCallback(

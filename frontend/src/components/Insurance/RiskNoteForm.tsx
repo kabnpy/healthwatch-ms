@@ -80,23 +80,7 @@ export const RiskNoteForm = ({
 
   // Populate form when data is loaded
   useEffect(() => {
-    if (existingRiskNote) {
-      const coverSnapshot = existingRiskNote.cover_snapshot || {}
-      const existingRN = existingRiskNote as any
-
-      form.reset({
-        transaction_type: existingRiskNote.transaction_type,
-        coverage_start:
-          existingRiskNote.coverage_start ||
-          (existingRiskNote as any).start_date,
-        coverage_end:
-          existingRiskNote.coverage_end || (existingRiskNote as any).end_date,
-        status: existingRN.status || "Draft",
-        net_premium: Number(existingRiskNote.net_premium),
-        commission_amount: Number(existingRiskNote.commission_amount),
-        details: coverSnapshot,
-      })
-    } else if (policy) {
+    if (policy) {
       const activeNote = (policy as any).active_note
       form.reset({
         transaction_type: initialTransactionType,
@@ -113,7 +97,7 @@ export const RiskNoteForm = ({
         details: activeNote?.cover_snapshot || {},
       })
     }
-  }, [existingRiskNote, policy, form, initialTransactionType])
+  }, [policy, form, initialTransactionType])
 
   const handleApplyRating = (res: AdvisoryRatingResult) => {
     form.setValue("net_premium", res.netPremium)
