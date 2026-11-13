@@ -10,12 +10,15 @@ from sqlmodel import Session, select
 
 from app.models import (
     BenefitCalculationType,
+    PremiumCalculation,
+    PremiumCalculationCreate,
     PricingMethod,
     PricingStrategy,
     Product,
     RateBracket,
     RateTableStatus,
     RateTableVersion,
+    Renewal,
 )
 from app.utils import parse_decimal
 
@@ -567,3 +570,66 @@ def normalize_rating_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
         if vehicle_sum is not None:
             normalized["sum_insured"] = vehicle_sum
     return normalized
+
+
+def _apply_selection(session: Session, calc: PremiumCalculation) -> None:
+    """Mark *calc* selected, unselect scoped siblings, and sync Renewal atomically."""
+    if calc.renewal_id is not None:
+        other_calcs = session.exec(
+            select(PremiumCalculation).where(
+                PremiumCalculation.renewal_id == calc.renewal_id,
+                PremiumCalculation.id != calc.id,
+            )
+        ).all()
+        for other in other_calcs:
+            other.is_selected = False
+            session.add(other)
+
+        renewal = session.get(Renewal, calc.renewal_id)
+        if renewal:
+            renewal.selected_calculation_id = calc.id
+            renewal.proposed_premium = calc.total_premium
+            session.add(renewal)
+    elif calc.policy_id is not None:
+        other_calcs = session.exec(
+            select(PremiumCalculation).where(
+                PremiumCalculation.policy_id == calc.policy_id,
+                PremiumCalculation.id != calc.id,
+            )
+        ).all()
+        for other in other_calcs:
+            other.is_selected = False
+            session.add(other)
+
+    calc.is_selected = True
+    session.add(calc)
+
+
+def create_premium_calculation(
+    session: Session,
+    *,
+    calc_in: PremiumCalculationCreate,
+    user_id: uuid.UUID | None = None,
+) -> PremiumCalculation:
+    """Persist a PremiumCalculation and, if is_selected, select it in one transaction."""
+    db_calc = PremiumCalculation(**calc_in.model_dump(), created_by_id=user_id)
+    session.add(db_calc)
+    session.flush()
+    if calc_in.is_selected:
+        _apply_selection(session, db_calc)
+    session.commit()
+    session.refresh(db_calc)
+    return db_calc
+
+
+def select_premium_calculation(
+    session: Session, *, calc_id: uuid.UUID
+) -> PremiumCalculation:
+    """Select a persisted PremiumCalculation and sync its scope in one transaction."""
+    calc = session.get(PremiumCalculation, calc_id)
+    if not calc:
+        raise ValueError("Calculation not found")
+    _apply_selection(session, calc)
+    session.commit()
+    session.refresh(calc)
+    return calc

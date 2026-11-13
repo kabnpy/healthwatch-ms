@@ -1341,49 +1341,6 @@ def count_premium_calculations(
     return session.exec(count_statement).one()
 
 
-def select_premium_calculation(
-    session: Session, *, calc_id: uuid.UUID
-) -> PremiumCalculation:
-    calc = session.get(PremiumCalculation, calc_id)
-    if not calc:
-        raise ValueError("Calculation not found")
-
-    # Unselect all other calculations for this policy/renewal
-    if calc.renewal_id:
-        other_calcs = session.exec(
-            select(PremiumCalculation).where(
-                PremiumCalculation.renewal_id == calc.renewal_id,
-                PremiumCalculation.id != calc.id,
-            )
-        ).all()
-    else:
-        other_calcs = session.exec(
-            select(PremiumCalculation).where(
-                PremiumCalculation.policy_id == calc.policy_id,
-                PremiumCalculation.id != calc.id,
-            )
-        ).all()
-
-    for other in other_calcs:
-        other.is_selected = False
-        session.add(other)
-
-    calc.is_selected = True
-    session.add(calc)
-
-    # If linked to a renewal, update the renewal's agreed_premium and selected_calculation_id
-    if calc.renewal_id:
-        renewal = session.get(Renewal, calc.renewal_id)
-        if renewal:
-            renewal.selected_calculation_id = calc.id
-            renewal.proposed_premium = calc.total_premium
-            session.add(renewal)
-
-    session.commit()
-    session.refresh(calc)
-    return calc
-
-
 # ==========================================
 # Renewal Invitations CRUD
 # ==========================================
