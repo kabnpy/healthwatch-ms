@@ -20,7 +20,12 @@ import {
   User,
 } from "lucide-react"
 import { useEffect, useState } from "react"
-import type { PolicyPublic, RenewalPublic, RenewalStatus } from "@/client"
+import type {
+  PolicyPublic,
+  QuoteResponse,
+  RenewalPublic,
+  RenewalStatus,
+} from "@/client"
 import { AdvisoryRatingCalculator } from "@/components/Insurance/AdvisoryRatingCalculator"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -45,7 +50,6 @@ import {
 } from "@/hooks/useRenewals"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/utils"
-import type { AdvisoryRatingResult } from "@/utils/ratingCalculator"
 
 interface RenewalTransitionSheetProps {
   isOpen: boolean
@@ -129,10 +133,17 @@ export function RenewalTransitionSheet({
   const [notes, setNotes] = useState<string>("")
   const [ratingCalcOpen, setRatingCalcOpen] = useState<boolean>(false)
 
-  const handleApplyRating = (result: AdvisoryRatingResult) => {
-    setProposedPremium(result.grossTotal)
-    setAgreedPremium(result.grossTotal)
-    const breakdownNote = `Advisory rating calculated: Gross KES ${result.grossTotal.toLocaleString()} (Net KES ${result.netPremium.toLocaleString()}, Levies KES ${result.taxesAndLevies.totalLevies.toLocaleString()})`
+  const handleApplyRating = (result: QuoteResponse) => {
+    const breakdown = result.breakdown as Record<string, unknown>
+    const grossTotal = Number(breakdown.total_amount || 0)
+    const netPremium = Number(breakdown.net_premium || 0)
+    const totalLevies =
+      Number(breakdown.itl || 0) +
+      Number(breakdown.phcf || 0) +
+      Number(breakdown.stamp_duty || 0)
+    setProposedPremium(grossTotal)
+    setAgreedPremium(grossTotal)
+    const breakdownNote = `Advisory rating calculated: Gross KES ${grossTotal.toLocaleString()} (Net KES ${netPremium.toLocaleString()}, Levies KES ${totalLevies.toLocaleString()})`
     setNotes((prev) => (prev ? `${prev}\n${breakdownNote}` : breakdownNote))
   }
 
@@ -726,6 +737,7 @@ export function RenewalTransitionSheet({
       <AdvisoryRatingCalculator
         isOpen={ratingCalcOpen}
         onOpenChange={setRatingCalcOpen}
+        productId={policy?.product?.id}
         initialClass={policy?.product?.class_of_insurance || "Motor Private"}
         initialSumInsured={
           Number((activeNote?.cover_snapshot as any)?.vehicle?.sum_insured) ||

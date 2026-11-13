@@ -3,7 +3,7 @@ import { Calculator } from "lucide-react"
 import { useEffect, useState } from "react"
 import { type SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
-import type { ApiError } from "@/client"
+import type { ApiError, QuoteResponse } from "@/client"
 import { AdvisoryRatingCalculator } from "@/components/Insurance/AdvisoryRatingCalculator"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,12 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import useCustomToast from "@/hooks/useCustomToast"
-import {
-  useCreateEndorsement,
-  usePolicy,
-} from "@/hooks/usePolicies"
+import { useCreateEndorsement, usePolicy } from "@/hooks/usePolicies"
 import { handleError } from "@/utils"
-import type { AdvisoryRatingResult } from "@/utils/ratingCalculator"
 
 interface RiskNoteFormProps {
   policyId: string
@@ -99,27 +95,21 @@ export const RiskNoteForm = ({
     }
   }, [policy, form, initialTransactionType])
 
-  const handleApplyRating = (res: AdvisoryRatingResult) => {
-    form.setValue("net_premium", res.netPremium)
+  const handleApplyRating = (res: QuoteResponse) => {
+    const netPremium = Number(res.breakdown.net_premium || 0)
+    form.setValue("net_premium", netPremium)
     const commRate =
       Number(policy?.product?.default_commission_rate || 10) / 100
     form.setValue(
       "commission_amount",
-      Math.round(res.netPremium * commRate * 100) / 100,
+      Math.round(netPremium * commRate * 100) / 100,
     )
 
     const currentDetails = form.getValues("details") || {}
     form.setValue("details", {
       ...currentDetails,
-      advisory_calculation: {
-        base_premium: res.basePremium,
-        applied_rate: res.appliedRatePercent,
-        benefits: res.benefitLines,
-        net_premium: res.netPremium,
-        taxes: res.taxesAndLevies,
-        gross_total: res.grossTotal,
-        engine_version: res.ruleProvenance.engineVersion,
-      },
+      calculation_detail: res.calculation_detail,
+      rule_provenance: res.rule_provenance,
     })
   }
 
@@ -371,6 +361,7 @@ export const RiskNoteForm = ({
       <AdvisoryRatingCalculator
         isOpen={ratingCalcOpen}
         onOpenChange={setRatingCalcOpen}
+        productId={policy?.product?.id}
         initialClass={policy?.product?.class_of_insurance || "Motor Private"}
         initialSumInsured={
           Number((form.getValues("details") as any)?.sum_insured) ||

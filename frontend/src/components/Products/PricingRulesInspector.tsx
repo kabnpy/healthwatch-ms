@@ -444,6 +444,7 @@ export function PricingRulesInspector({ product }: PricingRulesInspectorProps) {
       <AdvisoryRatingCalculator
         isOpen={calcOpen}
         onOpenChange={setCalcOpen}
+        productId={product.id}
         initialClass={product.class_of_insurance}
       />
     </div>

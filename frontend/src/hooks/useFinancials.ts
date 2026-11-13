@@ -1,9 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import {
-  FinancialsService,
-  type InvoiceBulkCreate,
-} from "../client"
+import { FinancialsService, type InvoiceBulkCreate } from "../client"
 
 // 1. INVOICES
 export const useInvoices = (clientId?: string, skip = 0, limit = 100) => {

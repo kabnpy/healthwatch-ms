@@ -1,6 +1,7 @@
 import { Calculator, Check, CheckCircle2, Copy } from "lucide-react"
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
+import type { QuoteResponse } from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -22,30 +23,33 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { useProducts, useQuoteQuery } from "@/hooks/usePolicies"
 import { formatCurrency } from "@/utils"
-import {
-  type AdvisoryRatingResult,
-  calculateDomesticRating,
-  calculateMedicalRating,
-  calculateMotorPrivateRating,
-  MOTOR_PRIVATE_DEFAULT_TIERS,
-} from "@/utils/ratingCalculator"
 
 interface AdvisoryRatingCalculatorProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
+  productId?: string
   initialClass?: string
   initialSumInsured?: number
-  onApplyCalculation?: (result: AdvisoryRatingResult) => void
+  onApplyCalculation?: (result: QuoteResponse) => void
 }
 
 export function AdvisoryRatingCalculator({
   isOpen,
   onOpenChange,
+  productId,
   initialClass = "Motor Private",
   initialSumInsured = 2000000,
   onApplyCalculation,
 }: AdvisoryRatingCalculatorProps) {
+  const [selectedProductId, setSelectedProductId] = useState<string>(
+    productId || "",
+  )
+  const { data: productsData } = useProducts(undefined, 0, 100)
+  const products = productsData?.data || []
+
+  const effectiveProductId = productId || selectedProductId
   // Class selection
   const [selectedClass, setSelectedClass] = useState<string>(
     initialClass.toLowerCase().includes("medical")
@@ -89,42 +93,41 @@ export function AdvisoryRatingCalculator({
   // Copy state
   const [hasCopied, setHasCopied] = useState(false)
 
-  // Compute live calculation
-  const ratingResult: AdvisoryRatingResult = useMemo(() => {
+  // Build risk_details payload for backend quote seam
+  const riskDetails = useMemo<Record<string, unknown>>(() => {
     if (selectedClass === "Motor Private") {
-      return calculateMotorPrivateRating({
-        sumInsured: motorSumInsured,
+      return {
+        sum_insured: motorSumInsured,
         extensions: {
           pvt: motorPvt,
-          excessProtector: motorExcessProtector,
-          passengerLiability: motorPassengerLiability,
-          roadRescue: motorRoadRescue,
-          courtesyCar: motorCourtesyCar,
+          excess_protector: motorExcessProtector,
+          passenger_liability: motorPassengerLiability,
+          road_rescue: motorRoadRescue,
+          courtesy_car: motorCourtesyCar,
         },
-      })
+      }
     }
 
     if (selectedClass === "Domestic Package") {
-      return calculateDomesticRating({
-        buildingsSumInsured: domesticBuildings,
-        contentsSumInsured: domesticContents,
-        allRisksSumInsured: domesticAllRisks,
-        numberOfServants: domesticServants,
-        includeOwnersLiability: domesticOwnersLiability,
-      })
+      return {
+        buildings_sum_insured: domesticBuildings,
+        contents_sum_insured: domesticContents,
+        all_risks_sum_insured: domesticAllRisks,
+        number_of_servants: domesticServants,
+        include_owners_liability: domesticOwnersLiability,
+      }
     }
 
-    // Default to Medical
-    return calculateMedicalRating({
-      tierLimit: medicalTierLimit,
-      familySize: medicalFamilySize,
+    return {
+      tier_limit: medicalTierLimit,
+      family_size: medicalFamilySize,
       riders: {
         outpatient: medOutpatient,
         dental: medDental,
         optical: medOptical,
         maternity: medMaternity,
       },
-    })
+    }
   }, [
     selectedClass,
     motorSumInsured,
@@ -146,22 +149,73 @@ export function AdvisoryRatingCalculator({
     medMaternity,
   ])
 
+  const { data: quoteResponse, isLoading: isQuoteLoading } = useQuoteQuery(
+    effectiveProductId
+      ? { product_id: effectiveProductId, risk_details: riskDetails }
+      : null,
+  )
+
+  const breakdown = quoteResponse?.breakdown as
+    | Record<string, unknown>
+    | undefined
+  const calcDetail = (quoteResponse?.calculation_detail ?? {}) as Record<
+    string,
+    unknown
+  >
+  const provenance = (quoteResponse?.rule_provenance ?? {}) as Record<
+    string,
+    unknown
+  >
+
+  const basePremium = Number(
+    calcDetail.base_premium ?? breakdown?.basic_premium ?? 0,
+  )
+  const netPremium = Number(breakdown?.net_premium ?? 0)
+  const itl = Number(breakdown?.itl ?? 0)
+  const phcf = Number(breakdown?.phcf ?? 0)
+  const stampDuty = Number(breakdown?.stamp_duty ?? 0)
+  const totalAmount = Number(breakdown?.total_amount ?? 0)
+  const appliedRate =
+    calcDetail.applied_rate !== undefined
+      ? Number(calcDetail.applied_rate)
+      : null
+  const minimumFloor =
+    calcDetail.minimum_premium_floor !== undefined
+      ? Number(calcDetail.minimum_premium_floor)
+      : null
+  const benefitLines = Array.isArray(calcDetail.benefits)
+    ? (calcDetail.benefits as Array<{
+        name?: string
+        label?: string
+        amount?: number | string
+        is_complimentary?: boolean
+        rate_description?: string
+      }>)
+    : []
+  const provenanceLabel = String(
+    provenance.version_label ||
+      provenance.engine_version ||
+      provenance.rate_table_version_id ||
+      "backend-decimal",
+  )
+  const isStampDutyExempt = selectedClass === "Medical" || stampDuty === 0
+
   const handleCopyBreakdown = () => {
     const textLines = [
       `HEALTHWATCH ADVISORY RATING BREAKDOWN`,
-      `Class of Insurance: ${ratingResult.classOfInsurance}`,
-      `Base Premium: ${formatCurrency(ratingResult.basePremium)}`,
-      ...ratingResult.benefitLines.map(
+      `Class of Insurance: ${selectedClass}`,
+      `Base Premium: ${formatCurrency(basePremium)}`,
+      ...benefitLines.map(
         (b) =>
-          `  - ${b.label}: ${b.isComplimentary ? "COMPLIMENTARY" : formatCurrency(b.amount)} (${b.rateDescription || ""})`,
+          `  - ${b.name || b.label}: ${b.is_complimentary ? "COMPLIMENTARY" : formatCurrency(Number(b.amount ?? 0))} (${b.rate_description || ""})`,
       ),
-      `Net Premium: ${formatCurrency(ratingResult.netPremium)}`,
+      `Net Premium: ${formatCurrency(netPremium)}`,
       `Statutory Levies:`,
-      `  - Training Levy (0.20%): ${formatCurrency(ratingResult.taxesAndLevies.trainingLevy)}`,
-      `  - PHCF Levy (0.25%): ${formatCurrency(ratingResult.taxesAndLevies.phcfLevy)}`,
-      `  - Stamp Duty: ${ratingResult.ruleProvenance.isMedicalStampDutyExempt ? "EXEMPT (KES 0.00)" : formatCurrency(ratingResult.taxesAndLevies.stampDuty)}`,
-      `Total Premium: ${formatCurrency(ratingResult.grossTotal)}`,
-      `Engine Version: ${ratingResult.ruleProvenance.engineVersion}`,
+      `  - Training Levy (0.20%): ${formatCurrency(itl)}`,
+      `  - PHCF Levy (0.25%): ${formatCurrency(phcf)}`,
+      `  - Stamp Duty: ${isStampDutyExempt ? "EXEMPT (KES 0.00)" : formatCurrency(stampDuty)}`,
+      `Total Premium: ${formatCurrency(totalAmount)}`,
+      `Provenance: ${provenanceLabel}`,
     ]
     navigator.clipboard.writeText(textLines.join("\n"))
     setHasCopied(true)
@@ -170,8 +224,8 @@ export function AdvisoryRatingCalculator({
   }
 
   const handleApply = () => {
-    if (onApplyCalculation) {
-      onApplyCalculation(ratingResult)
+    if (onApplyCalculation && quoteResponse) {
+      onApplyCalculation(quoteResponse)
       toast.success("Applied rating calculation to active workflow")
       onOpenChange(false)
     }
@@ -203,12 +257,46 @@ export function AdvisoryRatingCalculator({
               variant="outline"
               className="font-mono text-[11px] bg-background"
             >
-              {ratingResult.ruleProvenance.engineVersion}
+              {provenanceLabel}
             </Badge>
           </div>
         </SheetHeader>
 
         <div className="p-6 space-y-6 flex-1">
+          {/* Product Picker for standalone CommandMenu usage */}
+          {!productId && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Product (Rate Table)
+              </Label>
+              <Select
+                value={selectedProductId}
+                onValueChange={(val) => {
+                  setSelectedProductId(val)
+                  const prod = products.find((p) => p.id === val)
+                  if (prod?.class_of_insurance) {
+                    const cls = prod.class_of_insurance.toLowerCase()
+                    if (cls.includes("medical")) setSelectedClass("Medical")
+                    else if (cls.includes("domestic"))
+                      setSelectedClass("Domestic Package")
+                    else setSelectedClass("Motor Private")
+                  }
+                }}
+              >
+                <SelectTrigger aria-label="Select Product">
+                  <SelectValue placeholder="Select a product to quote..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {products.map((prod) => (
+                    <SelectItem key={prod.id} value={prod.id}>
+                      {prod.name} ({prod.class_of_insurance})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Class Switcher */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -256,21 +344,6 @@ export function AdvisoryRatingCalculator({
                   onValueChange={setMotorSumInsured}
                   className="font-mono text-base font-semibold"
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  Applicable bracket:{" "}
-                  <span className="font-medium text-foreground">
-                    {
-                      (
-                        MOTOR_PRIVATE_DEFAULT_TIERS.find(
-                          (t) => motorSumInsured <= t.max,
-                        ) ||
-                        MOTOR_PRIVATE_DEFAULT_TIERS[
-                          MOTOR_PRIVATE_DEFAULT_TIERS.length - 1
-                        ]
-                      ).label
-                    }
-                  </span>
-                </p>
               </div>
 
               {/* Cover Riders / Extensions */}
@@ -638,37 +711,37 @@ export function AdvisoryRatingCalculator({
                   <span className="font-semibold text-foreground">
                     Base Actuarial Premium
                   </span>
-                  {ratingResult.appliedRatePercent && (
+                  {appliedRate !== null && (
                     <span className="text-muted-foreground ml-1.5">
-                      ({ratingResult.appliedRatePercent.toFixed(2)}%
-                      {ratingResult.minimumPremiumFloor &&
-                      ratingResult.basePremium ===
-                        ratingResult.minimumPremiumFloor
-                        ? ` • Subject to minimum KES ${ratingResult.minimumPremiumFloor.toLocaleString()}`
+                      ({appliedRate.toFixed(2)}%
+                      {minimumFloor !== null && basePremium === minimumFloor
+                        ? ` • Subject to minimum KES ${minimumFloor.toLocaleString()}`
                         : ""}
                       )
                     </span>
                   )}
                 </div>
                 <span className="font-mono tabular-nums font-semibold text-right">
-                  {formatCurrency(ratingResult.basePremium)}
+                  {formatCurrency(basePremium)}
                 </span>
               </div>
 
               {/* Cover Riders / Benefit Lines */}
-              {ratingResult.benefitLines.length > 0 && (
+              {benefitLines.length > 0 && (
                 <div className="space-y-1.5 pt-2 border-t border-dashed">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block">
                     Cover Extensions & Riders
                   </span>
-                  {ratingResult.benefitLines.map((line, idx) => (
+                  {benefitLines.map((line, idx) => (
                     <div
                       key={idx}
                       className="flex items-center justify-between text-xs pl-2"
                     >
                       <div className="flex items-center gap-1.5">
-                        <span className="text-foreground">{line.label}</span>
-                        {line.isComplimentary && (
+                        <span className="text-foreground">
+                          {line.name || line.label}
+                        </span>
+                        {line.is_complimentary && (
                           <Badge
                             variant="secondary"
                             className="text-[10px] py-0 px-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
@@ -676,16 +749,16 @@ export function AdvisoryRatingCalculator({
                             Complimentary
                           </Badge>
                         )}
-                        {line.rateDescription && !line.isComplimentary && (
+                        {line.rate_description && !line.is_complimentary && (
                           <span className="text-[11px] text-muted-foreground">
-                            ({line.rateDescription})
+                            ({line.rate_description})
                           </span>
                         )}
                       </div>
                       <span className="font-mono tabular-nums text-right">
-                        {line.isComplimentary
+                        {line.is_complimentary
                           ? formatCurrency(0)
-                          : formatCurrency(line.amount)}
+                          : formatCurrency(Number(line.amount ?? 0))}
                       </span>
                     </div>
                   ))}
@@ -696,7 +769,7 @@ export function AdvisoryRatingCalculator({
               <div className="flex items-center justify-between text-xs pt-2 border-t font-semibold">
                 <span className="text-foreground">Net Premium (Pre-Tax)</span>
                 <span className="font-mono tabular-nums text-right text-foreground">
-                  {formatCurrency(ratingResult.netPremium)}
+                  {formatCurrency(netPremium)}
                 </span>
               </div>
 
@@ -709,19 +782,19 @@ export function AdvisoryRatingCalculator({
                 <div className="flex items-center justify-between pl-1 text-muted-foreground">
                   <span>Insurance Training Levy (0.20%)</span>
                   <span className="font-mono tabular-nums text-right text-foreground">
-                    {formatCurrency(ratingResult.taxesAndLevies.trainingLevy)}
+                    {formatCurrency(itl)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between pl-1 text-muted-foreground">
                   <span>Policyholders Compensation Fund (0.25%)</span>
                   <span className="font-mono tabular-nums text-right text-foreground">
-                    {formatCurrency(ratingResult.taxesAndLevies.phcfLevy)}
+                    {formatCurrency(phcf)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between pl-1 text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <span>Stamp Duty</span>
-                    {ratingResult.ruleProvenance.isMedicalStampDutyExempt && (
+                    {isStampDutyExempt && (
                       <Badge
                         variant="outline"
                         className="text-[9px] py-0 px-1 border-muted-foreground/30 text-muted-foreground"
@@ -731,9 +804,9 @@ export function AdvisoryRatingCalculator({
                     )}
                   </div>
                   <span className="font-mono tabular-nums text-right text-foreground">
-                    {ratingResult.ruleProvenance.isMedicalStampDutyExempt
+                    {isStampDutyExempt
                       ? formatCurrency(0)
-                      : formatCurrency(ratingResult.taxesAndLevies.stampDuty)}
+                      : formatCurrency(stampDuty)}
                   </span>
                 </div>
               </div>
@@ -744,7 +817,7 @@ export function AdvisoryRatingCalculator({
                   Reconciled Gross Premium
                 </span>
                 <span className="font-mono tabular-nums text-right text-base text-primary">
-                  {formatCurrency(ratingResult.grossTotal)}
+                  {formatCurrency(totalAmount)}
                 </span>
               </div>
             </div>
@@ -764,6 +837,7 @@ export function AdvisoryRatingCalculator({
             <Button
               size="sm"
               onClick={handleApply}
+              disabled={!quoteResponse || isQuoteLoading}
               className="gap-2 bg-primary text-primary-foreground font-medium"
             >
               <CheckCircle2 className="size-4" />
