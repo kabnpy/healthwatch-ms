@@ -98,7 +98,11 @@ def get_policy_quote(
             commission_amount=result.commission_amount or Decimal("0.00"),
             total_amount=result.total_premium,
         )
-        return QuoteResponse(breakdown=breakdown)
+        return QuoteResponse(
+            breakdown=breakdown,
+            calculation_detail=result.calculation_detail,
+            rule_provenance=result.rule_provenance,
+        )
     except RatingValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

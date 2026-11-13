@@ -1,5 +1,12 @@
+import { useQuery } from "@tanstack/react-query"
 import { Calculator } from "lucide-react"
 import { useState } from "react"
+import {
+  type RateBenefitPublic,
+  type RateBracketPublic,
+  RateTablesService,
+  type RateTableVersionPublic,
+} from "@/client"
 import { AdvisoryRatingCalculator } from "@/components/Insurance/AdvisoryRatingCalculator"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,16 +26,31 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { formatCurrency } from "@/utils"
-import {
-  MEDICAL_TIER_MATRIX,
-  MOTOR_PRIVATE_DEFAULT_TIERS,
-} from "@/utils/ratingCalculator"
+
+export interface MedicalTierItem {
+  id: string
+  inpatient_limit: string | number
+  family_size?: string
+  m_premium?: string | number
+  m1_premium?: string | number
+  m2_premium?: string | number
+  m3_premium?: string | number
+  m4_premium?: string | number
+  annual_premium?: string | number
+}
+
+export type RateTableVersionDetail = RateTableVersionPublic & {
+  brackets?: RateBracketPublic[]
+  benefits?: RateBenefitPublic[]
+  medical_tiers?: MedicalTierItem[]
+}
 
 interface PricingRulesInspectorProps {
   product: {
     id: string
     name: string
     class_of_insurance: string
+    insurer_id?: string
     default_commission_rate?: number
     insurer?: { name: string } | null
     product_details?: any
@@ -42,6 +64,36 @@ export function PricingRulesInspector({ product }: PricingRulesInspectorProps) {
     .toLowerCase()
     .includes("domestic")
   const isMedical = product.class_of_insurance.toLowerCase().includes("medical")
+
+  const { data: rateTable, isLoading } =
+    useQuery<RateTableVersionDetail | null>({
+      queryKey: [
+        "rate-tables",
+        "published",
+        product.insurer_id ?? null,
+        product.class_of_insurance,
+      ],
+      queryFn: async () => {
+        const listRes = await RateTablesService.tablesReadRateTables({
+          query: {
+            insurer_id: product.insurer_id ?? null,
+            class_of_insurance: product.class_of_insurance,
+            status: "published",
+            limit: 1,
+          },
+        })
+        const published = listRes.data?.data?.[0]
+        if (!published) return null
+        const detailRes = await RateTablesService.tablesReadRateTable({
+          path: { id: published.id },
+        })
+        return (detailRes.data as RateTableVersionDetail) ?? published
+      },
+    })
+
+  const brackets = rateTable?.brackets ?? []
+  const benefits = rateTable?.benefits ?? []
+  const medicalTiers = rateTable?.medical_tiers ?? []
 
   return (
     <div className="space-y-6">
@@ -72,8 +124,31 @@ export function PricingRulesInspector({ product }: PricingRulesInspectorProps) {
         </Button>
       </div>
 
+      {/* LOADING / EMPTY STATE */}
+      {isLoading && (
+        <Card>
+          <CardContent className="py-8 text-center text-xs text-muted-foreground">
+            Loading published rate table schedule...
+          </CardContent>
+        </Card>
+      )}
+
+      {!isLoading && !rateTable && (
+        <Card>
+          <CardContent className="py-8 text-center space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              No published rate table schedule found for this product.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Publish a RateTableVersion for {product.class_of_insurance} to
+              inspect live underwriting brackets, benefits, and tiers.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* MOTOR RATING SCHEDULE */}
-      {isMotor && (
+      {!isLoading && rateTable && isMotor && brackets.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
@@ -98,42 +173,21 @@ export function PricingRulesInspector({ product }: PricingRulesInspectorProps) {
                   <TableHead className="text-xs text-right">
                     Minimum Premium Floor
                   </TableHead>
-                  <TableHead className="text-xs">
-                    High-End Threshold Status
-                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {MOTOR_PRIVATE_DEFAULT_TIERS.map((tier, idx) => (
-                  <TableRow key={idx}>
+                {brackets.map((bracket) => (
+                  <TableRow key={bracket.id}>
                     <TableCell className="font-mono text-xs font-medium">
-                      {tier.max === Infinity
-                        ? "KES 5,000,000 and above"
-                        : idx === 0
-                          ? `Up to ${formatCurrency(tier.max)}`
-                          : `${formatCurrency(MOTOR_PRIVATE_DEFAULT_TIERS[idx - 1].max)} – ${formatCurrency(tier.max)}`}
+                      {bracket.display_label}
                     </TableCell>
                     <TableCell className="font-mono tabular-nums text-xs font-semibold text-right">
-                      {(tier.rate * 100).toFixed(2)}%
+                      {(Number(bracket.rate_percent) * 100).toFixed(2)}%
                     </TableCell>
                     <TableCell className="font-mono tabular-nums text-xs text-right">
-                      {tier.min > 0
-                        ? formatCurrency(tier.min)
+                      {Number(bracket.minimum_premium) > 0
+                        ? formatCurrency(Number(bracket.minimum_premium))
                         : "None (No Floor)"}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {tier.max > 3000000 ? (
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
-                        >
-                          Complimentary PVT & Excess Protector
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-[11px]">
-                          Standard Rateable Riders
-                        </span>
-                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -144,7 +198,7 @@ export function PricingRulesInspector({ product }: PricingRulesInspectorProps) {
       )}
 
       {/* MEDICAL TIER MATRIX */}
-      {isMedical && (
+      {!isLoading && rateTable && isMedical && medicalTiers.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
@@ -172,25 +226,72 @@ export function PricingRulesInspector({ product }: PricingRulesInspectorProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {Object.entries(MEDICAL_TIER_MATRIX).map(([limit, census]) => (
-                  <TableRow key={limit}>
+                {medicalTiers.map((tier) => (
+                  <TableRow key={tier.id}>
                     <TableCell className="font-mono text-xs font-semibold">
-                      {formatCurrency(Number.parseInt(limit, 10))} Limit
+                      {formatCurrency(Number(tier.inpatient_limit))} Limit
                     </TableCell>
                     <TableCell className="font-mono tabular-nums text-xs text-right">
-                      {formatCurrency(census.M)}
+                      {formatCurrency(
+                        Number(tier.m_premium ?? tier.annual_premium ?? 0),
+                      )}
                     </TableCell>
                     <TableCell className="font-mono tabular-nums text-xs text-right">
-                      {formatCurrency(census["M+1"])}
+                      {formatCurrency(Number(tier.m1_premium ?? 0))}
                     </TableCell>
                     <TableCell className="font-mono tabular-nums text-xs text-right">
-                      {formatCurrency(census["M+2"])}
+                      {formatCurrency(Number(tier.m2_premium ?? 0))}
                     </TableCell>
                     <TableCell className="font-mono tabular-nums text-xs text-right">
-                      {formatCurrency(census["M+3"])}
+                      {formatCurrency(Number(tier.m3_premium ?? 0))}
                     </TableCell>
                     <TableCell className="font-mono tabular-nums text-xs text-right">
-                      {formatCurrency(census["M+4"])}
+                      {formatCurrency(Number(tier.m4_premium ?? 0))}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* BENEFITS & RIDERS SCHEDULE */}
+      {!isLoading && rateTable && benefits.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+              Rateable Benefits & Riders
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Optional and mandatory benefit schedules from the published rate
+              table version.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead className="text-xs">Benefit</TableHead>
+                  <TableHead className="text-xs">Calculation Type</TableHead>
+                  <TableHead className="text-xs text-right">
+                    Rate / Amount
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {benefits.map((benefit) => (
+                  <TableRow key={benefit.id}>
+                    <TableCell className="font-medium text-xs">
+                      {benefit.name}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {benefit.calculation_type}
+                    </TableCell>
+                    <TableCell className="font-mono tabular-nums text-xs font-semibold text-right">
+                      {benefit.calculation_type === "percentage"
+                        ? `${(Number(benefit.rate_value) * 100).toFixed(2)}%`
+                        : formatCurrency(Number(benefit.rate_value))}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -107,6 +107,19 @@ def test_policy_quote_uses_published_rate_table_version(
     assert Decimal(breakdown["commission_amount"]) == Decimal("4000.00")
     assert Decimal(breakdown["total_amount"]) == Decimal("40220.00")
 
+    calculation_detail = data["calculation_detail"]
+    assert Decimal(calculation_detail["basic_premium"]) == Decimal("40000.00")
+    assert Decimal(calculation_detail["net_premium"]) == Decimal("40000.00")
+    assert Decimal(calculation_detail["total_premium"]) == Decimal("40220.00")
+    assert calculation_detail["taxes"]["training_levy"] == "80.00"
+    assert calculation_detail["taxes"]["phcf"] == "100.00"
+    assert calculation_detail["taxes"]["stamp_duty"] == "40.00"
+
+    rule_provenance = data["rule_provenance"]
+    assert rule_provenance["pricing_method"] == "bracketed_percentage"
+    assert rule_provenance["source_reference"] == "Test schedule"
+    assert rule_provenance["rate_table_version_id"] is not None
+
 
 def test_policy_quote_missing_published_rate_table_returns_400(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
