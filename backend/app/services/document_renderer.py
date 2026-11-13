@@ -6,7 +6,7 @@ import uuid
 from dataclasses import dataclass, replace
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 import jinja2
 from markdown_it import MarkdownIt
@@ -68,10 +68,69 @@ class RenderedDocument:
     pdf_bytes: bytes | None = None
 
 
+class PdfRasterizer(Protocol):
+    """Adapter seam for rasterizing HTML into PDF bytes."""
+
+    def render(self, html_content: str) -> bytes: ...
+
+
+class PlaywrightPdfRasterizer:
+    """Production PDF rasterizer backed by Bun and Playwright."""
+
+    def render(self, html_content: str) -> bytes:
+        bun_bin = shutil.which("bun")
+        if not bun_bin:
+            raise RuntimeError("Bun runtime not found for PDF rasterization")
+        if not FRONTEND_RENDER_SCRIPT.exists():
+            raise RuntimeError(
+                f"Playwright render script not found: {FRONTEND_RENDER_SCRIPT}"
+            )
+
+        with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False) as tmp_html:
+            tmp_html.write(html_content)
+            tmp_html_path = Path(tmp_html.name)
+
+        with tempfile.NamedTemporaryFile("wb", suffix=".pdf", delete=False) as tmp_pdf:
+            tmp_pdf_path = Path(tmp_pdf.name)
+
+        try:
+            cmd = [
+                bun_bin,
+                "run",
+                str(FRONTEND_RENDER_SCRIPT),
+                "--input",
+                str(tmp_html_path),
+                "--output",
+                str(tmp_pdf_path),
+            ]
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=20,
+                check=False,
+            )
+            if result.returncode != 0:
+                stderr = (result.stderr or "").strip()
+                raise RuntimeError(
+                    f"Bun Playwright rendering failed (code {result.returncode}): {stderr}"
+                )
+            if not tmp_pdf_path.exists() or tmp_pdf_path.stat().st_size == 0:
+                raise RuntimeError("Bun Playwright produced an empty PDF output")
+            logger.info("PDF successfully rendered via Bun Playwright")
+            return tmp_pdf_path.read_bytes()
+        finally:
+            if tmp_html_path.exists():
+                tmp_html_path.unlink()
+            if tmp_pdf_path.exists():
+                tmp_pdf_path.unlink()
+
+
 class DocumentRenderer:
     """Loads domain resources, normalizes snapshots, and renders Jinja2 HTML."""
 
     _jinja_env: jinja2.Environment | None = None
+    pdf_rasterizer: PdfRasterizer = PlaywrightPdfRasterizer()
 
     @classmethod
     def get_jinja_env(cls) -> jinja2.Environment:
@@ -171,6 +230,7 @@ class DocumentRenderer:
         resource_id: uuid.UUID | None = None,
         snapshot_override: dict[str, Any] | None = None,
         job_id: uuid.UUID | None = None,
+        rasterizer: PdfRasterizer | None = None,
     ) -> RenderedDocument:
         """Render HTML and PDF bytes for a domain resource and optional draft snapshot."""
         rendered = cls.render_html(
@@ -180,133 +240,11 @@ class DocumentRenderer:
             snapshot_override=snapshot_override,
             job_id=job_id,
         )
-        pdf_bytes = cls._render_pdf_bytes(
-            html_content=rendered.html,
-            fallback_title=rendered.fallback_title,
-            fallback_lines=rendered.fallback_lines,
-        )
+        active_rasterizer = rasterizer or cls.pdf_rasterizer
+        pdf_bytes = active_rasterizer.render(rendered.html)
+        if not pdf_bytes or not pdf_bytes.startswith(b"%PDF-"):
+            raise ValueError("Invalid PDF output from rasterizer")
         return replace(rendered, pdf_bytes=pdf_bytes)
-
-    @classmethod
-    def _render_pdf_bytes(
-        cls,
-        html_content: str,
-        fallback_title: str = "HealthWatch MS Document",
-        fallback_lines: list[str] | None = None,
-    ) -> bytes:
-        """Render HTML into A4 PDF bytes via Bun+Playwright, with pure-Python fallback."""
-        bun_bin = shutil.which("bun")
-
-        if bun_bin and FRONTEND_RENDER_SCRIPT.exists():
-            with tempfile.NamedTemporaryFile(
-                "w", suffix=".html", delete=False
-            ) as tmp_html:
-                tmp_html.write(html_content)
-                tmp_html_path = Path(tmp_html.name)
-
-            with tempfile.NamedTemporaryFile(
-                "wb", suffix=".pdf", delete=False
-            ) as tmp_pdf:
-                tmp_pdf_path = Path(tmp_pdf.name)
-
-            try:
-                cmd = [
-                    bun_bin,
-                    "run",
-                    str(FRONTEND_RENDER_SCRIPT),
-                    "--input",
-                    str(tmp_html_path),
-                    "--output",
-                    str(tmp_pdf_path),
-                ]
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=20,
-                    check=False,
-                )
-                if (
-                    result.returncode == 0
-                    and tmp_pdf_path.exists()
-                    and tmp_pdf_path.stat().st_size > 0
-                ):
-                    logger.info("PDF successfully rendered via Bun Playwright")
-                    return tmp_pdf_path.read_bytes()
-                logger.warning(
-                    "Bun Playwright rendering failed (code %d): %s, using fallback",
-                    result.returncode,
-                    result.stderr,
-                )
-            except Exception as e:
-                logger.warning(
-                    "Bun Playwright rendering encountered exception: %s, using fallback",
-                    e,
-                )
-            finally:
-                if tmp_html_path.exists():
-                    tmp_html_path.unlink()
-                if tmp_pdf_path.exists():
-                    tmp_pdf_path.unlink()
-
-        logger.info("Generating PDF using pure Python fallback")
-        lines = fallback_lines or [
-            "HealthWatch Insurance Agency Ltd",
-            "Nairobi, Kenya",
-            f"Document Title: {fallback_title}",
-            "Rendered via HealthWatch MS Document Pipeline",
-        ]
-        return cls._generate_fallback_pdf(fallback_title, lines)
-
-    @staticmethod
-    def _generate_fallback_pdf(title: str, text_lines: list[str]) -> bytes:
-        """Generate a minimal valid PDF-1.4 document in pure Python without external dependencies."""
-        content_lines = ["BT", "/F1 12 Tf", "50 750 Td", "14 TL"]
-        escaped_title = (
-            title.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
-        )
-        content_lines.append(f"({escaped_title}) '")
-        content_lines.append("() '")
-
-        for line in text_lines[:45]:
-            escaped = (
-                str(line).replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
-            )
-            content_lines.append(f"({escaped}) '")
-        content_lines.append("ET")
-
-        stream_data = "\n".join(content_lines).encode("latin-1", "replace")
-        stream_len = len(stream_data)
-
-        objects = [
-            b"%PDF-1.4\n",
-            b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
-            b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-            b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n",
-            f"4 0 obj\n<< /Length {stream_len} >>\nstream\n".encode("latin-1")
-            + stream_data
-            + b"\nendstream\nendobj\n",
-            b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
-        ]
-
-        offsets = []
-        curr_offset = 0
-        pdf_bytes = b""
-        for i, obj in enumerate(objects):
-            if i > 0:
-                offsets.append(curr_offset)
-            curr_offset += len(obj)
-            pdf_bytes += obj
-
-        xref_offset = curr_offset
-        xref = f"xref\n0 {len(objects)}\n0000000000 65535 f \n".encode("latin-1")
-        for off in offsets:
-            xref += f"{off:010d} 00000 n \n".encode("latin-1")
-
-        trailer = f"trailer\n<< /Size {len(objects)} /Root 1 0 R >>\nstartxref\n{xref_offset}\n%%EOF\n".encode(
-            "latin-1"
-        )
-        return pdf_bytes + xref + trailer
 
     @classmethod
     def _render_risk_note(
