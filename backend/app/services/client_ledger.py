@@ -61,6 +61,7 @@ class ClientStatement(BaseModel):
     total_invoiced: str
     total_allocated: str
     net_outstanding_balance: str
+    unallocated_credits: str = "0.00"
     invoice_count: int
     allocation_count: int
     ledger_entries: list[ClientStatementEntry]
@@ -327,6 +328,18 @@ class ClientLedgerService:
         total_allocated = sum((a.amount for a in allocations), Decimal("0.00"))
         net_outstanding = total_invoiced - total_allocated
 
+        active_unallocated_payments = session.exec(
+            select(PaymentRecord).where(
+                PaymentRecord.client_id == client_id,
+                PaymentRecord.status == PaymentStatus.ACTIVE,
+                PaymentRecord.unallocated_amount > Decimal("0.00"),
+            )
+        ).all()
+        unallocated_credits = sum(
+            (p.unallocated_amount for p in active_unallocated_payments),
+            Decimal("0.00"),
+        ).quantize(Decimal("0.01"))
+
         entries: list[ClientStatementEntry] = []
         for inv in invoices:
             entries.append(
@@ -368,6 +381,7 @@ class ClientLedgerService:
             total_invoiced=str(total_invoiced),
             total_allocated=str(total_allocated),
             net_outstanding_balance=str(net_outstanding),
+            unallocated_credits=str(unallocated_credits),
             invoice_count=len(invoices),
             allocation_count=len(allocations),
             ledger_entries=entries,

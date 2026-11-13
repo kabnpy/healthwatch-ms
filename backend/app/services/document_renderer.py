@@ -628,6 +628,7 @@ class DocumentRenderer:
                 "net_outstanding_balance": str(
                     snapshot.get("net_outstanding_balance", "0.00")
                 ),
+                "unallocated_credits": str(snapshot.get("unallocated_credits", "0.00")),
                 "invoice_count": int(snapshot.get("invoice_count", 0)),
                 "allocation_count": int(snapshot.get("allocation_count", 0)),
                 "ledger_entries": snapshot.get("ledger_entries", []),

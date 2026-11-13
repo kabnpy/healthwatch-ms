@@ -329,3 +329,91 @@ def test_legacy_pdf_renderer_and_6_tuple_method_removed() -> None:
         importlib.import_module("app.services.pdf_renderer")
 
     assert not hasattr(DocumentJobService, "render_resource_html")
+
+
+def test_render_statement_surfaces_unapplied_funds_when_positive_and_omits_when_zero(
+    db: Session,
+) -> None:
+    from app.models import PaymentMethod, PaymentRecord, PaymentStatus
+
+    client_rec = Client(
+        name="Savannah Imports Ltd",
+        email="savannah@example.com",
+        phone="0722334455",
+        kra_pin="P058887776B",
+    )
+    db.add(client_rec)
+    db.flush()
+
+    payment = PaymentRecord(
+        client_id=client_rec.id,
+        amount=Decimal("12500.00"),
+        unallocated_amount=Decimal("4500.00"),
+        payment_date=date(2026, 4, 10),
+        payment_method=PaymentMethod.MPESA,
+        reference_number="MPESA-SAV-1",
+        status=PaymentStatus.ACTIVE,
+    )
+    db.add(payment)
+    db.commit()
+
+    db_result = DocumentRenderer.render_html(
+        session=db,
+        resource_type=DocumentJobResourceType.STATEMENT,
+        resource_id=client_rec.id,
+    )
+    assert "Unapplied Funds" in db_result.html
+    assert "4,500.00" in db_result.html
+
+    zero_result = DocumentRenderer.render_html(
+        session=db,
+        resource_type=DocumentJobResourceType.STATEMENT,
+        resource_id=None,
+        snapshot_override={
+            "client_name": "Zero Unapplied Client",
+            "unallocated_credits": "0.00",
+        },
+    )
+    assert "Unapplied Funds" not in zero_result.html
+
+
+def test_render_statement_mpesa_invoice_number_ledger_activity_and_date_fallback(
+    db: Session,
+) -> None:
+    result = DocumentRenderer.render_html(
+        session=db,
+        resource_type=DocumentJobResourceType.STATEMENT,
+        resource_id=None,
+        snapshot_override={
+            "client_name": "Rift Valley Builders",
+            "kra_pin": "P051119998C",
+            "total_invoiced": "50000.00",
+            "total_allocated": "20000.00",
+            "net_outstanding_balance": "30000.00",
+            "invoice_count": 2,
+            "allocation_count": 1,
+        },
+    )
+
+    assert "Ledger Activity" in result.html
+    assert "2 Invoices, 1 Payments" in result.html
+    assert "Invoice Number" in result.html
+    assert "Account: <span class=\"kv-val mono bold\">Rift Valley Builders</span>" not in result.html
+    assert "18 October 2026" not in result.html
+
+    no_date_html = DocumentRenderer.render_template_html(
+        "statement.html",
+        {
+            "statement": {
+                "client_name": "No Date Client",
+                "total_invoiced": "0.00",
+                "total_allocated": "0.00",
+                "net_outstanding_balance": "0.00",
+                "invoice_count": 0,
+                "allocation_count": 0,
+                "ledger_entries": [],
+            }
+        },
+    )
+    assert "18 October 2026" not in no_date_html
+    assert 'Statement Date: <span class="doc-ref-number">—</span>' in no_date_html
