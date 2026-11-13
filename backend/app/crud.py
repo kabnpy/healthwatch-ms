@@ -19,9 +19,6 @@ from app.models import (
     ClientUpdate,
     CommissionSchedule,
     CommissionScheduleCreate,
-    Correspondence,
-    CorrespondenceCreate,
-    CorrespondenceUpdate,
     Document,
     DocumentCreate,
     DocumentEntityType,
@@ -293,62 +290,6 @@ def count_clients(session: Session) -> int:
 def delete_client(session: Session, *, db_client: Client) -> None:
     db_client.deleted_at = get_datetime_utc()
     session.add(db_client)
-    session.commit()
-
-
-def create_correspondence(
-    *, session: Session, correspondence_in: CorrespondenceCreate
-) -> Correspondence:
-    db_obj = Correspondence.model_validate(correspondence_in)
-    session.add(db_obj)
-    session.commit()
-    session.refresh(db_obj)
-    return db_obj
-
-
-def update_correspondence(
-    *,
-    session: Session,
-    db_correspondence: Correspondence,
-    correspondence_in: CorrespondenceUpdate,
-) -> Correspondence:
-    correspondence_data = correspondence_in.model_dump(exclude_unset=True)
-    db_correspondence.sqlmodel_update(correspondence_data)
-    session.add(db_correspondence)
-    session.commit()
-    session.refresh(db_correspondence)
-    return db_correspondence
-
-
-def get_correspondences(
-    session: Session,
-    *,
-    skip: int = 0,
-    limit: int = 100,
-    client_id: uuid.UUID | None = None,
-) -> list[Correspondence]:
-    statement = select(Correspondence).where(Correspondence.deleted_at == None)
-    if client_id:
-        statement = statement.where(Correspondence.client_id == client_id)
-    statement = statement.offset(skip).limit(limit)
-    return list(session.exec(statement).all())
-
-
-def count_correspondences(
-    session: Session, *, client_id: uuid.UUID | None = None
-) -> int:
-    statement = select(Correspondence).where(Correspondence.deleted_at == None)
-    if client_id:
-        statement = statement.where(Correspondence.client_id == client_id)
-    count_statement = select(func.count()).select_from(statement.subquery())
-    return session.exec(count_statement).one()
-
-
-def delete_correspondence(
-    session: Session, *, db_correspondence: Correspondence
-) -> None:
-    db_correspondence.deleted_at = get_datetime_utc()
-    session.add(db_correspondence)
     session.commit()
 
 
