@@ -252,7 +252,7 @@ class DocumentRenderer:
             if hasattr(risk_note.coverage_end, "strftime")
             else str(risk_note.coverage_end)
         )
-        stamp_dt = get_datetime_utc().strftime("%d %b %Y").upper()
+        stamp_dt = get_datetime_utc().strftime("%d %B %Y")
         special_conditions = override.get("special_conditions") or (
             risk_note.cover_snapshot.get("special_conditions")
             if risk_note.cover_snapshot
