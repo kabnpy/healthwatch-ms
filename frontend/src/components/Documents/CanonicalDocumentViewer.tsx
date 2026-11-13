@@ -6,9 +6,9 @@ import {
   RefreshCw,
   X,
 } from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
-import { client } from "@/client"
+import { useRef } from "react"
 import { Button } from "@/components/ui/button"
+import { useDocumentHtmlPreview } from "@/hooks/useDocumentHtmlPreview"
 
 interface CanonicalDocumentViewerProps {
   resourceType: "risk_note" | "invoice" | "statement"
@@ -34,48 +34,27 @@ export function CanonicalDocumentViewer({
   onClose,
 }: CanonicalDocumentViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
-  const [htmlContent, setHtmlContent] = useState<string>("")
-  const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    data: htmlContent = "",
+    isLoading,
+    isFetching,
+    error: queryError,
+    refetch,
+  } = useDocumentHtmlPreview({
+    resourceType,
+    resourceId,
+    draftSnapshot,
+  })
 
-  const fetchDocumentHtml = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const res =
-        draftSnapshot && Object.keys(draftSnapshot).length > 0
-          ? await client.post<string>({
-              url: "/api/v1/document-jobs/preview/html",
-              body: {
-                resource_type: resourceType,
-                resource_id: resourceId,
-                snapshot_data: draftSnapshot,
-              },
-              headers: {
-                "Content-Type": "application/json",
-              },
-              responseType: "text",
-            })
-          : await client.get<string>({
-              url: "/api/v1/document-jobs/preview/html",
-              query: {
-                resource_type: resourceType,
-                ...(resourceId ? { resource_id: resourceId } : {}),
-              },
-              responseType: "text",
-            })
+  const error = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : "Failed to render document preview"
+    : null
 
-      setHtmlContent(typeof res.data === "string" ? res.data : "")
-    } catch (err: any) {
-      setError(err.message || "Failed to render document preview")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [resourceType, resourceId, draftSnapshot])
-
-  useEffect(() => {
-    fetchDocumentHtml()
-  }, [fetchDocumentHtml])
+  const handleRefresh = () => {
+    void refetch()
+  }
 
   const handlePrint = () => {
     if (iframeRef.current?.contentWindow) {
@@ -107,13 +86,13 @@ export function CanonicalDocumentViewer({
             <Button
               size="sm"
               variant="ghost"
-              onClick={fetchDocumentHtml}
-              disabled={isLoading}
+              onClick={handleRefresh}
+              disabled={isFetching}
               className="h-7 text-xs px-2 gap-1 cursor-pointer"
               title="Refresh preview"
             >
               <RefreshCw
-                className={`size-3 ${isLoading ? "animate-spin" : ""}`}
+                className={`size-3 ${isFetching ? "animate-spin" : ""}`}
               />
               Refresh
             </Button>
@@ -186,7 +165,7 @@ export function CanonicalDocumentViewer({
             <Button
               size="sm"
               variant="outline"
-              onClick={fetchDocumentHtml}
+              onClick={handleRefresh}
               className="mt-2 text-xs"
             >
               Retry
