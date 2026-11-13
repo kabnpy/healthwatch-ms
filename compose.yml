@@ -1,72 +1,77 @@
 services:
-
-  proxy:
-    image: docker.io/library/traefik:v3.3
-    volumes:
-      - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock:ro
-    command:
-      - --providers.docker
-      - --providers.docker.exposedbydefault=false
-      - --entrypoints.http.address=:80
-      - --accesslog
-      - --log
-    restart: always
-
   db:
     image: docker.io/library/postgres:17
-    restart: always
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-app}"]
       interval: 10s
       retries: 5
       start_period: 30s
       timeout: 10s
     volumes:
       - app-db-data:/var/lib/postgresql/data/pgdata
-    env_file:
-      - .env
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
-      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
-      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changethis}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-app}
+
+  mailpit:
+    image: docker.io/axllent/mailpit
+    restart: unless-stopped
+    environment:
+      MP_MAX_MESSAGES: 500
 
   adminer:
     image: docker.io/library/adminer
-    restart: always
+    restart: unless-stopped
     depends_on:
       - db
     environment:
       - ADMINER_DESIGN=pepa-linha-dark
 
   prestart:
-    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    image: '${DOCKER_IMAGE_BACKEND:-backend}:${TAG:-latest}'
     build:
       context: .
       dockerfile: backend/Dockerfile
     depends_on:
       db:
         condition: service_healthy
-        restart: true
     command: bash scripts/prestart.sh
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-app}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changethis}
+      - SECRET_KEY=${SECRET_KEY:-changethis}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER:-admin@example.com}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD:-changethis}
 
   backend:
-    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
-    restart: always
+    image: '${DOCKER_IMAGE_BACKEND:-backend}:${TAG:-latest}'
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
-        restart: true
       prestart:
         condition: service_completed_successfully
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-app}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changethis}
+      - SECRET_KEY=${SECRET_KEY:-changethis}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER:-admin@example.com}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD:-changethis}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
       interval: 10s
@@ -77,12 +82,12 @@ services:
       dockerfile: backend/Dockerfile
 
   frontend:
-    image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'
-    restart: always
+    image: '${DOCKER_IMAGE_FRONTEND:-frontend}:${TAG:-latest}'
+    restart: unless-stopped
     build:
       context: ./frontend
       args:
-        - VITE_API_URL=https://api.${DOMAIN?Variable not set}
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
         - NODE_ENV=production
 
 volumes:

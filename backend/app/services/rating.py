@@ -13,6 +13,7 @@ from app.schemas import (
     MotorFinancialBreakdown,
     WIBAFinancialBreakdown,
 )
+from app.services.statutory_levy import StatutoryLevy, StatutoryLevyCalculator
 
 
 class RatingStrategy(ABC):
@@ -30,12 +31,29 @@ class RatingStrategy(ABC):
         return parse_decimal(value)
 
     @staticmethod
-    def _calculate_standard_levies(net_premium: Decimal) -> dict[str, Decimal]:
-        return {
-            "training_levy": (net_premium * Decimal("0.002")).quantize(Decimal("0.01")),
-            "phcf": (net_premium * Decimal("0.0025")).quantize(Decimal("0.01")),
-            "stamp_duty": Decimal("40.00"),
-        }
+    def _is_medical_product(product: Product | None) -> bool:
+        if not product or not product.class_of_insurance:
+            return False
+        class_name = product.class_of_insurance.lower()
+        return "medical" in class_name or "health" in class_name
+
+    @classmethod
+    def _calculate_levy(
+        cls,
+        net_premium: Decimal,
+        product: Product | None = None,
+        *,
+        exempt_stamp_duty: bool | None = None,
+    ) -> StatutoryLevy:
+        exempt = (
+            exempt_stamp_duty
+            if exempt_stamp_duty is not None
+            else cls._is_medical_product(product)
+        )
+        return StatutoryLevyCalculator.calculate(
+            net_premium,
+            exempt_stamp_duty=exempt,
+        )
 
 
 class MotorPrivateRatingStrategy(RatingStrategy):
@@ -130,8 +148,7 @@ class MotorPrivateRatingStrategy(RatingStrategy):
             )
             net_premium += pl_amount
 
-        levies = self._calculate_standard_levies(net_premium)
-        total_levies = sum(levies.values())
+        levy = self._calculate_levy(net_premium, product)
 
         post_levy_total = Decimal("0.00")
         if extensions.get("om_rescue_plus"):
@@ -145,20 +162,13 @@ class MotorPrivateRatingStrategy(RatingStrategy):
         return MotorFinancialBreakdown(
             type="motor",
             net_premium=net_premium,
-            taxes=levies,
+            taxes=levy.to_taxes_dict(),
             commission_amount=commission_amount,
-            total_amount=net_premium + total_levies + post_levy_total,
+            total_amount=levy.total_payable + post_levy_total,
             benefits=benefits,
             basic_rate=basic_rate,
             is_high_end=is_high_end,
         )
-
-    def _calculate_standard_levies(self, net_premium: Decimal) -> dict[str, Decimal]:
-        return {
-            "training_levy": (net_premium * Decimal("0.002")).quantize(Decimal("0.01")),
-            "phcf": (net_premium * Decimal("0.0025")).quantize(Decimal("0.01")),
-            "stamp_duty": Decimal("40.00"),
-        }
 
 
 class MotorThirdPartyRatingStrategy(RatingStrategy):
@@ -181,8 +191,7 @@ class MotorThirdPartyRatingStrategy(RatingStrategy):
         )
         net_premium = self.parse_decimal(tariff_raw)
 
-        levies = self._calculate_standard_levies(net_premium)
-        total_levies = sum(levies.values())
+        levy = self._calculate_levy(net_premium, product)
 
         commission_rate = Decimal(str((product.default_commission_rate or 10.0) / 100))
         commission_amount = (net_premium * commission_rate).quantize(Decimal("0.01"))
@@ -190,9 +199,9 @@ class MotorThirdPartyRatingStrategy(RatingStrategy):
         return MotorFinancialBreakdown(
             type="motor",
             net_premium=net_premium,
-            taxes=levies,
+            taxes=levy.to_taxes_dict(),
             commission_amount=commission_amount,
-            total_amount=net_premium + total_levies,
+            total_amount=levy.total_payable,
             benefits=[
                 BenefitLineItem(
                     name="Third Party Property Damage (Statutory)",
@@ -228,8 +237,7 @@ class FixedPackageRatingStrategy(RatingStrategy):
         )
         net_premium = self.parse_decimal(fee_raw)
 
-        levies = self._calculate_standard_levies(net_premium)
-        total_levies = sum(levies.values())
+        levy = self._calculate_levy(net_premium, product)
 
         commission_rate = Decimal(str((product.default_commission_rate or 20.0) / 100))
         commission_amount = (net_premium * commission_rate).quantize(Decimal("0.01"))
@@ -237,9 +245,9 @@ class FixedPackageRatingStrategy(RatingStrategy):
         return BaseFinancialBreakdown(
             type="base",
             net_premium=net_premium,
-            taxes=levies,
+            taxes=levy.to_taxes_dict(),
             commission_amount=commission_amount,
-            total_amount=net_premium + total_levies,
+            total_amount=levy.total_payable,
         )
 
 
@@ -255,8 +263,7 @@ class ManualRatingStrategy(RatingStrategy):
         )
         net_premium = self.parse_decimal(premium_raw)
 
-        levies = self._calculate_standard_levies(net_premium)
-        total_levies = sum(levies.values())
+        levy = self._calculate_levy(net_premium, product)
 
         commission_rate = Decimal(str(product.default_commission_rate / 100))
         commission_amount = (net_premium * commission_rate).quantize(Decimal("0.01"))
@@ -264,9 +271,9 @@ class ManualRatingStrategy(RatingStrategy):
         return BaseFinancialBreakdown(
             type="base",
             net_premium=net_premium,
-            taxes=levies,
+            taxes=levy.to_taxes_dict(),
             commission_amount=commission_amount,
-            total_amount=net_premium + total_levies,
+            total_amount=levy.total_payable,
         )
 
 
@@ -303,8 +310,7 @@ class DomesticPackageRatingStrategy(RatingStrategy):
         calculated_net = prem_b + prem_c + prem_ar + prem_servants
         net_premium = max(min_prem, calculated_net)
 
-        levies = self._calculate_standard_levies(net_premium)
-        total_levies = sum(levies.values())
+        levy = self._calculate_levy(net_premium, product)
 
         commission_rate = Decimal(str((product.default_commission_rate or 20.0) / 100))
         commission_amount = (net_premium * commission_rate).quantize(Decimal("0.01"))
@@ -312,9 +318,9 @@ class DomesticPackageRatingStrategy(RatingStrategy):
         return DomesticFinancialBreakdown(
             type="domestic",
             net_premium=net_premium,
-            taxes=levies,
+            taxes=levy.to_taxes_dict(),
             commission_amount=commission_amount,
-            total_amount=net_premium + total_levies,
+            total_amount=levy.total_payable,
             section_premiums={
                 "buildings": prem_b,
                 "contents": prem_c,
@@ -360,8 +366,7 @@ class WIBARatingStrategy(RatingStrategy):
         calculated_net = prem_c + prem_a + prem_h
         net_premium = max(min_prem, calculated_net)
 
-        levies = self._calculate_standard_levies(net_premium)
-        total_levies = sum(levies.values())
+        levy = self._calculate_levy(net_premium, product)
 
         commission_rate = Decimal(str((product.default_commission_rate or 15.0) / 100))
         commission_amount = (net_premium * commission_rate).quantize(Decimal("0.01"))
@@ -369,9 +374,9 @@ class WIBARatingStrategy(RatingStrategy):
         return WIBAFinancialBreakdown(
             type="wiba",
             net_premium=net_premium,
-            taxes=levies,
+            taxes=levy.to_taxes_dict(),
             commission_amount=commission_amount,
-            total_amount=net_premium + total_levies,
+            total_amount=levy.total_payable,
             payroll_totals={
                 "clerical": prem_c,
                 "artisan": prem_a,
@@ -410,8 +415,7 @@ class FirePerilsRatingStrategy(RatingStrategy):
         calculated_net = fire_prem + perils_prem
         net_premium = max(min_prem, calculated_net)
 
-        levies = self._calculate_standard_levies(net_premium)
-        total_levies = sum(levies.values())
+        levy = self._calculate_levy(net_premium, product)
 
         commission_rate = Decimal(str((product.default_commission_rate or 15.0) / 100))
         commission_amount = (net_premium * commission_rate).quantize(Decimal("0.01"))
@@ -419,9 +423,9 @@ class FirePerilsRatingStrategy(RatingStrategy):
         return CommercialFireFinancialBreakdown(
             type="fire",
             net_premium=net_premium,
-            taxes=levies,
+            taxes=levy.to_taxes_dict(),
             commission_amount=commission_amount,
-            total_amount=net_premium + total_levies,
+            total_amount=levy.total_payable,
             total_sum_insured=total_si,
             special_perils_included=include_perils,
         )
@@ -451,8 +455,7 @@ class MarineCargoRatingStrategy(RatingStrategy):
         calc_net = (uplifted * rate).quantize(Decimal("0.01"))
         net_premium = max(min_prem, calc_net)
 
-        levies = self._calculate_standard_levies(net_premium)
-        total_levies = sum(levies.values())
+        levy = self._calculate_levy(net_premium, product)
 
         commission_rate = Decimal(str((product.default_commission_rate or 12.5) / 100))
         commission_amount = (net_premium * commission_rate).quantize(Decimal("0.01"))
@@ -460,9 +463,9 @@ class MarineCargoRatingStrategy(RatingStrategy):
         return MarineFinancialBreakdown(
             type="marine",
             net_premium=net_premium,
-            taxes=levies,
+            taxes=levy.to_taxes_dict(),
             commission_amount=commission_amount,
-            total_amount=net_premium + total_levies,
+            total_amount=levy.total_payable,
             cif_value=cif_val,
             uplifted_value=uplifted,
             clause=clause,
@@ -514,9 +517,8 @@ class MedicalRatingStrategy(RatingStrategy):
         )
 
         net_premium = inpatient_total + outpatient_total
-        # Medical in Kenya is VAT-exempt, but ITL, PHCF, and Stamp Duty still apply under IRA rules
-        levies = self._calculate_standard_levies(net_premium)
-        total_levies = sum(levies.values())
+        # Medical in Kenya is exempt from Stamp Duty under Kenyan insurance rules; ITL and PHCF apply
+        levy = self._calculate_levy(net_premium, product, exempt_stamp_duty=True)
 
         commission_rate = Decimal(str((product.default_commission_rate or 10.0) / 100))
         commission_amount = (net_premium * commission_rate).quantize(Decimal("0.01"))
@@ -526,9 +528,9 @@ class MedicalRatingStrategy(RatingStrategy):
         return MedicalFinancialBreakdown(
             type="medical",
             net_premium=net_premium,
-            taxes=levies,
+            taxes=levy.to_taxes_dict(),
             commission_amount=commission_amount,
-            total_amount=net_premium + total_levies,
+            total_amount=levy.total_payable,
             inpatient_limit=ip_limit,
             inpatient_premium=inpatient_total,
             outpatient_premium=outpatient_total,
@@ -603,8 +605,6 @@ class RatingService:
     def _calculate_generic(
         cls, product: Product, risk_details: dict[str, Any]
     ) -> BaseFinancialBreakdown:
-        motor_strategy = MotorPrivateRatingStrategy()
-
         # Extract sum insured if present
         vehicle = risk_details.get("vehicle") or risk_details.get("vehicle_details", {})
         financials = risk_details.get("financials", {})
@@ -616,7 +616,7 @@ class RatingService:
         )
 
         sum_insured = (
-            motor_strategy.parse_decimal(si_raw)
+            RatingStrategy.parse_decimal(si_raw)
             if si_raw is not None
             else Decimal("0.00")
         )
@@ -626,8 +626,7 @@ class RatingService:
         rate = Decimal(str(rate_val)) / Decimal("100") if rate_val else Decimal("0.00")
 
         net_premium = (sum_insured * rate).quantize(Decimal("0.01"))
-        levies = motor_strategy._calculate_standard_levies(net_premium)
-        total_levies = sum(levies.values())
+        levy = RatingStrategy._calculate_levy(net_premium, product)
 
         commission_rate = Decimal(str((product.default_commission_rate or 0) / 100))
         commission_amount = (net_premium * commission_rate).quantize(Decimal("0.01"))
@@ -635,7 +634,7 @@ class RatingService:
         return BaseFinancialBreakdown(
             type="base",
             net_premium=net_premium,
-            taxes=levies,
+            taxes=levy.to_taxes_dict(),
             commission_amount=commission_amount,
-            total_amount=net_premium + total_levies,
+            total_amount=levy.total_payable,
         )

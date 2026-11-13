@@ -1,37 +1,19 @@
 services:
-
-  proxy:
-    ports:
-      - "${PROXY_HTTP_PORT:-80}:80"
-      - "8090:8080"
-    command:
-      - --providers.docker
-      - --providers.docker.exposedbydefault=false
-      - --entrypoints.http.address=:80
-      - --accesslog
-      - --log
-      - --log.level=DEBUG
-      - --api
-      - --api.insecure=true
-
   db:
     restart: "no"
     ports:
       - "5432:5432"
 
-  adminer:
-    restart: "no"
-    ports:
-      - "8080:8080"
-
   mailpit:
-    image: docker.io/axllent/mailpit
     restart: "no"
     ports:
       - "1080:8025"
       - "1025:1025"
-    environment:
-      MP_MAX_MESSAGES: 500
+
+  adminer:
+    restart: "no"
+    ports:
+      - "8080:8080"
 
   backend:
     restart: "no"
@@ -42,16 +24,6 @@ services:
       - run
       - --reload
       - "app/main.py"
-    develop:
-      watch:
-        - path: ./backend
-          action: sync
-          target: /app
-          ignore:
-            - ./backend/.venv
-            - .venv
-        - path: ./backend/pyproject.toml
-          action: rebuild
     environment:
       POSTGRES_SERVER: "db"
       SMTP_HOST: "mailpit"
@@ -81,12 +53,13 @@ services:
       - backend
       - mailpit
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       - VITE_API_URL=http://backend:8000
       - MAILCATCHER_HOST=http://mailpit:8025
       - PLAYWRIGHT_HTML_HOST=0.0.0.0
-      - CI=${CI}
+      - CI=${CI:-}
     volumes:
       - ./frontend/blob-report:/app/blob-report
       - ./frontend/test-results:/app/test-results

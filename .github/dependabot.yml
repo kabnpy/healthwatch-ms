@@ -1,44 +1,44 @@
 version: 2
 updates:
-  # GitHub Actions
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: daily
     commit-message:
-      prefix: ⬆
-    labels: [dependencies, internal]
-  # Python uv
+      prefix: "ci(deps)"
+    labels: [dependencies]
+
   - package-ecosystem: uv
     directory: /backend
     schedule:
       interval: weekly
     commit-message:
-      prefix: ⬆
-    labels: [dependencies, internal]
-  # npm
-  - package-ecosystem: npm
+      prefix: "chore(deps)"
+    labels: [dependencies]
+
+  - package-ecosystem: bun
     directory: /frontend
     schedule:
       interval: weekly
     commit-message:
-      prefix: ⬆
-    labels: [dependencies, internal]
-  # Docker
+      prefix: "chore(deps)"
+    labels: [dependencies]
+
   - package-ecosystem: docker
     directories:
+      - /
       - /backend
       - /frontend
     schedule:
       interval: weekly
     commit-message:
-      prefix: ⬆
-    labels: [dependencies, internal]
-  # Docker Compose
+      prefix: "chore(deps)"
+    labels: [dependencies]
+
   - package-ecosystem: docker-compose
     directory: /
     schedule:
       interval: weekly
     commit-message:
-      prefix: ⬆
-    labels: [dependencies, internal]
+      prefix: "chore(deps)"
+    labels: [dependencies]

@@ -4,18 +4,33 @@ set -e
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)"
 cd "$ROOT_DIR"
 
+if [ ! -f "$ROOT_DIR/.env" ] && [ -f "$ROOT_DIR/.env.example" ]; then
+  cp "$ROOT_DIR/.env.example" "$ROOT_DIR/.env"
+  echo "==> Created .env from .env.example"
+fi
+
 detect_compose() {
-  if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
-    echo "docker compose"
-  elif command -v podman >/dev/null 2>&1 && podman compose version >/dev/null 2>&1; then
+  if command -v podman >/dev/null 2>&1 && podman compose version >/dev/null 2>&1; then
     echo "podman compose"
   elif command -v podman-compose >/dev/null 2>&1; then
     echo "podman-compose"
+  elif command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    echo "docker compose"
   elif command -v docker-compose >/dev/null 2>&1; then
     echo "docker-compose"
   else
     echo ""
   fi
+}
+
+require_compose() {
+  local compose_cmd
+  compose_cmd="$(detect_compose)"
+  if [ -z "$compose_cmd" ]; then
+    echo "Error: Neither podman compose nor docker compose found." >&2
+    exit 1
+  fi
+  echo "$compose_cmd"
 }
 
 run_backend() {
@@ -39,22 +54,17 @@ is_db_ready() {
 
 start_db_if_needed() {
   if is_db_ready; then
-    echo "==> Database is reachable on port 5432."
     return 0
   fi
 
   local compose_cmd
-  compose_cmd="$(detect_compose)"
-  if [ -z "$compose_cmd" ]; then
-    echo "Error: Neither docker nor podman compose found, and database is not running on port 5432." >&2
-    exit 1
-  fi
+  compose_cmd="$(require_compose)"
 
   echo "==> Starting database and mailpit via $compose_cmd..."
   $compose_cmd up -d db mailpit
 
-  echo "==> Waiting for database to accept connections..."
-  local retries=20
+  echo "==> Waiting for database on port 5432..."
+  local retries=25
   while ! is_db_ready; do
     retries=$((retries - 1))
     if [ "$retries" -le 0 ]; then
@@ -67,8 +77,28 @@ start_db_if_needed() {
 }
 
 mode="${1:-all}"
+shift 2>/dev/null || true
 
 case "$mode" in
+  db:up)
+    start_db_if_needed
+    ;;
+  up)
+    compose_cmd="$(require_compose)"
+    if [ "$#" -eq 0 ]; then
+      $compose_cmd up -d db mailpit
+    else
+      $compose_cmd up -d "$@"
+    fi
+    ;;
+  down)
+    compose_cmd="$(require_compose)"
+    $compose_cmd down "$@"
+    ;;
+  logs)
+    compose_cmd="$(require_compose)"
+    $compose_cmd logs -f "$@"
+    ;;
   backend)
     start_db_if_needed
     run_backend fastapi dev app/main.py --port 8000

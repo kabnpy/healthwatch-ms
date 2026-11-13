@@ -1,23 +1,22 @@
 # HealthWatch MS - Development Guide
 
-## Container Workflow (Docker / Podman)
+## Local Development Workflow (Podman & Docker)
 
-Start the local stack with Docker Compose or Podman Compose:
+All workspace commands live in root [package.json](package.json) and auto-detect **Podman** (`podman compose` / `podman-compose`) or **Docker** (`docker compose`).
 
 ```bash
-# Docker Compose
-docker compose watch
-# Or background
-docker compose up -d
+# Start PostgreSQL + Mailpit in Podman/Docker, apply migrations, seed initial data,
+# and run FastAPI + Vite natively with hot-reload:
+bun run dev
 
-# Podman Compose
-podman compose up -d db adminer mailpit backend frontend
+# Check container runtime, DB, API, and frontend status:
+bun run status
+
+# Manage background backing services (PostgreSQL + Mailpit):
+bun run up
+bun run down
+bun run logs
 ```
-
-> **Podman Notes:**
-> - Ensure your images and database host connect properly: the compose files automatically configure `POSTGRES_SERVER=db` for container services.
-> - The rootless Podman user socket can be activated with `systemctl --user enable --now podman.socket`.
-> - If you want to use the optional Traefik `proxy` container on port 80 with rootless Podman, permit unprivileged binding via `sudo sysctl -w net.ipv4.ip_unprivileged_port_start=80` or customize `PROXY_HTTP_PORT` in your environment.
 
 ### Service URLs (Local Development)
 
@@ -27,76 +26,39 @@ podman compose up -d db adminer mailpit backend frontend
 | **Backend API** | <http://localhost:8000> | FastAPI with auto-reload |
 | **Swagger UI** | <http://localhost:8000/docs> | Interactive API documentation |
 | **ReDoc** | <http://localhost:8000/redoc> | Alternative API documentation |
-| **Adminer** | <http://localhost:8080> | Database web administration |
-| **Traefik UI** | <http://localhost:8090> | Reverse proxy routing & metrics |
 | **Mailpit** | <http://localhost:1080> | Local email inspection (SMTP on port 1025) |
+| **Adminer** | <http://localhost:8080> | Optional DB UI (`bun run up adminer`) |
 
-To monitor logs:
+---
+
+## Testing, Typechecking & Client Generation
+
 ```bash
-# All services
-docker compose logs -f
-
-# Specific service
-docker compose logs -f backend
+bun run test          # Run backend pytest + frontend vitest suites (auto-starts DB if stopped)
+bun run test:backend  # Run backend pytest suite
+bun run test:frontend # Run frontend vitest suite
+bun run test:e2e      # Run Playwright E2E suite
+bun run typecheck     # Run TypeScript compiler check
+bun run lint          # Run Ruff and Biome linters
+bun run format        # Auto-format backend and frontend
+bun run client        # Export OpenAPI schema and regenerate TypeScript client
+bun run migrate       # Apply Alembic database migrations
+bun run seed          # Seed realistic underwriting and client portfolio
 ```
 
 ---
 
-## Local Native Development
+## Container Files
 
-You can stop specific Docker Compose services and run them natively on your host.
-
-### 1. Stopping Containerized Services
-```bash
-docker compose stop frontend
-docker compose stop backend
-```
-
-### 2. Frontend (React 19 + Vite 8 + Bun)
-```bash
-cd frontend
-bun install
-bun run generate-client  # Sync OpenAPI Axios client with backend
-bun run dev              # Starts dev server on http://localhost:5173
-```
-
-### 3. Backend (FastAPI + SQLModel + uv)
-```bash
-cd backend
-uv sync
-uv run alembic upgrade head
-uv run python app/initial_data.py
-uv run fastapi dev app/main.py   # Starts dev server on http://localhost:8000
-```
+- `Dockerfile`: Unified production build (Stage 1 builds the React SPA with Bun; Stage 2 runs FastAPI on Python 3.14 and serves the embedded SPA).
+- `compose.yml` + `compose.override.yml`: Backing services (`db` PostgreSQL 17, `mailpit`, `adminer`) and CI container targets (`backend`, `frontend`, `playwright`), compatible with both rootless Podman and Docker Compose.
 
 ---
 
-## Docker Compose Files Specification
+## Pre-Commit & Code Quality (`prek`)
 
-We use the modern Docker Compose v2 file layout:
-- `compose.yml`: Base service definitions (Traefik, DB, Backend, Frontend, Mailpit).
-- `compose.override.yml`: Local development overrides (ports exposed on localhost, volume mounts, `develop.watch` sync). Automatically loaded alongside `compose.yml` during `docker compose up`.
-- `compose.deploy.yml`: Production & staging configurations (Let's Encrypt TLS certificates, domain labels, production entrypoints).
-
----
-
-## Pre-commit & Code Quality (`prek`)
-
-We use [`prek`](https://prek.j178.dev/) (a fast Rust-based runner compatible with pre-commit) for automated linting and formatting.
-
-### Install Git Hook
 ```bash
 cd backend
-uv run prek install -f
-```
-
-### Run Checks Across All Files
-```bash
-cd backend
+uv run prek install -t pre-commit -t commit-msg
 uv run prek run --all-files
 ```
-
-Checks executed by prek:
-- **Python:** `ruff check --fix` and `ruff format`
-- **Frontend:** `biome check` (Biome handles linting and formatting for TypeScript/React)
-- **Formatting:** File end newline, trailing whitespace, TOML, and YAML validation.

@@ -8,6 +8,7 @@ from app.models import (
     PricingMethod,
     RateTableVersion,
 )
+from app.services.statutory_levy import StatutoryLevyCalculator
 from app.utils import parse_decimal
 
 
@@ -59,33 +60,11 @@ class AdvisoryRatingService:
 
         net_premium = calc_result["net_premium"]
 
-        # Statutory Levies & Taxes
-        # Training Levy: 0.20% (0.0020)
-        training_levy = (net_premium * Decimal("0.0020")).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
-        # Policyholders Compensation Fund: 0.25% (0.0025)
-        phcf = (net_premium * Decimal("0.0025")).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
-
-        # Stamp Duty: KES 40.00 flat per contract slip. Medical / Healthcare policies are strictly exempt!
         is_medical = "medical" in class_name or "health" in class_name
-        stamp_duty = Decimal("0.00") if is_medical else Decimal("40.00")
-
-        total_taxes = training_levy + phcf + stamp_duty
-        exact_total = net_premium + total_taxes
-
-        # Whole KES integer rounding
-        rounded_total = exact_total.quantize(Decimal("1.00"), rounding=ROUND_HALF_UP)
-
-        taxes_dict = {
-            "training_levy": str(training_levy),
-            "phcf": str(phcf),
-            "stamp_duty": str(stamp_duty),
-            "total_taxes": str(total_taxes),
-            "stamp_duty_exempt": is_medical,
-        }
+        levy = StatutoryLevyCalculator.calculate(
+            net_premium, exempt_stamp_duty=is_medical
+        )
+        taxes_dict = levy.to_advisory_taxes_dict()
 
         calculation_detail = {
             "components": calc_result["components"],
@@ -93,8 +72,8 @@ class AdvisoryRatingService:
             "basic_premium": str(calc_result.get("basic_premium", net_premium)),
             "net_premium": str(net_premium),
             "taxes": taxes_dict,
-            "exact_total": str(exact_total),
-            "total_premium": str(rounded_total),
+            "exact_total": str(levy.exact_total),
+            "total_premium": str(levy.total_payable),
         }
 
         rule_provenance = {
@@ -108,8 +87,8 @@ class AdvisoryRatingService:
 
         return {
             "net_premium": net_premium,
-            "total_taxes": total_taxes,
-            "total_premium": rounded_total,
+            "total_taxes": levy.total_levies,
+            "total_premium": levy.total_payable,
             "calculation_detail": calculation_detail,
             "rule_provenance": rule_provenance,
             "input_snapshot": inputs,

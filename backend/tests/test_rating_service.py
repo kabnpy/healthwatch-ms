@@ -319,8 +319,28 @@ def test_medical_rating():
     assert breakdown.inpatient_premium == Decimal("87000.00")
     assert breakdown.outpatient_premium == Decimal("25000.00")
     assert breakdown.net_premium == Decimal("112000.00")
+    assert breakdown.taxes["training_levy"] == Decimal("224.00")
+    assert breakdown.taxes["phcf"] == Decimal("280.00")
+    assert breakdown.taxes["stamp_duty"] == Decimal("0.00")
+    assert breakdown.total_amount == Decimal("112504.00")
     assert breakdown.family_size == 4
     assert breakdown.commission_amount == Decimal("11200.00")
+
+
+def test_generic_fallback_medical_exempts_stamp_duty():
+    product = Product(
+        name="Corporate Health Plan",
+        class_of_insurance="Health Insurance",
+        pricing_rules={"rate": "2.00"},
+    )
+    risk_details = {"sum_insured": Decimal("500000.00")}
+    breakdown = RatingService.calculate_breakdown(product, risk_details)
+
+    assert breakdown.net_premium == Decimal("10000.00")
+    assert breakdown.taxes["training_levy"] == Decimal("20.00")
+    assert breakdown.taxes["phcf"] == Decimal("25.00")
+    assert breakdown.taxes["stamp_duty"] == Decimal("0.00")
+    assert breakdown.total_amount == Decimal("10045.00")
 
 
 def test_motor_third_party_rating():

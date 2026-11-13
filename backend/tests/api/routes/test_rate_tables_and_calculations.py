@@ -270,3 +270,54 @@ def test_persist_and_select_premium_calculation(
     # Verify renewal proposed premium was updated
     db.refresh(renewal)
     assert renewal.selected_calculation_id == uuid.UUID(calc_id)
+
+
+def test_advisory_rating_service_levy_breakdown() -> None:
+    from app.models import RateTableVersion
+    from app.services.advisory_rating import AdvisoryRatingService
+
+    motor_table = RateTableVersion(
+        insurer_id=uuid.uuid4(),
+        class_of_insurance="Motor Private",
+        pricing_method=PricingMethod.FIXED_TIER,
+        currency="KES",
+        version_number=1,
+    )
+    motor_quote = AdvisoryRatingService.calculate_quote(
+        motor_table, inputs={"fixed_amount": Decimal("7500.00")}
+    )
+    assert motor_quote["net_premium"] == Decimal("7500.00")
+    assert motor_quote["total_taxes"] == Decimal("73.75")
+    assert motor_quote["total_premium"] == Decimal("7573.75")
+    assert motor_quote["calculation_detail"]["taxes"] == {
+        "training_levy": "15.00",
+        "phcf": "18.75",
+        "stamp_duty": "40.00",
+        "total_taxes": "73.75",
+        "stamp_duty_exempt": False,
+    }
+    assert motor_quote["calculation_detail"]["exact_total"] == "7573.75"
+    assert motor_quote["calculation_detail"]["total_premium"] == "7573.75"
+
+    medical_table = RateTableVersion(
+        insurer_id=uuid.uuid4(),
+        class_of_insurance="Medical Corporate",
+        pricing_method=PricingMethod.PACKAGED,
+        currency="KES",
+        version_number=1,
+    )
+    medical_quote = AdvisoryRatingService.calculate_quote(
+        medical_table, inputs={"custom_premium": Decimal("88000.00")}
+    )
+    assert medical_quote["net_premium"] == Decimal("88000.00")
+    assert medical_quote["total_taxes"] == Decimal("396.00")
+    assert medical_quote["total_premium"] == Decimal("88396.00")
+    assert medical_quote["calculation_detail"]["taxes"] == {
+        "training_levy": "176.00",
+        "phcf": "220.00",
+        "stamp_duty": "0.00",
+        "total_taxes": "396.00",
+        "stamp_duty_exempt": True,
+    }
+    assert medical_quote["calculation_detail"]["exact_total"] == "88396.00"
+    assert medical_quote["calculation_detail"]["total_premium"] == "88396.00"

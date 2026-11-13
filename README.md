@@ -72,6 +72,7 @@ Documentation is organized for both engineers and coding agents:
 - **[Design System](docs/02_design_system.md):** UI patterns, OKLCH color tokens, financial numeral rules, and A4 print specifications.
 - **[Git Hygiene](docs/03_git_hygiene.md):** Branching conventions, Conventional Commits, and pre-commit hooks.
 - **[Reference Catalog & Seeding](docs/04_reference_catalog_and_seeding.md):** Kenyan underwriter catalog, statutory levy benchmarks, and realistic test portfolio.
+- **[Development Guide](development.md):** Local Podman/Docker workflow, service URLs, and pre-commit hooks.
 
 ---
 
@@ -79,17 +80,17 @@ Documentation is organized for both engineers and coding agents:
 
 For technical teams and developers:
 
-- **Backend:** Python 3.14, FastAPI, SQLModel (SQLAlchemy 2 + Pydantic v2), PostgreSQL 16+.
+- **Backend:** Python 3.14, FastAPI, SQLModel (SQLAlchemy 2 + Pydantic v2), PostgreSQL 17.
 - **Frontend:** React 19, Vite 8, Bun, TanStack Query v5, TanStack Router, Tailwind CSS, Shadcn UI.
 - **Storage:** Cloudflare R2 object storage with secure, short-lived signed URLs.
-- **Infrastructure:** Docker Compose v2 / Podman Compose for local development, Railway for production hosting.
+- **Infrastructure:** Podman Compose / Docker Compose v2 for local development, unified `Dockerfile` for Railway production hosting.
 
 ### Running Locally
 
-Ensure `.env` exists (copied from `.env.example`), then use root `package.json` scripts via `bun run`:
+All workspace commands live in root `package.json` (`bun run <script>`) and auto-detect **Podman** or **Docker** (creating `.env` from `.env.example` automatically if missing):
 
 ```bash
-# 1. Start database, run migrations, seed data, and launch backend + frontend concurrently:
+# 1. Start database + Mailpit, run migrations, seed data, and launch backend + frontend:
 bun run dev
 
 # 2. Check operational status of runtime, DB, API, and frontend:
@@ -103,6 +104,9 @@ Service URLs:
 
 Additional workspace commands (`package.json`):
 ```bash
+bun run up            # Start backing containers (db, mailpit)
+bun run down          # Stop backing containers
+bun run logs          # Tail container logs
 bun run dev:backend   # Run FastAPI dev server natively
 bun run dev:frontend  # Run Vite dev server natively
 bun run test          # Run all backend pytest and frontend vitest suites
