@@ -462,7 +462,6 @@ class ClientPublic(ClientBase):
 class Client(ClientBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     policies: list[Policy] = Relationship(back_populates="client")
-    correspondence: list[Correspondence] = Relationship(back_populates="client")
     invoices: list[Invoice] = Relationship(back_populates="client")
     activities: list[Activity] = Relationship(
         back_populates="client",
@@ -476,40 +475,6 @@ class Client(ClientBase, table=True):
 
 class ClientsPublic(SQLModel):
     data: list[ClientPublic]
-    count: int
-
-
-class CorrespondenceBase(AuditMixin, SQLModel):
-    client_id: uuid.UUID = Field(foreign_key="client.id", index=True)
-    subject: str
-    summary: str | None = None
-    file_path: str
-    date_logged: datetime = Field(default_factory=get_datetime_utc)
-
-
-class CorrespondenceCreate(CorrespondenceBase):
-    pass
-
-
-class CorrespondenceUpdate(SQLModel):
-    client_id: uuid.UUID | None = None
-    subject: str | None = None
-    summary: str | None = None
-    file_path: str | None = None
-    date_logged: datetime | None = None
-
-
-class CorrespondencePublic(CorrespondenceBase):
-    id: uuid.UUID
-
-
-class Correspondence(CorrespondenceBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    client: Client = Relationship(back_populates="correspondence")
-
-
-class CorrespondencesPublic(SQLModel):
-    data: list[CorrespondencePublic]
     count: int
 
 

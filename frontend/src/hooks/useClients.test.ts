@@ -15,8 +15,6 @@ const mockReadClient = vi.fn()
 const mockCreateClient = vi.fn()
 const mockUpdateClient = vi.fn()
 const mockDeleteClient = vi.fn()
-const mockReadClientCorrespondences = vi.fn()
-const mockCreateClientCorrespondence = vi.fn()
 
 vi.mock("../client", () => ({
   ClientsService: {
@@ -25,19 +23,13 @@ vi.mock("../client", () => ({
     createClient: (...args: unknown[]) => mockCreateClient(...args),
     updateClient: (...args: unknown[]) => mockUpdateClient(...args),
     deleteClient: (...args: unknown[]) => mockDeleteClient(...args),
-    readClientCorrespondences: (...args: unknown[]) =>
-      mockReadClientCorrespondences(...args),
-    createClientCorrespondence: (...args: unknown[]) =>
-      mockCreateClientCorrespondence(...args),
   },
 }))
 
 import {
   useClient,
   useClients,
-  useCorrespondences,
   useCreateClient,
-  useCreateCorrespondence,
   useDeleteClient,
   useUpdateClient,
 } from "./useClients"
@@ -112,30 +104,5 @@ describe("useClients domain hooks", () => {
     }
     await expect(deleteOpts.mutationFn("c1")).resolves.toEqual({ ok: true })
     deleteOpts.onSuccess()
-  })
-
-  it("useCorrespondences and useCreateCorrespondence manage client correspondences", async () => {
-    mockReadClientCorrespondences.mockResolvedValueOnce({ data: [] })
-    const listOpts = useCorrespondences("c1") as unknown as {
-      queryKey: unknown[]
-      enabled: boolean
-      queryFn: () => Promise<unknown>
-    }
-    expect(listOpts.queryKey).toEqual(["correspondences", "c1"])
-    expect(listOpts.enabled).toBe(true)
-    await expect(listOpts.queryFn()).resolves.toEqual([])
-
-    mockCreateClientCorrespondence.mockResolvedValueOnce({ data: { id: "m1" } })
-    const createOpts = useCreateCorrespondence() as unknown as {
-      mutationFn: (v: { clientId: string; data: unknown }) => Promise<unknown>
-      onSuccess: (_: unknown, v: { clientId: string }) => void
-    }
-    await expect(
-      createOpts.mutationFn({ clientId: "c1", data: { subject: "Hi" } }),
-    ).resolves.toEqual({ id: "m1" })
-    createOpts.onSuccess(undefined, { clientId: "c1" })
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({
-      queryKey: ["correspondences", "c1"],
-    })
   })
 })
