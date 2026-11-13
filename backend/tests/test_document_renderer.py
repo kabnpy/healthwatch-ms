@@ -417,3 +417,139 @@ def test_render_statement_mpesa_invoice_number_ledger_activity_and_date_fallback
     )
     assert "18 October 2026" not in no_date_html
     assert 'Statement Date: <span class="doc-ref-number">—</span>' in no_date_html
+
+
+def test_render_risk_note_indents_included_benefits_beneath_net_base_premium(
+    db: Session,
+) -> None:
+    client_rec = Client(
+        name="Savannah Fleet Ltd",
+        email="fleet@example.com",
+        phone="0700333444",
+        kra_pin="P051112224B",
+    )
+    db.add(client_rec)
+    db.flush()
+
+    insurer = Insurer(name="Britam General Insurance")
+    db.add(insurer)
+    db.flush()
+
+    product = Product(
+        insurer_id=insurer.id,
+        name="Motor Commercial",
+        class_of_insurance="Motor",
+    )
+    db.add(product)
+    db.flush()
+
+    policy = Policy(
+        policy_number="POL-RN-BEN-001",
+        client_id=client_rec.id,
+        product_id=product.id,
+        status=PolicyStatus.ACTIVE,
+        inception_date=date(2026, 3, 1),
+    )
+    db.add(policy)
+    db.flush()
+
+    risk_note = RiskNote(
+        risk_note_number="RN-2026-BEN-001",
+        policy_id=policy.id,
+        transaction_type=TransactionType.NEW_BUSINESS,
+        status=RiskNoteStatus.ACTIVE,
+        coverage_start=date(2026, 3, 1),
+        coverage_end=date(2027, 2, 28),
+        net_premium=Decimal("50000.00"),
+        total_amount=Decimal("50265.00"),
+        cover_snapshot={"vehicle": {"registration": "KCB 456C"}},
+        financial_breakdown={
+            "taxes": {
+                "training_levy": "100.00",
+                "pcf": "125.00",
+                "stamp_duty": "40.00",
+            },
+            "benefits": [
+                {"name": "Political Violence & Terrorism", "premium": "5000.00"},
+                {"name": "Excess Protector", "premium": "3500.00"},
+            ],
+        },
+    )
+    db.add(risk_note)
+    db.commit()
+
+    result = DocumentRenderer.render_html(
+        session=db,
+        resource_type=DocumentJobResourceType.RISK_NOTE,
+        resource_id=risk_note.id,
+    )
+
+    assert "Net Base Premium" in result.html
+    assert "Political Violence &amp; Terrorism" in result.html
+    assert "(Included)" in result.html
+    assert "benefit-subrow" in result.html
+
+
+def test_render_risk_note_compact_certification_and_pending_issue_fallback() -> None:
+    issued_html = DocumentRenderer.render_template_html(
+        "risk_note.html",
+        {
+            "risk_note": {
+                "risk_note_number": "RN-2026-CERT-001",
+                "status": "Issued",
+                "transaction_type": "new_business",
+                "net_premium": "25000.00",
+                "total_amount": "25150.00",
+            },
+            "policy": {"policy_number": "POL-CERT-001"},
+            "client": {"name": "Mombasa Logistics Ltd", "kra_pin": "P051234567M"},
+            "product": {"name": "Motor Private"},
+            "insurer": {"name": "Jubilee Insurance"},
+            "vehicles": [],
+            "vehicle": None,
+            "taxes": {},
+            "benefits": [],
+            "special_conditions": None,
+            "coverage_start_formatted": "01 January 2026",
+            "coverage_end_formatted": "31 December 2026",
+            "stamp_date": None,
+            "generated_at": None,
+            "include_digital_stamp": True,
+        },
+    )
+
+    assert "CERTIFIED OFFICIAL" in issued_html
+    assert "Digitally Authenticated — Agency Operations" in issued_html
+    assert 'viewBox="0 0 200 100"' not in issued_html
+    assert "Pending Issue" in issued_html
+    assert "18 October 2026" not in issued_html
+
+    draft_html = DocumentRenderer.render_template_html(
+        "risk_note.html",
+        {
+            "risk_note": {
+                "risk_note_number": "DRAFT",
+                "status": "Draft",
+                "transaction_type": "new_business",
+                "net_premium": "25000.00",
+                "total_amount": "25150.00",
+            },
+            "policy": {"policy_number": "POL-DRAFT-001"},
+            "client": {"name": "Mombasa Logistics Ltd", "kra_pin": "P051234567M"},
+            "product": {"name": "Motor Private"},
+            "insurer": {"name": "Jubilee Insurance"},
+            "vehicles": [],
+            "vehicle": None,
+            "taxes": {},
+            "benefits": [],
+            "special_conditions": None,
+            "coverage_start_formatted": "01 January 2026",
+            "coverage_end_formatted": "31 December 2026",
+            "stamp_date": None,
+            "generated_at": None,
+            "include_digital_stamp": True,
+        },
+    )
+
+    assert "CERTIFIED OFFICIAL" not in draft_html
+    assert "Digitally Authenticated — Agency Operations" not in draft_html
