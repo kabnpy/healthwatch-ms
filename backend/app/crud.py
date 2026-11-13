@@ -67,11 +67,6 @@ from app.models import (
     RateTableVersion,
     RateTableVersionCreate,
     RateTableVersionUpdate,
-    Receipt,
-    ReceiptAllocation,
-    ReceiptAllocationCreate,
-    ReceiptCreate,
-    ReceiptStatus,
     Renewal,
     RenewalCreate,
     RenewalStatus,
@@ -677,60 +672,6 @@ def create_invoice_line_item(
     *, session: Session, line_item_in: InvoiceLineItemCreate
 ) -> InvoiceLineItem:
     db_obj = InvoiceLineItem.model_validate(line_item_in)
-    session.add(db_obj)
-    session.commit()
-    session.refresh(db_obj)
-    return db_obj
-
-
-def create_receipt(*, session: Session, receipt_in: ReceiptCreate) -> Receipt:
-    db_obj = Receipt.model_validate(receipt_in)
-    session.add(db_obj)
-    session.commit()
-    session.refresh(db_obj)
-    return db_obj
-
-
-def get_receipt(session: Session, *, id: uuid.UUID) -> Receipt | None:
-    statement = (
-        select(Receipt)
-        .where(Receipt.id == id)
-        .where(Receipt.deleted_at == None)
-        .options(selectinload(cast(Any, Receipt.allocations)))
-    )
-    return session.exec(statement).first()
-
-
-def get_receipts(
-    session: Session,
-    *,
-    skip: int = 0,
-    limit: int = 100,
-    client_id: uuid.UUID | None = None,
-) -> list[Receipt]:
-    statement = (
-        select(Receipt)
-        .where(Receipt.deleted_at == None)
-        .options(selectinload(cast(Any, Receipt.allocations)))
-    )
-    if client_id:
-        statement = statement.where(Receipt.client_id == client_id)
-    statement = statement.offset(skip).limit(limit)
-    return list(session.exec(statement).all())
-
-
-def void_receipt(*, session: Session, db_receipt: Receipt) -> Receipt:
-    db_receipt.status = ReceiptStatus.VOIDED
-    session.add(db_receipt)
-    session.commit()
-    session.refresh(db_receipt)
-    return db_receipt
-
-
-def create_receipt_allocation(
-    *, session: Session, allocation_in: ReceiptAllocationCreate
-) -> ReceiptAllocation:
-    db_obj = ReceiptAllocation.model_validate(allocation_in)
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)

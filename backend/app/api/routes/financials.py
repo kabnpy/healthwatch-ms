@@ -79,9 +79,3 @@ def create_bulk_invoice(
     return create_invoice_bulk(session=session, bulk_in=bulk_in)
 
 
-# ==========================================
-# Receipt Routes
-# ==========================================
-
-
-
