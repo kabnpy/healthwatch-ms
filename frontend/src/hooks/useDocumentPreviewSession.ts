@@ -1,10 +1,7 @@
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import type { ClientPublic } from "@/client"
-import {
-  useEnqueueDocumentJob,
-  useProcessDocumentJob,
-} from "@/hooks/useDocumentJobs"
+import { useDocumentPdfExport } from "@/hooks/useDocumentPdfExport"
 import { useUpdateRiskNote } from "@/hooks/usePolicies"
 import type { EnhancedPolicy, EnhancedRiskNote } from "@/types/insurance"
 
@@ -56,7 +53,6 @@ export function useDocumentPreviewSession({
   policy,
 }: UseDocumentPreviewSessionParams) {
   const [includeDigitalStamp, setIncludeDigitalStamp] = useState(true)
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const [specialConditions, setSpecialConditions] = useState<string>(() => {
     const raw = (
       riskNote?.cover_snapshot as Record<string, unknown> | undefined
@@ -67,15 +63,13 @@ export function useDocumentPreviewSession({
     return DEFAULT_SPECIAL_CONDITIONS
   })
 
-  const enqueueJob = useEnqueueDocumentJob()
-  const processJob = useProcessDocumentJob()
+  const { exportPdf, isExporting: isGeneratingPdf } = useDocumentPdfExport()
   const updateRiskNote = useUpdateRiskNote()
 
   const handleGenerateServerPdf = async () => {
     if (!riskNote) return
-    setIsGeneratingPdf(true)
     try {
-      const enqueued = await enqueueJob.mutateAsync({
+      await exportPdf({
         resource_type: "risk_note" as any,
         resource_id: riskNote.id,
         snapshot_data: {
@@ -83,15 +77,8 @@ export function useDocumentPreviewSession({
           special_conditions: specialConditions,
         },
       })
-      if (enqueued?.id) {
-        await processJob.mutateAsync(enqueued.id)
-        window.open(`/api/v1/document-jobs/${enqueued.id}/download`, "_blank")
-      }
     } catch (err) {
       console.error("Failed to generate official PDF:", err)
-      toast.error("Failed to generate official PDF")
-    } finally {
-      setIsGeneratingPdf(false)
     }
   }
 

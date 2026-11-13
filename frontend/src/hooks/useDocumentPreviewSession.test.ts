@@ -8,16 +8,13 @@ import {
   useDocumentPreviewSession,
 } from "./useDocumentPreviewSession"
 
-const mockEnqueueMutateAsync = vi.fn()
-const mockProcessMutateAsync = vi.fn()
+const mockExportPdf = vi.fn()
 const mockUpdateRiskNoteMutateAsync = vi.fn()
 
-vi.mock("@/hooks/useDocumentJobs", () => ({
-  useEnqueueDocumentJob: () => ({
-    mutateAsync: mockEnqueueMutateAsync,
-  }),
-  useProcessDocumentJob: () => ({
-    mutateAsync: mockProcessMutateAsync,
+vi.mock("@/hooks/useDocumentPdfExport", () => ({
+  useDocumentPdfExport: () => ({
+    exportPdf: mockExportPdf,
+    isExporting: false,
   }),
 }))
 
@@ -172,10 +169,8 @@ describe("useDocumentPreviewSession", () => {
     })
   })
 
-  it("enqueues and processes DocumentJob PDF dispatch and opens download URL", async () => {
-    mockEnqueueMutateAsync.mockResolvedValueOnce({ id: "job-123" })
-    mockProcessMutateAsync.mockResolvedValueOnce({})
-    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null)
+  it("delegates PDF export to useDocumentPdfExport with snapshot_data", async () => {
+    mockExportPdf.mockResolvedValueOnce(undefined)
 
     const { result } = renderHook(() =>
       useDocumentPreviewSession({
@@ -189,7 +184,7 @@ describe("useDocumentPreviewSession", () => {
       await result.current.handleGenerateServerPdf()
     })
 
-    expect(mockEnqueueMutateAsync).toHaveBeenCalledWith({
+    expect(mockExportPdf).toHaveBeenCalledWith({
       resource_type: "risk_note",
       resource_id: "rn-1",
       snapshot_data: {
@@ -197,14 +192,7 @@ describe("useDocumentPreviewSession", () => {
         special_conditions: result.current.specialConditions,
       },
     })
-    expect(mockProcessMutateAsync).toHaveBeenCalledWith("job-123")
-    expect(openSpy).toHaveBeenCalledWith(
-      "/api/v1/document-jobs/job-123/download",
-      "_blank",
-    )
     expect(result.current.isGeneratingPdf).toBe(false)
-
-    openSpy.mockRestore()
   })
 
   it("validates completeness of client, riskNote, and motor fields", () => {
