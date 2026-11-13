@@ -892,6 +892,10 @@ export type DocumentJobPublic = {
      * Resource Id
      */
     resource_id?: string | null;
+    /**
+     * Document Id
+     */
+    document_id?: string | null;
     status?: DocumentJobStatus;
     /**
      * Idempotency Key
@@ -951,6 +955,23 @@ export type DocumentJobsPublic = {
      * Count
      */
     count: number;
+};
+
+/**
+ * DocumentPreviewDraftRequest
+ */
+export type DocumentPreviewDraftRequest = {
+    resource_type: DocumentJobResourceType;
+    /**
+     * Resource Id
+     */
+    resource_id?: string | null;
+    /**
+     * Snapshot Data
+     */
+    snapshot_data?: {
+        [key: string]: unknown;
+    };
 };
 
 /**
@@ -3312,6 +3333,22 @@ export type RiskNotePublic = {
 };
 
 /**
+ * RiskNoteRevisionCreate
+ */
+export type RiskNoteRevisionCreate = {
+    /**
+     * Special Clauses
+     */
+    special_clauses: Array<string>;
+    /**
+     * Cover Snapshot
+     */
+    cover_snapshot?: {
+        [key: string]: unknown;
+    } | null;
+};
+
+/**
  * RiskNoteStatus
  */
 export type RiskNoteStatus = 'Draft' | 'Issued' | 'Replaced' | 'Cancelled' | 'Issued';
@@ -5473,6 +5510,36 @@ export type riskNotesUpdateRiskNoteResponses = {
 
 export type riskNotesUpdateRiskNoteResponse = riskNotesUpdateRiskNoteResponses[keyof riskNotesUpdateRiskNoteResponses];
 
+export type riskNotesCreateRiskNoteRevisionData = {
+    body: RiskNoteRevisionCreate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/risk-notes/{id}/revisions';
+};
+
+export type riskNotesCreateRiskNoteRevisionErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type riskNotesCreateRiskNoteRevisionError = riskNotesCreateRiskNoteRevisionErrors[keyof riskNotesCreateRiskNoteRevisionErrors];
+
+export type riskNotesCreateRiskNoteRevisionResponses = {
+    /**
+     * Successful Response
+     */
+    200: RiskNotePublic;
+};
+
+export type riskNotesCreateRiskNoteRevisionResponse = riskNotesCreateRiskNoteRevisionResponses[keyof riskNotesCreateRiskNoteRevisionResponses];
+
 export type financialsReadInvoicesData = {
     body?: never;
     path?: never;
@@ -7196,6 +7263,12 @@ export type documentJobsReadDocumentJobsResponse = documentJobsReadDocumentJobsR
 
 export type documentJobsEnqueueDocumentJobData = {
     body: DocumentJobEnqueueRequest;
+    headers?: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/document-jobs/';
@@ -7218,6 +7291,62 @@ export type documentJobsEnqueueDocumentJobResponses = {
 };
 
 export type documentJobsEnqueueDocumentJobResponse = documentJobsEnqueueDocumentJobResponses[keyof documentJobsEnqueueDocumentJobResponses];
+
+export type documentJobsPreviewDocumentHtmlData = {
+    body?: never;
+    path?: never;
+    query: {
+        resource_type: DocumentJobResourceType;
+        /**
+         * Resource Id
+         */
+        resource_id?: string | null;
+    };
+    url: '/api/v1/document-jobs/preview/html';
+};
+
+export type documentJobsPreviewDocumentHtmlErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type documentJobsPreviewDocumentHtmlError = documentJobsPreviewDocumentHtmlErrors[keyof documentJobsPreviewDocumentHtmlErrors];
+
+export type documentJobsPreviewDocumentHtmlResponses = {
+    /**
+     * Successful Response
+     */
+    200: string;
+};
+
+export type documentJobsPreviewDocumentHtmlResponse = documentJobsPreviewDocumentHtmlResponses[keyof documentJobsPreviewDocumentHtmlResponses];
+
+export type documentJobsPreviewDocumentHtmlDraftData = {
+    body: DocumentPreviewDraftRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/document-jobs/preview/html';
+};
+
+export type documentJobsPreviewDocumentHtmlDraftErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type documentJobsPreviewDocumentHtmlDraftError = documentJobsPreviewDocumentHtmlDraftErrors[keyof documentJobsPreviewDocumentHtmlDraftErrors];
+
+export type documentJobsPreviewDocumentHtmlDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: string;
+};
+
+export type documentJobsPreviewDocumentHtmlDraftResponse = documentJobsPreviewDocumentHtmlDraftResponses[keyof documentJobsPreviewDocumentHtmlDraftResponses];
 
 export type documentJobsReadDocumentJobData = {
     body?: never;

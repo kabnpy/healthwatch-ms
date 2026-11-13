@@ -9,7 +9,7 @@ import {
 } from "./useDocumentPreviewSession"
 
 const mockExportPdf = vi.fn()
-const mockUpdateRiskNoteMutateAsync = vi.fn()
+const mockCreateRiskNoteRevisionMutateAsync = vi.fn()
 
 vi.mock("@/hooks/useDocumentPdfExport", () => ({
   useDocumentPdfExport: () => ({
@@ -19,8 +19,8 @@ vi.mock("@/hooks/useDocumentPdfExport", () => ({
 }))
 
 vi.mock("@/hooks/usePolicies", () => ({
-  useUpdateRiskNote: () => ({
-    mutateAsync: mockUpdateRiskNoteMutateAsync,
+  useCreateRiskNoteRevision: () => ({
+    mutateAsync: mockCreateRiskNoteRevisionMutateAsync,
     isPending: false,
   }),
 }))
@@ -140,7 +140,7 @@ describe("useDocumentPreviewSession", () => {
   })
 
   it("persists specialConditions to RiskNote via handleSaveClauses", async () => {
-    mockUpdateRiskNoteMutateAsync.mockResolvedValueOnce({})
+    mockCreateRiskNoteRevisionMutateAsync.mockResolvedValueOnce({})
 
     const { result } = renderHook(() =>
       useDocumentPreviewSession({
@@ -158,9 +158,10 @@ describe("useDocumentPreviewSession", () => {
       await result.current.handleSaveClauses()
     })
 
-    expect(mockUpdateRiskNoteMutateAsync).toHaveBeenCalledWith({
+    expect(mockCreateRiskNoteRevisionMutateAsync).toHaveBeenCalledWith({
       id: "rn-1",
       data: {
+        special_clauses: ["Updated warranty"],
         cover_snapshot: {
           ...baseRiskNote.cover_snapshot,
           special_conditions: "Updated warranty",

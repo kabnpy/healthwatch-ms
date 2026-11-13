@@ -2,7 +2,7 @@ import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import type { ClientPublic } from "@/client"
 import { useDocumentPdfExport } from "@/hooks/useDocumentPdfExport"
-import { useUpdateRiskNote } from "@/hooks/usePolicies"
+import { useCreateRiskNoteRevision } from "@/hooks/usePolicies"
 import type { EnhancedPolicy, EnhancedRiskNote } from "@/types/insurance"
 
 export interface PresetClause {
@@ -64,7 +64,7 @@ export function useDocumentPreviewSession({
   })
 
   const { exportPdf, isExporting: isGeneratingPdf } = useDocumentPdfExport()
-  const updateRiskNote = useUpdateRiskNote()
+  const createRiskNoteRevision = useCreateRiskNoteRevision()
 
   const handleGenerateServerPdf = async () => {
     if (!riskNote) return
@@ -98,9 +98,10 @@ export function useDocumentPreviewSession({
         ...(riskNote.cover_snapshot || {}),
         special_conditions: specialConditions,
       }
-      await updateRiskNote.mutateAsync({
+      await createRiskNoteRevision.mutateAsync({
         id: riskNote.id,
         data: {
+          special_clauses: [specialConditions],
           cover_snapshot: updatedSnapshot,
         },
       })
@@ -166,7 +167,7 @@ export function useDocumentPreviewSession({
     specialConditions,
     setSpecialConditions,
     isGeneratingPdf,
-    isSavingClauses: updateRiskNote.isPending,
+    isSavingClauses: createRiskNoteRevision.isPending,
     validation,
     draftSnapshot,
     handleGenerateServerPdf,

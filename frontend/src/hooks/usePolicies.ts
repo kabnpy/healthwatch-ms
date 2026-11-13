@@ -8,6 +8,7 @@ import {
   ProductsService,
   type QuoteRequest,
   type RiskNoteCreate,
+  type RiskNoteRevisionCreate,
   RiskNotesService,
   type RiskNoteUpdate,
 } from "../client"
@@ -112,6 +113,29 @@ export const useUpdateRiskNote = () => {
     mutationFn: async ({ id, data }: { id: string; data: RiskNoteUpdate }) =>
       (await RiskNotesService.notesUpdateRiskNote({ path: { id }, body: data }))
         .data,
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["risk-notes"] })
+      queryClient.invalidateQueries({ queryKey: ["risk-notes", id] })
+    },
+  })
+}
+
+export const useCreateRiskNoteRevision = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string
+      data: RiskNoteRevisionCreate
+    }) =>
+      (
+        await RiskNotesService.notesCreateRiskNoteRevision({
+          path: { id },
+          body: data,
+        })
+      ).data,
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["risk-notes"] })
       queryClient.invalidateQueries({ queryKey: ["risk-notes", id] })

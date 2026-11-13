@@ -693,6 +693,11 @@ class RiskNoteUpdate(SQLModel):
     cover_snapshot: dict[str, Any] | None = None
 
 
+class RiskNoteRevisionCreate(SQLModel):
+    special_clauses: list[str]
+    cover_snapshot: dict[str, Any] | None = None
+
+
 class RiskNotePublic(RiskNoteBase):
     id: uuid.UUID
     policy: PolicyPublic | None = None
