@@ -7,12 +7,11 @@ import {
   RotateCcw,
   ShieldAlert,
 } from "lucide-react"
-import { Suspense, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import type { PaymentRecordPublic } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
-import { DocumentViewerModal } from "@/components/Common/DocumentViewerModal"
 import { EmptyState } from "@/components/Common/EmptyState"
-import { DocumentViewer } from "@/components/Documents/DocumentViewer"
+import { DocumentPreviewDrawer } from "@/components/Documents/DocumentPreviewDrawer"
 import { ClientStatementView } from "@/components/Financials/ClientStatementView"
 import { InvoicesSkeleton } from "@/components/Financials/InvoicesSkeleton"
 import { InvoiceWizard } from "@/components/Financials/InvoiceWizard"
@@ -534,28 +533,22 @@ export function ClientInvoices({ clientId }: ClientInvoicesProps) {
         onClose={() => setIsInvoiceWizardOpen(false)}
       />
 
-      {/* DOCUMENT VIEWER MODAL */}
-      {selectedDocId && (
-        <DocumentViewerModal
-          isOpen={viewerOpen}
-          onClose={() => {
-            setViewerOpen(false)
-            setSelectedDocId(null)
-          }}
-          title="Invoice Details"
-        >
-          <Suspense fallback={<InvoicesSkeleton />}>
-            <DocumentViewer
-              id={selectedDocId}
-              type="invoice"
-              onClose={() => {
-                setViewerOpen(false)
-                setSelectedDocId(null)
-              }}
-            />
-          </Suspense>
-        </DocumentViewerModal>
-      )}
+      {/* DOCUMENT PREVIEW DRAWER */}
+      <DocumentPreviewDrawer
+        isOpen={viewerOpen}
+        onOpenChange={(open) => {
+          setViewerOpen(open)
+          if (!open) setSelectedDocId(null)
+        }}
+        target={
+          selectedDocId
+            ? {
+                kind: "invoice",
+                invoiceId: selectedDocId,
+              }
+            : null
+        }
+      />
     </div>
   )
 }

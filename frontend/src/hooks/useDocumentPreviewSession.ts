@@ -41,17 +41,38 @@ export const PRESET_CLAUSES: PresetClause[] = [
 const DEFAULT_SPECIAL_CONDITIONS =
   "### Standard Policy Warranties\n- **Anti-Theft Tracker Warranty:** Fitted within 14 days of inception.\n- **Territorial Limits:** Restricted to Kenya unless endorsed.\n- **Use:** Strictly Social, Domestic and Pleasure (SD&P) & business carriage."
 
+export type DocumentPreviewTarget =
+  | {
+      kind: "risk_note"
+      riskNote: EnhancedRiskNote
+      client: ClientPublic
+      policy: EnhancedPolicy
+    }
+  | {
+      kind: "invoice"
+      invoiceId: string
+      invoiceNumber?: string | null
+    }
+
 export interface UseDocumentPreviewSessionParams {
-  riskNote: EnhancedRiskNote | null
-  client: ClientPublic
-  policy: EnhancedPolicy
+  target?: DocumentPreviewTarget | null
+  riskNote?: EnhancedRiskNote | null
+  client?: ClientPublic
+  policy?: EnhancedPolicy
 }
 
 export function useDocumentPreviewSession({
-  riskNote,
-  client,
-  policy,
+  target,
+  riskNote: legacyRiskNote,
+  client: legacyClient,
+  policy: legacyPolicy,
 }: UseDocumentPreviewSessionParams) {
+  const riskNote =
+    target?.kind === "risk_note" ? target.riskNote : (legacyRiskNote ?? null)
+  const client = target?.kind === "risk_note" ? target.client : legacyClient
+  const policy = target?.kind === "risk_note" ? target.policy : legacyPolicy
+  const isInvoice = target?.kind === "invoice"
+
   const [includeDigitalStamp, setIncludeDigitalStamp] = useState(true)
   const [specialConditions, setSpecialConditions] = useState<string>(() => {
     const raw = (
@@ -67,6 +88,17 @@ export function useDocumentPreviewSession({
   const createRiskNoteRevision = useCreateRiskNoteRevision()
 
   const handleGenerateServerPdf = async () => {
+    if (isInvoice && target?.kind === "invoice") {
+      try {
+        await exportPdf({
+          resource_type: "invoice" as any,
+          resource_id: target.invoiceId,
+        })
+      } catch (err) {
+        console.error("Failed to generate official PDF:", err)
+      }
+      return
+    }
     if (!riskNote) return
     try {
       await exportPdf({
@@ -112,7 +144,10 @@ export function useDocumentPreviewSession({
   }
 
   const validation = useMemo(() => {
-    if (!riskNote)
+    if (isInvoice) {
+      return { isValid: true, missingFields: [] as string[] }
+    }
+    if (!riskNote || !client || !policy)
       return { isValid: false, missingFields: ["Risk Note Record"] }
 
     const missing: string[] = []
@@ -151,14 +186,17 @@ export function useDocumentPreviewSession({
       isValid: missing.length === 0,
       missingFields: missing,
     }
-  }, [riskNote, client, policy])
+  }, [isInvoice, riskNote, client, policy])
 
   const draftSnapshot = useMemo(
-    () => ({
-      include_digital_stamp: includeDigitalStamp,
-      special_conditions: specialConditions,
-    }),
-    [includeDigitalStamp, specialConditions],
+    () =>
+      isInvoice
+        ? undefined
+        : {
+            include_digital_stamp: includeDigitalStamp,
+            special_conditions: specialConditions,
+          },
+    [isInvoice, includeDigitalStamp, specialConditions],
   )
 
   return {
