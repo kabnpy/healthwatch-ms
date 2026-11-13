@@ -144,6 +144,49 @@ def test_render_invoice_from_db(db: Session) -> None:
     assert result.filename == "Invoice_INV-2026-042.pdf"
 
 
+def test_render_invoice_omits_duplicate_agency_row_and_renders_balance_due_and_remittance(
+    db: Session,
+) -> None:
+    client_rec = Client(
+        name="Savannah Logistics Ltd",
+        email="finance@savannah.co.ke",
+        phone="0722000111",
+        kra_pin="P051999888B",
+    )
+    db.add(client_rec)
+    db.flush()
+
+    invoice = Invoice(
+        invoice_number="INV-2026-104",
+        client_id=client_rec.id,
+        date_issued=date(2026, 3, 10),
+        due_date=date(2026, 4, 9),
+        total_amount=Decimal("125000.00"),
+        amount_paid=Decimal("25000.00"),
+        balance_due=Decimal("100000.00"),
+        status=InvoiceStatus.PARTIAL,
+    )
+    db.add(invoice)
+    db.commit()
+
+    result = DocumentRenderer.render_html(
+        session=db,
+        resource_type=DocumentJobResourceType.INVOICE,
+        resource_id=invoice.id,
+    )
+
+    assert '<span class="kv-label">Agency</span>' not in result.html
+    assert "Balance Due" in result.html
+    assert "125,000.00" in result.html
+    assert "25,000.00" in result.html
+    assert "100,000.00" in result.html
+    assert "522522" in result.html
+    assert "NCBA Bank Kenya" in result.html
+    assert "1002345678" in result.html
+    assert "NCBAKENA" in result.html
+    assert "Quote invoice number <strong>INV-2026-104</strong>" in result.html
+
+
 def test_render_fallback_resource_type(db: Session) -> None:
     result = DocumentRenderer.render_html(
         session=db,
