@@ -90,6 +90,8 @@ export const useCreatePaymentRecord = () => {
   })
 }
 
+export const useRecordPayment = useCreatePaymentRecord
+
 export const useAllocatePayment = () => {
   const queryClient = useQueryClient()
   return useMutation({
