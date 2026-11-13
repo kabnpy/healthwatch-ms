@@ -127,3 +127,7 @@ _Avoid_: Incident ticket
 **Activity**:
 An append-only chronological log entry (call, email, meeting, reminder, or note) attached to a Client, Policy, or Renewal that never triggers workflow state transitions.
 _Avoid_: Correspondence, audit trigger
+
+## `SpecialConditions`
+
+Editable markdown clauses attached to a `RiskNote` and included in its `RenderedDocument`.
