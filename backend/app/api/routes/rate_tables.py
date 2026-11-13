@@ -21,6 +21,38 @@ from app.models import (
 
 router = APIRouter()
 
+_ALLOWED_STATUS_TRANSITIONS: dict[RateTableStatus, set[RateTableStatus]] = {
+    RateTableStatus.DRAFT: {RateTableStatus.PUBLISHED},
+    RateTableStatus.PUBLISHED: {RateTableStatus.RETIRED},
+    RateTableStatus.RETIRED: set(),
+}
+
+
+def _get_rate_table_or_404(
+    session: SessionDep, rate_table_id: uuid.UUID
+) -> Any:
+    db_rate_table = crud.get_rate_table_version(
+        session=session, rate_table_id=rate_table_id
+    )
+    if not db_rate_table or db_rate_table.deleted_at is not None:
+        raise HTTPException(status_code=404, detail="Rate table version not found")
+    return db_rate_table
+
+
+def _get_draft_rate_table_or_409(
+    session: SessionDep, rate_table_id: uuid.UUID
+) -> Any:
+    db_rate_table = _get_rate_table_or_404(session, rate_table_id)
+    if db_rate_table.status != RateTableStatus.DRAFT:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Rate table version in '{db_rate_table.status.value}' status "
+                "cannot be modified; only 'draft' versions are mutable."
+            ),
+        )
+    return db_rate_table
+
 
 @router.get("/", response_model=RateTableVersionsPublic)
 def read_rate_tables(
@@ -85,9 +117,31 @@ def update_rate_table(
     rate_table_in: RateTableVersionUpdate,
 ) -> Any:
     """Update a rate table version (e.g. activate, archive, update dates)."""
-    db_rate_table = crud.get_rate_table_version(session=session, rate_table_id=id)
-    if not db_rate_table or db_rate_table.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Rate table version not found")
+    db_rate_table = _get_rate_table_or_404(session, id)
+    update_data = rate_table_in.model_dump(exclude_unset=True)
+
+    new_status = update_data.get("status")
+    if new_status is not None and new_status != db_rate_table.status:
+        allowed = _ALLOWED_STATUS_TRANSITIONS.get(db_rate_table.status, set())
+        if new_status not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"Invalid status transition from '{db_rate_table.status.value}' "
+                    f"to '{new_status.value}'."
+                ),
+            )
+
+    non_status_fields = {k for k in update_data if k != "status"}
+    if non_status_fields and db_rate_table.status != RateTableStatus.DRAFT:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Rate table version in '{db_rate_table.status.value}' status "
+                "cannot be edited; only 'draft' versions are mutable."
+            ),
+        )
+
     return crud.update_rate_table_version(
         session=session, db_rate_table=db_rate_table, rate_table_in=rate_table_in
     )
@@ -106,9 +160,7 @@ def add_rate_bracket(
     bracket_in: RateBracketCreate,
 ) -> Any:
     """Add a pricing bracket to a rate table version."""
-    db_rate_table = crud.get_rate_table_version(session=session, rate_table_id=id)
-    if not db_rate_table or db_rate_table.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Rate table version not found")
+    _get_draft_rate_table_or_409(session, id)
     bracket_in.rate_table_version_id = id
     return crud.create_rate_bracket(session=session, bracket_in=bracket_in)
 
@@ -126,9 +178,7 @@ def add_rate_benefit(
     benefit_in: RateBenefitCreate,
 ) -> Any:
     """Add a benefit/rider rule to a rate table version."""
-    db_rate_table = crud.get_rate_table_version(session=session, rate_table_id=id)
-    if not db_rate_table or db_rate_table.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Rate table version not found")
+    _get_draft_rate_table_or_409(session, id)
     benefit_in.rate_table_version_id = id
     return crud.create_rate_benefit(session=session, benefit_in=benefit_in)
 
@@ -146,8 +196,6 @@ def add_medical_tier(
     tier_in: MedicalTierCreate,
 ) -> Any:
     """Add a medical census tier to a rate table version."""
-    db_rate_table = crud.get_rate_table_version(session=session, rate_table_id=id)
-    if not db_rate_table or db_rate_table.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Rate table version not found")
+    _get_draft_rate_table_or_409(session, id)
     tier_in.rate_table_version_id = id
     return crud.create_medical_tier(session=session, tier_in=tier_in)

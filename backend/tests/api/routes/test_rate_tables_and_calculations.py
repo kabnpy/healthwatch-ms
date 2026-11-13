@@ -535,3 +535,196 @@ def test_standalone_calculation_selection_does_not_unselect_others() -> None:
     assert standalone_calc.is_selected is True
     session.exec.assert_not_called()
     session.add.assert_called_once_with(standalone_calc)
+
+
+def test_rate_table_draft_mutability_and_forward_only_status_transitions(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    insurer = Insurer(name="Immutability Test Insurer")
+    db.add(insurer)
+    db.commit()
+    db.refresh(insurer)
+
+    # 1. Create RateTableVersion (defaults to DRAFT)
+    r = client.post(
+        f"{settings.API_V1_STR}/rate-tables/",
+        headers=superuser_token_headers,
+        json={
+            "insurer_id": str(insurer.id),
+            "class_of_insurance": "Motor Private",
+            "pricing_method": PricingMethod.BRACKETED_PERCENTAGE.value,
+            "currency": "KES",
+            "version_number": 1,
+            "source_reference": "Initial Draft",
+        },
+    )
+    assert r.status_code == 201
+    rt_id = r.json()["id"]
+    assert r.json()["status"] == "draft"
+
+    # 2. DRAFT edits & child-rule additions succeed
+    r_patch = client.patch(
+        f"{settings.API_V1_STR}/rate-tables/{rt_id}",
+        headers=superuser_token_headers,
+        json={"source_reference": "Updated Draft"},
+    )
+    assert r_patch.status_code == 200
+    assert r_patch.json()["source_reference"] == "Updated Draft"
+
+    bracket_payload = {
+        "rate_table_version_id": rt_id,
+        "min_value": 0.0,
+        "max_value": 1000000.0,
+        "rate_percent": 0.05,
+        "minimum_premium": 50000.0,
+        "display_label": "0 - 1M",
+    }
+    assert (
+        client.post(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}/brackets",
+            headers=superuser_token_headers,
+            json=bracket_payload,
+        ).status_code
+        == 201
+    )
+
+    benefit_payload = {
+        "rate_table_version_id": rt_id,
+        "code": "PVT",
+        "name": "Political Violence",
+        "calculation_type": BenefitCalculationType.PERCENTAGE.value,
+        "rate_value": 0.0025,
+    }
+    assert (
+        client.post(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}/benefits",
+            headers=superuser_token_headers,
+            json=benefit_payload,
+        ).status_code
+        == 201
+    )
+
+    tier_payload = {
+        "rate_table_version_id": rt_id,
+        "tier_code": "M+1",
+        "benefit_limits": {"inpatient": 500000.0},
+        "premium": 25000.0,
+    }
+    assert (
+        client.post(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}/medical-tiers",
+            headers=superuser_token_headers,
+            json=tier_payload,
+        ).status_code
+        == 201
+    )
+
+    # 3. DRAFT -> PUBLISHED succeeds
+    r_pub = client.patch(
+        f"{settings.API_V1_STR}/rate-tables/{rt_id}",
+        headers=superuser_token_headers,
+        json={"status": "published"},
+    )
+    assert r_pub.status_code == 200
+    assert r_pub.json()["status"] == "published"
+
+    # 4. PUBLISHED rejects metadata edits, child-rule additions, and backward transitions
+    assert (
+        client.patch(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}",
+            headers=superuser_token_headers,
+            json={"source_reference": "Illegal Edit"},
+        ).status_code
+        == 409
+    )
+    assert (
+        client.patch(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}",
+            headers=superuser_token_headers,
+            json={"status": "draft"},
+        ).status_code
+        == 409
+    )
+    assert (
+        client.post(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}/brackets",
+            headers=superuser_token_headers,
+            json=bracket_payload,
+        ).status_code
+        == 409
+    )
+    assert (
+        client.post(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}/benefits",
+            headers=superuser_token_headers,
+            json=benefit_payload,
+        ).status_code
+        == 409
+    )
+    assert (
+        client.post(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}/medical-tiers",
+            headers=superuser_token_headers,
+            json=tier_payload,
+        ).status_code
+        == 409
+    )
+
+    # 5. PUBLISHED -> RETIRED succeeds
+    r_ret = client.patch(
+        f"{settings.API_V1_STR}/rate-tables/{rt_id}",
+        headers=superuser_token_headers,
+        json={"status": "retired"},
+    )
+    assert r_ret.status_code == 200
+    assert r_ret.json()["status"] == "retired"
+
+    # 6. RETIRED rejects metadata edits, child-rule additions, and backward transitions
+    assert (
+        client.patch(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}",
+            headers=superuser_token_headers,
+            json={"source_reference": "Illegal Retired Edit"},
+        ).status_code
+        == 409
+    )
+    assert (
+        client.patch(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}",
+            headers=superuser_token_headers,
+            json={"status": "published"},
+        ).status_code
+        == 409
+    )
+    assert (
+        client.patch(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}",
+            headers=superuser_token_headers,
+            json={"status": "draft"},
+        ).status_code
+        == 409
+    )
+    assert (
+        client.post(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}/brackets",
+            headers=superuser_token_headers,
+            json=bracket_payload,
+        ).status_code
+        == 409
+    )
+    assert (
+        client.post(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}/benefits",
+            headers=superuser_token_headers,
+            json=benefit_payload,
+        ).status_code
+        == 409
+    )
+    assert (
+        client.post(
+            f"{settings.API_V1_STR}/rate-tables/{rt_id}/medical-tiers",
+            headers=superuser_token_headers,
+            json=tier_payload,
+        ).status_code
+        == 409
+    )
