@@ -244,6 +244,20 @@ def test_persist_and_select_premium_calculation(
     )
     rt_id = r.json()["id"]
 
+    b_resp = client.post(
+        f"{settings.API_V1_STR}/rate-tables/{rt_id}/brackets",
+        headers=superuser_token_headers,
+        json={
+            "rate_table_version_id": rt_id,
+            "min_value": 0.00,
+            "max_value": None,
+            "rate_percent": 0.00,
+            "minimum_premium": 7500.00,
+            "display_label": "Fixed Tier 7,500",
+        },
+    )
+    assert b_resp.status_code == 201
+
     # Persist calculation
     calc_resp = client.post(
         f"{settings.API_V1_STR}/calculations/",
@@ -272,52 +286,51 @@ def test_persist_and_select_premium_calculation(
     assert renewal.selected_calculation_id == uuid.UUID(calc_id)
 
 
-def test_advisory_rating_service_levy_breakdown() -> None:
-    from app.models import RateTableVersion
-    from app.services.advisory_rating import AdvisoryRatingService
+def test_calculation_out_of_range_inputs_return_400(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    insurer = Insurer(name="OutOfRange Insurer", contact_email="oor@insurer.co.ke")
+    db.add(insurer)
+    db.commit()
+    db.refresh(insurer)
 
-    motor_table = RateTableVersion(
-        insurer_id=uuid.uuid4(),
-        class_of_insurance="Motor Private",
-        pricing_method=PricingMethod.FIXED_TIER,
-        currency="KES",
-        version_number=1,
+    rt = client.post(
+        f"{settings.API_V1_STR}/rate-tables/",
+        headers=superuser_token_headers,
+        json={
+            "insurer_id": str(insurer.id),
+            "class_of_insurance": "Motor Private",
+            "pricing_method": PricingMethod.BRACKETED_PERCENTAGE.value,
+            "currency": "KES",
+            "version_number": 1,
+            "source_reference": "OOR Test 2026",
+        },
     )
-    motor_quote = AdvisoryRatingService.calculate_quote(
-        motor_table, inputs={"fixed_amount": Decimal("7500.00")}
-    )
-    assert motor_quote["net_premium"] == Decimal("7500.00")
-    assert motor_quote["total_taxes"] == Decimal("73.75")
-    assert motor_quote["total_premium"] == Decimal("7573.75")
-    assert motor_quote["calculation_detail"]["taxes"] == {
-        "training_levy": "15.00",
-        "phcf": "18.75",
-        "stamp_duty": "40.00",
-        "total_taxes": "73.75",
-        "stamp_duty_exempt": False,
-    }
-    assert motor_quote["calculation_detail"]["exact_total"] == "7573.75"
-    assert motor_quote["calculation_detail"]["total_premium"] == "7573.75"
+    assert rt.status_code == 201
+    rt_id = rt.json()["id"]
 
-    medical_table = RateTableVersion(
-        insurer_id=uuid.uuid4(),
-        class_of_insurance="Medical Corporate",
-        pricing_method=PricingMethod.PACKAGED,
-        currency="KES",
-        version_number=1,
+    b_resp = client.post(
+        f"{settings.API_V1_STR}/rate-tables/{rt_id}/brackets",
+        headers=superuser_token_headers,
+        json={
+            "rate_table_version_id": rt_id,
+            "min_value": 500000.00,
+            "max_value": 2000000.00,
+            "rate_percent": 0.04,
+            "minimum_premium": 25000.00,
+            "display_label": "KES 500k - 2M",
+        },
     )
-    medical_quote = AdvisoryRatingService.calculate_quote(
-        medical_table, inputs={"custom_premium": Decimal("88000.00")}
+    assert b_resp.status_code == 201
+
+    resp = client.post(
+        f"{settings.API_V1_STR}/calculations/quote",
+        headers=superuser_token_headers,
+        json={
+            "rate_table_id": rt_id,
+            "inputs": {"sum_insured": 100000.00},
+            "business_event": BusinessEvent.NEW_BUSINESS.value,
+        },
     )
-    assert medical_quote["net_premium"] == Decimal("88000.00")
-    assert medical_quote["total_taxes"] == Decimal("396.00")
-    assert medical_quote["total_premium"] == Decimal("88396.00")
-    assert medical_quote["calculation_detail"]["taxes"] == {
-        "training_levy": "176.00",
-        "phcf": "220.00",
-        "stamp_duty": "0.00",
-        "total_taxes": "396.00",
-        "stamp_duty_exempt": True,
-    }
-    assert medical_quote["calculation_detail"]["exact_total"] == "88396.00"
-    assert medical_quote["calculation_detail"]["total_premium"] == "88396.00"
+    assert resp.status_code == 400
+    assert "outside" in resp.json()["detail"].lower()

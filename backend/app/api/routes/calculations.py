@@ -12,7 +12,7 @@ from app.models import (
     PremiumCalculationPublic,
     PremiumCalculationsPublic,
 )
-from app.services.advisory_rating import AdvisoryRatingService
+from app.services.premium_calculation import RatingValidationError, calculate_premium
 
 router = APIRouter()
 
@@ -48,18 +48,21 @@ def quote_preview(
         raise HTTPException(status_code=404, detail="Rate table version not found")
 
     try:
-        quote = AdvisoryRatingService.calculate_quote(
+        result = calculate_premium(
             rate_table=rate_table,
             inputs=request.inputs,
-            business_event=request.business_event,
-            policy_id=request.policy_id,
-            renewal_id=request.renewal_id,
-            user_id=_current_user.id,
         )
-    except ValueError as e:
+    except RatingValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return quote
+    return {
+        "net_premium": result.net_premium,
+        "total_taxes": result.total_taxes,
+        "total_premium": result.total_premium,
+        "calculation_detail": result.calculation_detail,
+        "rule_provenance": result.rule_provenance,
+        "input_snapshot": result.input_snapshot,
+    }
 
 
 @router.post(
@@ -79,15 +82,11 @@ def create_calculation(
         raise HTTPException(status_code=404, detail="Rate table version not found")
 
     try:
-        quote = AdvisoryRatingService.calculate_quote(
+        result = calculate_premium(
             rate_table=rate_table,
             inputs=request.inputs,
-            business_event=request.business_event,
-            policy_id=request.policy_id,
-            renewal_id=request.renewal_id,
-            user_id=_current_user.id,
         )
-    except ValueError as e:
+    except RatingValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
     calc_in = PremiumCalculationCreate(
@@ -95,10 +94,10 @@ def create_calculation(
         renewal_id=request.renewal_id,
         business_event=request.business_event,
         rate_table_version_id=request.rate_table_id,
-        input_snapshot=quote["input_snapshot"],
-        rule_provenance=quote["rule_provenance"],
-        calculation_detail=quote["calculation_detail"],
-        total_premium=quote["total_premium"],
+        input_snapshot=result.input_snapshot,
+        rule_provenance=result.rule_provenance,
+        calculation_detail=result.calculation_detail,
+        total_premium=result.total_premium,
         is_selected=request.is_selected,
     )
     db_calc = crud.create_premium_calculation(
