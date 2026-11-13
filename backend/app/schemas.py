@@ -88,6 +88,8 @@ class QuoteRequest(BaseModel):
 
 class QuoteResponse(BaseModel):
     breakdown: BreakdownUnion
+    calculation_detail: dict[str, Any] = Field(default_factory=dict)
+    rule_provenance: dict[str, Any] = Field(default_factory=dict)
 
 
 class MotorVehicleDetails(BaseModel):
