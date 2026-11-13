@@ -23,8 +23,6 @@ from app.models import (
 from app.services.premium_calculation import (
     PremiumCalculationResult,
     calculate_premium,
-    normalize_rating_inputs,
-    validate_risk_details,
 )
 
 logger = logging.getLogger(__name__)
@@ -146,15 +144,11 @@ class PolicyService:
             raise HTTPException(status_code=404, detail="Product not found")
 
         try:
-            validated_risk = validate_risk_details(
-                product.class_of_insurance, effective_snapshot
-            )
             result = calculate_premium(
-                inputs=normalize_rating_inputs(validated_risk),
+                inputs=effective_snapshot,
                 product=product,
                 session=session,
                 as_of_date=coverage_start,
-                manual_net_premium=validated_risk.get("manual_net_premium"),
             )
         except Exception as e:
             logger.exception("Validation or Rating failure")
@@ -190,7 +184,7 @@ class PolicyService:
             financial_breakdown=financial_breakdown,
             commission_amount=result.commission_amount or Decimal("0.00"),
             total_amount=result.total_premium,
-            cover_snapshot=PolicyService.to_numeric_dict(validated_risk),
+            cover_snapshot=PolicyService.to_numeric_dict(result.input_snapshot),
             created_by_id=current_user_id,
         )
 
@@ -247,24 +241,18 @@ class PolicyService:
             raise HTTPException(status_code=400, detail="No active risk note found")
 
         try:
-            validated_risk = validate_risk_details(
-                policy.product.class_of_insurance, effective_snapshot
-            )
-            new_inputs = normalize_rating_inputs(validated_risk)
             new_result = calculate_premium(
-                inputs=new_inputs,
+                inputs=effective_snapshot,
                 product=policy.product,
                 session=session,
                 as_of_date=effective_date,
-                manual_net_premium=new_inputs.get("manual_net_premium"),
             )
-            old_inputs = normalize_rating_inputs(current_rn.cover_snapshot)
             old_result = calculate_premium(
-                inputs=old_inputs,
+                inputs=current_rn.cover_snapshot,
                 product=policy.product,
                 session=session,
                 as_of_date=effective_date,
-                manual_net_premium=old_inputs.get("manual_net_premium"),
+                validate_inputs=False,
             )
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
@@ -289,7 +277,7 @@ class PolicyService:
             financial_breakdown=prorata["financial_breakdown"],
             commission_amount=prorata["delta_comm"],
             total_amount=prorata["delta_total"],
-            cover_snapshot=PolicyService.to_numeric_dict(validated_risk),
+            cover_snapshot=PolicyService.to_numeric_dict(new_result.input_snapshot),
             special_clauses=[change_description],
             created_by_id=current_user_id,
         )

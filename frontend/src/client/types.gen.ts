@@ -2472,6 +2472,18 @@ export type QuoteResponse = {
      * Breakdown
      */
     breakdown: MotorFinancialBreakdown | DomesticFinancialBreakdown | WIBAFinancialBreakdown | CommercialFireFinancialBreakdown | MarineFinancialBreakdown | MedicalFinancialBreakdown | BaseFinancialBreakdown;
+    /**
+     * Calculation Detail
+     */
+    calculation_detail?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Rule Provenance
+     */
+    rule_provenance?: {
+        [key: string]: unknown;
+    };
 };
 
 /**

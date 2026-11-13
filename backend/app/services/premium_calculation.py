@@ -441,6 +441,7 @@ def calculate_premium(
     as_of_date: date | None = None,
     manual_net_premium: Decimal | float | str | None = None,
     commission_rate: Decimal | float | None = None,
+    validate_inputs: bool = True,
 ) -> PremiumCalculationResult:
     """Evaluate a premium calculation using a RateTableVersion or Product."""
     effective_commission_rate = (
@@ -449,16 +450,38 @@ def calculate_premium(
         else (product.default_commission_rate if product is not None else None)
     )
 
+    class_of_insurance = (
+        rate_table.class_of_insurance
+        if rate_table is not None
+        else (product.class_of_insurance if product is not None else None)
+    )
+
+    working_inputs = inputs
+    if validate_inputs and class_of_insurance is not None:
+        try:
+            working_inputs = validate_risk_details(class_of_insurance, working_inputs)
+        except RatingValidationError:
+            raise
+        except Exception as e:
+            raise RatingValidationError(str(e)) from e
+
+    normalized_inputs = normalize_rating_inputs(working_inputs)
+    effective_manual_net_premium = (
+        manual_net_premium
+        if manual_net_premium is not None
+        else normalized_inputs.get("manual_net_premium")
+    )
+
     if (
         rate_table is None
         and product is not None
         and product.pricing_strategy == PricingStrategy.MANUAL
     ):
-        if manual_net_premium is None:
+        if effective_manual_net_premium is None:
             raise RatingValidationError(
                 "A valid manual net premium is required for MANUAL pricing_strategy products."
             )
-        manual_dec = _quantize_cent(parse_decimal(manual_net_premium))
+        manual_dec = _quantize_cent(parse_decimal(effective_manual_net_premium))
         if manual_dec <= ZERO:
             raise RatingValidationError(
                 "A valid positive manual net premium is required for MANUAL pricing_strategy products."
@@ -471,7 +494,7 @@ def calculate_premium(
             benefits=[],
             applied_bracket=None,
             rate_table=None,
-            inputs=inputs,
+            inputs=normalized_inputs,
             commission_rate=effective_commission_rate,
         )
 
@@ -484,17 +507,17 @@ def calculate_premium(
 
     method = rate_table.pricing_method
     if method == PricingMethod.BRACKETED_PERCENTAGE:
-        calc_result = _calculate_bracketed_percentage(rate_table, inputs)
+        calc_result = _calculate_bracketed_percentage(rate_table, normalized_inputs)
     elif method == PricingMethod.FIXED_TIER:
-        calc_result = _calculate_fixed_tier(rate_table, inputs)
+        calc_result = _calculate_fixed_tier(rate_table, normalized_inputs)
     elif method == PricingMethod.MULTI_COMPONENT:
-        calc_result = _calculate_multi_component(rate_table, inputs)
+        calc_result = _calculate_multi_component(rate_table, normalized_inputs)
     elif method == PricingMethod.PACKAGED:
-        calc_result = _calculate_packaged_medical(rate_table, inputs)
+        calc_result = _calculate_packaged_medical(rate_table, normalized_inputs)
     elif method == PricingMethod.WAGE_ROLL:
-        calc_result = _calculate_wage_roll(rate_table, inputs)
+        calc_result = _calculate_wage_roll(rate_table, normalized_inputs)
     elif method == PricingMethod.LIMIT_OF_INDEMNITY:
-        calc_result = _calculate_limit_of_indemnity(rate_table, inputs)
+        calc_result = _calculate_limit_of_indemnity(rate_table, normalized_inputs)
     else:
         raise RatingValidationError(f"Unsupported pricing method: {method}")
 
@@ -506,7 +529,7 @@ def calculate_premium(
         benefits=calc_result.get("benefits", []),
         applied_bracket=calc_result.get("applied_bracket"),
         rate_table=rate_table,
-        inputs=inputs,
+        inputs=normalized_inputs,
         commission_rate=effective_commission_rate,
     )
 
