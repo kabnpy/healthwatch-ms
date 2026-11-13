@@ -19,23 +19,18 @@ from app.models import (
     RateTableVersionUpdate,
 )
 from app.services.premium_calculation import (
-    count_rate_table_versions,
     create_medical_tier,
     create_rate_benefit,
     create_rate_bracket,
-    create_rate_table_version,
     get_rate_table_version,
-    get_rate_table_versions,
-    update_rate_table_version,
+)
+from app.services.rate_table import (
+    RateTableConflictError,
+    RateTableNotFoundError,
+    RateTableService,
 )
 
 router = APIRouter()
-
-_ALLOWED_STATUS_TRANSITIONS: dict[RateTableStatus, set[RateTableStatus]] = {
-    RateTableStatus.DRAFT: {RateTableStatus.PUBLISHED},
-    RateTableStatus.PUBLISHED: {RateTableStatus.RETIRED},
-    RateTableStatus.RETIRED: set(),
-}
 
 
 def _get_rate_table_or_404(
@@ -75,16 +70,9 @@ def read_rate_tables(
     status: RateTableStatus | None = None,
 ) -> Any:
     """Retrieve advisory rate table versions with optional filters."""
-    rate_tables = get_rate_table_versions(
-        session=session,
+    rate_tables, count = RateTableService(session).list_versions(
         skip=skip,
         limit=limit,
-        insurer_id=insurer_id,
-        class_of_insurance=class_of_insurance,
-        status=status,
-    )
-    count = count_rate_table_versions(
-        session=session,
         insurer_id=insurer_id,
         class_of_insurance=class_of_insurance,
         status=status,
@@ -99,10 +87,10 @@ def read_rate_table(
     _current_user: CurrentUser,
 ) -> Any:
     """Get single rate table version details with brackets, benefits, and tiers."""
-    rate_table = get_rate_table_version(session=session, rate_table_id=id)
-    if not rate_table:
-        raise HTTPException(status_code=404, detail="Rate table version not found")
-    return rate_table
+    try:
+        return RateTableService(session).get_version(id)
+    except RateTableNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.post(
@@ -115,7 +103,7 @@ def create_rate_table(
     rate_table_in: RateTableVersionCreate,
 ) -> Any:
     """Create a new rate table version."""
-    return create_rate_table_version(session=session, rate_table_in=rate_table_in)
+    return RateTableService(session).create_version(rate_table_in)
 
 
 @router.patch("/{id}", response_model=RateTableVersionPublic)
@@ -127,34 +115,12 @@ def update_rate_table(
     rate_table_in: RateTableVersionUpdate,
 ) -> Any:
     """Update a rate table version (e.g. activate, archive, update dates)."""
-    db_rate_table = _get_rate_table_or_404(session, id)
-    update_data = rate_table_in.model_dump(exclude_unset=True)
-
-    new_status = update_data.get("status")
-    if new_status is not None and new_status != db_rate_table.status:
-        allowed = _ALLOWED_STATUS_TRANSITIONS.get(db_rate_table.status, set())
-        if new_status not in allowed:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=(
-                    f"Invalid status transition from '{db_rate_table.status.value}' "
-                    f"to '{new_status.value}'."
-                ),
-            )
-
-    non_status_fields = {k for k in update_data if k != "status"}
-    if non_status_fields and db_rate_table.status != RateTableStatus.DRAFT:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                f"Rate table version in '{db_rate_table.status.value}' status "
-                "cannot be edited; only 'draft' versions are mutable."
-            ),
-        )
-
-    return update_rate_table_version(
-        session=session, db_rate_table=db_rate_table, rate_table_in=rate_table_in
-    )
+    try:
+        return RateTableService(session).update_version(id, rate_table_in)
+    except RateTableNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except RateTableConflictError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
 
 @router.post(
