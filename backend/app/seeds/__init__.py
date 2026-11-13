@@ -16,6 +16,7 @@ from app.seeds.clients_data import seed_clients
 from app.seeds.documents_data import seed_documents
 from app.seeds.financials_data import seed_financials
 from app.seeds.portfolios_data import seed_portfolios_and_assets
+from app.seeds.rate_tables_data import seed_rate_tables
 from app.seeds.renewals_data import seed_renewals
 from app.seeds.staff_users_data import seed_staff_users
 
@@ -42,6 +43,9 @@ def _run_seed_pipeline(session: Session) -> dict[str, Any]:
     ref_data = seed_insurers_and_products(session)
     insurers = ref_data["insurers"]
     products = ref_data["products"]
+
+    logger.info("Executing Phase 1b: Published RateTableVersion Schedules...")
+    rate_tables = seed_rate_tables(session=session, products=products)
 
     logger.info("Executing Phase 2: Client Directory (Individuals, HNW, Corporate)...")
     clients = seed_clients(session)
@@ -97,6 +101,7 @@ def _run_seed_pipeline(session: Session) -> dict[str, Any]:
         "users_count": len(users),
         "insurers_count": len(insurers),
         "products_count": len(products),
+        "rate_tables_count": len(rate_tables),
         "clients_count": len(clients),
         "policies_count": len(policies),
         "renewals_count": len(renewals),
