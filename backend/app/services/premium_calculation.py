@@ -6,26 +6,18 @@ from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
-from sqlalchemy.orm import selectinload
 from sqlmodel import Session, func, select
 
 from app.models import (
     BenefitCalculationType,
-    MedicalTier,
-    MedicalTierCreate,
     PremiumCalculation,
     PremiumCalculationCreate,
     PricingMethod,
     PricingStrategy,
     Product,
-    RateBenefit,
-    RateBenefitCreate,
     RateBracket,
-    RateBracketCreate,
     RateTableStatus,
     RateTableVersion,
-    RateTableVersionCreate,
-    RateTableVersionUpdate,
     Renewal,
     TaxRateRule,
     TaxRateRuleCreate,
@@ -666,146 +658,6 @@ def select_premium_calculation(
     session.commit()
     session.refresh(calc)
     return calc
-
-
-def _rate_table_base_query(
-    *,
-    insurer_id: uuid.UUID | None = None,
-    class_of_insurance: str | None = None,
-    status: RateTableStatus | None = None,
-):
-    statement = select(RateTableVersion).where(RateTableVersion.deleted_at.is_(None))
-    if insurer_id is not None:
-        statement = statement.where(RateTableVersion.insurer_id == insurer_id)
-    if class_of_insurance is not None:
-        statement = statement.where(
-            RateTableVersion.class_of_insurance == class_of_insurance
-        )
-    if status is not None:
-        statement = statement.where(RateTableVersion.status == status)
-    return statement
-
-
-def create_rate_table_version(
-    session: Session, *, rate_table_in: RateTableVersionCreate
-) -> RateTableVersion:
-    """Persist a new RateTableVersion atomically."""
-    db_obj = RateTableVersion.model_validate(rate_table_in)
-    session.add(db_obj)
-    session.commit()
-    session.refresh(db_obj)
-    return db_obj
-
-
-def get_rate_table_version(
-    session: Session,
-    *,
-    rate_table_id: uuid.UUID,
-    include_deleted: bool = False,
-) -> RateTableVersion | None:
-    """Fetch a RateTableVersion with brackets, benefits, and medical tiers."""
-    statement = select(RateTableVersion).where(RateTableVersion.id == rate_table_id)
-    if not include_deleted:
-        statement = statement.where(RateTableVersion.deleted_at.is_(None))
-    statement = statement.options(
-        selectinload(RateTableVersion.brackets),
-        selectinload(RateTableVersion.benefits),
-        selectinload(RateTableVersion.medical_tiers),
-    )
-    return session.exec(statement).first()
-
-
-def get_rate_table_versions(
-    session: Session,
-    *,
-    skip: int = 0,
-    limit: int = 100,
-    insurer_id: uuid.UUID | None = None,
-    class_of_insurance: str | None = None,
-    status: RateTableStatus | None = None,
-) -> list[RateTableVersion]:
-    """List non-deleted RateTableVersions with optional filters."""
-    statement = (
-        _rate_table_base_query(
-            insurer_id=insurer_id,
-            class_of_insurance=class_of_insurance,
-            status=status,
-        )
-        .options(
-            selectinload(RateTableVersion.brackets),
-            selectinload(RateTableVersion.benefits),
-            selectinload(RateTableVersion.medical_tiers),
-        )
-        .order_by(RateTableVersion.version_number.desc())
-        .offset(skip)
-        .limit(limit)
-    )
-    return list(session.exec(statement).all())
-
-
-def count_rate_table_versions(
-    session: Session,
-    *,
-    insurer_id: uuid.UUID | None = None,
-    class_of_insurance: str | None = None,
-    status: RateTableStatus | None = None,
-) -> int:
-    """Count non-deleted RateTableVersions matching optional filters."""
-    statement = _rate_table_base_query(
-        insurer_id=insurer_id,
-        class_of_insurance=class_of_insurance,
-        status=status,
-    )
-    count_statement = select(func.count()).select_from(statement.subquery())
-    return session.exec(count_statement).one()
-
-
-def update_rate_table_version(
-    session: Session,
-    *,
-    db_rate_table: RateTableVersion,
-    rate_table_in: RateTableVersionUpdate,
-) -> RateTableVersion:
-    """Update a RateTableVersion atomically."""
-    update_data = rate_table_in.model_dump(exclude_unset=True)
-    db_rate_table.sqlmodel_update(update_data)
-    session.add(db_rate_table)
-    session.commit()
-    session.refresh(db_rate_table)
-    return db_rate_table
-
-
-def create_rate_bracket(
-    session: Session, *, bracket_in: RateBracketCreate
-) -> RateBracket:
-    """Persist a RateBracket atomically."""
-    db_obj = RateBracket.model_validate(bracket_in)
-    session.add(db_obj)
-    session.commit()
-    session.refresh(db_obj)
-    return db_obj
-
-
-def create_rate_benefit(
-    session: Session, *, benefit_in: RateBenefitCreate
-) -> RateBenefit:
-    """Persist a RateBenefit atomically."""
-    db_obj = RateBenefit.model_validate(benefit_in)
-    session.add(db_obj)
-    session.commit()
-    session.refresh(db_obj)
-    return db_obj
-
-
-def create_medical_tier(
-    session: Session, *, tier_in: MedicalTierCreate
-) -> MedicalTier:
-    """Persist a MedicalTier atomically."""
-    db_obj = MedicalTier.model_validate(tier_in)
-    session.add(db_obj)
-    session.commit()
-    session.refresh(db_obj)
-    return db_obj
 
 
 def create_tax_rate_rule(

@@ -1,10 +1,17 @@
 import uuid
+from typing import Any
 
 from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
 from app.models import (
+    MedicalTier,
+    MedicalTierCreate,
+    RateBenefit,
+    RateBenefitCreate,
+    RateBracket,
+    RateBracketCreate,
     RateTableStatus,
     RateTableVersion,
     RateTableVersionCreate,
@@ -147,3 +154,41 @@ class RateTableService:
         self.session.commit()
         self.session.refresh(db_rate_table)
         return db_rate_table
+
+    def _require_draft_version(self, rate_table_id: uuid.UUID) -> RateTableVersion:
+        db_rate_table = self.get_version(rate_table_id)
+        if db_rate_table.status != RateTableStatus.DRAFT:
+            raise RateTableConflictError(
+                f"Rate table version in '{db_rate_table.status.value}' status "
+                "cannot be modified; only 'draft' versions are mutable."
+            )
+        return db_rate_table
+
+    def _add_child(
+        self, rate_table_id: uuid.UUID, model_cls: type, child_in: Any
+    ) -> Any:
+        self._require_draft_version(rate_table_id)
+        payload = child_in.model_copy(update={"rate_table_version_id": rate_table_id})
+        db_obj = model_cls.model_validate(payload)
+        self.session.add(db_obj)
+        self.session.commit()
+        self.session.refresh(db_obj)
+        return db_obj
+
+    def add_bracket(
+        self, rate_table_id: uuid.UUID, bracket_in: RateBracketCreate
+    ) -> RateBracket:
+        """Add a RateBracket to a draft RateTableVersion atomically."""
+        return self._add_child(rate_table_id, RateBracket, bracket_in)
+
+    def add_benefit(
+        self, rate_table_id: uuid.UUID, benefit_in: RateBenefitCreate
+    ) -> RateBenefit:
+        """Add a RateBenefit to a draft RateTableVersion atomically."""
+        return self._add_child(rate_table_id, RateBenefit, benefit_in)
+
+    def add_medical_tier(
+        self, rate_table_id: uuid.UUID, tier_in: MedicalTierCreate
+    ) -> MedicalTier:
+        """Add a MedicalTier to a draft RateTableVersion atomically."""
+        return self._add_child(rate_table_id, MedicalTier, tier_in)

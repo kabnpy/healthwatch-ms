@@ -12,17 +12,10 @@ from app.models import (
     RateBracketCreate,
     RateBracketPublic,
     RateTableStatus,
-    RateTableVersion,
     RateTableVersionCreate,
     RateTableVersionPublic,
     RateTableVersionsPublic,
     RateTableVersionUpdate,
-)
-from app.services.premium_calculation import (
-    create_medical_tier,
-    create_rate_benefit,
-    create_rate_bracket,
-    get_rate_table_version,
 )
 from app.services.rate_table import (
     RateTableConflictError,
@@ -31,32 +24,6 @@ from app.services.rate_table import (
 )
 
 router = APIRouter()
-
-
-def _get_rate_table_or_404(
-    session: SessionDep, rate_table_id: uuid.UUID
-) -> RateTableVersion:
-    db_rate_table = get_rate_table_version(
-        session=session, rate_table_id=rate_table_id
-    )
-    if not db_rate_table or db_rate_table.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Rate table version not found")
-    return db_rate_table
-
-
-def _get_draft_rate_table_or_409(
-    session: SessionDep, rate_table_id: uuid.UUID
-) -> RateTableVersion:
-    db_rate_table = _get_rate_table_or_404(session, rate_table_id)
-    if db_rate_table.status != RateTableStatus.DRAFT:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                f"Rate table version in '{db_rate_table.status.value}' status "
-                "cannot be modified; only 'draft' versions are mutable."
-            ),
-        )
-    return db_rate_table
 
 
 @router.get("/", response_model=RateTableVersionsPublic)
@@ -136,9 +103,12 @@ def add_rate_bracket(
     bracket_in: RateBracketCreate,
 ) -> Any:
     """Add a pricing bracket to a rate table version."""
-    _get_draft_rate_table_or_409(session, id)
-    bracket_in.rate_table_version_id = id
-    return create_rate_bracket(session=session, bracket_in=bracket_in)
+    try:
+        return RateTableService(session).add_bracket(id, bracket_in)
+    except RateTableNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except RateTableConflictError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
 
 
 @router.post(
@@ -154,9 +124,12 @@ def add_rate_benefit(
     benefit_in: RateBenefitCreate,
 ) -> Any:
     """Add a benefit/rider rule to a rate table version."""
-    _get_draft_rate_table_or_409(session, id)
-    benefit_in.rate_table_version_id = id
-    return create_rate_benefit(session=session, benefit_in=benefit_in)
+    try:
+        return RateTableService(session).add_benefit(id, benefit_in)
+    except RateTableNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except RateTableConflictError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
 
 
 @router.post(
@@ -172,6 +145,9 @@ def add_medical_tier(
     tier_in: MedicalTierCreate,
 ) -> Any:
     """Add a medical census tier to a rate table version."""
-    _get_draft_rate_table_or_409(session, id)
-    tier_in.rate_table_version_id = id
-    return create_medical_tier(session=session, tier_in=tier_in)
+    try:
+        return RateTableService(session).add_medical_tier(id, tier_in)
+    except RateTableNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except RateTableConflictError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))

@@ -18,9 +18,9 @@ from app.services.premium_calculation import (
     create_premium_calculation,
     get_premium_calculation,
     get_premium_calculations,
-    get_rate_table_version,
     select_premium_calculation,
 )
+from app.services.rate_table import RateTableNotFoundError, RateTableService
 
 router = APIRouter()
 
@@ -49,11 +49,10 @@ def quote_preview(
     request: AdvisoryQuoteRequest,
 ) -> Any:
     """Calculate an advisory quote preview with full breakdown and taxes without persisting."""
-    rate_table = get_rate_table_version(
-        session=session, rate_table_id=request.rate_table_id
-    )
-    if not rate_table:
-        raise HTTPException(status_code=404, detail="Rate table version not found")
+    try:
+        rate_table = RateTableService(session).get_version(request.rate_table_id)
+    except RateTableNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
     try:
         result = calculate_premium(
@@ -83,11 +82,10 @@ def create_calculation(
     request: PersistQuoteRequest,
 ) -> Any:
     """Calculate and persist an immutable advisory PremiumCalculation snapshot."""
-    rate_table = get_rate_table_version(
-        session=session, rate_table_id=request.rate_table_id
-    )
-    if not rate_table:
-        raise HTTPException(status_code=404, detail="Rate table version not found")
+    try:
+        rate_table = RateTableService(session).get_version(request.rate_table_id)
+    except RateTableNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
     try:
         result = calculate_premium(
