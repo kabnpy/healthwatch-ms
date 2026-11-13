@@ -13,10 +13,16 @@ from app.models import (
     Document,
     Insurer,
     Invoice,
+    MedicalTier,
     PaymentAllocation,
     PaymentRecord,
     Policy,
+    PricingStrategy,
     Product,
+    RateBenefit,
+    RateBracket,
+    RateTableStatus,
+    RateTableVersion,
     Renewal,
     RiskNote,
     User,
@@ -158,3 +164,59 @@ def test_seed_data_pipeline_and_invariants(db: Session) -> None:
     assert len(db.exec(select(Invoice)).all()) == initial_invoice_count
     assert len(db.exec(select(Claim)).all()) == initial_claim_count
     assert len(db.exec(select(Document)).all()) == initial_doc_count
+
+
+def test_seed_rate_table_versions_covers_all_non_manual_products(db: Session) -> None:
+    """
+    Verify every non-manual catalog Product has a PUBLISHED RateTableVersion
+    with appropriate brackets, benefits, or medical tiers, and that seeding is idempotent.
+    """
+    create_mock_data(session=db)
+
+    products = db.exec(select(Product)).all()
+    non_manual_products = [
+        p for p in products if p.pricing_strategy != PricingStrategy.MANUAL
+    ]
+    assert len(non_manual_products) >= 20
+
+    rate_tables = db.exec(
+        select(RateTableVersion).where(
+            RateTableVersion.status == RateTableStatus.PUBLISHED
+        )
+    ).all()
+    rt_by_key = {(rt.insurer_id, rt.class_of_insurance): rt for rt in rate_tables}
+
+    for product in non_manual_products:
+        key = (product.insurer_id, product.class_of_insurance)
+        assert key in rt_by_key, (
+            f"Missing PUBLISHED RateTableVersion for {product.name} "
+            f"({product.class_of_insurance})"
+        )
+        rt = rt_by_key[key]
+        assert rt.currency == "KES"
+        assert rt.version_number >= 1
+        assert rt.source_reference
+
+        # Each published rate table must have at least one child schedule row
+        brackets = db.exec(
+            select(RateBracket).where(RateBracket.rate_table_version_id == rt.id)
+        ).all()
+        benefits = db.exec(
+            select(RateBenefit).where(RateBenefit.rate_table_version_id == rt.id)
+        ).all()
+        tiers = db.exec(
+            select(MedicalTier).where(MedicalTier.rate_table_version_id == rt.id)
+        ).all()
+        assert len(brackets) + len(benefits) + len(tiers) >= 1, (
+            f"RateTableVersion for {product.class_of_insurance} ({rt.id}) "
+            f"has no brackets, benefits, or medical tiers"
+        )
+
+    initial_rt_count = len(db.exec(select(RateTableVersion)).all())
+
+    # Idempotency: running seed again must not duplicate RateTableVersion rows
+    create_mock_data(session=db)
+    after_rt_count = len(db.exec(select(RateTableVersion)).all())
+    assert after_rt_count == initial_rt_count, (
+        f"RateTableVersion rows duplicated: {initial_rt_count} -> {after_rt_count}"
+    )
