@@ -1,6 +1,6 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import { AlertCircle, ExternalLink, FileText, Loader2, X } from "lucide-react"
-import { Suspense, useState } from "react"
+import { Suspense } from "react"
 import {
   client,
   DocumentsService,
@@ -8,10 +8,7 @@ import {
   RiskNotesService,
 } from "@/client"
 import { Button } from "@/components/ui/button"
-import {
-  useEnqueueDocumentJob,
-  useProcessDocumentJob,
-} from "@/hooks/useDocumentJobs"
+import { useDocumentPdfExport } from "@/hooks/useDocumentPdfExport"
 import { CanonicalDocumentViewer } from "./CanonicalDocumentViewer"
 
 // --- Types ---
@@ -107,25 +104,16 @@ function RiskNoteLoader({ id, onClose }: { id: string; onClose?: () => void }) {
     queryKey: ["risk-notes", id],
   })
 
-  const enqueueJob = useEnqueueDocumentJob()
-  const processJob = useProcessDocumentJob()
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
+  const { exportPdf, isExporting: isDownloadingPdf } = useDocumentPdfExport()
 
   const handleDownloadPdf = async () => {
-    setIsDownloadingPdf(true)
     try {
-      const enqueued = await enqueueJob.mutateAsync({
+      await exportPdf({
         resource_type: "risk_note" as any,
         resource_id: riskNote.id,
       })
-      if (enqueued?.id) {
-        await processJob.mutateAsync(enqueued.id)
-        window.open(`/api/v1/document-jobs/${enqueued.id}/download`, "_blank")
-      }
     } catch (err) {
       console.error("Failed to generate official PDF:", err)
-    } finally {
-      setIsDownloadingPdf(false)
     }
   }
 
@@ -148,25 +136,16 @@ function InvoiceLoader({ id, onClose }: { id: string; onClose?: () => void }) {
     queryKey: ["invoices", id],
   })
 
-  const enqueueJob = useEnqueueDocumentJob()
-  const processJob = useProcessDocumentJob()
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
+  const { exportPdf, isExporting: isDownloadingPdf } = useDocumentPdfExport()
 
   const handleDownloadPdf = async () => {
-    setIsDownloadingPdf(true)
     try {
-      const enqueued = await enqueueJob.mutateAsync({
+      await exportPdf({
         resource_type: "invoice" as any,
         resource_id: invoice.id,
       })
-      if (enqueued?.id) {
-        await processJob.mutateAsync(enqueued.id)
-        window.open(`/api/v1/document-jobs/${enqueued.id}/download`, "_blank")
-      }
     } catch (err) {
       console.error("Failed to generate official PDF:", err)
-    } finally {
-      setIsDownloadingPdf(false)
     }
   }
 

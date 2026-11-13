@@ -182,27 +182,48 @@ def test_preview_html_endpoints_use_document_renderer(
     assert "Preview Draft Client" in post_resp.text
 
 
-def test_render_pdf_produces_pdf_bytes_with_fallback(
+def test_render_pdf_raises_when_rasterizer_fails(
     db: Session,
     monkeypatch,
 ) -> None:
-    monkeypatch.setattr("app.services.document_renderer.shutil.which", lambda _: None)
+    import pytest
 
-    result = DocumentRenderer.render_pdf(
-        session=db,
-        resource_type=DocumentJobResourceType.STATEMENT,
-        resource_id=None,
-        snapshot_override={
-            "client_name": "Fallback PDF Client",
-            "net_outstanding_balance": "1200.00",
-        },
-    )
+    class FailingRasterizer:
+        def render(self, html_content: str) -> bytes:
+            raise RuntimeError("Playwright crashed")
 
-    assert isinstance(result, RenderedDocument)
-    assert "Fallback PDF Client" in result.html
-    assert result.pdf_bytes is not None
-    assert result.pdf_bytes.startswith(b"%PDF-1.4")
-    assert b"%%EOF" in result.pdf_bytes
+    monkeypatch.setattr(DocumentRenderer, "pdf_rasterizer", FailingRasterizer())
+
+    with pytest.raises(RuntimeError, match="Playwright crashed"):
+        DocumentRenderer.render_pdf(
+            session=db,
+            resource_type=DocumentJobResourceType.STATEMENT,
+            resource_id=None,
+            snapshot_override={
+                "client_name": "Failing PDF Client",
+                "net_outstanding_balance": "1200.00",
+            },
+        )
+
+
+def test_render_pdf_raises_on_invalid_pdf_output(
+    db: Session,
+    monkeypatch,
+) -> None:
+    import pytest
+
+    class InvalidOutputRasterizer:
+        def render(self, html_content: str) -> bytes:
+            return b"not-a-pdf"
+
+    monkeypatch.setattr(DocumentRenderer, "pdf_rasterizer", InvalidOutputRasterizer())
+
+    with pytest.raises(ValueError, match="Invalid PDF"):
+        DocumentRenderer.render_pdf(
+            session=db,
+            resource_type=DocumentJobResourceType.STATEMENT,
+            resource_id=None,
+        )
 
 
 def test_render_pdf_uses_playwright_when_available(
@@ -250,7 +271,12 @@ def test_document_job_service_process_job_uses_document_renderer_and_uploads_pdf
     from app.models import Document, DocumentJobStatus
     from app.services.document_job import DocumentJobService
 
-    monkeypatch.setattr("app.services.document_renderer.shutil.which", lambda _: None)
+    class StubPdfRasterizer:
+        def render(self, html_content: str) -> bytes:
+            assert "Job Pipeline Client" in html_content
+            return b"%PDF-1.4 stub-pdf\n%%EOF\n"
+
+    monkeypatch.setattr(DocumentRenderer, "pdf_rasterizer", StubPdfRasterizer())
 
     render_calls: list[dict] = []
     original_render_pdf = DocumentRenderer.render_pdf

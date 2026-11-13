@@ -7,6 +7,7 @@ import {
   X,
 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
+import { client } from "@/client"
 import { Button } from "@/components/ui/button"
 
 interface CanonicalDocumentViewerProps {
@@ -41,35 +42,30 @@ export function CanonicalDocumentViewer({
     setIsLoading(true)
     setError(null)
     try {
-      let res: Response
-      if (draftSnapshot && Object.keys(draftSnapshot).length > 0) {
-        res = await fetch("/api/v1/document-jobs/preview/html", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("access_token") || ""}`,
-          },
-          body: JSON.stringify({
-            resource_type: resourceType,
-            resource_id: resourceId,
-            snapshot_data: draftSnapshot,
-          }),
-        })
-      } else {
-        const url = `/api/v1/document-jobs/preview/html?resource_type=${resourceType}${resourceId ? `&resource_id=${resourceId}` : ""}`
-        res = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token") || ""}`,
-          },
-        })
-      }
+      const res =
+        draftSnapshot && Object.keys(draftSnapshot).length > 0
+          ? await client.post<string>({
+              url: "/api/v1/document-jobs/preview/html",
+              body: {
+                resource_type: resourceType,
+                resource_id: resourceId,
+                snapshot_data: draftSnapshot,
+              },
+              headers: {
+                "Content-Type": "application/json",
+              },
+              responseType: "text",
+            })
+          : await client.get<string>({
+              url: "/api/v1/document-jobs/preview/html",
+              query: {
+                resource_type: resourceType,
+                ...(resourceId ? { resource_id: resourceId } : {}),
+              },
+              responseType: "text",
+            })
 
-      if (!res.ok) {
-        throw new Error(`Failed to load document preview (HTTP ${res.status})`)
-      }
-
-      const text = await res.text()
-      setHtmlContent(text)
+      setHtmlContent(typeof res.data === "string" ? res.data : "")
     } catch (err: any) {
       setError(err.message || "Failed to render document preview")
     } finally {

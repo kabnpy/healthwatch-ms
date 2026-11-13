@@ -1620,8 +1620,9 @@ class InvoiceBatchesPublic(SQLModel):
 class DocumentJobBase(SQLModel):
     resource_type: DocumentJobResourceType = Field(index=True)
     resource_id: uuid.UUID | None = Field(default=None, index=True)
+    document_id: uuid.UUID | None = Field(default=None, foreign_key="document.id", index=True)
     status: DocumentJobStatus = Field(default=DocumentJobStatus.PENDING, index=True)
-    idempotency_key: str = Field(index=True)
+    idempotency_key: str = Field(unique=True, index=True)
     snapshot_data: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
     attempt_count: int = Field(default=0)
     error_code: str | None = None
