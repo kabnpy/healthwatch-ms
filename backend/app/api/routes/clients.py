@@ -24,9 +24,6 @@ from app.models import (
     ClientPublic,
     ClientsPublic,
     ClientUpdate,
-    CorrespondenceCreate,
-    CorrespondencePublic,
-    CorrespondencesPublic,
     Message,
 )
 
@@ -103,37 +100,3 @@ def delete_client(session: SessionDep, _current_user: StaffUser, id: uuid.UUID) 
         raise HTTPException(status_code=404, detail="Client not found")
     crud_delete_client(session=session, db_client=client)
     return Message(message="Client deleted successfully")
-
-
-@router.get("/{id}/correspondences", response_model=CorrespondencesPublic)
-def read_client_correspondences(
-    session: SessionDep, _current_user: CurrentUser, id: uuid.UUID
-) -> Any:
-    """
-    Get correspondences for a client.
-    """
-    from app.crud import count_correspondences, get_correspondences
-
-    count = count_correspondences(session=session, client_id=id)
-    correspondences = get_correspondences(session=session, client_id=id)
-    return CorrespondencesPublic(data=correspondences, count=count)
-
-
-@router.post("/{id}/correspondences", response_model=CorrespondencePublic)
-def create_client_correspondence(
-    *,
-    session: SessionDep,
-    _current_user: StaffUser,
-    id: uuid.UUID,
-    correspondence_in: CorrespondenceCreate,
-) -> Any:
-    """
-    Create new correspondence for a client.
-    """
-    from app.crud import create_correspondence
-
-    correspondence_in.client_id = id
-    correspondence = create_correspondence(
-        session=session, correspondence_in=correspondence_in
-    )
-    return correspondence
