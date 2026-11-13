@@ -36,11 +36,9 @@ from app.models import (
     Invoice,
     InvoiceBatch,
     InvoiceBatchCreate,
-    InvoiceBulkCreate,
     InvoiceCreate,
     InvoiceLineItem,
     InvoiceLineItemCreate,
-    InvoiceStatus,
     InvoiceUpdate,
     IPFAgreement,
     IPFAgreementCreate,
@@ -642,35 +640,6 @@ def update_invoice(
     session.commit()
     session.refresh(db_invoice)
     return db_invoice
-
-
-def create_invoice_bulk(*, session: Session, bulk_in: InvoiceBulkCreate) -> Invoice:
-    risk_notes = session.exec(
-        select(RiskNote).where(col(RiskNote.id).in_(bulk_in.risk_note_ids))
-    ).all()
-    total_amount = sum(rn.total_amount for rn in risk_notes)
-    invoice_in = InvoiceCreate(
-        invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
-        client_id=bulk_in.client_id,
-        date_issued=bulk_in.date_issued,
-        total_amount=total_amount,
-        balance_due=total_amount,
-        notes=bulk_in.notes,
-        status=InvoiceStatus.UNPAID,
-    )
-    invoice = create_invoice(session=session, invoice_in=invoice_in)
-    for rn in risk_notes:
-        line_item_in = InvoiceLineItemCreate(
-            invoice_id=invoice.id,
-            risk_note_id=rn.id,
-            amount=rn.total_amount,
-            description=f"{rn.transaction_type} - RN {rn.risk_note_number}",
-        )
-        create_invoice_line_item(session=session, line_item_in=line_item_in)
-        session.add(rn)
-    session.commit()
-    session.refresh(invoice)
-    return invoice
 
 
 def create_invoice_line_item(
