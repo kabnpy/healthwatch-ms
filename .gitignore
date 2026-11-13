@@ -71,8 +71,9 @@ Thumbs.db
 *.swp
 *.swo
 
-# Scratch
+# Scratch & AI tooling
 scratch/
+.better-design/
 
 # Document Storage
 storage/
