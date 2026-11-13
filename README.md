@@ -63,17 +63,15 @@ Whenever a risk note, renewal invitation, invoice, or statement is produced, the
 
 ## Project Documentation
 
-Detailed technical and operational documentation is maintained in the `docs/` directory:
+Documentation is organized for both engineers and coding agents:
 
-- **[Master System Specification](docs/insurance_agency_system_documentation.md):** Authoritative business rules, renewal transitions, and accounting logic.
-- **[Product Specifications](docs/01_product_specs.md):** Detailed workflow requirements and screen structures.
-- **[Technical Architecture](docs/02_tech_architecture.md):** Application structure, data integrity safeguards, and deployment setup.
-- **[Backend Data Models](docs/03_backend_data_models.md):** Database models and relational constraints.
-- **[Development Roadmap](docs/04_development_roadmap.md):** Implementation phases and production checklist.
-- **[Design System](docs/05_design_system.md):** UI patterns, color tokens, and typography guidelines.
-- **[Git Hygiene](docs/06_git_hygiene.md):** Branching conventions, commit syntax, and pre-push quality gates.
-- **[Reference Catalog & Seeding](docs/07_reference_catalog_and_seeding.md):** Authoritative Kenyan underwriter catalog, statutory levy benchmarks, and realistic test portfolio.
-- **[Architecture Decision Records](docs/architecture_decision_records.md):** Chronological log of key architectural decisions (ADR-001 through ADR-014).
+- **[Domain Glossary](GLOSSARY.md):** Canonical domain language and `_Avoid_` terms.
+- **[Coding Standards](CODING_STANDARDS.md):** Architectural, financial precision, and review invariants.
+- **[Architecture Decision Records](docs/adr/):** Atomic architectural decisions (`0001`–`0006`).
+- **[Product Specifications](docs/01_product_specs.md):** Core workflows, renewal state machine, and rating math.
+- **[Design System](docs/02_design_system.md):** UI patterns, OKLCH color tokens, financial numeral rules, and A4 print specifications.
+- **[Git Hygiene](docs/03_git_hygiene.md):** Branching conventions, Conventional Commits, and pre-commit hooks.
+- **[Reference Catalog & Seeding](docs/04_reference_catalog_and_seeding.md):** Kenyan underwriter catalog, statutory levy benchmarks, and realistic test portfolio.
 
 ---
 
@@ -84,20 +82,18 @@ For technical teams and developers:
 - **Backend:** Python 3.14, FastAPI, SQLModel (SQLAlchemy 2 + Pydantic v2), PostgreSQL 16+.
 - **Frontend:** React 19, Vite 8, Bun, TanStack Query v5, TanStack Router, Tailwind CSS, Shadcn UI.
 - **Storage:** Cloudflare R2 object storage with secure, short-lived signed URLs.
-- **Infrastructure:** Docker Compose v2 for local development, Railway for production hosting.
+- **Infrastructure:** Docker Compose v2 / Podman Compose for local development, Railway for production hosting.
 
 ### Running Locally
 
-Ensure `.env` exists (copied from `.env.example`).
-
-The recommended local development workflow uses `./run`, which automatically detects whether your system runs **Podman** (`podman compose` / `podman-compose`) or **Docker** (`docker compose`):
+Ensure `.env` exists (copied from `.env.example`), then use root `package.json` scripts via `bun run`:
 
 ```bash
 # 1. Start database, run migrations, seed data, and launch backend + frontend concurrently:
-./run dev
+bun run dev
 
 # 2. Check operational status of runtime, DB, API, and frontend:
-./run status
+bun run status
 ```
 
 Service URLs:
@@ -105,15 +101,18 @@ Service URLs:
 - Backend API Documentation: http://localhost:8000/docs
 - Local Email Viewer (Mailpit): http://localhost:1080
 
-Additional runner commands:
+Additional workspace commands (`package.json`):
 ```bash
-./run services:up     # Start background database & mailpit in Podman or Docker
-./run dev:backend     # Run FastAPI dev server natively
-./run dev:frontend    # Run Vite dev server natively
-./run test            # Run all backend pytest and frontend vitest suites
-./run lint            # Run Ruff and Biome linters
-./run format          # Auto-format codebase
-./run seed            # Seed realistic underwriting and client portfolio
+bun run dev:backend   # Run FastAPI dev server natively
+bun run dev:frontend  # Run Vite dev server natively
+bun run test          # Run all backend pytest and frontend vitest suites
+bun run test:e2e      # Run Playwright E2E suite
+bun run typecheck     # Run TypeScript compiler check
+bun run lint          # Run Ruff and Biome linters
+bun run format        # Auto-format codebase
+bun run client        # Export OpenAPI schema and regenerate TypeScript client
+bun run migrate       # Apply Alembic database migrations
+bun run seed          # Seed realistic underwriting and client portfolio
 ```
 
 ---

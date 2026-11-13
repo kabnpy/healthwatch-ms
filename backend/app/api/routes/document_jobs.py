@@ -15,6 +15,7 @@ from app.models import (
     DocumentJobStatus,
 )
 from app.services.document_job import DocumentJobService
+from app.services.document_renderer import DocumentRenderer
 
 router = APIRouter()
 
@@ -72,12 +73,12 @@ def preview_document_html(
     resource_id: uuid.UUID | None = None,
 ) -> Any:
     """Renders the canonical Jinja2 document HTML for instant browser preview with 100% print fidelity."""
-    html, _, _, _, _, _ = DocumentJobService.render_resource_html(
+    rendered = DocumentRenderer.render_html(
         session=session,
         resource_type=resource_type,
         resource_id=resource_id,
     )
-    return HTMLResponse(content=html)
+    return HTMLResponse(content=rendered.html)
 
 
 @router.post("/preview/html", response_class=HTMLResponse)
@@ -88,13 +89,13 @@ def preview_document_html_draft(
     request: DocumentPreviewDraftRequest,
 ) -> Any:
     """Renders the canonical Jinja2 document HTML with live draft snapshot overrides."""
-    html, _, _, _, _, _ = DocumentJobService.render_resource_html(
+    rendered = DocumentRenderer.render_html(
         session=session,
         resource_type=request.resource_type,
         resource_id=request.resource_id,
-        snapshot_data=request.snapshot_data,
+        snapshot_override=request.snapshot_data,
     )
-    return HTMLResponse(content=html)
+    return HTMLResponse(content=rendered.html)
 
 
 @router.get("/{id}", response_model=DocumentJobPublic)

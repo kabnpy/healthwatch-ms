@@ -125,7 +125,7 @@
 }
 
 /* ==========================================================================
-   A4 Print & Legal Document Layout Standard (docs/05_design_system.md §6)
+   A4 Print & Legal Document Layout Standard (docs/02_design_system.md §6)
    ========================================================================== */
 @media print {
   @page {

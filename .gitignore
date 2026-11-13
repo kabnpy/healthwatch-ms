@@ -4,7 +4,7 @@
 *.env
 !*.env.example
 
-# Agent task worktrees (see docs/06_git_hygiene.md)
+# Agent task worktrees (see docs/03_git_hygiene.md)
 .worktrees/
 
 # Python

@@ -1,7 +1,7 @@
 # Product Specifications: Insurance Agency Management System
 
 > **STATUS:** Authoritative Product Baseline
-> **ALIGNMENT:** Synchronized with the expanded [insurance_agency_system_documentation.md](./insurance_agency_system_documentation.md) baseline.
+> **VOCABULARY & DECISIONS:** Canonical domain definitions live in [GLOSSARY.md](../GLOSSARY.md); architectural decisions live in [docs/adr/](./adr/).
 
 ---
 
@@ -18,33 +18,15 @@ HealthWatch MS was built to digitize this business. It translates the real, day-
 - **Portfolio & Vehicle Scope:** Covers individual and SME accounts, including small vehicle groupings / mini-fleets (typically 2 to 6 vehicles under a client portfolio).
 - **Internal Salaried Agency Model:** HealthWatch employs full-time, salaried account managers. Commission is recognized 100% at the agency entity level; there are no freelance sub-agent commission splits or third-party producer commission ledgers.
 - **Carrier Terms as Authority:** The insurer's renewal notice is the authoritative source for offered renewal terms; an agent reviews this document before preparing client invitations.
-- **Deterministic Premium Calculations:** The advisory premium calculator provides verified calculations using published rate schedules and statutory levies (see [docs/07_reference_catalog_and_seeding.md](./07_reference_catalog_and_seeding.md)). Contractual terms agreed with the carrier are recorded separately.
+- **Deterministic Premium Calculations:** The advisory premium calculator provides verified calculations using published rate schedules and statutory levies (see [docs/04_reference_catalog_and_seeding.md](./04_reference_catalog_and_seeding.md)). Contractual terms agreed with the carrier are recorded separately.
 - **Internal Staff Workspace:** Designed for authenticated agency staff to coordinate operations without spreadsheet drift or lost paperwork.
 
 
 ---
 
-## 2. Terminology & Usage Guide
+## 2. Domain Vocabulary
 
-To maintain consistency across documentation, system code, and user interface copy, use the following terms according to their defined roles:
-
-- **Agency:** Refers to the business organization. The system is an agency management workspace designed for agency operations.
-- **Agent / Account Manager:** Refers to the staff members who manage client policies and coordinate renewals on behalf of clients and carriers.
-- **Client:** An individual or business whose insurance policies are managed by the agency.
-- **Portfolio:** The complete collection of active and historical policies belonging to a client.
-- **Policy:** The long-lived contract container identified by the carrier's policy number. Maintains enduring identity while coverage details update over time. A policy may cover one or multiple vehicles (e.g. family or corporate fleet).
-- **Vehicle:** Asset details attached to a motor policy (plate registration, make, model, year, insured value, and valuation tracking metadata: `last_valuation_date`, `valuation_report_ref`, `valuer_name`). `last_valuation_date` is visible on the Policy management page in the application UI, but is strictly omitted from the printed Risk Note document.
-- **Renewal:** The workflow tracking an annual expiration cycle through its business stages (awaiting carrier terms, client invitation, payment, and completion).
-- **PremiumCalculation:** A persisted, deterministic calculation run capturing exact input values, published rule versions, itemized lines, and integer KES totals.
-- **Risk Note:** The generated transaction overview snapshot of coverage terms, asset details, and rating calculations prepared for sharing with the carrier. Generated only for product classes that require carrier cover slips (such as motor or domestic cover). Medical policies never use a Risk Note. Multi-vehicle policies generate **one single Risk Note** consolidating all covered vehicles. Adheres to a strict **one-page A4 schedule format** (~25% label, ~75% details). Cancellations strictly never produce Risk Notes. Pricing authority resides in the versioned `PremiumCalculation` and carrier schedules.
-- **Invoice:** A financial document issued when billing a client, typically post-renewal or upon agreement. Decoupled from immediate Risk Note creation.
-- **Invoice Batch:** A monthly consolidation grouping all invoices for a client within a calendar month.
-- **Payment Record:** Verified, cleared funds received into the agency account, recorded with date, payment method (M-Pesa, bank transfer, cheque, financing), and transaction reference.
-- **Payment Allocation:** The application of a specific amount from a payment record to an outstanding invoice.
-- **Proof of Payment:** Client-supplied evidence (M-Pesa confirmations, bank slips, cheque copies, IPF forms) indicating payment has been initiated. Used to record evidence without confusing it with cleared agency funds.
-- **Insurer Receipt:** The formal receipt issued by the insurance carrier confirming remittance, used as the business confirmation that coverage is in force and agency commission can be recognized.
-- **Statement:** An on-demand account summary showing opening balances, chronological invoice debits, payment allocation credits, and running balances.
-- **Activity:** Append-only timeline entries recording calls, emails, meetings, reminders, and notes attached to clients, policies, or renewals.
+All entity names, artifacts, and ledger concepts follow the canonical definitions and `_Avoid_` lists in [GLOSSARY.md](../GLOSSARY.md).
 
 ---
 
@@ -152,7 +134,7 @@ Mandated by the Insurance Regulatory Authority (IRA) of Kenya:
 *(Note: Medical insurance premiums are exempt from Value Added Tax).*
 
 #### 7. Unified Persisted Artifact: `PremiumCalculation`
-Regardless of whether pricing is driven by a vehicle's market value, a family's medical census, a declared payroll schedule, a professional indemnity limit, or a fixed golfers package, the rating engine produces the exact same deterministic, immutable [`PremiumCalculation`](./03_backend_data_models.md#premiumcalculation-persisted-calculation-run) snapshot. Every line item is itemized, auditable, and rounded to integer KES.
+Regardless of whether pricing is driven by a vehicle's market value, a family's medical census, a declared payroll schedule, a professional indemnity limit, or a fixed golfers package, the rating engine produces the exact same deterministic, immutable `PremiumCalculation` snapshot (see [GLOSSARY.md](../GLOSSARY.md) and [ADR-0004](./adr/0004-versioned-deterministic-rating-engine.md)). Every line item is itemized, auditable, and rounded using fixed-point `Decimal` arithmetic (`ROUND_HALF_UP`).
 
 
 ### 3.3 Payments, Allocations & Statements
@@ -193,7 +175,7 @@ Client retention across renewal cycles is directly influenced by the agency's ad
 
 ## 4. User Interface Architecture
 
-Adheres to the density and styling guidelines in [05_design_system.md](./05_design_system.md).
+Adheres to the density and styling guidelines in [02_design_system.md](./02_design_system.md).
 
 ### 4.1 Dashboard (Broker Command Deck)
 Default landing page after login, surfacing immediate operational queues:

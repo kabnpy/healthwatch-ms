@@ -1,8 +1,8 @@
 /**
  * Deterministic Advisory Rating Engine for HealthWatch MS
  * Synchronized with:
- * - docs/07_reference_catalog_and_seeding.md
- * - docs/insurance_agency_system_documentation.md (§4.14, §4.15)
+ * - docs/04_reference_catalog_and_seeding.md
+ * - docs/01_product_specs.md (§3.2.1)
  * - Insurance Act (Cap 487) Kenya statutory levies
  */
 
