@@ -23,7 +23,7 @@ from app.models import (
     RiskNote,
     get_datetime_utc,
 )
-from app.services.statement import ClientStatementService
+from app.services.client_ledger import ClientLedgerService
 
 logger = logging.getLogger(__name__)
 
@@ -611,9 +611,9 @@ class DocumentRenderer:
 
         client = session.get(Client, client_uuid) if client_uuid else None
         if client:
-            statement_data = ClientStatementService.generate_statement(
+            statement_data = ClientLedgerService.generate_statement(
                 session, client.id
-            )
+            ).model_dump()
             client_name = client.name
             client_id_val = client.id
         else:

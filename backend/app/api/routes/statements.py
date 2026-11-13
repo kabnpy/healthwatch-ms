@@ -4,12 +4,16 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 
 from app.api.deps import CurrentUser, SessionDep
-from app.services.statement import ClientStatementService
+from app.services.client_ledger import (
+    ClientLedgerService,
+    ClientStatement,
+    LedgerNotFoundError,
+)
 
 router = APIRouter()
 
 
-@router.get("/client/{client_id}")
+@router.get("/client/{client_id}", response_model=ClientStatement)
 def get_client_statement(
     client_id: uuid.UUID,
     session: SessionDep,
@@ -17,8 +21,8 @@ def get_client_statement(
 ) -> Any:
     """Retrieve reconciled financial statement and ledger for a client."""
     try:
-        return ClientStatementService.generate_statement(
+        return ClientLedgerService.generate_statement(
             session=session, client_id=client_id
         )
-    except ValueError as e:
+    except LedgerNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))

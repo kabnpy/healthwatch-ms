@@ -10,7 +10,11 @@ from app.models import (
     InvoiceBatchesPublic,
     InvoiceBatchPublic,
 )
-from app.services.invoice_batch import InvoiceBatchService
+from app.services.client_ledger import (
+    ClientLedgerService,
+    LedgerNotFoundError,
+    LedgerValidationError,
+)
 
 router = APIRouter()
 
@@ -60,10 +64,12 @@ def create_monthly_batch(
 ) -> Any:
     """Consolidate monthly client invoices into a single batch enforcing UNIQUE(client_id, billing_month)."""
     try:
-        return InvoiceBatchService.create_monthly_batch(
+        return ClientLedgerService.create_monthly_batch(
             session=session,
             client_id=request.client_id,
             billing_month=request.billing_month,
         )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except LedgerNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except LedgerValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

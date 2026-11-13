@@ -14,7 +14,11 @@ from app.models import (
     PaymentRecordsPublic,
     ReversalCreate,
 )
-from app.services.payment import PaymentService
+from app.services.client_ledger import (
+    ClientLedgerService,
+    LedgerNotFoundError,
+    LedgerValidationError,
+)
 
 payment_records_router = APIRouter()
 payment_allocations_router = APIRouter()
@@ -64,7 +68,12 @@ def create_payment_record(
     payment_in: PaymentRecordCreate,
 ) -> Any:
     """Record a gross payment instrument/event from a client."""
-    return PaymentService.record_payment(session=session, payment_in=payment_in)
+    try:
+        return ClientLedgerService.record_payment(
+            session=session, payment_in=payment_in
+        )
+    except LedgerValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @payment_records_router.post(
@@ -85,7 +94,14 @@ def allocate_payment_to_invoice(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Route ID does not match payment_record_id in request body.",
         )
-    return PaymentService.allocate_payment(session=session, allocation_in=allocation_in)
+    try:
+        return ClientLedgerService.allocate_payment(
+            session=session, allocation_in=allocation_in
+        )
+    except LedgerNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except LedgerValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @payment_records_router.get(
@@ -115,9 +131,14 @@ def reverse_payment_record(
     reversal_in: ReversalCreate,
 ) -> Any:
     """Atomically reverse a payment record and cascade reversal to all linked allocations."""
-    return PaymentService.reverse_payment_record(
-        session=session, payment_id=id, reversal_reason=reversal_in.reversal_reason
-    )
+    try:
+        return ClientLedgerService.reverse_payment_record(
+            session=session, payment_id=id, reversal_reason=reversal_in.reversal_reason
+        )
+    except LedgerNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except LedgerValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 # ==========================================
@@ -174,6 +195,13 @@ def reverse_payment_allocation(
     reversal_in: ReversalCreate,
 ) -> Any:
     """Reverse an individual payment allocation and restore the invoice balance."""
-    return PaymentService.reverse_allocation(
-        session=session, allocation_id=id, reversal_reason=reversal_in.reversal_reason
-    )
+    try:
+        return ClientLedgerService.reverse_allocation(
+            session=session,
+            allocation_id=id,
+            reversal_reason=reversal_in.reversal_reason,
+        )
+    except LedgerNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except LedgerValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
