@@ -24,6 +24,16 @@
       background: #ffffff;
       -webkit-font-smoothing: antialiased;
     }
+    @media screen and (min-width: 641px) {
+      body {
+        max-width: 49.6rem;
+        margin: 0 auto;
+        padding: 2.25rem 2.5rem;
+      }
+    }
+    .nowrap {
+      white-space: nowrap;
+    }
 
     /* Header & Letterhead */
     .agency-header {
@@ -42,15 +52,13 @@
       gap: 0.75rem;
     }
     .brand-symbol {
-      width: 2.25rem;
-      height: 2.25rem;
+      width: 2.5rem;
+      height: 2.5rem;
       flex-shrink: 0;
-      background: #0f172a;
-      border-radius: 0.375rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #ffffff;
+      color: #0f172a;
     }
     .brand-title {
       font-size: 1.125rem;
@@ -96,9 +104,10 @@
       gap: 0.5rem;
     }
     .doc-title-main {
-      font-size: 1rem;
+      font-size: 1.25rem;
       font-weight: 800;
-      letter-spacing: -0.015em;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
       color: #0f172a;
       margin: 0;
     }
@@ -106,6 +115,7 @@
       font-size: 0.75rem;
       color: #475569;
       margin-top: 0.25rem;
+      text-wrap: pretty;
     }
     .badge {
       display: inline-block;
@@ -141,6 +151,7 @@
       font-weight: 800;
       font-size: 0.875rem;
       color: #0f172a;
+      white-space: nowrap;
     }
 
     /* Section Headings & Grids */
@@ -174,15 +185,26 @@
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      gap: 0.75rem;
+      gap: 0.375rem;
       font-size: 0.75rem;
     }
+    .kv-row::before {
+      content: "";
+      order: 2;
+      flex: 1 1 auto;
+      min-width: 0.75rem;
+      border-bottom: 0.0625rem dotted #cbd5e1;
+      align-self: baseline;
+      margin: 0 0.125rem;
+    }
     .kv-label {
+      order: 1;
       color: #475569;
       font-weight: 500;
       flex-shrink: 0;
     }
     .kv-val {
+      order: 3;
       font-weight: 600;
       color: #0f172a;
       text-align: right;
@@ -194,6 +216,7 @@
     .kv-val.mono {
       font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
 
     /* Line Items Table */
@@ -242,6 +265,7 @@
       font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       font-variant-numeric: tabular-nums;
       font-weight: 600;
+      white-space: nowrap;
     }
     .item-desc {
       font-weight: 700;
@@ -252,6 +276,7 @@
       color: #475569;
       font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       margin-top: 0.125rem;
+      white-space: nowrap;
     }
 
     /* Financial Summary Layout */
@@ -281,23 +306,26 @@
       font-variant-numeric: tabular-nums;
       font-weight: 700;
       color: #0f172a;
+      white-space: nowrap;
     }
     .summary-card-table td.amount.credit {
       color: #065f46;
     }
     .summary-card-table tr.grand-total td {
-      background: #f1f5f9;
-      color: #0f172a;
-      font-size: 0.8125rem;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 1.0625rem;
       font-weight: 800;
+      letter-spacing: -0.01em;
       border-top: 0.125rem solid #0f172a;
       border-bottom: none;
-      padding: 0.5rem 0.75rem;
+      padding: 0.6875rem 0.875rem;
     }
     .summary-card-table tr.grand-total td.amount {
-      color: #0f172a;
-      font-size: 0.875rem;
+      color: #ffffff;
+      font-size: 1.125rem;
       font-weight: 800;
+      white-space: nowrap;
     }
 
     /* Settlement Instructions */
@@ -336,9 +364,11 @@
       font-size: 0.75rem;
       color: #475569;
       line-height: 1.45;
+      text-wrap: pretty;
     }
     .settlement-note strong {
       color: #0f172a;
+      white-space: nowrap;
     }
 
     /* Legal Notice */
@@ -348,6 +378,7 @@
       line-height: 1.45;
       border-top: 0.0625rem solid #cbd5e1;
       padding-top: 0.5rem;
+      text-wrap: pretty;
     }
     .legal-notice strong {
       color: #0f172a;
@@ -374,8 +405,17 @@
     /* Strict Print Overrides (docs/02_design_system.md Section 6) */
     @media print {
       body {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
         color: #000000 !important;
         background: #ffffff !important;
+      }
+      .brand-symbol {
+        color: #000000 !important;
+      }
+      .kv-row::before {
+        border-bottom: 0.5pt dotted #111111 !important;
       }
       .agency-header {
         border-bottom: 1pt solid #000000 !important;
@@ -431,12 +471,11 @@
   <header class="agency-header">
     <div class="brand-block">
       <div class="brand-symbol" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1.5" y="1.5" width="37" height="37" rx="4" stroke="currentColor" stroke-width="1.5"/>
+          <rect x="4.5" y="4.5" width="31" height="31" rx="2" stroke="currentColor" stroke-width="0.75" stroke-opacity="0.35"/>
+          <path d="M10.5 13V27M10.5 20H18.5M18.5 13V27" stroke="currentColor" stroke-width="2" stroke-linecap="square"/>
+          <path d="M22 13L24 27L26.75 18.5L29.5 27L31.5 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
       <div>
@@ -468,7 +507,7 @@
       </div>
       <div class="doc-banner-meta">
         <div>Invoice Number: <span class="doc-ref-number">{{ invoice.invoice_number }}</span></div>
-        <div>Issued: <strong>{{ invoice_date_formatted }}</strong>, Due: <strong>{{ due_date_formatted }}</strong></div>
+        <div>Issued: <strong class="nowrap">{{ invoice_date_formatted }}</strong>, Due: <strong class="nowrap">{{ due_date_formatted }}</strong></div>
       </div>
     </section>
 
@@ -510,10 +549,6 @@
         <div class="kv-row">
           <span class="kv-label">Payment Terms</span>
           <span class="kv-val">Cash and Carry (Section 156A)</span>
-        </div>
-        <div class="kv-row">
-          <span class="kv-label">Agency</span>
-          <span class="kv-val">HealthWatch Insurance Agency</span>
         </div>
       </div>
     </div>
