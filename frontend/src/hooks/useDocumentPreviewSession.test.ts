@@ -221,4 +221,31 @@ describe("useDocumentPreviewSession", () => {
       missingFields: ["Risk Note Record"],
     })
   })
+
+  it("supports invoice targets with read-only preview and async PDF export", async () => {
+    const { result } = renderHook(() =>
+      useDocumentPreviewSession({
+        target: {
+          kind: "invoice",
+          invoiceId: "inv-1",
+          invoiceNumber: "INV-2026-001",
+        },
+      }),
+    )
+
+    expect(result.current.validation).toEqual({
+      isValid: true,
+      missingFields: [],
+    })
+    expect(result.current.draftSnapshot).toBeUndefined()
+
+    await act(async () => {
+      await result.current.handleGenerateServerPdf()
+    })
+
+    expect(mockExportPdf).toHaveBeenCalledWith({
+      resource_type: "invoice",
+      resource_id: "inv-1",
+    })
+  })
 })

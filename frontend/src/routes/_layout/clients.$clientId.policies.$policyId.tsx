@@ -5,10 +5,8 @@ import { PoliciesService } from "@/client"
 import { ActivityTimeline } from "@/components/Activities/ActivityTimeline"
 import { DataTable } from "@/components/Common/DataTable"
 import { DocumentManager } from "@/components/Common/DocumentManager"
-import { DocumentViewerModal } from "@/components/Common/DocumentViewerModal"
 import ErrorComponent from "@/components/Common/ErrorComponent"
 import { DocumentPreviewDrawer } from "@/components/Documents/DocumentPreviewDrawer"
-import { DocumentViewer } from "@/components/Documents/DocumentViewer"
 import { RiskNoteForm } from "@/components/Insurance/RiskNoteForm"
 import PendingItems from "@/components/Pending/PendingItems"
 import { PolicyDashboardSkeleton } from "@/components/Policies/Dashboard/PolicyDashboardSkeleton"
@@ -75,12 +73,6 @@ function PolicyDashboardContent({
   // We need client name for breadcrumbs
   const { data: client } = useClient(clientId)
 
-  // State for Document Viewer
-  const [viewerOpen, setViewerOpen] = useState(false)
-  const [selectedRiskNoteId, setSelectedRiskNoteId] = useState<string | null>(
-    null,
-  )
-  const [viewType, setViewType] = useState<"risknote" | "invoice">("risknote")
   const [previewDrawerOpen, setPreviewDrawerOpen] = useState(false)
 
   // State for Risk Note Form
@@ -89,14 +81,9 @@ function PolicyDashboardContent({
   const [, setEditingRiskNoteId] = useState<string | undefined>()
 
   // Handlers
-  const handleViewRiskNote = useCallback(
-    (id: string, type: "risknote" | "invoice" = "risknote") => {
-      setSelectedRiskNoteId(id)
-      setViewType(type)
-      setViewerOpen(true)
-    },
-    [],
-  )
+  const handleViewRiskNote = useCallback(() => {
+    setPreviewDrawerOpen(true)
+  }, [])
 
   const handleRenew = () => {
     setTransactionType("Renewal")
@@ -451,23 +438,6 @@ function PolicyDashboardContent({
         </TabsContent>
       </Tabs>
 
-      {/* Document Viewer Modal */}
-      {selectedRiskNoteId && (
-        <DocumentViewerModal
-          isOpen={viewerOpen}
-          onClose={() => setViewerOpen(false)}
-          title={`Document: ${selectedRiskNoteId}`}
-        >
-          <Suspense fallback={<PendingItems />}>
-            <DocumentViewer
-              id={selectedRiskNoteId}
-              type={viewType}
-              onClose={() => setViewerOpen(false)}
-            />
-          </Suspense>
-        </DocumentViewerModal>
-      )}
-
       {/* Risk Note Form Dialog (Renewals/Endorsements) */}
       <Dialog open={riskNoteFormOpen} onOpenChange={setRiskNoteFormOpen}>
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
@@ -492,9 +462,16 @@ function PolicyDashboardContent({
       <DocumentPreviewDrawer
         isOpen={previewDrawerOpen}
         onOpenChange={setPreviewDrawerOpen}
-        riskNote={latestRiskNote as EnhancedRiskNote}
-        client={client}
-        policy={policy as EnhancedPolicy}
+        target={
+          latestRiskNote
+            ? {
+                kind: "risk_note",
+                riskNote: latestRiskNote as EnhancedRiskNote,
+                client,
+                policy: policy as EnhancedPolicy,
+              }
+            : null
+        }
         onEditDraft={handleEndorse}
       />
     </div>
