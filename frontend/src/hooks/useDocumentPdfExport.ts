@@ -2,18 +2,16 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { type DocumentJobEnqueueRequest, DocumentJobsService } from "@/client"
+import {
+  invalidateDocumentJobs,
+  openDocumentJobDownload,
+  pollDocumentJobUntilTerminal,
+} from "@/utils/documentJobs"
 
 export interface ExportPdfOptions {
   idempotencyKey?: string
   pollIntervalMs?: number
   maxPolls?: number
-}
-
-const DEFAULT_POLL_INTERVAL_MS = 1000
-const DEFAULT_MAX_POLLS = 30
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 export function useDocumentPdfExport() {
@@ -26,8 +24,6 @@ export function useDocumentPdfExport() {
       options?: ExportPdfOptions,
     ): Promise<void> => {
       const idempotencyKey = options?.idempotencyKey ?? crypto.randomUUID()
-      const pollIntervalMs = options?.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS
-      const maxPolls = options?.maxPolls ?? DEFAULT_MAX_POLLS
 
       setIsExporting(true)
       try {
@@ -42,35 +38,17 @@ export function useDocumentPdfExport() {
           throw new Error("Document job enqueue did not return a job ID")
         }
 
-        queryClient.invalidateQueries({ queryKey: ["document-jobs"] })
+        invalidateDocumentJobs(queryClient)
 
-        let current = enqueued
-        let polls = 0
-        while (
-          current.status !== "succeeded" &&
-          current.status !== "failed" &&
-          polls < maxPolls
-        ) {
-          await sleep(pollIntervalMs)
-          const pollRes = await DocumentJobsService.jobsReadDocumentJob({
-            path: { id: enqueued.id },
-          })
-          current = pollRes.data
-          polls += 1
-        }
+        await pollDocumentJobUntilTerminal({
+          jobId: enqueued.id,
+          initialJob: enqueued,
+          pollIntervalMs: options?.pollIntervalMs,
+          maxPolls: options?.maxPolls,
+          queryClient,
+        })
 
-        if (current.status === "failed") {
-          throw new Error(
-            current.error_message || "Document PDF generation failed",
-          )
-        }
-
-        if (current.status !== "succeeded") {
-          throw new Error("Document PDF generation timed out")
-        }
-
-        queryClient.invalidateQueries({ queryKey: ["document-jobs"] })
-        window.open(`/api/v1/document-jobs/${enqueued.id}/download`, "_blank")
+        openDocumentJobDownload(enqueued.id)
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to generate official PDF"
