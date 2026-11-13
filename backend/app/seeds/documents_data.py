@@ -252,7 +252,7 @@ def seed_documents(
         d13 = upsert_doc(
             entity_type=DocumentEntityType.CLAIM,
             entity_id=clm1.id,
-            document_type=DocumentType.RECEIPT,
+            document_type=DocumentType.PROOF_OF_PAYMENT,
             relative_path="claim/autoglass_settlement_receipt.pdf",
             filename="autoglass_replacement_receipt_voucher.pdf",
             extra_metadata={"amount": 35000, "vendor": "AutoGlass Kenya Ltd."},

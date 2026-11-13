@@ -15,8 +15,6 @@ from app.models import (
     PolicyCreateExtended,
     Product,
     ProductCreate,
-    Receipt,
-    ReceiptCreate,
 )
 from app.services.policy import policy_service
 from tests.utils.client import create_random_client
@@ -71,22 +69,6 @@ def create_random_policy(
         coverage_start=policy_in.coverage_start,
         coverage_end=policy_in.coverage_end,
     )
-
-
-def create_random_receipt(db: Session, client_id: uuid.UUID | None = None) -> Receipt:
-    if not client_id:
-        client = create_random_client(db)
-        client_id = client.id
-    receipt_number = random_lower_string()
-    receipt_in = ReceiptCreate(
-        receipt_number=receipt_number,
-        client_id=client_id,
-        date_received=date.today(),
-        amount=1000.0,
-        mode="Cash",
-        reference=random_lower_string(),
-    )
-    return crud.create_receipt(session=db, receipt_in=receipt_in)
 
 
 def create_random_invoice(db: Session, client_id: uuid.UUID | None = None) -> Invoice:
