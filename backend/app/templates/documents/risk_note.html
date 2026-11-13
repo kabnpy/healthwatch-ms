@@ -122,6 +122,7 @@
       font-weight: 600;
       padding: 0.125rem 0.5rem;
       border-radius: 0.25rem;
+      white-space: nowrap;
     }
     .badge-issued {
       background: #ecfdf5;
@@ -145,6 +146,7 @@
       font-weight: 800;
       font-size: 0.875rem;
       color: #0f172a;
+      white-space: nowrap;
     }
 
     /* Section Headings & Grids */
@@ -317,6 +319,7 @@
       font-variant-numeric: tabular-nums;
       font-weight: 600;
       color: #0f172a;
+      white-space: nowrap;
     }
     .financial-table tr.benefit-subrow td {
       color: #475569;
@@ -790,7 +793,7 @@
       <div class="signatory-details">
         <div>Issued by: <strong>HealthWatch Insurance Agency</strong></div>
         <div>Issue Date: <strong>{{ stamp_date or generated_at or "Pending Issue" }}</strong></div>
-        {% if risk_note.status != 'Draft' and include_digital_stamp %}
+        {% if risk_note.status in ['Issued', 'Active'] and include_digital_stamp %}
         <div class="certification-line">
           <span class="cert-badge">CERTIFIED OFFICIAL</span>
           <span class="cert-text">Digitally Authenticated — Agency Operations</span>

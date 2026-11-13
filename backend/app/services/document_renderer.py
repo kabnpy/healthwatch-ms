@@ -634,10 +634,14 @@ class DocumentRenderer:
                 "ledger_entries": snapshot.get("ledger_entries", []),
             }
 
+        has_unallocated_credits = Decimal(
+            str(statement_data.get("unallocated_credits") or "0.00")
+        ) > Decimal("0.00")
         rendered_html = cls.render_template_html(
             "statement.html",
             {
                 "statement": statement_data,
+                "has_unallocated_credits": has_unallocated_credits,
                 "generated_at": get_datetime_utc().strftime("%Y-%m-%d %H:%M:%S UTC"),
             },
         )

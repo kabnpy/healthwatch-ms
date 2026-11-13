@@ -2,7 +2,7 @@ import calendar
 import logging
 import uuid
 from datetime import date
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from pydantic import BaseModel
 from sqlmodel import Session, col, select
@@ -338,7 +338,7 @@ class ClientLedgerService:
         unallocated_credits = sum(
             (p.unallocated_amount for p in active_unallocated_payments),
             Decimal("0.00"),
-        ).quantize(Decimal("0.01"))
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         entries: list[ClientStatementEntry] = []
         for inv in invoices:
