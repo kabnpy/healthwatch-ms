@@ -31,7 +31,7 @@ from app.models import (
     RiskNotesPublic,
 )
 from app.schemas import BaseFinancialBreakdown, QuoteRequest, QuoteResponse
-from app.services.policy import PolicyService, policy_service
+from app.services.policy import policy_service
 from app.services.premium_calculation import RatingValidationError, calculate_premium
 
 router = APIRouter()
@@ -83,7 +83,9 @@ def get_policy_quote(
         raise HTTPException(status_code=404, detail="Product not found")
 
     try:
-        rating_inputs = PolicyService.normalize_rating_inputs(quote_in.risk_details)
+        from app.services.premium_calculation import normalize_rating_inputs
+
+        rating_inputs = normalize_rating_inputs(quote_in.risk_details)
         result = calculate_premium(
             inputs=rating_inputs,
             product=product,
@@ -131,7 +133,6 @@ def create_policy(
         coverage_end=policy_in.coverage_end,
         current_user_id=current_user.id,
     )
-    session.commit()
     session.refresh(policy)
     return prepare_policy_public(policy)
 
@@ -155,7 +156,6 @@ def create_endorsement(
         effective_date=endorsement_in.effective_date,
         current_user_id=current_user.id,
     )
-    session.commit()
     session.refresh(res)
     return res
 

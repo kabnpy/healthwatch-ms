@@ -506,3 +506,64 @@ def calculate_premium(
         inputs=inputs,
         commission_rate=effective_commission_rate,
     )
+
+
+def validate_risk_details(
+    class_of_insurance: str, risk_details: dict[str, Any]
+) -> dict[str, Any]:
+    """Validate class-specific risk details against their Pydantic schema when applicable."""
+    class_name = class_of_insurance.lower()
+    if "motor private" in class_name:
+        from app.schemas import MotorPrivateRiskDetails
+
+        return MotorPrivateRiskDetails(**risk_details).model_dump(mode="python")
+    if "domestic" in class_name and any(
+        k in risk_details
+        for k in (
+            "buildings_sum_insured",
+            "contents_sum_insured",
+            "all_risks_valuables",
+        )
+    ):
+        from app.schemas import DomesticPackageRiskDetails
+
+        return DomesticPackageRiskDetails(**risk_details).model_dump(mode="python")
+    if "wiba" in class_name and any(
+        k in risk_details
+        for k in ("clerical_payroll", "artisan_payroll", "hazardous_payroll")
+    ):
+        from app.schemas import WIBARiskDetails
+
+        return WIBARiskDetails(**risk_details).model_dump(mode="python")
+    if "fire" in class_name and any(
+        k in risk_details
+        for k in (
+            "buildings_sum_insured",
+            "plant_machinery_sum_insured",
+            "stock_sum_insured",
+        )
+    ):
+        from app.schemas import FirePerilsRiskDetails
+
+        return FirePerilsRiskDetails(**risk_details).model_dump(mode="python")
+    if "marine" in class_name and "cif_value" in risk_details:
+        from app.schemas import MarineCargoRiskDetails
+
+        return MarineCargoRiskDetails(**risk_details).model_dump(mode="python")
+    if "medical" in class_name and any(
+        k in risk_details for k in ("inpatient_limit", "principal_age")
+    ):
+        from app.schemas import MedicalRiskDetails
+
+        return MedicalRiskDetails(**risk_details).model_dump(mode="python")
+    return risk_details
+
+
+def normalize_rating_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+    """Flatten nested vehicle.sum_insured when top-level sum_insured is absent."""
+    normalized = dict(inputs)
+    if "sum_insured" not in normalized and isinstance(normalized.get("vehicle"), dict):
+        vehicle_sum = normalized["vehicle"].get("sum_insured")
+        if vehicle_sum is not None:
+            normalized["sum_insured"] = vehicle_sum
+    return normalized

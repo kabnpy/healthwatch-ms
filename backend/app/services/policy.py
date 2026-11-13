@@ -19,7 +19,12 @@ from app.models import (
     RiskNoteStatus,
     TransactionType,
 )
-from app.services.premium_calculation import calculate_premium
+from app.services.premium_calculation import (
+    PremiumCalculationResult,
+    calculate_premium,
+    normalize_rating_inputs,
+    validate_risk_details,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,67 +33,85 @@ def generate_risk_note_number() -> str:
     return f"RN-{uuid.uuid4().hex[:12].upper()}"
 
 
+def calculate_endorsement_prorata(
+    *,
+    old_result: PremiumCalculationResult,
+    new_result: PremiumCalculationResult,
+    coverage_start: date,
+    coverage_end: date,
+    effective_date: date,
+) -> dict[str, Any]:
+    """Compute pro-rata endorsement deltas and financial breakdown without DB access."""
+    total_days = max(1, (coverage_end - coverage_start).days)
+    remaining_days = max(0, (coverage_end - effective_date).days)
+    prorata_factor = Decimal(str(remaining_days)) / Decimal(str(total_days))
+
+    new_comm = new_result.commission_amount or Decimal("0.00")
+    old_comm = old_result.commission_amount or Decimal("0.00")
+
+    delta_net = (
+        (new_result.net_premium - old_result.net_premium) * prorata_factor
+    ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    delta_comm = ((new_comm - old_comm) * prorata_factor).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+
+    new_levies = {
+        "Training Levy": new_result.training_levy,
+        "PHCF": new_result.phcf,
+        "Stamp Duty": new_result.stamp_duty,
+    }
+    old_levies = {
+        "Training Levy": old_result.training_levy,
+        "PHCF": old_result.phcf,
+        "Stamp Duty": old_result.stamp_duty,
+    }
+    all_levy_keys = set(new_levies.keys()) | set(old_levies.keys())
+    delta_levies = {
+        k: (
+            (new_levies.get(k, Decimal("0")) - old_levies.get(k, Decimal("0")))
+            * prorata_factor
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        for k in all_levy_keys
+    }
+
+    delta_total = delta_net + sum(delta_levies.values())
+
+    new_state_breakdown = {
+        "type": "base",
+        "net_premium": new_result.net_premium,
+        "taxes": new_levies,
+        "commission_amount": new_comm,
+        "total_amount": new_result.total_premium,
+    }
+
+    financial_breakdown = PolicyService.to_numeric_dict(
+        {
+            "new_state": new_state_breakdown,
+            "delta": {
+                "net_premium": delta_net,
+                "total_amount": delta_total,
+                "commission_amount": delta_comm,
+                "levies": delta_levies,
+            },
+            "prorata_info": {
+                "remaining_days": remaining_days,
+                "total_days": total_days,
+                "factor": prorata_factor,
+            },
+        }
+    )
+
+    return {
+        "delta_net": delta_net,
+        "delta_comm": delta_comm,
+        "delta_levies": delta_levies,
+        "delta_total": delta_total,
+        "financial_breakdown": financial_breakdown,
+    }
+
+
 class PolicyService:
-    @staticmethod
-    def validate_risk_details(
-        class_of_insurance: str, risk_details: dict[str, Any]
-    ) -> dict[str, Any]:
-        class_name = class_of_insurance.lower()
-        if "motor private" in class_name:
-            from app.schemas import MotorPrivateRiskDetails
-
-            return MotorPrivateRiskDetails(**risk_details).model_dump(mode="python")
-        if "domestic" in class_name and any(
-            k in risk_details
-            for k in (
-                "buildings_sum_insured",
-                "contents_sum_insured",
-                "all_risks_valuables",
-            )
-        ):
-            from app.schemas import DomesticPackageRiskDetails
-
-            return DomesticPackageRiskDetails(**risk_details).model_dump(mode="python")
-        if "wiba" in class_name and any(
-            k in risk_details
-            for k in ("clerical_payroll", "artisan_payroll", "hazardous_payroll")
-        ):
-            from app.schemas import WIBARiskDetails
-
-            return WIBARiskDetails(**risk_details).model_dump(mode="python")
-        if "fire" in class_name and any(
-            k in risk_details
-            for k in (
-                "buildings_sum_insured",
-                "plant_machinery_sum_insured",
-                "stock_sum_insured",
-            )
-        ):
-            from app.schemas import FirePerilsRiskDetails
-
-            return FirePerilsRiskDetails(**risk_details).model_dump(mode="python")
-        if "marine" in class_name and "cif_value" in risk_details:
-            from app.schemas import MarineCargoRiskDetails
-
-            return MarineCargoRiskDetails(**risk_details).model_dump(mode="python")
-        if "medical" in class_name and any(
-            k in risk_details for k in ("inpatient_limit", "principal_age")
-        ):
-            from app.schemas import MedicalRiskDetails
-
-            return MedicalRiskDetails(**risk_details).model_dump(mode="python")
-        return risk_details
-
-    @staticmethod
-    def normalize_rating_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
-        """Flatten nested vehicle.sum_insured when top-level sum_insured is absent."""
-        normalized = dict(inputs)
-        if "sum_insured" not in normalized and isinstance(normalized.get("vehicle"), dict):
-            vehicle_sum = normalized["vehicle"].get("sum_insured")
-            if vehicle_sum is not None:
-                normalized["sum_insured"] = vehicle_sum
-        return normalized
-
     @staticmethod
     def to_numeric_dict(data: Any) -> Any:
         """Recursively convert Decimals to strings for JSON serialization."""
@@ -122,11 +145,11 @@ class PolicyService:
             raise HTTPException(status_code=404, detail="Product not found")
 
         try:
-            validated_risk = PolicyService.validate_risk_details(
+            validated_risk = validate_risk_details(
                 product.class_of_insurance, effective_snapshot
             )
             result = calculate_premium(
-                inputs=PolicyService.normalize_rating_inputs(validated_risk),
+                inputs=normalize_rating_inputs(validated_risk),
                 product=product,
                 session=session,
                 as_of_date=coverage_start,
@@ -223,10 +246,10 @@ class PolicyService:
             raise HTTPException(status_code=400, detail="No active risk note found")
 
         try:
-            validated_risk = PolicyService.validate_risk_details(
+            validated_risk = validate_risk_details(
                 policy.product.class_of_insurance, effective_snapshot
             )
-            new_inputs = PolicyService.normalize_rating_inputs(validated_risk)
+            new_inputs = normalize_rating_inputs(validated_risk)
             new_result = calculate_premium(
                 inputs=new_inputs,
                 product=policy.product,
@@ -234,7 +257,7 @@ class PolicyService:
                 as_of_date=effective_date,
                 manual_net_premium=new_inputs.get("manual_net_premium"),
             )
-            old_inputs = PolicyService.normalize_rating_inputs(current_rn.cover_snapshot)
+            old_inputs = normalize_rating_inputs(current_rn.cover_snapshot)
             old_result = calculate_premium(
                 inputs=old_inputs,
                 product=policy.product,
@@ -245,64 +268,12 @@ class PolicyService:
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-        total_days = max(1, (current_rn.coverage_end - current_rn.coverage_start).days)
-        remaining_days = max(0, (current_rn.coverage_end - effective_date).days)
-        prorata_factor = Decimal(str(remaining_days)) / Decimal(str(total_days))
-
-        new_comm = new_result.commission_amount or Decimal("0.00")
-        old_comm = old_result.commission_amount or Decimal("0.00")
-
-        delta_net = (
-            (new_result.net_premium - old_result.net_premium) * prorata_factor
-        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-        delta_comm = ((new_comm - old_comm) * prorata_factor).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
-
-        new_levies = {
-            "Training Levy": new_result.training_levy,
-            "PHCF": new_result.phcf,
-            "Stamp Duty": new_result.stamp_duty,
-        }
-        old_levies = {
-            "Training Levy": old_result.training_levy,
-            "PHCF": old_result.phcf,
-            "Stamp Duty": old_result.stamp_duty,
-        }
-        all_levy_keys = set(new_levies.keys()) | set(old_levies.keys())
-        delta_levies = {
-            k: (
-                (new_levies.get(k, Decimal("0")) - old_levies.get(k, Decimal("0")))
-                * prorata_factor
-            ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-            for k in all_levy_keys
-        }
-
-        delta_total = delta_net + sum(delta_levies.values())
-
-        new_state_breakdown = {
-            "type": "base",
-            "net_premium": new_result.net_premium,
-            "taxes": new_levies,
-            "commission_amount": new_comm,
-            "total_amount": new_result.total_premium,
-        }
-
-        financial_breakdown = PolicyService.to_numeric_dict(
-            {
-                "new_state": new_state_breakdown,
-                "delta": {
-                    "net_premium": delta_net,
-                    "total_amount": delta_total,
-                    "commission_amount": delta_comm,
-                    "levies": delta_levies,
-                },
-                "prorata_info": {
-                    "remaining_days": remaining_days,
-                    "total_days": total_days,
-                    "factor": prorata_factor,
-                },
-            }
+        prorata = calculate_endorsement_prorata(
+            old_result=old_result,
+            new_result=new_result,
+            coverage_start=current_rn.coverage_start,
+            coverage_end=current_rn.coverage_end,
+            effective_date=effective_date,
         )
 
         risk_note_in = RiskNoteCreate(
@@ -313,10 +284,10 @@ class PolicyService:
             effective_date=effective_date,
             coverage_start=current_rn.coverage_start,
             coverage_end=current_rn.coverage_end,
-            net_premium=delta_net,
-            financial_breakdown=financial_breakdown,
-            commission_amount=delta_comm,
-            total_amount=delta_total,
+            net_premium=prorata["delta_net"],
+            financial_breakdown=prorata["financial_breakdown"],
+            commission_amount=prorata["delta_comm"],
+            total_amount=prorata["delta_total"],
             cover_snapshot=PolicyService.to_numeric_dict(validated_risk),
             special_clauses=[change_description],
             created_by_id=current_user_id,
