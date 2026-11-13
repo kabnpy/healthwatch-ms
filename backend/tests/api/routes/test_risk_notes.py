@@ -84,3 +84,29 @@ def test_create_risk_note_clause_revision(
     )
     assert original_resp.status_code == 200
     assert original_resp.json()["status"] == RiskNoteStatus.REPLACED.value
+
+
+def test_retired_risk_note_mutation_routes_return_405(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    original = _create_issued_risk_note(db)
+
+    post_resp = client.post(
+        f"{settings.API_V1_STR}/risk-notes/",
+        headers=superuser_token_headers,
+        json={},
+    )
+    assert post_resp.status_code == 405
+
+    put_resp = client.put(
+        f"{settings.API_V1_STR}/risk-notes/{original.id}",
+        headers=superuser_token_headers,
+        json={},
+    )
+    assert put_resp.status_code == 405
+
+    delete_resp = client.delete(
+        f"{settings.API_V1_STR}/risk-notes/{original.id}",
+        headers=superuser_token_headers,
+    )
+    assert delete_resp.status_code == 405

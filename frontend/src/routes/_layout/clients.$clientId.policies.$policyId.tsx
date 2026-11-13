@@ -100,14 +100,6 @@ function PolicyDashboardContent({
     [],
   )
 
-  const handlePopulateDraft = () => {
-    if (latestRiskNote?.id) {
-      setTransactionType(latestRiskNote.transaction_type)
-      setEditingRiskNoteId(latestRiskNote.id)
-      setRiskNoteFormOpen(true)
-    }
-  }
-
   const handleRenew = () => {
     setTransactionType("Renewal")
     setEditingRiskNoteId(undefined)
@@ -401,7 +393,7 @@ function PolicyDashboardContent({
                     <Button
                       size="sm"
                       className="bg-amber-600 hover:bg-amber-700 text-white gap-2 font-medium cursor-pointer"
-                      onClick={handlePopulateDraft}
+                      onClick={handleEndorse}
                     >
                       Populate & Issue
                     </Button>
@@ -506,7 +498,7 @@ function PolicyDashboardContent({
         riskNote={latestRiskNote as EnhancedRiskNote}
         client={client}
         policy={policy as EnhancedPolicy}
-        onEditDraft={handlePopulateDraft}
+        onEditDraft={handleEndorse}
       />
     </div>
   )

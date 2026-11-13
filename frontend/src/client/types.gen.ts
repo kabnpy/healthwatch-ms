@@ -3164,86 +3164,6 @@ export type ReversalCreate = {
 };
 
 /**
- * RiskNoteCreate
- */
-export type RiskNoteCreate = {
-    /**
-     * Created At
-     */
-    created_at?: string;
-    /**
-     * Updated At
-     */
-    updated_at?: string;
-    /**
-     * Deleted At
-     */
-    deleted_at?: string | null;
-    /**
-     * Deleted By Id
-     */
-    deleted_by_id?: string | null;
-    /**
-     * Policy Id
-     */
-    policy_id: string;
-    /**
-     * Risk Note Number
-     */
-    risk_note_number?: string | null;
-    transaction_type: TransactionType;
-    status?: RiskNoteStatus;
-    /**
-     * Previous Risk Note Id
-     */
-    previous_risk_note_id?: string | null;
-    /**
-     * Created By Id
-     */
-    created_by_id?: string | null;
-    /**
-     * Effective Date
-     */
-    effective_date?: string;
-    /**
-     * Coverage Start
-     */
-    coverage_start: string;
-    /**
-     * Coverage End
-     */
-    coverage_end: string;
-    /**
-     * Net Premium
-     */
-    net_premium?: number | string;
-    /**
-     * Commission Amount
-     */
-    commission_amount?: number | string;
-    /**
-     * Total Amount
-     */
-    total_amount?: number | string;
-    /**
-     * Cover Snapshot
-     */
-    cover_snapshot?: {
-        [key: string]: unknown;
-    };
-    /**
-     * Financial Breakdown
-     */
-    financial_breakdown?: {
-        [key: string]: unknown;
-    };
-    /**
-     * Special Clauses
-     */
-    special_clauses?: Array<string>;
-};
-
-/**
  * RiskNotePublic
  */
 export type RiskNotePublic = {
@@ -3352,62 +3272,6 @@ export type RiskNoteRevisionCreate = {
  * RiskNoteStatus
  */
 export type RiskNoteStatus = 'Draft' | 'Issued' | 'Replaced' | 'Cancelled' | 'Issued';
-
-/**
- * RiskNoteUpdate
- */
-export type RiskNoteUpdate = {
-    transaction_type?: TransactionType | null;
-    /**
-     * Risk Note Number
-     */
-    risk_note_number?: string | null;
-    status?: RiskNoteStatus | null;
-    /**
-     * Previous Risk Note Id
-     */
-    previous_risk_note_id?: string | null;
-    /**
-     * Effective Date
-     */
-    effective_date?: string | null;
-    /**
-     * Coverage Start
-     */
-    coverage_start?: string | null;
-    /**
-     * Coverage End
-     */
-    coverage_end?: string | null;
-    /**
-     * Net Premium
-     */
-    net_premium?: number | string | null;
-    /**
-     * Financial Breakdown
-     */
-    financial_breakdown?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Commission Amount
-     */
-    commission_amount?: number | string | null;
-    /**
-     * Total Amount
-     */
-    total_amount?: number | string | null;
-    /**
-     * Special Clauses
-     */
-    special_clauses?: Array<string> | null;
-    /**
-     * Cover Snapshot
-     */
-    cover_snapshot?: {
-        [key: string]: unknown;
-    } | null;
-};
 
 /**
  * RiskNotesPublic
@@ -5395,61 +5259,6 @@ export type riskNotesReadRiskNotesResponses = {
 
 export type riskNotesReadRiskNotesResponse = riskNotesReadRiskNotesResponses[keyof riskNotesReadRiskNotesResponses];
 
-export type riskNotesCreateRiskNoteData = {
-    body: RiskNoteCreate;
-    path?: never;
-    query?: never;
-    url: '/api/v1/risk-notes/';
-};
-
-export type riskNotesCreateRiskNoteErrors = {
-    /**
-     * Validation Error
-     */
-    422: HTTPValidationError;
-};
-
-export type riskNotesCreateRiskNoteError = riskNotesCreateRiskNoteErrors[keyof riskNotesCreateRiskNoteErrors];
-
-export type riskNotesCreateRiskNoteResponses = {
-    /**
-     * Successful Response
-     */
-    200: RiskNotePublic;
-};
-
-export type riskNotesCreateRiskNoteResponse = riskNotesCreateRiskNoteResponses[keyof riskNotesCreateRiskNoteResponses];
-
-export type riskNotesDeleteRiskNoteData = {
-    body?: never;
-    path: {
-        /**
-         * Id
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/risk-notes/{id}';
-};
-
-export type riskNotesDeleteRiskNoteErrors = {
-    /**
-     * Validation Error
-     */
-    422: HTTPValidationError;
-};
-
-export type riskNotesDeleteRiskNoteError = riskNotesDeleteRiskNoteErrors[keyof riskNotesDeleteRiskNoteErrors];
-
-export type riskNotesDeleteRiskNoteResponses = {
-    /**
-     * Successful Response
-     */
-    200: Message;
-};
-
-export type riskNotesDeleteRiskNoteResponse = riskNotesDeleteRiskNoteResponses[keyof riskNotesDeleteRiskNoteResponses];
-
 export type riskNotesReadRiskNoteData = {
     body?: never;
     path: {
@@ -5479,36 +5288,6 @@ export type riskNotesReadRiskNoteResponses = {
 };
 
 export type riskNotesReadRiskNoteResponse = riskNotesReadRiskNoteResponses[keyof riskNotesReadRiskNoteResponses];
-
-export type riskNotesUpdateRiskNoteData = {
-    body: RiskNoteUpdate;
-    path: {
-        /**
-         * Id
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/risk-notes/{id}';
-};
-
-export type riskNotesUpdateRiskNoteErrors = {
-    /**
-     * Validation Error
-     */
-    422: HTTPValidationError;
-};
-
-export type riskNotesUpdateRiskNoteError = riskNotesUpdateRiskNoteErrors[keyof riskNotesUpdateRiskNoteErrors];
-
-export type riskNotesUpdateRiskNoteResponses = {
-    /**
-     * Successful Response
-     */
-    200: RiskNotePublic;
-};
-
-export type riskNotesUpdateRiskNoteResponse = riskNotesUpdateRiskNoteResponses[keyof riskNotesUpdateRiskNoteResponses];
 
 export type riskNotesCreateRiskNoteRevisionData = {
     body: RiskNoteRevisionCreate;

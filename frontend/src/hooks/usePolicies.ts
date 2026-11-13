@@ -2,15 +2,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   ActivitiesService,
   type ActivityCreate,
+  type EndorsementCreate,
   PoliciesService,
   type PolicyCreateExtended,
   type PolicyUpdate,
   ProductsService,
   type QuoteRequest,
-  type RiskNoteCreate,
   type RiskNoteRevisionCreate,
   RiskNotesService,
-  type RiskNoteUpdate,
 } from "../client"
 
 // POLICIES
@@ -95,27 +94,25 @@ export const useRiskNote = (id: string) => {
   })
 }
 
-export const useCreateRiskNote = () => {
+export const useCreateEndorsement = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (data: RiskNoteCreate) =>
-      (await RiskNotesService.notesCreateRiskNote({ body: data })).data,
+    mutationFn: async ({
+      policyId,
+      data,
+    }: {
+      policyId: string
+      data: EndorsementCreate
+    }) =>
+      (
+        await PoliciesService.createEndorsement({
+          path: { id: policyId },
+          body: data,
+        })
+      ).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["risk-notes"] })
       queryClient.invalidateQueries({ queryKey: ["policies"] })
-    },
-  })
-}
-
-export const useUpdateRiskNote = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: RiskNoteUpdate }) =>
-      (await RiskNotesService.notesUpdateRiskNote({ path: { id }, body: data }))
-        .data,
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ["risk-notes"] })
-      queryClient.invalidateQueries({ queryKey: ["risk-notes", id] })
     },
   })
 }

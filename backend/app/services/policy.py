@@ -193,7 +193,7 @@ class PolicyService:
             created_by_id=current_user_id,
         )
 
-        PolicyService.create_risk_note(session=session, risk_note_in=risk_note_in)
+        PolicyService._create_risk_note(session=session, risk_note_in=risk_note_in)
 
         calc = PremiumCalculation(
             policy_id=policy.id,
@@ -296,7 +296,7 @@ class PolicyService:
         current_rn.status = RiskNoteStatus.REPLACED
         session.add(current_rn)
 
-        endorsement_rn = PolicyService.create_risk_note(
+        endorsement_rn = PolicyService._create_risk_note(
             session=session, risk_note_in=risk_note_in
         )
 
@@ -320,7 +320,7 @@ class PolicyService:
         return endorsement_rn
 
     @staticmethod
-    def create_risk_note(
+    def _create_risk_note(
         *,
         session: Session,
         risk_note_in: RiskNoteCreate,

@@ -3,7 +3,7 @@ import { Calculator } from "lucide-react"
 import { useEffect, useState } from "react"
 import { type SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
-import type { ApiError, RiskNoteStatus } from "@/client"
+import type { ApiError } from "@/client"
 import { AdvisoryRatingCalculator } from "@/components/Insurance/AdvisoryRatingCalculator"
 import { Button } from "@/components/ui/button"
 import {
@@ -25,10 +25,9 @@ import {
 } from "@/components/ui/select"
 import useCustomToast from "@/hooks/useCustomToast"
 import {
-  useCreateRiskNote,
+  useCreateEndorsement,
   usePolicy,
   useRiskNote,
-  useUpdateRiskNote,
 } from "@/hooks/usePolicies"
 import { handleError } from "@/utils"
 import type { AdvisoryRatingResult } from "@/utils/ratingCalculator"
@@ -53,8 +52,7 @@ export const RiskNoteForm = ({
   const { data: existingRiskNote, isLoading: isLoadingRiskNote } = useRiskNote(
     riskNoteId || "",
   )
-  const createRiskNote = useCreateRiskNote()
-  const updateRiskNote = useUpdateRiskNote()
+  const createEndorsement = useCreateEndorsement()
   const [ratingCalcOpen, setRatingCalcOpen] = useState(false)
 
   const formSchema = z.object({
@@ -148,62 +146,25 @@ export const RiskNoteForm = ({
   }
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
-    const isMedical =
-      policy?.product?.class_of_insurance?.toLowerCase().includes("medical") ||
-      false
-    const stampDuty = isMedical ? 0 : 40.0
-    const trainingLevy = Math.round(data.net_premium * 0.002 * 100) / 100
-    const phcf = Math.round(data.net_premium * 0.0025 * 100) / 100
-    const total_amount =
-      Math.round((data.net_premium + trainingLevy + phcf + stampDuty) * 100) /
-      100
-
-    const payload = {
-      policy_id: policyId,
-      transaction_type: data.transaction_type as any,
-      coverage_start: data.coverage_start,
-      coverage_end: data.coverage_end,
-      net_premium: data.net_premium,
-      commission_amount: data.commission_amount,
-      status: data.status as RiskNoteStatus,
-      cover_snapshot: data.details,
-      financial_breakdown: {
-        taxes: {
-          training_levy: trainingLevy,
-          phcf,
-          stamp_duty: stampDuty,
+    createEndorsement.mutate(
+      {
+        policyId,
+        data: {
+          updated_risk_details: data.details,
+          change_description: `${data.transaction_type} transaction`,
+          effective_date: data.coverage_start,
         },
-        net_premium: data.net_premium,
-        total_amount,
-        commission_amount: data.commission_amount,
       },
-      total_amount,
-    }
-
-    if (riskNoteId) {
-      updateRiskNote.mutate(
-        { id: riskNoteId, data: payload as any },
-        {
-          onSuccess: () => {
-            showSuccessToast("Transaction record updated successfully")
-            onSuccess?.()
-          },
-          onError: (err: Error) => {
-            handleError.call(showErrorToast, err as ApiError)
-          },
-        },
-      )
-    } else {
-      createRiskNote.mutate(payload as any, {
+      {
         onSuccess: () => {
-          showSuccessToast("New transaction note issued successfully")
+          showSuccessToast("Endorsement risk note issued successfully")
           onSuccess?.()
         },
         onError: (err: Error) => {
           handleError.call(showErrorToast, err as ApiError)
         },
-      })
-    }
+      },
+    )
   }
 
   if (isLoadingPolicy || (riskNoteId && isLoadingRiskNote)) {
@@ -216,7 +177,7 @@ export const RiskNoteForm = ({
 
   const productAny = policy?.product as any
   const productDetails = (productAny?.product_details as any[]) || []
-  const isPending = createRiskNote.isPending || updateRiskNote.isPending
+  const isPending = createEndorsement.isPending
 
   return (
     <>

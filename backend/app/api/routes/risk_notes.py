@@ -8,21 +8,13 @@ from app.crud import (
     count_risk_notes,
     get_risk_notes,
 )
-from app.crud import (
-    delete_risk_note as crud_delete_risk_note,
-)
-from app.crud import (
-    update_risk_note as crud_update_risk_note,
-)
 from app.models import (
-    Message,
     RiskNote,
     RiskNoteCreate,
     RiskNotePublic,
     RiskNoteRevisionCreate,
     RiskNotesPublic,
     RiskNoteStatus,
-    RiskNoteUpdate,
 )
 from app.services.policy import policy_service
 
@@ -72,40 +64,6 @@ def read_risk_note(
     return risk_note
 
 
-@router.post("/", response_model=RiskNotePublic)
-def create_risk_note(
-    *, session: SessionDep, _current_user: StaffUser, risk_note_in: RiskNoteCreate
-) -> Any:
-    """
-    Create new risk note.
-    """
-    risk_note = policy_service.create_risk_note_with_invoice(
-        session=session, risk_note_in=risk_note_in, created_by_id=_current_user.id
-    )
-    return risk_note
-
-
-@router.put("/{id}", response_model=RiskNotePublic)
-def update_risk_note(
-    *,
-    session: SessionDep,
-    _current_user: StaffUser,
-    id: uuid.UUID,
-    risk_note_in: RiskNoteUpdate,
-) -> Any:
-    """
-    Update a risk note.
-    """
-    risk_note = session.get(RiskNote, id)
-    if not risk_note:
-        raise HTTPException(status_code=404, detail="Risk note not found")
-
-    risk_note = crud_update_risk_note(
-        session=session, db_risk_note=risk_note, risk_note_in=risk_note_in
-    )
-    return risk_note
-
-
 @router.post("/{id}/revisions", response_model=RiskNotePublic)
 def create_risk_note_revision(
     *,
@@ -150,20 +108,6 @@ def create_risk_note_revision(
     current_rn.status = RiskNoteStatus.REPLACED
     session.add(current_rn)
 
-    return policy_service.create_risk_note(
+    return policy_service._create_risk_note(
         session=session, risk_note_in=risk_note_in
     )
-
-
-@router.delete("/{id}", response_model=Message)
-def delete_risk_note(
-    session: SessionDep, _current_user: StaffUser, id: uuid.UUID
-) -> Any:
-    """
-    Delete a risk note.
-    """
-    risk_note = session.get(RiskNote, id)
-    if not risk_note:
-        raise HTTPException(status_code=404, detail="Risk note not found")
-    crud_delete_risk_note(session=session, db_risk_note=risk_note)
-    return Message(message="Risk note deleted successfully")

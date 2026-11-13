@@ -15,10 +15,9 @@ const mockReadPolicy = vi.fn()
 const mockCreatePolicy = vi.fn()
 const mockUpdatePolicy = vi.fn()
 const mockGetPolicyQuote = vi.fn()
+const mockCreateEndorsement = vi.fn()
 const mockReadRiskNotes = vi.fn()
 const mockReadRiskNote = vi.fn()
-const mockCreateRiskNote = vi.fn()
-const mockUpdateRiskNote = vi.fn()
 const mockReadProducts = vi.fn()
 const mockReadActivities = vi.fn()
 const mockCreateActivity = vi.fn()
@@ -30,12 +29,11 @@ vi.mock("../client", () => ({
     createPolicy: (...args: unknown[]) => mockCreatePolicy(...args),
     updatePolicy: (...args: unknown[]) => mockUpdatePolicy(...args),
     getPolicyQuote: (...args: unknown[]) => mockGetPolicyQuote(...args),
+    createEndorsement: (...args: unknown[]) => mockCreateEndorsement(...args),
   },
   RiskNotesService: {
     notesReadRiskNotes: (...args: unknown[]) => mockReadRiskNotes(...args),
     notesReadRiskNote: (...args: unknown[]) => mockReadRiskNote(...args),
-    notesCreateRiskNote: (...args: unknown[]) => mockCreateRiskNote(...args),
-    notesUpdateRiskNote: (...args: unknown[]) => mockUpdateRiskNote(...args),
   },
   ProductsService: {
     readProducts: (...args: unknown[]) => mockReadProducts(...args),
@@ -48,7 +46,7 @@ vi.mock("../client", () => ({
 
 import {
   useCreateActivity,
-  useCreateRiskNote,
+  useCreateEndorsement,
   usePolicies,
   usePolicy,
   useProducts,
@@ -105,9 +103,33 @@ describe("usePolicies domain hooks", () => {
     ])
     await expect(listOpts.queryFn()).resolves.toEqual({ data: [], count: 0 })
 
-    const createOpts = useCreateRiskNote() as unknown as {
+    mockCreateEndorsement.mockResolvedValueOnce({ data: { id: "rn2" } })
+    const createOpts = useCreateEndorsement() as unknown as {
+      mutationFn: (vars: {
+        policyId: string
+        data: {
+          updated_risk_details: Record<string, unknown>
+          change_description: string
+        }
+      }) => Promise<unknown>
       onSuccess: () => void
     }
+    await expect(
+      createOpts.mutationFn({
+        policyId: "p1",
+        data: {
+          updated_risk_details: { sum_insured: 1200000 },
+          change_description: "Increase sum insured",
+        },
+      }),
+    ).resolves.toEqual({ id: "rn2" })
+    expect(mockCreateEndorsement).toHaveBeenCalledWith({
+      path: { id: "p1" },
+      body: {
+        updated_risk_details: { sum_insured: 1200000 },
+        change_description: "Increase sum insured",
+      },
+    })
     createOpts.onSuccess()
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
       queryKey: ["risk-notes"],
