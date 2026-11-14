@@ -3,6 +3,9 @@ import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 let mockPathname = "/catalog/insurers"
+let mockMatches: Array<{ routeId: string }> = [
+  { routeId: "/_layout/catalog/insurers/" },
+]
 
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (opts: { component: React.ComponentType }) => ({
@@ -13,6 +16,7 @@ vi.mock("@tanstack/react-router", () => ({
   ),
   Outlet: () => <div data-testid="catalog-outlet">Outlet Content</div>,
   useLocation: () => ({ pathname: mockPathname }),
+  useMatches: () => mockMatches,
 }))
 
 vi.mock("@/components/Insurers/AddInsurer", () => ({
@@ -34,10 +38,12 @@ describe("CatalogLayout", () => {
 
   beforeEach(() => {
     mockPathname = "/catalog/insurers"
+    mockMatches = [{ routeId: "/_layout/catalog/insurers/" }]
   })
 
   it("renders Catalog header, tabs, and Add Insurer on /catalog/insurers", () => {
     mockPathname = "/catalog/insurers"
+    mockMatches = [{ routeId: "/_layout/catalog/insurers/" }]
     render(<CatalogLayout />)
 
     expect(screen.getByText("Catalog")).toBeTruthy()
@@ -48,6 +54,7 @@ describe("CatalogLayout", () => {
 
   it("suppresses Catalog header, tabs, and Add button on /catalog/insurers/$insurerId", () => {
     mockPathname = "/catalog/insurers/insurer-123"
+    mockMatches = [{ routeId: "/_layout/catalog/insurers/$insurerId" }]
     render(<CatalogLayout />)
 
     expect(screen.queryByText("Catalog")).toBeNull()
@@ -58,6 +65,7 @@ describe("CatalogLayout", () => {
 
   it("suppresses Catalog header, tabs, and Add button on /catalog/products/$productId", () => {
     mockPathname = "/catalog/products/product-456"
+    mockMatches = [{ routeId: "/_layout/catalog/products/$productId" }]
     render(<CatalogLayout />)
 
     expect(screen.queryByText("Catalog")).toBeNull()

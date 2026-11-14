@@ -140,6 +140,25 @@ test.describe("Catalog (/catalog)", () => {
     await expect(
       page.getByRole("columnheader", { name: "Insurer", exact: true }),
     ).toHaveCount(0)
+
+    // Zero horizontal overflow at 1440x900 desktop
+    const insurerDesktopOverflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    )
+    expect(insurerDesktopOverflow).toBe(true)
+
+    // Zero horizontal overflow at 390x844 mobile
+    await page.setViewportSize({ width: 390, height: 844 })
+    const insurerMobileOverflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    )
+    expect(insurerMobileOverflow).toBe(true)
+  })
+
   test("Product Detail uses bg-card in dark mode, displays Insurer name, single Save CTA, and has zero overflow", async ({
     page,
   }) => {
