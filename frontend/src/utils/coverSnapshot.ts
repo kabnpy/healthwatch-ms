@@ -123,28 +123,56 @@ export function buildCoverSnapshot(params: {
   }
 }
 
+export interface CoverSnapshotVehicle {
+  reg_no?: string
+  "Reg. No"?: string
+  registration_number?: string
+  registration?: string
+  make?: string
+  model?: string
+  sum_insured?: number | string
+  [key: string]: unknown
+}
+
+export interface CoverSnapshotProperty {
+  location?: string
+  sum_insured?: number | string
+  [key: string]: unknown
+}
+
+export interface CoverSnapshot {
+  vehicle?: CoverSnapshotVehicle
+  vehicle_details?: CoverSnapshotVehicle
+  property?: CoverSnapshotProperty
+  extensions?: Record<string, unknown>
+  [key: string]: unknown
+}
+
 export interface CoverSummary {
   sumInsured: number
   vehicleReg: string | undefined
   makeModel: string | undefined
+  propertyLocation: string | undefined
   extensions: string[]
 }
 
 export function extractCoverSummary(
-  coverSnapshot: Record<string, unknown> | null | undefined,
+  coverSnapshot: CoverSnapshot | Record<string, unknown> | null | undefined,
 ): CoverSummary {
   if (!coverSnapshot || typeof coverSnapshot !== "object") {
     return {
       sumInsured: 0,
       vehicleReg: undefined,
       makeModel: undefined,
+      propertyLocation: undefined,
       extensions: [],
     }
   }
 
-  const vehicle = (coverSnapshot.vehicle ??
-    coverSnapshot.vehicle_details ??
-    {}) as Record<string, unknown>
+  const snapshot = coverSnapshot as CoverSnapshot
+  const vehicle = (snapshot.vehicle ??
+    snapshot.vehicle_details ??
+    {}) as CoverSnapshotVehicle
 
   const sumInsured =
     vehicle.sum_insured !== undefined
@@ -164,7 +192,13 @@ export function extractCoverSummary(
   const makeModelStr = [make, model].filter(Boolean).join(" ")
   const makeModel = makeModelStr !== "" ? makeModelStr : undefined
 
-  const extObj = (coverSnapshot.extensions ?? {}) as Record<string, unknown>
+  const rawLocation = snapshot.property?.location
+  const propertyLocation =
+    typeof rawLocation === "string" && rawLocation.trim() !== ""
+      ? rawLocation.trim()
+      : undefined
+
+  const extObj = (snapshot.extensions ?? {}) as Record<string, unknown>
   const extensions = Object.entries(extObj)
     .filter(([, v]) => Boolean(v))
     .map(([k]) => k)
@@ -173,6 +207,7 @@ export function extractCoverSummary(
     sumInsured,
     vehicleReg,
     makeModel,
+    propertyLocation,
     extensions,
   }
 }
