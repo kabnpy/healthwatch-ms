@@ -49,7 +49,10 @@ function CatalogLayout() {
       </div>
 
       <Tabs value={activeTab} className="w-full">
-        <TabsList>
+        <TabsList
+          variant="line"
+          className="w-full max-w-full overflow-x-auto justify-start border-b"
+        >
           <TabsTrigger
             value="insurers"
             render={<Link to="/catalog/insurers">Insurers</Link>}

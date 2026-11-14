@@ -648,7 +648,10 @@ function RenewalsDeskPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="h-10 bg-muted/60 p-1 w-full sm:w-fit max-w-full overflow-x-auto justify-start">
+        <TabsList
+          variant="line"
+          className="w-full max-w-full overflow-x-auto justify-start border-b"
+        >
           <TabsTrigger value="expiring_30" className="gap-2 px-3 py-1.5 text-sm">
             Expiring in ≤30 Days
             <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">
