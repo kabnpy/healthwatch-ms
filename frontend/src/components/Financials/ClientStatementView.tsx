@@ -450,9 +450,7 @@ export function ClientStatementView({
                           {isDebit ? formatCurrency(item.debit) : "—"}
                         </TableCell>
                         <TableCell className="font-mono tabular-nums text-right text-emerald-600 dark:text-emerald-400">
-                          {creditNum > 0
-                            ? formatCurrency(item.credit)
-                            : "—"}
+                          {creditNum > 0 ? formatCurrency(item.credit) : "—"}
                         </TableCell>
                         <TableCell className="font-mono tabular-nums text-right font-bold text-foreground">
                           {formatCurrency(item.running_balance ?? "0.00")}

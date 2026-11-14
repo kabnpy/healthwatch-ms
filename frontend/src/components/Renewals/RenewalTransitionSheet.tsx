@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router"
-import { extractCoverSummary } from "@/utils/coverSnapshot"
 import {
   AlertCircle,
   ArrowRight,
@@ -51,6 +50,7 @@ import {
 } from "@/hooks/useRenewals"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/utils"
+import { extractCoverSummary } from "@/utils/coverSnapshot"
 
 interface RenewalTransitionSheetProps {
   isOpen: boolean

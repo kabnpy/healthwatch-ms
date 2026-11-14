@@ -75,6 +75,9 @@ export function DocumentJobStatusTray() {
           <Button
             variant="ghost"
             size="icon"
+            aria-label={
+              isExpanded ? "Collapse document jobs" : "Expand document jobs"
+            }
             className="size-6 text-muted-foreground hover:text-foreground"
             onClick={() => setIsExpanded(!isExpanded)}
           >
@@ -88,6 +91,7 @@ export function DocumentJobStatusTray() {
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Dismiss document jobs"
               className="size-6 text-muted-foreground hover:text-foreground"
               onClick={() => setIsDismissed(true)}
             >

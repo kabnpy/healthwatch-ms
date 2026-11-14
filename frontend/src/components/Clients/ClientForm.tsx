@@ -266,6 +266,7 @@ export const ClientForm = ({
                 type="button"
                 variant="ghost"
                 size="icon"
+                aria-label="Remove contact"
                 className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-destructive"
                 onClick={() => remove(index)}
               >

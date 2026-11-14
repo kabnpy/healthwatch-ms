@@ -146,6 +146,7 @@ export const RiskNoteTable = ({
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label={`Remove ${k}`}
                         className="h-4 w-4 opacity-0 group-hover/row:opacity-100 text-destructive"
                         onClick={() => handleRemoveRow(section.name, k)}
                       >

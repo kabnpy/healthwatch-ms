@@ -127,6 +127,7 @@ export function FileUploadZone({
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Remove selected file"
               className="hover:bg-destructive/10 hover:text-destructive transition-colors"
               onClick={clearFile}
             >

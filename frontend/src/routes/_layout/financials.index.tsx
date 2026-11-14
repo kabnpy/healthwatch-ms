@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 import {
   AlertCircle,
   CheckCircle2,
@@ -9,15 +9,20 @@ import {
 } from "lucide-react"
 import { useMemo, useState } from "react"
 import type { PaymentRecordPublic } from "@/client"
+import { DataTable } from "@/components/Common/DataTable"
 import { AllocatePaymentDialog } from "@/components/Financials/AllocatePaymentDialog"
 import { ClientStatementView } from "@/components/Financials/ClientStatementView"
+import {
+  getAllocationColumns,
+  getInvoiceColumns,
+  getPaymentColumns,
+} from "@/components/Financials/financialsColumns"
 import {
   LedgerReversalDialog,
   type LedgerReversalTarget,
 } from "@/components/Financials/LedgerReversalDialog"
 import { RecordPaymentModal } from "@/components/Financials/RecordPaymentModal"
 import PendingItems from "@/components/Pending/PendingItems"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -300,118 +305,16 @@ function FinancialsHub() {
       {/* TAB 1: Payment Records */}
       {activeTab === "payments" && (
         <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-muted/40 text-muted-foreground font-semibold uppercase tracking-wider border-b">
-                  <tr>
-                    <th className="p-3.5">Payment Date</th>
-                    <th className="p-3.5">Reference / Slip</th>
-                    <th className="p-3.5">Client Portfolio</th>
-                    <th className="p-3.5">Channel</th>
-                    <th className="p-3.5 text-right">Gross Amount</th>
-                    <th className="p-3.5 text-right">Unallocated</th>
-                    <th className="p-3.5 text-center">Status</th>
-                    <th className="p-3.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filteredPayments.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={8}
-                        className="p-8 text-center text-muted-foreground"
-                      >
-                        No payment records matching the criteria.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredPayments.map((p) => {
-                      const clientName = clientMap.get(p.client_id) || "Client"
-                      const unalloc = Number(p.unallocated_amount || 0)
-                      const isReversed = p.status?.toLowerCase() === "reversed"
-
-                      return (
-                        <tr
-                          key={p.id}
-                          className="hover:bg-muted/20 transition-colors"
-                        >
-                          <td className="p-3.5 font-mono text-muted-foreground">
-                            {p.payment_date}
-                          </td>
-                          <td className="p-3.5 font-mono font-bold">
-                            {p.reference_number || "NO-REF"}
-                          </td>
-                          <td className="p-3.5 font-medium">{clientName}</td>
-                          <td className="p-3.5">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-muted border">
-                              {p.payment_method}
-                            </span>
-                          </td>
-                          <td className="p-3.5 text-right font-mono tabular-nums font-bold text-foreground">
-                            KES {Number(p.amount).toLocaleString()}
-                          </td>
-                          <td className="p-3.5 text-right font-mono tabular-nums">
-                            {unalloc > 0 ? (
-                              <span className="text-amber-600 dark:text-amber-400 font-bold">
-                                KES {unalloc.toLocaleString()}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground">
-                                KES 0.00
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3.5 text-center">
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] font-bold px-1.5 py-0",
-                                isReversed
-                                  ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
-                                  : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-                              )}
-                            >
-                              {p.status || "active"}
-                            </Badge>
-                          </td>
-                          <td className="p-3.5 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {!isReversed && unalloc > 0 && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleOpenAllocate(p)}
-                                  className="h-7 text-[11px] px-2 cursor-pointer"
-                                >
-                                  Allocate
-                                </Button>
-                              )}
-                              {!isReversed && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() =>
-                                    setReversalTarget({
-                                      type: "payment",
-                                      id: p.id,
-                                      title: `Payment ${p.reference_number || p.id.substring(0, 8)}`,
-                                    })
-                                  }
-                                  className="h-7 text-[11px] px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer"
-                                >
-                                  Reverse
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+          <CardContent className="p-4">
+            <DataTable
+              columns={getPaymentColumns({
+                clientMap,
+                onAllocate: handleOpenAllocate,
+                onReverse: setReversalTarget,
+              })}
+              data={filteredPayments}
+              searchPlaceholder="Search payment records..."
+            />
           </CardContent>
         </Card>
       )}
@@ -419,101 +322,12 @@ function FinancialsHub() {
       {/* TAB 2: Invoices */}
       {activeTab === "invoices" && (
         <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-muted/40 text-muted-foreground font-semibold uppercase tracking-wider border-b">
-                  <tr>
-                    <th className="p-3.5">Invoice Number</th>
-                    <th className="p-3.5">Client Portfolio</th>
-                    <th className="p-3.5">Issue Date</th>
-                    <th className="p-3.5">Due Date</th>
-                    <th className="p-3.5 text-right">Total Invoiced</th>
-                    <th className="p-3.5 text-right">Balance Due</th>
-                    <th className="p-3.5 text-center">Status</th>
-                    <th className="p-3.5 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filteredInvoices.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={8}
-                        className="p-8 text-center text-muted-foreground"
-                      >
-                        No invoices found.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredInvoices.map((inv) => {
-                      const clientName =
-                        clientMap.get(inv.client_id) || "Client"
-                      const balDue = Number(inv.balance_due || 0)
-
-                      return (
-                        <tr
-                          key={inv.id}
-                          className="hover:bg-muted/20 transition-colors"
-                        >
-                          <td className="p-3.5 font-mono font-bold text-primary">
-                            {inv.invoice_number}
-                          </td>
-                          <td className="p-3.5 font-medium">{clientName}</td>
-                          <td className="p-3.5 font-mono text-muted-foreground">
-                            {inv.date_issued}
-                          </td>
-                          <td className="p-3.5 font-mono text-muted-foreground">
-                            {inv.due_date || "—"}
-                          </td>
-                          <td className="p-3.5 text-right font-mono tabular-nums font-semibold">
-                            KES {Number(inv.total_amount).toLocaleString()}
-                          </td>
-                          <td className="p-3.5 text-right font-mono tabular-nums font-bold">
-                            {balDue > 0 ? (
-                              <span className="text-rose-600 dark:text-rose-400">
-                                KES {balDue.toLocaleString()}
-                              </span>
-                            ) : (
-                              <span className="text-emerald-600 dark:text-emerald-400">
-                                Settled
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3.5 text-center">
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] font-bold px-1.5 py-0 uppercase",
-                                balDue === 0
-                                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
-                                  : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-                              )}
-                            >
-                              {inv.status}
-                            </Badge>
-                          </td>
-                          <td className="p-3.5 text-right">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              asChild
-                              className="h-7 text-[11px] px-2.5"
-                            >
-                              <Link
-                                to="/clients/$clientId/invoices"
-                                params={{ clientId: inv.client_id }}
-                              >
-                                View File &rarr;
-                              </Link>
-                            </Button>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+          <CardContent className="p-4">
+            <DataTable
+              columns={getInvoiceColumns({ clientMap })}
+              data={filteredInvoices}
+              searchPlaceholder="Search invoices..."
+            />
           </CardContent>
         </Card>
       )}
@@ -521,94 +335,14 @@ function FinancialsHub() {
       {/* TAB 3: Allocations & Audit Trail */}
       {activeTab === "allocations" && (
         <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-muted/40 text-muted-foreground font-semibold uppercase tracking-wider border-b">
-                  <tr>
-                    <th className="p-3.5">Allocated At</th>
-                    <th className="p-3.5">Payment Record ID</th>
-                    <th className="p-3.5">Target Invoice ID</th>
-                    <th className="p-3.5 text-right">Amount Allocated</th>
-                    <th className="p-3.5 text-center">Status</th>
-                    <th className="p-3.5">Audit / Reversal Notes</th>
-                    <th className="p-3.5 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filteredAllocations.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        className="p-8 text-center text-muted-foreground"
-                      >
-                        No payment allocations recorded yet.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredAllocations.map((a) => {
-                      const isReversed = a.status?.toLowerCase() === "reversed"
-
-                      return (
-                        <tr
-                          key={a.id}
-                          className="hover:bg-muted/20 transition-colors"
-                        >
-                          <td className="p-3.5 font-mono text-muted-foreground">
-                            {a.allocated_at
-                              ? new Date(a.allocated_at).toLocaleDateString()
-                              : "—"}
-                          </td>
-                          <td className="p-3.5 font-mono text-xs">
-                            {a.payment_record_id.substring(0, 8)}...
-                          </td>
-                          <td className="p-3.5 font-mono text-xs">
-                            {a.invoice_id.substring(0, 8)}...
-                          </td>
-                          <td className="p-3.5 text-right font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
-                            +KES {Number(a.amount).toLocaleString()}
-                          </td>
-                          <td className="p-3.5 text-center">
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] font-bold px-1.5 py-0 uppercase",
-                                isReversed
-                                  ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
-                                  : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-                              )}
-                            >
-                              {a.status}
-                            </Badge>
-                          </td>
-                          <td className="p-3.5 text-muted-foreground text-xs max-w-xs truncate">
-                            {a.reversal_reason || "Standard payment allocation"}
-                          </td>
-                          <td className="p-3.5 text-right">
-                            {!isReversed && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() =>
-                                  setReversalTarget({
-                                    type: "allocation",
-                                    id: a.id,
-                                    title: `Allocation ${a.id.substring(0, 8)}`,
-                                  })
-                                }
-                                className="h-7 text-[11px] px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer"
-                              >
-                                Reverse
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+          <CardContent className="p-4">
+            <DataTable
+              columns={getAllocationColumns({
+                onReverse: setReversalTarget,
+              })}
+              data={filteredAllocations}
+              searchPlaceholder="Search allocations..."
+            />
           </CardContent>
         </Card>
       )}

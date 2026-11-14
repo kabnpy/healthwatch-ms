@@ -20,7 +20,8 @@ const mockUpdateRenewal = vi.fn()
 vi.mock("../client", () => ({
   RenewalsService: {
     readRenewals: (...args: unknown[]) => mockReadRenewals(...args),
-    readRenewalsHorizon: (...args: unknown[]) => mockReadRenewalsHorizon(...args),
+    readRenewalsHorizon: (...args: unknown[]) =>
+      mockReadRenewalsHorizon(...args),
     readRenewal: (...args: unknown[]) => mockReadRenewal(...args),
     createRenewal: (...args: unknown[]) => mockCreateRenewal(...args),
     transitionRenewal: (...args: unknown[]) => mockTransitionRenewal(...args),

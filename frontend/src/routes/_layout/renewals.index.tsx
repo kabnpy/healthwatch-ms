@@ -16,11 +16,7 @@ import {
   User,
 } from "lucide-react"
 import { useCallback, useMemo, useState } from "react"
-import type {
-  PolicyPublic,
-  RenewalHorizonItem,
-  RenewalStatus,
-} from "@/client"
+import type { PolicyPublic, RenewalHorizonItem, RenewalStatus } from "@/client"
 
 import { DataTable } from "@/components/Common/DataTable"
 import { EmptyState } from "@/components/Common/EmptyState"
@@ -93,7 +89,8 @@ const STAGE_META: Record<
 }
 
 function RenewalsDeskPage() {
-  const { data: horizonData, isLoading: isHorizonLoading } = useRenewalsHorizon()
+  const { data: horizonData, isLoading: isHorizonLoading } =
+    useRenewalsHorizon()
 
   const [activeTab, setActiveTab] = useState("expiring_30")
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyPublic | null>(

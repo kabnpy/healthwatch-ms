@@ -138,6 +138,7 @@ export function StepFinancials({
     extensions.omRescuePlus,
     extensions.passengerLiability,
     quoteMutation.mutate,
+    extensions,
   ])
 
   // 2. authoritative source of truth
@@ -192,12 +193,7 @@ export function StepFinancials({
       if (!extensions.excessProtector)
         form.setValue("extensions.excessProtector", true)
     }
-  }, [
-    isHighEnd,
-    extensions.excessProtector,
-    extensions.pvt,
-    form.setValue,
-  ])
+  }, [isHighEnd, extensions.excessProtector, extensions.pvt, form.setValue])
 
   return (
     <Form {...(form as any)}>

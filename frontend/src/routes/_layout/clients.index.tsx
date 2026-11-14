@@ -65,9 +65,14 @@ function Clients() {
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between border-b pb-6">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">Clients</h1>
-          <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Client Portfolio Management
+          </p>
+          <h1 className="text-3xl font-extrabold tracking-tight mt-1">
+            Clients
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Manage client profiles, policies, and servicing records
           </p>
         </div>
         <AddClient />

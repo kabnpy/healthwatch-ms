@@ -46,7 +46,7 @@ export function Main({ items }: MainProps) {
                 <SidebarMenuButton
                   tooltip={item.title}
                   isActive={isActive}
-                  className="data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:rounded-l-none font-medium"
+                  className="font-medium"
                   asChild
                 >
                   <RouterLink to={item.path} onClick={handleMenuClick}>

@@ -142,7 +142,7 @@ function AgencyDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
         <div>
           <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="size-2 rounded-full bg-emerald-500" />
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               Agency Operations • {today}
             </p>
@@ -210,7 +210,7 @@ function AgencyDashboard() {
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
               Expiring in ≤30 Days
             </CardTitle>
-            <Clock className="size-4 text-amber-600 animate-pulse" />
+            <Clock className="size-4 text-amber-600" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-mono tabular-nums tracking-tight text-amber-700 dark:text-amber-400">

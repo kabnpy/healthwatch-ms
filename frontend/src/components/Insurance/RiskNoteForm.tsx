@@ -5,7 +5,6 @@ import { type SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 import type { ApiError, CalculationQuoteResponse } from "@/client"
 import { AdvisoryRatingCalculator } from "@/components/Insurance/AdvisoryRatingCalculator"
-import { extractCoverSummary, extractSumInsured } from "@/utils/coverSnapshot"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -27,6 +26,7 @@ import {
 import useCustomToast from "@/hooks/useCustomToast"
 import { useCreateEndorsement, usePolicy } from "@/hooks/usePolicies"
 import { handleError } from "@/utils"
+import { extractCoverSummary, extractSumInsured } from "@/utils/coverSnapshot"
 
 interface RiskNoteFormProps {
   policyId: string

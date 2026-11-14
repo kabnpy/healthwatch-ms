@@ -53,9 +53,7 @@ export function buildQuoteRiskDetails(params: {
 
 function stripEmptySentinels(value: unknown): unknown {
   if (Array.isArray(value)) {
-    return value
-      .map(stripEmptySentinels)
-      .filter((item) => item !== "[ EMPTY ]")
+    return value.map(stripEmptySentinels).filter((item) => item !== "[ EMPTY ]")
   }
   if (value && typeof value === "object") {
     const cleaned: Record<string, unknown> = {}
