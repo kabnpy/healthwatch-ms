@@ -10,6 +10,7 @@ import {
 import { useMemo, useState } from "react"
 import type { PaymentRecordPublic } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
+import { QueryErrorBanner } from "@/components/Common/QueryErrorBanner"
 import { AllocatePaymentDialog } from "@/components/Financials/AllocatePaymentDialog"
 import { ClientStatementView } from "@/components/Financials/ClientStatementView"
 import {
@@ -51,17 +52,31 @@ export const Route = createFileRoute("/_layout/financials/")({
 })
 
 function FinancialsHub() {
-  const { summary, isLoading: isSummaryLoading } = useFinancialSummary()
+  const {
+    summary,
+    isLoading: isSummaryLoading,
+    isError: isSummaryError,
+    refetch: refetchSummary,
+  } = useFinancialSummary()
   const { data: clientsData } = useClients(0, 500)
-  const { data: invoicesData, isLoading: isInvoicesLoading } = useInvoices(
-    undefined,
-    0,
-    200,
-  )
-  const { data: paymentsData, isLoading: isPaymentsLoading } =
-    usePaymentRecords(undefined, 0, 200)
-  const { data: allocationsData, isLoading: isAllocationsLoading } =
-    usePaymentAllocations(undefined, undefined, 0, 200)
+  const {
+    data: invoicesData,
+    isLoading: isInvoicesLoading,
+    isError: isInvoicesError,
+    refetch: refetchInvoices,
+  } = useInvoices(undefined, 0, 200)
+  const {
+    data: paymentsData,
+    isLoading: isPaymentsLoading,
+    isError: isPaymentsError,
+    refetch: refetchPayments,
+  } = usePaymentRecords(undefined, 0, 200)
+  const {
+    data: allocationsData,
+    isLoading: isAllocationsLoading,
+    isError: isAllocationsError,
+    refetch: refetchAllocations,
+  } = usePaymentAllocations(undefined, undefined, 0, 200)
 
   // State
   const [activeTab, setActiveTab] = useState<
@@ -98,7 +113,7 @@ function FinancialsHub() {
   )
 
   // Server-computed unallocated pool
-  const totalUnallocated = summary.totalUnallocated
+  const totalUnallocated = summary?.totalUnallocated ?? 0
 
   // Filtered lists
   const filteredPayments = useMemo(() => {
@@ -151,6 +166,28 @@ function FinancialsHub() {
     isAllocationsLoading
   ) {
     return <PendingItems />
+  }
+
+  if (
+    isSummaryError ||
+    isInvoicesError ||
+    isPaymentsError ||
+    isAllocationsError
+  ) {
+    const handleRetry = () => {
+      if (isSummaryError) void refetchSummary()
+      if (isInvoicesError) void refetchInvoices()
+      if (isPaymentsError) void refetchPayments()
+      if (isAllocationsError) void refetchAllocations()
+    }
+    return (
+      <div className="p-6">
+        <QueryErrorBanner
+          message="Failed to load financial data. Please try again."
+          onRetry={handleRetry}
+        />
+      </div>
+    )
   }
 
   return (

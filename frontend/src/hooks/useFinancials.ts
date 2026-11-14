@@ -62,5 +62,7 @@ export const useFinancialSummary = (clientId?: string) => {
       totalUnallocated: Number(data?.total_unallocated ?? 0),
     },
     isLoading: summaryQuery.isLoading,
+    isError: summaryQuery.isError,
+    refetch: summaryQuery.refetch,
   }
 }
