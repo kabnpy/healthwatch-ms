@@ -32,9 +32,13 @@ function toCents(value: string | number | null | undefined): number | null {
   if (value === null || value === undefined) return null
   const str = String(value).trim()
   if (str === "") return null
-  const num = Number(str)
-  if (!Number.isFinite(num)) return null
-  return Math.round(num * 100)
+  const match = /^([+-])?(?:(\d+)(?:\.(\d*))?|\.(\d+))$/.exec(str)
+  if (!match) return null
+  const sign = match[1] === "-" ? -1 : 1
+  const whole = Number(match[2] ?? "0")
+  const fracStr = match[3] ?? match[4] ?? ""
+  const frac = fracStr.padEnd(2, "0").slice(0, 2)
+  return sign * (whole * 100 + Number(frac))
 }
 
 function formatKesFromCents(cents: number): string {
