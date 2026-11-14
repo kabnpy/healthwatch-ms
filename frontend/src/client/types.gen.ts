@@ -111,51 +111,9 @@ export type AdvisoryQuoteRequest = {
 };
 
 /**
- * BaseFinancialBreakdown
- */
-export type BaseFinancialBreakdown = {
-    /**
-     * Type
-     */
-    type?: 'base';
-    /**
-     * Net Premium
-     */
-    net_premium: string;
-    /**
-     * Taxes
-     */
-    taxes?: {
-        [key: string]: string;
-    };
-    /**
-     * Commission Amount
-     */
-    commission_amount: string;
-    /**
-     * Total Amount
-     */
-    total_amount: string;
-};
-
-/**
  * BenefitCalculationType
  */
 export type BenefitCalculationType = 'percentage' | 'fixed_amount';
-
-/**
- * BenefitLineItem
- */
-export type BenefitLineItem = {
-    /**
-     * Name
-     */
-    name: string;
-    /**
-     * Amount
-     */
-    amount: string;
-};
 
 /**
  * Body_documents-upload_document
@@ -783,42 +741,6 @@ export type ClientsPublic = {
 };
 
 /**
- * CommercialFireFinancialBreakdown
- */
-export type CommercialFireFinancialBreakdown = {
-    /**
-     * Type
-     */
-    type?: 'fire';
-    /**
-     * Net Premium
-     */
-    net_premium: string;
-    /**
-     * Taxes
-     */
-    taxes?: {
-        [key: string]: string;
-    };
-    /**
-     * Commission Amount
-     */
-    commission_amount: string;
-    /**
-     * Total Amount
-     */
-    total_amount: string;
-    /**
-     * Total Sum Insured
-     */
-    total_sum_insured?: string;
-    /**
-     * Special Perils Included
-     */
-    special_perils_included?: boolean;
-};
-
-/**
  * CommissionCalculationRequest
  */
 export type CommissionCalculationRequest = {
@@ -1077,52 +999,6 @@ export type DocumentsPublic = {
      * Count
      */
     count: number;
-};
-
-/**
- * DomesticFinancialBreakdown
- */
-export type DomesticFinancialBreakdown = {
-    /**
-     * Type
-     */
-    type?: 'domestic';
-    /**
-     * Net Premium
-     */
-    net_premium: string;
-    /**
-     * Taxes
-     */
-    taxes?: {
-        [key: string]: string;
-    };
-    /**
-     * Commission Amount
-     */
-    commission_amount: string;
-    /**
-     * Total Amount
-     */
-    total_amount: string;
-    /**
-     * Section Premiums
-     */
-    section_premiums?: {
-        [key: string]: string;
-    };
-    /**
-     * Buildings Sum Insured
-     */
-    buildings_sum_insured?: string;
-    /**
-     * Contents Sum Insured
-     */
-    contents_sum_insured?: string;
-    /**
-     * All Risks Valuables
-     */
-    all_risks_valuables?: string;
 };
 
 /**
@@ -1655,90 +1531,6 @@ export type InvoicesPublic = {
 };
 
 /**
- * MarineFinancialBreakdown
- */
-export type MarineFinancialBreakdown = {
-    /**
-     * Type
-     */
-    type?: 'marine';
-    /**
-     * Net Premium
-     */
-    net_premium: string;
-    /**
-     * Taxes
-     */
-    taxes?: {
-        [key: string]: string;
-    };
-    /**
-     * Commission Amount
-     */
-    commission_amount: string;
-    /**
-     * Total Amount
-     */
-    total_amount: string;
-    /**
-     * Cif Value
-     */
-    cif_value?: string;
-    /**
-     * Uplifted Value
-     */
-    uplifted_value?: string;
-    /**
-     * Clause
-     */
-    clause?: string;
-};
-
-/**
- * MedicalFinancialBreakdown
- */
-export type MedicalFinancialBreakdown = {
-    /**
-     * Type
-     */
-    type?: 'medical';
-    /**
-     * Net Premium
-     */
-    net_premium: string;
-    /**
-     * Taxes
-     */
-    taxes?: {
-        [key: string]: string;
-    };
-    /**
-     * Commission Amount
-     */
-    commission_amount: string;
-    /**
-     * Total Amount
-     */
-    total_amount: string;
-    /**
-     * Inpatient Limit
-     */
-    inpatient_limit?: string;
-    /**
-     * Inpatient Premium
-     */
-    inpatient_premium?: string;
-    /**
-     * Outpatient Premium
-     */
-    outpatient_premium?: string;
-    /**
-     * Family Size
-     */
-    family_size?: number;
-};
-
-/**
  * MedicalTierCreate
  */
 export type MedicalTierCreate = {
@@ -1798,46 +1590,6 @@ export type Message = {
      * Message
      */
     message: string;
-};
-
-/**
- * MotorFinancialBreakdown
- */
-export type MotorFinancialBreakdown = {
-    /**
-     * Type
-     */
-    type?: 'motor';
-    /**
-     * Net Premium
-     */
-    net_premium: string;
-    /**
-     * Taxes
-     */
-    taxes?: {
-        [key: string]: string;
-    };
-    /**
-     * Commission Amount
-     */
-    commission_amount: string;
-    /**
-     * Total Amount
-     */
-    total_amount: string;
-    /**
-     * Benefits
-     */
-    benefits?: Array<BenefitLineItem>;
-    /**
-     * Basic Rate
-     */
-    basic_rate?: string | null;
-    /**
-     * Is High End
-     */
-    is_high_end?: boolean;
 };
 
 /**
@@ -2520,44 +2272,6 @@ export type ProductsPublic = {
      * Count
      */
     count: number;
-};
-
-/**
- * QuoteRequest
- */
-export type QuoteRequest = {
-    /**
-     * Product Id
-     */
-    product_id: string;
-    /**
-     * Risk Details
-     */
-    risk_details: {
-        [key: string]: unknown;
-    };
-};
-
-/**
- * QuoteResponse
- */
-export type QuoteResponse = {
-    /**
-     * Breakdown
-     */
-    breakdown: MotorFinancialBreakdown | DomesticFinancialBreakdown | WIBAFinancialBreakdown | CommercialFireFinancialBreakdown | MarineFinancialBreakdown | MedicalFinancialBreakdown | BaseFinancialBreakdown;
-    /**
-     * Calculation Detail
-     */
-    calculation_detail?: {
-        [key: string]: unknown;
-    };
-    /**
-     * Rule Provenance
-     */
-    rule_provenance?: {
-        [key: string]: unknown;
-    };
 };
 
 /**
@@ -3539,44 +3253,6 @@ export type VehiclesPublic = {
      * Count
      */
     count: number;
-};
-
-/**
- * WIBAFinancialBreakdown
- */
-export type WIBAFinancialBreakdown = {
-    /**
-     * Type
-     */
-    type?: 'wiba';
-    /**
-     * Net Premium
-     */
-    net_premium: string;
-    /**
-     * Taxes
-     */
-    taxes?: {
-        [key: string]: string;
-    };
-    /**
-     * Commission Amount
-     */
-    commission_amount: string;
-    /**
-     * Total Amount
-     */
-    total_amount: string;
-    /**
-     * Payroll Totals
-     */
-    payroll_totals?: {
-        [key: string]: string;
-    };
-    /**
-     * Employee Count
-     */
-    employee_count?: number;
 };
 
 export type loginLoginAccessTokenData = {
@@ -4785,31 +4461,6 @@ export type policiesUpdatePolicyResponses = {
 };
 
 export type policiesUpdatePolicyResponse = policiesUpdatePolicyResponses[keyof policiesUpdatePolicyResponses];
-
-export type policiesGetPolicyQuoteData = {
-    body: QuoteRequest;
-    path?: never;
-    query?: never;
-    url: '/api/v1/policies/quote';
-};
-
-export type policiesGetPolicyQuoteErrors = {
-    /**
-     * Validation Error
-     */
-    422: HTTPValidationError;
-};
-
-export type policiesGetPolicyQuoteError = policiesGetPolicyQuoteErrors[keyof policiesGetPolicyQuoteErrors];
-
-export type policiesGetPolicyQuoteResponses = {
-    /**
-     * Successful Response
-     */
-    200: QuoteResponse;
-};
-
-export type policiesGetPolicyQuoteResponse = policiesGetPolicyQuoteResponses[keyof policiesGetPolicyQuoteResponses];
 
 export type policiesCreateEndorsementData = {
     body: EndorsementCreate;

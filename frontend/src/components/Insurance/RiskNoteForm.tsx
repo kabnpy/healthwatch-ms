@@ -3,7 +3,7 @@ import { Calculator } from "lucide-react"
 import { useEffect, useState } from "react"
 import { type SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
-import type { ApiError, QuoteResponse } from "@/client"
+import type { ApiError, CalculationQuoteResponse } from "@/client"
 import { AdvisoryRatingCalculator } from "@/components/Insurance/AdvisoryRatingCalculator"
 import { Button } from "@/components/ui/button"
 import {
@@ -95,7 +95,7 @@ export const RiskNoteForm = ({
     }
   }, [policy, form, initialTransactionType])
 
-  const handleApplyRating = (res: QuoteResponse) => {
+  const handleApplyRating = (res: CalculationQuoteResponse) => {
     const netPremium = Number(res.breakdown.net_premium || 0)
     form.setValue("net_premium", netPremium)
     form.setValue(

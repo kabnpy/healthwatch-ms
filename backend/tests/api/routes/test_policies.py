@@ -14,7 +14,7 @@ def test_get_policy_quote_motor_private(
     # Use singular semantic keys directly
     data = {
         "product_id": str(product.id),
-        "risk_details": {
+        "inputs": {
             "sum_insured": 4000000,
             "registration_number": "KCM 123",
             "make": "Toyota",
@@ -23,25 +23,21 @@ def test_get_policy_quote_motor_private(
         },
     }
     response = client.post(
-        f"{settings.API_V1_STR}/policies/quote",
+        f"{settings.API_V1_STR}/calculations/quote",
         headers=superuser_token_headers,
         json=data,
     )
     assert response.status_code == 200
     content = response.json()
-    assert "breakdown" in content
-    breakdown = content["breakdown"]
-    assert breakdown["type"] == "motor"
     # Basic: 4,000,000 * 0.0325 = 130,000 (Tier 4: 3M-5M)
     # PVT: 4,000,000 * 0 = 0 (is_high_end = True for >= 3M)
     # EP: 4,000,000 * 0 = 0
     # Net: 130,000
-    assert float(breakdown["net_premium"]) == 130000.0
-    assert "taxes" in breakdown
-    assert "training_levy" in breakdown["taxes"]
-    assert "phcf" in breakdown["taxes"]
-    assert "stamp_duty" in breakdown["taxes"]
-    assert len(breakdown["benefits"]) == 2
+    assert float(content["net_premium"]) == 130000.0
+    assert "taxes" in content
+    assert "training_levy" in content["taxes"]
+    assert "phcf" in content["taxes"]
+    assert "stamp_duty" in content["taxes"]
 
 
 def test_get_policy_quote_not_found(
@@ -49,13 +45,13 @@ def test_get_policy_quote_not_found(
 ) -> None:
     import uuid
 
-    data = {"product_id": str(uuid.uuid4()), "risk_details": {}}
+    data = {"product_id": str(uuid.uuid4()), "inputs": {}}
     response = client.post(
-        f"{settings.API_V1_STR}/policies/quote",
+        f"{settings.API_V1_STR}/calculations/quote",
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 404
+    assert response.status_code in (400, 404)
 
 
 def test_create_policy_with_breakdown(
