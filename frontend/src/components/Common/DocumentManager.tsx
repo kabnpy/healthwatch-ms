@@ -56,6 +56,14 @@ const DOCUMENT_PRESETS: Record<string, string[]> = {
   Receipt: ["Proof of Payment", "Bank Slip", "M-Pesa Screenshot"],
 }
 
+function formatDocumentType(type: string): string {
+  return type
+    .split("_")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ")
+}
+
 const uploadSchema = z.object({
   document_type: z.string().min(1, "Document type is required"),
   file: z.instanceof(File, { message: "File is required" }),
@@ -99,7 +107,9 @@ export function DocumentManager({
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             <FileIcon className="size-4 text-muted-foreground" />
-            <span className="font-medium">{row.original.document_type}</span>
+            <span className="font-medium">
+              {formatDocumentType(row.original.document_type)}
+            </span>
           </div>
         ),
       },
@@ -153,9 +163,7 @@ export function DocumentManager({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold tracking-tight">
-          {title}
-        </h2>
+        <h2 className="text-xl font-bold tracking-tight">{title}</h2>
         <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
           <DialogTrigger
             render={
@@ -172,10 +180,7 @@ export function DocumentManager({
                 Select a file to attach to this {entityType}.
               </DialogDescription>
             </DialogHeader>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-4"
-            >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <Controller
                 control={form.control}
                 name="document_type"
@@ -198,7 +203,7 @@ export function DocumentManager({
                       <SelectContent>
                         {DOCUMENT_PRESETS[entityType]?.map((type) => (
                           <SelectItem key={type} value={type}>
-                            {type}
+                            {formatDocumentType(type)}
                           </SelectItem>
                         ))}
                         <SelectItem value="Other">Other</SelectItem>

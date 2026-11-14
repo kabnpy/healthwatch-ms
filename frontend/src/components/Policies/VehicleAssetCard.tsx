@@ -25,7 +25,7 @@ export function VehicleAssetCard({ vehicle }: VehicleAssetCardProps) {
   const isHighEnd = sumInsured >= 3000000
 
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm space-y-3">
+    <div className="rounded-xl border border-border/80 bg-card p-4 shadow-xs space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-lg text-primary">
@@ -33,7 +33,10 @@ export function VehicleAssetCard({ vehicle }: VehicleAssetCardProps) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-sm bg-muted/60 px-2 py-0.5 rounded border">
+              <span
+                data-testid="vehicle-plate-badge"
+                className="font-mono font-bold text-sm bg-muted/60 px-2 py-0.5 rounded border whitespace-nowrap"
+              >
                 {vehicle.registration_number || "REG UNRECORDED"}
               </span>
               <span className="font-semibold text-sm text-foreground">
