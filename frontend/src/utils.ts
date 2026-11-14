@@ -119,14 +119,15 @@ export const getPolicyDisplayName = (riskNote: any): string => {
 export const formatCurrency = (
   amount: number | string | undefined | null,
 ): string => {
-  if (amount === undefined || amount === null) return "Kshs. 0.00"
+  if (amount === undefined || amount === null) return "KES 0.00"
   const numericAmount =
     typeof amount === "string" ? Number.parseFloat(amount) : amount
-  if (Number.isNaN(numericAmount)) return "Kshs. 0.00"
+  if (Number.isNaN(numericAmount)) return "KES 0.00"
 
-  return new Intl.NumberFormat("en-KE", {
-    style: "currency",
-    currency: "KES",
+  const formatted = new Intl.NumberFormat("en-KE", {
     minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(numericAmount)
+
+  return `KES ${formatted}`
 }

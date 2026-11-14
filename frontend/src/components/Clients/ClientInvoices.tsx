@@ -192,14 +192,14 @@ export function ClientInvoices({ clientId }: ClientInvoicesProps) {
       </div>
 
       <Tabs defaultValue="invoices" className="w-full">
-        <TabsList>
+        <TabsList className="max-w-full overflow-x-auto">
           <TabsTrigger value="invoices">
             Invoices ({invoices.length})
           </TabsTrigger>
           <TabsTrigger value="payments">
             Payment Records ({paymentRecords.length})
           </TabsTrigger>
-          <TabsTrigger value="statement">Account Statement</TabsTrigger>
+          <TabsTrigger value="statement">Statement</TabsTrigger>
         </TabsList>
 
         {/* TAB 1: INVOICES */}
@@ -209,11 +209,6 @@ export function ClientInvoices({ clientId }: ClientInvoicesProps) {
               title="No invoices found"
               description="There are no invoices for this client yet. Use the wizard to generate one from issued risk notes."
               icon={FileText}
-              action={{
-                label: "Generate Invoice",
-                onClick: () => setIsInvoiceWizardOpen(true),
-                icon: FilePlus,
-              }}
             />
           ) : (
             <DataTable

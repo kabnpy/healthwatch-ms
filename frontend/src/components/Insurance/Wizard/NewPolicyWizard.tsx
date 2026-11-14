@@ -232,6 +232,7 @@ export function NewPolicyWizard({
               state={state}
               onIssue={handleIssuePolicy}
               onBack={handleBack}
+              onJumpToStep={setStep}
               isSubmitting={createPolicy.isPending}
             />
           )}
