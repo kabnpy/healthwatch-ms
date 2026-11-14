@@ -273,6 +273,22 @@ class ClientLedgerService:
             proof_document_id=payment_in.proof_document_id,
         )
         session.add(db_payment)
+        session.flush()
+
+        if payment_in.initial_allocations:
+            try:
+                for alloc in payment_in.initial_allocations:
+                    ClientLedgerService._allocate_payment_in_tx(
+                        session=session,
+                        payment=db_payment,
+                        invoice_id=alloc.invoice_id,
+                        amount=alloc.amount,
+                        risk_note_id=alloc.risk_note_id,
+                    )
+            except Exception:
+                session.rollback()
+                raise
+
         session.commit()
         session.refresh(db_payment)
         return db_payment
@@ -317,6 +333,63 @@ class ClientLedgerService:
         return session.exec(count_statement).one()
 
     @staticmethod
+    def _allocate_payment_in_tx(
+        *,
+        session: Session,
+        payment: PaymentRecord,
+        invoice_id: uuid.UUID,
+        amount: Decimal,
+        risk_note_id: uuid.UUID | None = None,
+    ) -> PaymentAllocation:
+        """Apply a single PaymentAllocation inside an active transaction."""
+        invoice = session.exec(
+            select(Invoice)
+            .where(Invoice.id == invoice_id)
+            .with_for_update()
+        ).first()
+        if not invoice:
+            raise LedgerNotFoundError("Invoice not found")
+        if invoice.client_id != payment.client_id:
+            raise LedgerValidationError(
+                "Payment client and invoice client do not match."
+            )
+
+        if amount <= Decimal("0.00"):
+            raise LedgerValidationError("Allocation amount must be greater than zero.")
+
+        if amount > payment.unallocated_amount:
+            raise LedgerValidationError(
+                f"Allocation amount ({amount}) exceeds unallocated payment amount ({payment.unallocated_amount})."
+            )
+
+        current_balance = (
+            invoice.balance_due
+            if invoice.balance_due is not None
+            else invoice.total_amount
+        )
+        if amount > current_balance:
+            raise LedgerValidationError(
+                f"Allocation amount ({amount}) exceeds invoice balance due ({current_balance})."
+            )
+
+        allocation = PaymentAllocation(
+            payment_record_id=payment.id,
+            invoice_id=invoice_id,
+            risk_note_id=risk_note_id,
+            amount=amount,
+        )
+        session.add(allocation)
+        session.flush()
+
+        payment.unallocated_amount = (
+            payment.unallocated_amount - amount
+        ).quantize(Decimal("0.01"))
+        session.add(payment)
+
+        _apply_invoice_allocation_delta(session, invoice, -amount)
+        return allocation
+
+    @staticmethod
     def allocate_payment(
         *,
         session: Session,
@@ -338,46 +411,13 @@ class ClientLedgerService:
                 "Cannot allocate from a reversed or inactive payment record."
             )
 
-        invoice = session.exec(
-            select(Invoice)
-            .where(Invoice.id == allocation_in.invoice_id)
-            .with_for_update()
-        ).first()
-        if not invoice:
-            raise LedgerNotFoundError("Invoice not found")
-        if invoice.client_id != payment.client_id:
-            raise LedgerValidationError(
-                "Payment client and invoice client do not match."
-            )
-
-        if allocation_in.amount <= Decimal("0.00"):
-            raise LedgerValidationError("Allocation amount must be greater than zero.")
-
-        if allocation_in.amount > payment.unallocated_amount:
-            raise LedgerValidationError(
-                f"Allocation amount ({allocation_in.amount}) exceeds unallocated payment amount ({payment.unallocated_amount})."
-            )
-
-        current_balance = (
-            invoice.balance_due
-            if invoice.balance_due is not None
-            else invoice.total_amount
+        allocation = ClientLedgerService._allocate_payment_in_tx(
+            session=session,
+            payment=payment,
+            invoice_id=allocation_in.invoice_id,
+            amount=allocation_in.amount,
+            risk_note_id=allocation_in.risk_note_id,
         )
-        if allocation_in.amount > current_balance:
-            raise LedgerValidationError(
-                f"Allocation amount ({allocation_in.amount}) exceeds invoice balance due ({current_balance})."
-            )
-
-        allocation = PaymentAllocation.model_validate(allocation_in)
-        session.add(allocation)
-        session.flush()
-
-        payment.unallocated_amount = (
-            payment.unallocated_amount - allocation_in.amount
-        ).quantize(Decimal("0.01"))
-        session.add(payment)
-
-        _apply_invoice_allocation_delta(session, invoice, -allocation_in.amount)
 
         session.commit()
         session.refresh(allocation)

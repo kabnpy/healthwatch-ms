@@ -509,3 +509,75 @@ def test_generate_statement_computes_decimal_aging_buckets_with_as_of_date(
     assert statement.aging_buckets.days_61_90 == "1101.21"
     assert statement.aging_buckets.over_90 == "700.77"
     assert statement.aging_buckets.total_overdue == "2803.08"
+def test_record_payment_with_initial_allocations_atomic_commit_and_rollback(
+    db: Session,
+) -> None:
+    from app.models import InitialPaymentAllocation
+
+    client = _create_client(db, "atomic")
+    db.commit()
+
+    inv1 = ClientLedgerService.create_invoice(
+        session=db,
+        invoice_in=InvoiceCreate(
+            invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
+            client_id=client.id,
+            date_issued=date.today(),
+            total_amount=Decimal("2000.00"),
+            balance_due=Decimal("2000.00"),
+            status=InvoiceStatus.UNPAID,
+        ),
+    )
+    inv2 = ClientLedgerService.create_invoice(
+        session=db,
+        invoice_in=InvoiceCreate(
+            invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
+            client_id=client.id,
+            date_issued=date.today(),
+            total_amount=Decimal("1000.00"),
+            balance_due=Decimal("1000.00"),
+            status=InvoiceStatus.UNPAID,
+        ),
+    )
+
+    # Valid atomic payment + initial allocation
+    pmt = ClientLedgerService.record_payment(
+        session=db,
+        payment_in=PaymentRecordCreate(
+            client_id=client.id,
+            amount=Decimal("2500.00"),
+            payment_date=date.today(),
+            payment_method=PaymentMethod.MPESA,
+            reference_number=f"REF-{uuid.uuid4().hex[:6]}",
+            initial_allocations=[
+                InitialPaymentAllocation(invoice_id=inv1.id, amount=Decimal("2000.00")),
+            ],
+        ),
+    )
+    assert pmt.unallocated_amount == Decimal("500.00")
+    db.refresh(inv1)
+    assert inv1.balance_due == Decimal("0.00")
+    assert inv1.status == InvoiceStatus.PAID
+
+    # Failed second allocation must roll back the entire PaymentRecord
+    with pytest.raises(LedgerValidationError):
+        ClientLedgerService.record_payment(
+            session=db,
+            payment_in=PaymentRecordCreate(
+                client_id=client.id,
+                amount=Decimal("1500.00"),
+                payment_date=date.today(),
+                payment_method=PaymentMethod.MPESA,
+                reference_number=f"REF-{uuid.uuid4().hex[:6]}",
+                initial_allocations=[
+                    InitialPaymentAllocation(
+                        invoice_id=inv2.id, amount=Decimal("1500.00")
+                    ),
+                ],
+            ),
+        )
+
+    assert ClientLedgerService.count_payment_records(session=db, client_id=client.id) == 1
+    db.refresh(inv2)
+    assert inv2.balance_due == Decimal("1000.00")
+    assert inv2.status == InvoiceStatus.UNPAID
