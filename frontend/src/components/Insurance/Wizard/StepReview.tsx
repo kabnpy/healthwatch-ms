@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { useProducts, useQuoteQuery } from "@/hooks/usePolicies"
 import type { EnhancedProduct, WizardState } from "@/types/insurance"
+import { buildQuoteRiskDetails } from "@/utils/coverSnapshot"
 
 interface StepReviewProps {
   state: WizardState
@@ -36,17 +37,10 @@ export function StepReview({
     if (!state.product_id || !isMotorPrivate) return null
     return {
       product_id: state.product_id,
-      inputs: {
-        vehicle: {
-          sum_insured: state.sum_insured,
-        },
-        extensions: {
-          pvt: !!state.extensions?.pvt,
-          excess_protector: !!state.extensions?.excessProtector,
-          om_rescue_plus: !!state.extensions?.omRescuePlus,
-          passenger_liability: !!state.extensions?.passengerLiability,
-        },
-      },
+      inputs: buildQuoteRiskDetails({
+        sumInsured: state.sum_insured,
+        extensions: state.extensions,
+      }),
     }
   }, [state.product_id, state.sum_insured, state.extensions, isMotorPrivate])
 

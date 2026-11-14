@@ -20,6 +20,7 @@ import type {
   WizardExtensions,
   WizardFinancials,
 } from "@/types/insurance"
+import { buildQuoteRiskDetails } from "@/utils/coverSnapshot"
 
 const financialsSchema = z.object({
   financials: z.object({
@@ -119,20 +120,11 @@ export function StepFinancials({
     const timer = setTimeout(() => {
       quoteMutation.mutate({
         product_id: productId,
-        inputs: {
-          vehicle: {
-            sum_insured: sum_insured,
-          },
-          financials: {
-            rate: financials.rate || 0,
-          },
-          extensions: {
-            pvt: !!extensions.pvt,
-            excess_protector: !!extensions.excessProtector,
-            om_rescue_plus: !!extensions.omRescuePlus,
-            passenger_liability: !!extensions.passengerLiability,
-          },
-        },
+        inputs: buildQuoteRiskDetails({
+          sumInsured: sum_insured,
+          rate: financials.rate || 0,
+          extensions,
+        }),
       })
     }, 500) // 500ms debounce
 
@@ -191,22 +183,21 @@ export function StepFinancials({
     breakdown,
   ])
 
+  const isHighEnd = Boolean(calcDetail.is_high_end)
+
   // High-End Logic: Auto-select included benefits
   useEffect(() => {
-    if (isMotorPrivate && (Number(sum_insured) || 0) >= 3000000) {
+    if (isHighEnd) {
       if (!extensions.pvt) form.setValue("extensions.pvt", true)
       if (!extensions.excessProtector)
         form.setValue("extensions.excessProtector", true)
     }
   }, [
-    isMotorPrivate,
-    sum_insured,
+    isHighEnd,
     extensions.excessProtector,
     extensions.pvt,
     form.setValue,
   ])
-
-  const isHighEnd = isMotorPrivate && (Number(sum_insured) || 0) >= 3000000
 
   return (
     <Form {...(form as any)}>

@@ -9,7 +9,7 @@ import useCustomToast from "@/hooks/useCustomToast"
 import { useCreatePolicy, useProducts } from "@/hooks/usePolicies"
 import { cn } from "@/lib/utils"
 import type { EnhancedProduct, WizardState } from "@/types/insurance"
-import { injectWizardData } from "@/utils/documentData"
+import { buildCoverSnapshot, extractSumInsured } from "@/utils/coverSnapshot"
 import { StepAsset } from "./StepAsset"
 import { StepBlueprint } from "./StepBlueprint"
 import { StepFinancials } from "./StepFinancials"
@@ -73,29 +73,7 @@ export function NewPolicyWizard({
         policy_number: data.policy_number,
       }))
     } else if (step === 1) {
-      // Sync logic: Extract "Value" or "Sum Insured" from details (recursive search)
-      // Now using 'sum_insured' as the semantic key
-      const findValue = (obj: any): number => {
-        if (!obj || typeof obj !== "object") return 0
-        for (const [k, v] of Object.entries(obj)) {
-          // Look for sum_insured, value, or display aliases
-          if (
-            /sum_insured|value|sum insured/i.test(k) &&
-            typeof v !== "object"
-          ) {
-            const cleanVal =
-              typeof v === "string" ? v.replace(/[^0-9.]/g, "") : v
-            return Number(cleanVal) || 0
-          }
-          if (typeof v === "object") {
-            const found = findValue(v)
-            if (found !== 0) return found
-          }
-        }
-        return 0
-      }
-
-      const extractedValue = findValue(data)
+      const extractedValue = extractSumInsured(data)
 
       setState((prev) => ({
         ...prev,
@@ -150,41 +128,13 @@ export function NewPolicyWizard({
 
       const endDate = endDateDate.toISOString().split("T")[0]
 
-      // Structure the risk details using the product blueprint
-      const structuredRiskDetails = injectWizardData(
-        selectedProduct.product_details,
-        state.details,
-      )
-
-      // Align with Atomic Snapshot Schema: Sensible Nesting
-      // We merge the structured details from the blueprint with the explicit state from the wizard.
-      // Note: The blueprint uses "vehicle_details", but the backend expects "vehicle"
-      const vehicleData =
-        structuredRiskDetails.vehicle_details ||
-        structuredRiskDetails.vehicle ||
-        {}
-      const extensionData =
-        structuredRiskDetails.added_benefits ||
-        structuredRiskDetails.extensions ||
-        {}
-
-      const coverSnapshot = {
-        vehicle: {
-          ...vehicleData,
-          sum_insured: state.sum_insured,
-        },
-        extensions: {
-          ...extensionData,
-          pvt: !!state.extensions?.pvt,
-          excess_protector: !!state.extensions?.excessProtector,
-          om_rescue_plus: !!state.extensions?.omRescuePlus,
-          passenger_liability: !!state.extensions?.passengerLiability,
-        },
-        // Use the customized terms from the wizard state
-        benefits_and_limits: state.terms.benefits_and_limits,
-        excesses: state.terms.excesses,
-        special_clauses: state.terms.special_clauses,
-      }
+      const coverSnapshot = buildCoverSnapshot({
+        blueprint: selectedProduct.product_details,
+        details: state.details,
+        sumInsured: state.sum_insured,
+        extensions: state.extensions,
+        terms: state.terms,
+      })
 
       // Create Policy atomically
       await createPolicy.mutateAsync({
