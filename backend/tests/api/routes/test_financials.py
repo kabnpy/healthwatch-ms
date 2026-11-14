@@ -261,3 +261,31 @@ def test_read_invoice_by_id_and_missing_returns_404(
         headers=superuser_token_headers,
     )
     assert missing.status_code == 404
+
+
+def test_read_financial_summary(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    inv = create_random_invoice(db)
+    resp_global = client.get(
+        f"{settings.API_V1_STR}/financials/summary",
+        headers=superuser_token_headers,
+    )
+    assert resp_global.status_code == 200
+    body_global = resp_global.json()
+    assert set(body_global.keys()) == {
+        "total_invoiced",
+        "total_paid",
+        "total_due",
+        "total_unallocated",
+    }
+
+    resp_client = client.get(
+        f"{settings.API_V1_STR}/financials/summary?client_id={inv.client_id}",
+        headers=superuser_token_headers,
+    )
+    assert resp_client.status_code == 200
+    body_client = resp_client.json()
+    assert float(body_client["total_invoiced"]) >= float(inv.total_amount)
+    assert float(body_client["total_due"]) >= float(inv.balance_due)
+

@@ -40,28 +40,27 @@ export const useCreateBulkInvoice = () => {
   })
 }
 
-// 2. FINANCIAL SUMMARY (Aggregator)
+// 2. FINANCIAL SUMMARY (Server-side Decimal KPIs)
 export const useFinancialSummary = (clientId?: string) => {
-  const invoicesQuery = useInvoices(clientId)
+  const summaryQuery = useQuery({
+    queryKey: ["financial-summary", { clientId }],
+    queryFn: async () =>
+      (
+        await FinancialsService.readFinancialSummary({
+          query: clientId ? { client_id: clientId } : undefined,
+        })
+      ).data,
+  })
 
-  const invoices = invoicesQuery.data?.data || []
-  const totalInvoiced = invoices.reduce(
-    (sum, inv) => sum + Number(inv.total_amount || 0),
-    0,
-  )
-  const totalDue = invoices.reduce(
-    (sum, inv) => sum + Number(inv.balance_due || 0),
-    0,
-  )
-  const totalPaid = totalInvoiced - totalDue
+  const data = summaryQuery.data
 
   return {
-    invoices,
     summary: {
-      totalInvoiced,
-      totalPaid,
-      totalDue,
+      totalInvoiced: Number(data?.total_invoiced ?? 0),
+      totalPaid: Number(data?.total_paid ?? 0),
+      totalDue: Number(data?.total_due ?? 0),
+      totalUnallocated: Number(data?.total_unallocated ?? 0),
     },
-    isLoading: invoicesQuery.isLoading,
+    isLoading: summaryQuery.isLoading,
   }
 }

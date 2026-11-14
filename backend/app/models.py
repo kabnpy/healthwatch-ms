@@ -760,6 +760,13 @@ class InvoicesPublic(SQLModel):
     count: int
 
 
+class LedgerSummary(SQLModel):
+    total_invoiced: Decimal
+    total_paid: Decimal
+    total_due: Decimal
+    total_unallocated: Decimal
+
+
 # ==========================================
 # Claim Models
 # ==========================================
