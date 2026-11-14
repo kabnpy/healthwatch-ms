@@ -273,7 +273,7 @@ function FinancialsHub() {
           onValueChange={(val: any) => setActiveTab(val)}
           className="w-full sm:w-auto"
         >
-          <TabsList className="grid grid-cols-4 w-full sm:w-auto">
+          <TabsList className="flex flex-wrap h-auto w-full sm:w-auto">
             <TabsTrigger value="payments" className="text-xs font-medium">
               Payment Records ({payments.length})
             </TabsTrigger>

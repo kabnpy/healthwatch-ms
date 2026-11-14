@@ -38,7 +38,7 @@ export const Header = () => {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-      <div className="flex-1 flex justify-center px-4">
+      <div className="min-w-0 flex-1 flex justify-center px-2 sm:px-4">
         <CommandMenu />
       </div>
     </header>

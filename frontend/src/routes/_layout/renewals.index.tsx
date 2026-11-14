@@ -89,8 +89,11 @@ const STAGE_META: Record<
 }
 
 function RenewalsDeskPage() {
-  const { data: horizonData, isLoading: isHorizonLoading } =
-    useRenewalsHorizon()
+  const {
+    data: horizonData,
+    isLoading: isHorizonLoading,
+    isError: isHorizonError,
+  } = useRenewalsHorizon()
 
   const [activeTab, setActiveTab] = useState("expiring_30")
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyPublic | null>(
@@ -316,6 +319,16 @@ function RenewalsDeskPage() {
     return <PendingItems />
   }
 
+  if (isHorizonError) {
+    return (
+      <div className="p-6">
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+          Failed to load renewals pipeline. Please refresh the page to try again.
+        </div>
+      </div>
+    )
+  }
+
   const allHorizonItems = [
     ...(horizonData?.overdue ?? []),
     ...(horizonData?.["0_30"] ?? []),
@@ -418,7 +431,7 @@ function RenewalsDeskPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-muted/60 p-1">
+        <TabsList className="bg-muted/60 p-1 max-w-full overflow-x-auto justify-start">
           <TabsTrigger value="expiring_30" className="gap-2 text-xs">
             Expiring in ≤30 Days
             <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
