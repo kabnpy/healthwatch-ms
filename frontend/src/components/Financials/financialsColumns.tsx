@@ -8,7 +8,34 @@ import type {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { formatCurrency } from "@/utils"
 import type { LedgerReversalTarget } from "./LedgerReversalDialog"
+
+const PAYMENT_CHANNEL_LABELS: Record<string, string> = {
+  MPESA: "M-Pesa",
+  BANK_TRANSFER: "Bank Transfer",
+  CHEQUE: "Cheque",
+  IPF: "IPF",
+  CASH: "Cash",
+}
+
+function formatPaymentChannel(method: string | null | undefined): string {
+  if (!method) return "—"
+  const upper = method.toUpperCase()
+  if (PAYMENT_CHANNEL_LABELS[upper]) return PAYMENT_CHANNEL_LABELS[upper]
+  return method
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+function formatStatusLabel(status: string | null | undefined): string {
+  if (!status) return "Active"
+  return status
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
 
 export function getPaymentColumns(opts: {
   clientMap: Map<string, string>
@@ -47,7 +74,7 @@ export function getPaymentColumns(opts: {
       header: "Channel",
       cell: ({ row }) => (
         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-muted border">
-          {row.original.payment_method}
+          {formatPaymentChannel(row.original.payment_method)}
         </span>
       ),
     },
@@ -56,7 +83,7 @@ export function getPaymentColumns(opts: {
       header: () => <div className="text-right">Gross Amount</div>,
       cell: ({ row }) => (
         <div className="text-right font-mono tabular-nums font-bold text-foreground">
-          KES {Number(row.original.amount).toLocaleString()}
+          {formatCurrency(row.original.amount)}
         </div>
       ),
     },
@@ -69,7 +96,7 @@ export function getPaymentColumns(opts: {
           <div className="text-right font-mono tabular-nums">
             {unalloc > 0 ? (
               <span className="text-amber-600 dark:text-amber-400 font-bold">
-                KES {unalloc.toLocaleString()}
+                {formatCurrency(unalloc)}
               </span>
             ) : (
               <span className="text-muted-foreground">KES 0.00</span>
@@ -94,7 +121,7 @@ export function getPaymentColumns(opts: {
                   : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
               )}
             >
-              {row.original.status || "active"}
+              {formatStatusLabel(row.original.status || "active")}
             </Badge>
           </div>
         )
@@ -186,7 +213,7 @@ export function getInvoiceColumns(opts: {
       header: () => <div className="text-right">Total Invoiced</div>,
       cell: ({ row }) => (
         <div className="text-right font-mono tabular-nums font-semibold">
-          KES {Number(row.original.total_amount).toLocaleString()}
+          {formatCurrency(row.original.total_amount)}
         </div>
       ),
     },
@@ -199,7 +226,7 @@ export function getInvoiceColumns(opts: {
           <div className="text-right font-mono tabular-nums font-bold">
             {balDue > 0 ? (
               <span className="text-rose-600 dark:text-rose-400">
-                KES {balDue.toLocaleString()}
+                {formatCurrency(balDue)}
               </span>
             ) : (
               <span className="text-emerald-600 dark:text-emerald-400">
@@ -226,7 +253,7 @@ export function getInvoiceColumns(opts: {
                   : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
               )}
             >
-              {row.original.status}
+              {formatStatusLabel(row.original.status)}
             </Badge>
           </div>
         )
@@ -294,7 +321,7 @@ export function getAllocationColumns(opts: {
       header: () => <div className="text-right">Amount Allocated</div>,
       cell: ({ row }) => (
         <div className="text-right font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
-          +KES {Number(row.original.amount).toLocaleString()}
+          +{formatCurrency(row.original.amount)}
         </div>
       ),
     },
@@ -314,7 +341,7 @@ export function getAllocationColumns(opts: {
                   : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
               )}
             >
-              {row.original.status}
+              {formatStatusLabel(row.original.status)}
             </Badge>
           </div>
         )
@@ -345,7 +372,7 @@ export function getAllocationColumns(opts: {
                   opts.onReverse({
                     type: "allocation",
                     id: a.id,
-                    title: `Allocation ${a.id.substring(0, 8)} (KES ${Number(a.amount).toLocaleString()})`,
+                    title: `Allocation ${a.id.substring(0, 8)} (${formatCurrency(a.amount)})`,
                   })
                 }
                 className="h-7 text-[11px] px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer"

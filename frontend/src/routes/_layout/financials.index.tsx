@@ -39,13 +39,14 @@ import { useClients } from "@/hooks/useClients"
 import { useFinancialSummary, useInvoices } from "@/hooks/useFinancials"
 import { usePaymentAllocations, usePaymentRecords } from "@/hooks/usePayments"
 import { cn } from "@/lib/utils"
+import { formatCurrency } from "@/utils"
 
 export const Route = createFileRoute("/_layout/financials/")({
   component: FinancialsHub,
   head: () => ({
     meta: [
       {
-        title: "Financials & Accounts Hub - HealthWatch MS",
+        title: "Financials Hub - HealthWatch MS",
       },
     ],
   }),
@@ -213,7 +214,7 @@ function FinancialsHub() {
         <div className="flex items-center gap-2">
           <Button
             onClick={() => setIsRecordPaymentOpen(true)}
-            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+            className="gap-2 cursor-pointer"
           >
             <Plus className="size-4" />
             Record Payment
@@ -233,7 +234,7 @@ function FinancialsHub() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono tabular-nums tracking-tight">
-              KES {summary.totalInvoiced.toLocaleString()}
+              {formatCurrency(summary.totalInvoiced)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Across {invoices.length} issued policy invoices
@@ -251,10 +252,10 @@ function FinancialsHub() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
-              KES {summary.totalPaid.toLocaleString()}
+              {formatCurrency(summary.totalPaid)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Deposited in agency accounts
+              Deposited in agency bank & M-Pesa
             </p>
           </CardContent>
         </Card>
@@ -269,32 +270,82 @@ function FinancialsHub() {
           )}
         >
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">
+            <CardTitle
+              className={cn(
+                "text-xs font-bold uppercase tracking-wider",
+                summary.totalDue > 0
+                  ? "text-rose-700 dark:text-rose-400"
+                  : "text-muted-foreground",
+              )}
+            >
               Outstanding Balance
             </CardTitle>
-            <AlertCircle className="size-4 text-rose-600" />
+            <AlertCircle
+              className={cn(
+                "size-4",
+                summary.totalDue > 0 ? "text-rose-600" : "text-muted-foreground",
+              )}
+            />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono tabular-nums tracking-tight text-rose-600 dark:text-rose-400">
-              KES {summary.totalDue.toLocaleString()}
+            <div
+              className={cn(
+                "text-2xl font-bold font-mono tabular-nums tracking-tight",
+                summary.totalDue > 0 && "text-rose-600 dark:text-rose-400",
+              )}
+            >
+              {formatCurrency(summary.totalDue)}
             </div>
-            <p className="text-xs text-rose-700/80 dark:text-rose-400/80 mt-1">
+            <p
+              className={cn(
+                "text-xs mt-1",
+                summary.totalDue > 0
+                  ? "text-rose-700/80 dark:text-rose-400/80"
+                  : "text-muted-foreground",
+              )}
+            >
               Open debtor balance awaiting collection
             </p>
           </CardContent>
         </Card>
 
         {/* Metric 4: Unallocated Client Funds */}
-        <Card className="hover:border-primary/50 transition-colors">
+        <Card
+          className={cn(
+            "transition-colors",
+            totalUnallocated > 0
+              ? "border-amber-500/40 bg-amber-500/5 hover:border-amber-500/60"
+              : "hover:border-primary/50",
+          )}
+        >
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <CardTitle
+              className={cn(
+                "text-xs font-bold uppercase tracking-wider",
+                totalUnallocated > 0
+                  ? "text-amber-700 dark:text-amber-400"
+                  : "text-muted-foreground",
+              )}
+            >
               Unallocated Funds
             </CardTitle>
-            <Wallet className="size-4 text-amber-600" />
+            <Wallet
+              className={cn(
+                "size-4",
+                totalUnallocated > 0
+                  ? "text-amber-600"
+                  : "text-muted-foreground",
+              )}
+            />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono tabular-nums tracking-tight text-amber-600 dark:text-amber-400">
-              KES {totalUnallocated.toLocaleString()}
+            <div
+              className={cn(
+                "text-2xl font-bold font-mono tabular-nums tracking-tight",
+                totalUnallocated > 0 && "text-amber-600 dark:text-amber-400",
+              )}
+            >
+              {formatCurrency(totalUnallocated)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Cleared funds awaiting invoice allocation
@@ -350,7 +401,7 @@ function FinancialsHub() {
                 onReverse: setReversalTarget,
               })}
               data={filteredPayments}
-              searchPlaceholder="Search payment records..."
+              hideSearch
             />
           </CardContent>
         </Card>
@@ -363,7 +414,7 @@ function FinancialsHub() {
             <DataTable
               columns={getInvoiceColumns({ clientMap })}
               data={filteredInvoices}
-              searchPlaceholder="Search invoices..."
+              hideSearch
             />
           </CardContent>
         </Card>
@@ -378,7 +429,7 @@ function FinancialsHub() {
                 onReverse: setReversalTarget,
               })}
               data={filteredAllocations}
-              searchPlaceholder="Search allocations..."
+              hideSearch
             />
           </CardContent>
         </Card>
