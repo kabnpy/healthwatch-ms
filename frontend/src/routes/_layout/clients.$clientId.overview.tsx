@@ -88,7 +88,7 @@ function ClientOverview() {
                   )}
                 >
                   <Building2 className="mr-1 size-3" />
-                  {client.client_type} Account
+                  {client.client_type} Client
                 </Badge>
 
                 {client.kra_pin && (
@@ -262,7 +262,11 @@ function ClientOverview() {
             <CreditCard
               className={cn(
                 "size-4",
-                summary.totalDue > 0 ? "text-rose-600" : "text-emerald-600",
+                summary.totalDue > 0
+                  ? "text-rose-600"
+                  : summary.totalInvoiced === 0
+                    ? "text-muted-foreground"
+                    : "text-emerald-600",
               )}
             />
           </CardHeader>
@@ -272,14 +276,20 @@ function ClientOverview() {
                 "text-2xl font-bold font-mono tabular-nums tracking-tight",
                 summary.totalDue > 0
                   ? "text-rose-600 dark:text-rose-400"
-                  : "text-emerald-600 dark:text-emerald-400",
+                  : summary.totalInvoiced === 0
+                    ? "text-foreground"
+                    : "text-emerald-600 dark:text-emerald-400",
               )}
             >
               KES {summary.totalDue.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground mt-1 flex items-center justify-between">
               <span>
-                {summary.totalDue > 0 ? "Open balance due" : "Account settled"}
+                {summary.totalDue > 0
+                  ? "Open balance due"
+                  : summary.totalInvoiced === 0
+                    ? "No issued invoices"
+                    : "Account settled"}
               </span>
               {summary.totalDue > 0 && (
                 <Link
