@@ -50,10 +50,7 @@ export function StepAsset({ defaultValues, onNext }: StepAssetProps) {
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel>Insurance Product</FieldLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-              >
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <SelectTrigger className="h-12 text-base">
                   <SelectValue placeholder="Select a product..." />
                 </SelectTrigger>
@@ -91,8 +88,7 @@ export function StepAsset({ defaultValues, onNext }: StepAssetProps) {
                 className="h-12 text-base"
               />
               <FieldDescription>
-                Enter the unique reference number provided by the insurance
-                company.
+                Enter the unique reference number provided by the insurer.
               </FieldDescription>
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
