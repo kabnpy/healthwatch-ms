@@ -81,7 +81,17 @@ function ClientHubContent({ clientId }: { clientId: string }) {
   else if (path.includes("/settings")) activeTab = "settings"
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center border-b pb-3">
+        <Link
+          to="/clients"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors min-w-0"
+        >
+          <ArrowLeft className="h-4 w-4 shrink-0" />
+          <span className="truncate">Back to Clients</span>
+        </Link>
+      </div>
+
       <div className="flex items-center justify-between border-b pb-6">
         <div>
           <h1 className="text-4xl font-bold tracking-tight">{client.name}</h1>
@@ -92,7 +102,10 @@ function ClientHubContent({ clientId }: { clientId: string }) {
       </div>
 
       <Tabs value={activeTab} className="w-full">
-        <TabsList className="w-full max-w-full overflow-x-auto justify-start">
+        <TabsList
+          variant="line"
+          className="w-full max-w-full overflow-x-auto justify-start border-b"
+        >
           <TabsTrigger
             value="overview"
             render={

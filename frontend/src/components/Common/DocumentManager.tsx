@@ -153,7 +153,7 @@ export function DocumentManager({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold tracking-tight text-primary">
+        <h2 className="text-xl font-bold tracking-tight">
           {title}
         </h2>
         <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>

@@ -90,255 +90,186 @@ function ClientOverview() {
 
   return (
     <div className="flex flex-col gap-6 pt-4 pb-12">
-      {/* 1. Entity Profile & Contact Dossier Strip */}
-      <Card className="border-border/80 bg-card shadow-xs">
-        <CardContent className="p-5">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            {/* Identity & Legal Identifiers */}
-            <div className="space-y-3 min-w-0">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-xs font-semibold px-2.5 py-0.5 uppercase tracking-wider",
-                    client.client_type === "Corporate"
-                      ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
-                      : "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
-                  )}
-                >
-                  <Building2 className="mr-1 size-3" />
-                  {client.client_type} Client
-                </Badge>
-
-                {client.kra_pin && (
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border bg-muted/30 text-xs font-mono font-medium">
-                    <Hash className="size-3 text-muted-foreground" />
-                    <span>PIN: {client.kra_pin}</span>
-                    <button
-                      type="button"
-                      onClick={() => copyPin(client.kra_pin || "")}
-                      className="ml-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                      title="Copy KRA PIN"
-                    >
-                      {copiedPin === client.kra_pin ? (
-                        <Check className="size-3 text-emerald-500" />
-                      ) : (
-                        <Copy className="size-3" />
-                      )}
-                    </button>
-                  </div>
+      {/* 1. Compact Inline Metadata Strip */}
+      <div className="flex flex-col gap-3 border-b pb-4 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          {client.kra_pin && (
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border bg-muted/30 font-mono font-medium text-foreground">
+              <Hash className="size-3 text-muted-foreground" />
+              <span>PIN: {client.kra_pin}</span>
+              <button
+                type="button"
+                onClick={() => copyPin(client.kra_pin || "")}
+                className="ml-0.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                title="Copy KRA PIN"
+              >
+                {copiedPin === client.kra_pin ? (
+                  <Check className="size-3 text-emerald-500" />
+                ) : (
+                  <Copy className="size-3" />
                 )}
-              </div>
-
-              {/* Contact & Location Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-6 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Phone className="size-3.5 text-primary shrink-0" />
-                  {client.phone ? (
-                    <a
-                      href={`tel:${client.phone}`}
-                      className="hover:text-foreground font-mono transition-colors"
-                    >
-                      {client.phone}
-                    </a>
-                  ) : (
-                    <span>No phone recorded</span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 truncate">
-                  <Mail className="size-3.5 text-primary shrink-0" />
-                  {client.email ? (
-                    <a
-                      href={`mailto:${client.email}`}
-                      className="hover:text-foreground truncate transition-colors"
-                      title={client.email}
-                    >
-                      {client.email}
-                    </a>
-                  ) : (
-                    <span>No email recorded</span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 truncate">
-                  <MapPin className="size-3.5 text-primary shrink-0" />
-                  <span
-                    className="truncate"
-                    title={
-                      client.physical_address ||
-                      postalAddress ||
-                      "No address recorded"
-                    }
-                  >
-                    {client.physical_address ||
-                      postalAddress ||
-                      "No address recorded"}
-                  </span>
-                </div>
-              </div>
+              </button>
             </div>
+          )}
 
-            {/* Quick Actions */}
-            <div className="flex items-center gap-2 shrink-0 border-t lg:border-t-0 pt-3 lg:pt-0">
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs"
-                render={
-                  <Link
-                    to="/clients/$clientId/policies"
-                    params={{ clientId }}
-                    className="gap-1.5"
-                  >
-                    <ShieldCheck className="size-3.5" />
-                    View All Policies
-                  </Link>
-                }
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs"
-                render={
-                  <Link
-                    to="/clients/$clientId/invoices"
-                    params={{ clientId }}
-                    className="gap-1.5"
-                  >
-                    <Receipt className="size-3.5" />
-                    View Ledger
-                  </Link>
-                }
-              />
-            </div>
+          <div className="flex items-center gap-1.5">
+            <Phone className="size-3.5 text-muted-foreground shrink-0" />
+            {client.phone ? (
+              <a
+                href={`tel:${client.phone}`}
+                className="hover:text-foreground font-mono transition-colors"
+              >
+                {client.phone}
+              </a>
+            ) : (
+              <span>No phone recorded</span>
+            )}
           </div>
 
-          {/* Key Contacts Strip (if applicable) */}
-          {client.contacts && (client.contacts as any[]).length > 0 && (
-            <div className="mt-4 pt-3.5 border-t flex flex-wrap items-center gap-4 text-xs">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                <Users className="size-3" />
-                Key Contacts:
-              </span>
-              {(client.contacts as any[]).map((contact, idx) => (
-                <div
-                  key={idx}
-                  className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-muted/40 border text-xs"
-                >
-                  <User className="size-3 text-muted-foreground" />
-                  <span className="font-semibold text-foreground">
-                    {contact.name}
-                  </span>
-                  <span className="text-muted-foreground">
-                    ({contact.role || "Contact"})
-                  </span>
-                  {contact.phone && (
-                    <span className="font-mono text-muted-foreground">
-                      &bull; {contact.phone}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Mail className="size-3.5 text-muted-foreground shrink-0" />
+            {client.email ? (
+              <a
+                href={`mailto:${client.email}`}
+                className="hover:text-foreground truncate transition-colors"
+                title={client.email}
+              >
+                {client.email}
+              </a>
+            ) : (
+              <span>No email recorded</span>
+            )}
+          </div>
 
-      {/* 2. Operational Metrics Ribbon (Strict Invariant: Tabular Numerals) */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <MapPin className="size-3.5 text-muted-foreground shrink-0" />
+            <span
+              className="truncate"
+              title={
+                client.physical_address ||
+                postalAddress ||
+                "No address recorded"
+              }
+            >
+              {client.physical_address ||
+                postalAddress ||
+                "No address recorded"}
+            </span>
+          </div>
+        </div>
+
+        {/* Key Contacts Strip (if applicable) */}
+        {client.contacts && (client.contacts as any[]).length > 0 && (
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+              <Users className="size-3" />
+              Key Contacts:
+            </span>
+            {(client.contacts as any[]).map((contact, idx) => (
+              <div
+                key={idx}
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/40 border text-xs"
+              >
+                <User className="size-3 text-muted-foreground" />
+                <span className="font-semibold text-foreground">
+                  {contact.name}
+                </span>
+                <span className="text-muted-foreground">
+                  ({contact.role || "Contact"})
+                </span>
+                {contact.phone && (
+                  <span className="font-mono text-muted-foreground">
+                    &bull; {contact.phone}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 2. Unified Hairline-Divided Summary Strip (Strict Invariant: Tabular Numerals) */}
+      <div
+        data-testid="overview-summary-strip"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x rounded-lg border bg-card"
+      >
         {/* Metric 1: Policies In Force */}
-        <Card className="hover:border-primary/50 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="p-4 flex flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Policies In Force
-            </CardTitle>
+            </span>
             <ShieldCheck className="size-4 text-emerald-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono tabular-nums tracking-tight">
-              {activePolicies.length}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {policies.length} total historical contracts
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="text-2xl font-bold font-mono tabular-nums tracking-tight">
+            {activePolicies.length}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {policies.length} total historical contracts
+          </p>
+        </div>
 
         {/* Metric 2: Outstanding Balance */}
-        <Card
-          className={cn(
-            "transition-colors",
-            summary.totalDue > 0
-              ? "border-rose-500/40 bg-rose-500/5 hover:border-rose-500/60"
-              : "hover:border-primary/50",
-          )}
-        >
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="p-4 flex flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Outstanding Balance
-            </CardTitle>
+            </span>
             <CreditCard className={cn("size-4", balanceState.iconClass)} />
-          </CardHeader>
-          <CardContent>
-            <div
-              className={cn(
-                "text-2xl font-bold font-mono tabular-nums tracking-tight",
-                balanceState.amountClass,
-              )}
-            >
-              {formatCurrency(summary.totalDue)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center justify-between">
-              <span>{balanceState.label}</span>
-              {summary.totalDue > 0 && (
-                <Link
-                  to="/clients/$clientId/invoices"
-                  params={{ clientId }}
-                  className="font-bold underline text-rose-600 dark:text-rose-400"
-                >
-                  Collect &rarr;
-                </Link>
-              )}
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div
+            className={cn(
+              "text-2xl font-bold font-mono tabular-nums tracking-tight",
+              balanceState.amountClass,
+            )}
+          >
+            {formatCurrency(summary.totalDue)}
+          </div>
+          <p className="text-xs text-muted-foreground flex items-center justify-between">
+            <span>{balanceState.label}</span>
+            {summary.totalDue > 0 && (
+              <Link
+                to="/clients/$clientId/invoices"
+                params={{ clientId }}
+                className="font-bold underline text-rose-600 dark:text-rose-400"
+              >
+                Collect &rarr;
+              </Link>
+            )}
+          </p>
+        </div>
 
-        {/* Metric 3: Total Premium Invoiced */}
-        <Card className="hover:border-primary/50 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        {/* Metric 3: Invoiced Premium */}
+        <div className="p-4 flex flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Invoiced Premium
-            </CardTitle>
+            </span>
             <Receipt className="size-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono tabular-nums tracking-tight">
-              KES {summary.totalInvoiced.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              All issued debit notes
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="text-2xl font-bold font-mono tabular-nums tracking-tight">
+            {formatCurrency(summary.totalInvoiced)}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            All issued debit notes
+          </p>
+        </div>
 
-        {/* Metric 4: Collections Cleared */}
-        <Card className="hover:border-primary/50 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        {/* Metric 4: Cleared Collections */}
+        <div className="p-4 flex flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Cleared Collections
-            </CardTitle>
+            </span>
             <Check className="size-4 text-emerald-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
-              KES {summary.totalPaid.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Remitted by client
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="text-2xl font-bold font-mono tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
+            {formatCurrency(summary.totalPaid)}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Remitted by client
+          </p>
+        </div>
       </div>
 
       {/* 3. Operational Two-Column Workspace */}
