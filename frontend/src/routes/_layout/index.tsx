@@ -50,8 +50,7 @@ function AgencyDashboard() {
     0,
     200,
   )
-  const { data: horizonData, isLoading: isHorizonLoading } =
-    useRenewalsHorizon()
+  const { data: horizonData } = useRenewalsHorizon()
   const { summary } = useFinancialSummary()
 
   const [isAddReceiptOpen, setIsAddReceiptOpen] = useState(false)

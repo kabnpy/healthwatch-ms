@@ -3,7 +3,7 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.models import (
     Client,
@@ -21,6 +21,10 @@ from app.models import (
     RenewalStatus,
     RenewalTransition,
     RenewalUpdate,
+    RiskNote,
+    RiskNoteStatus,
+    TransactionType,
+    User,
     get_datetime_utc,
 )
 from app.services.renewal import (
@@ -353,3 +357,131 @@ def test_create_and_list_invitations_for_renewal(db: Session) -> None:
     )
     assert [inv.id for inv in invitations] == [inv2.id, inv1.id]
     assert invitations[0].storage_key == "invitations/v2.pdf"
+
+
+def test_transition_renewal_completed_binds_successor_risk_note_for_non_medical(
+    db: Session,
+) -> None:
+    policy, _ = _create_policy_fixture(db)
+    prior_start = date(2025, 1, 1)
+    prior_end = date(2025, 12, 31)
+    prior_note = RiskNote(
+        policy_id=policy.id,
+        risk_note_number=f"RN-{uuid.uuid4().hex[:8].upper()}",
+        transaction_type=TransactionType.NEW_BUSINESS,
+        status=RiskNoteStatus.ISSUED,
+        effective_date=prior_start,
+        coverage_start=prior_start,
+        coverage_end=prior_end,
+        net_premium=Decimal("40000.00"),
+        financial_breakdown={"net_premium": 40000.0, "total_amount": 40250.0},
+        commission_amount=Decimal("4000.00"),
+        total_amount=Decimal("40250.00"),
+        cover_snapshot={"sum_insured": 1000000},
+    )
+    db.add(prior_note)
+    db.commit()
+    db.refresh(prior_note)
+
+    renewal = RenewalService.create_renewal(
+        session=db,
+        renewal_in=RenewalCreate(
+            policy_id=policy.id,
+            renewal_period_start=date(2026, 1, 1),
+            renewal_period_end=date(2026, 12, 31),
+            proposed_premium=Decimal("45000.00"),
+        ),
+    )
+    for target in (
+        RenewalStatus.CARRIER_RECEIVED,
+        RenewalStatus.CLIENT_INVITED,
+        RenewalStatus.PAID,
+    ):
+        renewal = RenewalService.transition_renewal(
+            session=db,
+            renewal_id=renewal.id,
+            transition_in=RenewalTransition(
+                target_status=target,
+                version=renewal.version,
+                agreed_premium=Decimal("44000.00")
+                if target == RenewalStatus.PAID
+                else None,
+            ),
+        )
+
+    user = User(
+        email=f"user-{uuid.uuid4().hex[:6]}@example.com",
+        hashed_password="hashedpassword",
+    )
+    db.add(user)
+    db.flush()
+    user_id = user.id
+    completed = RenewalService.transition_renewal(
+        session=db,
+        renewal_id=renewal.id,
+        transition_in=RenewalTransition(
+            target_status=RenewalStatus.COMPLETED,
+            version=renewal.version,
+        ),
+        current_user_id=user_id,
+    )
+    assert completed.status == RenewalStatus.COMPLETED
+
+    db.refresh(prior_note)
+    assert prior_note.status == RiskNoteStatus.REPLACED
+
+    successor_notes = db.exec(
+        select(RiskNote)
+        .where(RiskNote.policy_id == policy.id)
+        .where(RiskNote.status == RiskNoteStatus.ISSUED)
+    ).all()
+    assert len(successor_notes) == 1
+    successor = successor_notes[0]
+    assert successor.transaction_type == TransactionType.RENEWAL
+    assert successor.previous_risk_note_id == prior_note.id
+    assert successor.created_by_id == user_id
+    assert successor.coverage_start == date(2026, 1, 1)
+    assert successor.coverage_end == date(2026, 12, 31)
+    assert successor.total_amount == Decimal("44000.00")
+    assert successor.cover_snapshot == {"sum_insured": 1000000}
+
+
+def test_transition_renewal_completed_skips_risk_note_for_medical(
+    db: Session,
+) -> None:
+    policy, _ = _create_policy_fixture(db)
+    from app.models import Product
+
+    product = db.get(Product, policy.product_id)
+    assert product is not None
+    product.class_of_insurance = "Medical"
+    db.add(product)
+    db.commit()
+
+    renewal = RenewalService.create_renewal(
+        session=db,
+        renewal_in=RenewalCreate(
+            policy_id=policy.id,
+            renewal_period_start=date(2026, 1, 1),
+            renewal_period_end=date(2026, 12, 31),
+            proposed_premium=Decimal("120000.00"),
+        ),
+    )
+    for target in (
+        RenewalStatus.CARRIER_RECEIVED,
+        RenewalStatus.CLIENT_INVITED,
+        RenewalStatus.PAID,
+        RenewalStatus.COMPLETED,
+    ):
+        renewal = RenewalService.transition_renewal(
+            session=db,
+            renewal_id=renewal.id,
+            transition_in=RenewalTransition(
+                target_status=target,
+                version=renewal.version,
+            ),
+        )
+
+    assert renewal.status == RenewalStatus.COMPLETED
+    notes = db.exec(select(RiskNote).where(RiskNote.policy_id == policy.id)).all()
+    assert notes == []
