@@ -179,14 +179,13 @@ function RenewalsDeskPage() {
         cell: ({ row }) => {
           const product = row.original.policy.product
           const activeNote = row.original.policy.active_note
-          const snapshot = activeNote?.cover_snapshot as any
           const summary = extractCoverSummary(activeNote?.cover_snapshot)
 
           let assetDescriptor = "Asset / Risk Details"
           if (summary.vehicleReg) {
             assetDescriptor = `${summary.makeModel || "Vehicle"} (${summary.vehicleReg})`
-          } else if (snapshot?.property?.location) {
-            assetDescriptor = snapshot.property.location
+          } else if (summary.propertyLocation) {
+            assetDescriptor = summary.propertyLocation
           } else if (product?.class_of_insurance) {
             assetDescriptor = product.class_of_insurance
           }
