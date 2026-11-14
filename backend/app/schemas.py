@@ -1,5 +1,4 @@
 import json
-import uuid
 from decimal import Decimal
 from typing import Annotated, Any, Literal
 
@@ -79,17 +78,6 @@ class FinancialBreakdown(BaseModel):
         BreakdownUnion,
         Field(discriminator="type"),
     ]
-
-
-class QuoteRequest(BaseModel):
-    product_id: uuid.UUID
-    risk_details: dict[str, Any]
-
-
-class QuoteResponse(BaseModel):
-    breakdown: BreakdownUnion
-    calculation_detail: dict[str, Any] = Field(default_factory=dict)
-    rule_provenance: dict[str, Any] = Field(default_factory=dict)
 
 
 class MotorVehicleDetails(BaseModel):

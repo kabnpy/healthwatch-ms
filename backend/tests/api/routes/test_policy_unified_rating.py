@@ -84,11 +84,11 @@ def test_policy_quote_uses_published_rate_table_version(
     _create_published_rate_table(db, product=product)
 
     resp = client.post(
-        f"{settings.API_V1_STR}/policies/quote",
+        f"{settings.API_V1_STR}/calculations/quote",
         headers=superuser_token_headers,
         json={
             "product_id": str(product.id),
-            "risk_details": {
+            "inputs": {
                 "vehicle": {
                     "registration_number": "KAA 123A",
                     "make": "Toyota",
@@ -99,13 +99,12 @@ def test_policy_quote_uses_published_rate_table_version(
     )
     assert resp.status_code == 200, resp.text
     data = resp.json()
-    breakdown = data["breakdown"]
-    assert Decimal(breakdown["net_premium"]) == Decimal("40000.00")
-    assert Decimal(breakdown["taxes"]["Training Levy"]) == Decimal("80.00")
-    assert Decimal(breakdown["taxes"]["PHCF"]) == Decimal("100.00")
-    assert Decimal(breakdown["taxes"]["Stamp Duty"]) == Decimal("40.00")
-    assert Decimal(breakdown["commission_amount"]) == Decimal("4000.00")
-    assert Decimal(breakdown["total_amount"]) == Decimal("40220.00")
+    assert Decimal(data["net_premium"]) == Decimal("40000.00")
+    assert Decimal(data["taxes"]["training_levy"]) == Decimal("80.00")
+    assert Decimal(data["taxes"]["phcf"]) == Decimal("100.00")
+    assert Decimal(data["taxes"]["stamp_duty"]) == Decimal("40.00")
+    assert Decimal(data["commission_amount"]) == Decimal("4000.00")
+    assert Decimal(data["total_amount"]) == Decimal("40220.00")
 
     calculation_detail = data["calculation_detail"]
     assert Decimal(calculation_detail["basic_premium"]) == Decimal("40000.00")
@@ -128,11 +127,11 @@ def test_policy_quote_missing_published_rate_table_returns_400(
     db.commit()
 
     resp = client.post(
-        f"{settings.API_V1_STR}/policies/quote",
+        f"{settings.API_V1_STR}/calculations/quote",
         headers=superuser_token_headers,
         json={
             "product_id": str(product.id),
-            "risk_details": {
+            "inputs": {
                 "vehicle": {
                     "registration_number": "KAA 123A",
                     "make": "Toyota",

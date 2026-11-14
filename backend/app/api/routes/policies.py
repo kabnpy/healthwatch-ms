@@ -1,8 +1,7 @@
 import uuid
-from decimal import Decimal
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.api.deps import CurrentUser, SessionDep, StaffUser
 from app.api.utils import prepare_policy_public, raise_policy_http_error
@@ -16,10 +15,7 @@ from app.models import (
     RiskNotePublic,
     RiskNotesPublic,
 )
-from app.schemas import BaseFinancialBreakdown, QuoteRequest, QuoteResponse
-from app.services.catalog import CatalogNotFoundError, catalog_service
 from app.services.policy import PolicyError, policy_service
-from app.services.premium_calculation import RatingValidationError, calculate_premium
 
 router = APIRouter()
 
@@ -53,50 +49,6 @@ def read_policy(session: SessionDep, _current_user: CurrentUser, id: uuid.UUID) 
     except PolicyError as exc:
         raise_policy_http_error(exc)
     return prepare_policy_public(policy)
-
-
-@router.post("/quote", response_model=QuoteResponse)
-def get_policy_quote(
-    *,
-    session: SessionDep,
-    _current_user: CurrentUser,
-    quote_in: QuoteRequest,
-) -> Any:
-    """
-    Get a non-persistent premium quote breakdown.
-    """
-    try:
-        product = catalog_service.get_product_or_raise(
-            session=session, product_id=quote_in.product_id
-        )
-    except CatalogNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-
-    try:
-        result = calculate_premium(
-            inputs=quote_in.risk_details,
-            product=product,
-            session=session,
-        )
-        breakdown = BaseFinancialBreakdown(
-            net_premium=result.net_premium,
-            taxes={
-                "Training Levy": result.training_levy,
-                "PHCF": result.phcf,
-                "Stamp Duty": result.stamp_duty,
-            },
-            commission_amount=result.commission_amount or Decimal("0.00"),
-            total_amount=result.total_premium,
-        )
-        return QuoteResponse(
-            breakdown=breakdown,
-            calculation_detail=result.calculation_detail,
-            rule_provenance=result.rule_provenance,
-        )
-    except RatingValidationError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/", response_model=PolicyPublic)
