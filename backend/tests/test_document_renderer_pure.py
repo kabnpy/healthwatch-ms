@@ -13,7 +13,6 @@ class StubPdfRasterizer:
 def test_render_html_risk_note_pure_in_process() -> None:
     risk_note_id = uuid.uuid4()
     snapshot = {
-        "_frozen": True,
         "found": True,
         "entity_type": DocumentEntityType.POLICY.value,
         "entity_id": str(risk_note_id),
@@ -56,7 +55,6 @@ def test_render_html_risk_note_pure_in_process() -> None:
 
 def test_render_pdf_pure_in_process_with_stub_rasterizer() -> None:
     snapshot = {
-        "_frozen": True,
         "found": True,
         "entity_type": DocumentEntityType.CLIENT.value,
         "entity_id": str(uuid.uuid4()),
@@ -84,7 +82,6 @@ def test_render_html_invoice_pure_in_process() -> None:
     client_id = uuid.uuid4()
     invoice_id = uuid.uuid4()
     snapshot = {
-        "_frozen": True,
         "found": True,
         "entity_type": DocumentEntityType.CLIENT.value,
         "entity_id": str(client_id),
@@ -118,7 +115,6 @@ def test_render_html_invoice_pure_in_process() -> None:
 def test_render_html_fallback_resource_pure_in_process() -> None:
     entity_id = uuid.uuid4()
     snapshot = {
-        "_frozen": True,
         "found": True,
         "entity_type": DocumentEntityType.CLIENT.value,
         "entity_id": str(entity_id),

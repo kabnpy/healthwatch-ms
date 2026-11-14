@@ -167,8 +167,6 @@ class DocumentRenderer:
         Statement remains the ADR-0005 exception and is not frozen at enqueue time.
         """
         override = dict(snapshot_override or {})
-        if override.get("_frozen") is True:
-            return override
 
         if resource_type == DocumentJobResourceType.STATEMENT:
             return cls._build_statement_snapshot(
@@ -193,7 +191,6 @@ class DocumentRenderer:
 
         # Invitation, InvoiceBatch, or other non-Statement resources
         return {
-            "_frozen": True,
             "found": False,
             "resource_type": resource_type.value,
             "resource_id": str(resource_id) if resource_id else None,
@@ -214,8 +211,7 @@ class DocumentRenderer:
         risk_note = session.get(RiskNote, target_id) if target_id else None
         if not risk_note:
             return {
-                "_frozen": True,
-                "found": False,
+                    "found": False,
                 "target_id": str(target_id) if target_id else None,
                 **jsonable_encoder(override),
             }
@@ -272,7 +268,6 @@ class DocumentRenderer:
 
         rn_number = risk_note.risk_note_number or risk_note.id
         snapshot: dict[str, Any] = {
-            "_frozen": True,
             "found": True,
             "entity_type": DocumentEntityType.RISK_NOTE.value,
             "entity_id": str(risk_note.id),
@@ -293,7 +288,7 @@ class DocumentRenderer:
             "include_digital_stamp": bool(override.get("include_digital_stamp", True)),
         }
         for key, value in override.items():
-            if key not in {"_frozen", "found"}:
+            if key != "found":
                 snapshot[key] = jsonable_encoder(value)
         return snapshot
 
@@ -308,8 +303,7 @@ class DocumentRenderer:
         invoice = session.get(Invoice, target_id) if target_id else None
         if not invoice:
             return {
-                "_frozen": True,
-                "found": False,
+                    "found": False,
                 "target_id": str(target_id) if target_id else None,
                 **jsonable_encoder(override),
             }
@@ -339,7 +333,6 @@ class DocumentRenderer:
         inv_number = invoice.invoice_number or invoice.id
         inv_entity_id = invoice.client_id or invoice.id
         snapshot: dict[str, Any] = {
-            "_frozen": True,
             "found": True,
             "entity_type": DocumentEntityType.CLIENT.value,
             "entity_id": str(inv_entity_id),
@@ -351,7 +344,7 @@ class DocumentRenderer:
             "due_date_formatted": due_date_str,
         }
         for key, value in override.items():
-            if key not in {"_frozen", "found"}:
+            if key != "found":
                 snapshot[key] = jsonable_encoder(value)
         return snapshot
 
@@ -402,7 +395,6 @@ class DocumentRenderer:
 
         client_slug = client_name.replace(" ", "_")
         snapshot: dict[str, Any] = {
-            "_frozen": True,
             "found": found,
             "entity_type": DocumentEntityType.CLIENT.value,
             "entity_id": str(client_id_val),
@@ -410,7 +402,7 @@ class DocumentRenderer:
             "statement": statement_data,
         }
         for key, value in override.items():
-            if key not in {"_frozen", "found"}:
+            if key != "found":
                 snapshot[key] = jsonable_encoder(value)
         return snapshot
 

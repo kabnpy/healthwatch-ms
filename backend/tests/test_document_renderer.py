@@ -566,7 +566,7 @@ def test_build_snapshot_fallback_resource_type_is_frozen(db: Session) -> None:
         snapshot_override={"custom_key": "custom_value"},
     )
 
-    assert snapshot["_frozen"] is True
+    assert "_frozen" not in snapshot
     assert snapshot["found"] is False
     assert snapshot["entity_type"] is None
     assert snapshot["entity_id"] == str(resource_id)
@@ -586,14 +586,16 @@ def test_enqueue_job_freezes_risk_note_and_invoice_but_defers_statement(
         resource_type=DocumentJobResourceType.RISK_NOTE,
         resource_id=uuid.uuid4(),
     )
-    assert rn_job.snapshot_data.get("_frozen") is True
+    assert "_frozen" not in rn_job.snapshot_data
+    assert rn_job.snapshot_data.get("found") is False
 
     inv_job = DocumentJobService.enqueue_job(
         session=db,
         resource_type=DocumentJobResourceType.INVOICE,
         resource_id=uuid.uuid4(),
     )
-    assert inv_job.snapshot_data.get("_frozen") is True
+    assert "_frozen" not in inv_job.snapshot_data
+    assert inv_job.snapshot_data.get("found") is False
 
     stmt_job = DocumentJobService.enqueue_job(
         session=db,
