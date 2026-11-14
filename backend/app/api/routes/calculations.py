@@ -1,8 +1,9 @@
 import uuid
+from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.api.deps import CurrentUser, SessionDep, StaffUser
 from app.models import (
@@ -12,6 +13,7 @@ from app.models import (
     PremiumCalculationsPublic,
 )
 from app.services.premium_calculation import (
+    PremiumCalculationService,
     RatingValidationError,
     calculate_premium,
     count_premium_calculations,
@@ -26,11 +28,28 @@ router = APIRouter()
 
 
 class AdvisoryQuoteRequest(BaseModel):
-    rate_table_id: uuid.UUID
-    inputs: dict[str, Any]
+    rate_table_id: uuid.UUID | None = None
+    product_id: uuid.UUID | None = None
+    inputs: dict[str, Any] = Field(default_factory=dict)
     business_event: BusinessEvent = BusinessEvent.NEW_BUSINESS
     policy_id: uuid.UUID | None = None
     renewal_id: uuid.UUID | None = None
+
+
+class CalculationQuoteResponse(BaseModel):
+    basic_premium: Decimal
+    training_levy: Decimal
+    phcf: Decimal
+    stamp_duty: Decimal
+    net_premium: Decimal
+    total_taxes: Decimal
+    total_premium: Decimal
+    total_amount: Decimal
+    commission_amount: Decimal | None = None
+    taxes: dict[str, Any] = Field(default_factory=dict)
+    calculation_detail: dict[str, Any] = Field(default_factory=dict)
+    rule_provenance: dict[str, Any] = Field(default_factory=dict)
+    input_snapshot: dict[str, Any] = Field(default_factory=dict)
 
 
 class PersistQuoteRequest(BaseModel):
@@ -42,34 +61,38 @@ class PersistQuoteRequest(BaseModel):
     is_selected: bool = False
 
 
-@router.post("/quote")
+@router.post("/quote", response_model=CalculationQuoteResponse)
 def quote_preview(
     session: SessionDep,
     _current_user: CurrentUser,
     request: AdvisoryQuoteRequest,
-) -> Any:
+) -> CalculationQuoteResponse:
     """Calculate an advisory quote preview with full breakdown and taxes without persisting."""
     try:
-        rate_table = RateTableService(session).get_version(request.rate_table_id)
-    except RateTableNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
-
-    try:
-        result = calculate_premium(
-            rate_table=rate_table,
+        result = PremiumCalculationService.evaluate_quote(
+            session,
             inputs=request.inputs,
+            rate_table_id=request.rate_table_id,
+            product_id=request.product_id,
         )
     except RatingValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return {
-        "net_premium": result.net_premium,
-        "total_taxes": result.total_taxes,
-        "total_premium": result.total_premium,
-        "calculation_detail": result.calculation_detail,
-        "rule_provenance": result.rule_provenance,
-        "input_snapshot": result.input_snapshot,
-    }
+    return CalculationQuoteResponse(
+        basic_premium=result.basic_premium,
+        training_levy=result.training_levy,
+        phcf=result.phcf,
+        stamp_duty=result.stamp_duty,
+        net_premium=result.net_premium,
+        total_taxes=result.total_taxes,
+        total_premium=result.total_premium,
+        total_amount=result.total_premium,
+        commission_amount=result.commission_amount,
+        taxes=result.calculation_detail.get("taxes", {}),
+        calculation_detail=result.calculation_detail,
+        rule_provenance=result.rule_provenance,
+        input_snapshot=result.input_snapshot,
+    )
 
 
 @router.post(

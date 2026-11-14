@@ -88,11 +88,15 @@ export type AdvisoryQuoteRequest = {
     /**
      * Rate Table Id
      */
-    rate_table_id: string;
+    rate_table_id?: string | null;
+    /**
+     * Product Id
+     */
+    product_id?: string | null;
     /**
      * Inputs
      */
-    inputs: {
+    inputs?: {
         [key: string]: unknown;
     };
     business_event?: BusinessEvent;
@@ -213,6 +217,72 @@ export type Body_login_login_access_token = {
  * BusinessEvent
  */
 export type BusinessEvent = 'new_business' | 'renewal' | 'cover_change';
+
+/**
+ * CalculationQuoteResponse
+ */
+export type CalculationQuoteResponse = {
+    /**
+     * Basic Premium
+     */
+    basic_premium: string;
+    /**
+     * Training Levy
+     */
+    training_levy: string;
+    /**
+     * Phcf
+     */
+    phcf: string;
+    /**
+     * Stamp Duty
+     */
+    stamp_duty: string;
+    /**
+     * Net Premium
+     */
+    net_premium: string;
+    /**
+     * Total Taxes
+     */
+    total_taxes: string;
+    /**
+     * Total Premium
+     */
+    total_premium: string;
+    /**
+     * Total Amount
+     */
+    total_amount: string;
+    /**
+     * Commission Amount
+     */
+    commission_amount?: string | null;
+    /**
+     * Taxes
+     */
+    taxes?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Calculation Detail
+     */
+    calculation_detail?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Rule Provenance
+     */
+    rule_provenance?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Input Snapshot
+     */
+    input_snapshot?: {
+        [key: string]: unknown;
+    };
+};
 
 /**
  * ClaimCreate
@@ -594,6 +664,10 @@ export type ClientStatement = {
      * Net Outstanding Balance
      */
     net_outstanding_balance: string;
+    /**
+     * Unallocated Credits
+     */
+    unallocated_credits?: string;
     /**
      * Invoice Count
      */
@@ -6118,12 +6192,12 @@ export type calculationsQuotePreviewError = calculationsQuotePreviewErrors[keyof
 
 export type calculationsQuotePreviewResponses = {
     /**
-     * Response Calculations-Quote Preview
-     *
      * Successful Response
      */
-    200: unknown;
+    200: CalculationQuoteResponse;
 };
+
+export type calculationsQuotePreviewResponse = calculationsQuotePreviewResponses[keyof calculationsQuotePreviewResponses];
 
 export type calculationsReadCalculationsData = {
     body?: never;
