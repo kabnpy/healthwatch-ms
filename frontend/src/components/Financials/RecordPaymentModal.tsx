@@ -49,12 +49,8 @@ const PAYMENT_METHODS: Array<{
     hint: "EFT / RTGS Reference",
   },
   { value: "cheque", label: "Cheque", hint: "Bank Cheque Number" },
+  { value: "ipf", label: "IPF", hint: "Bank IPF Facility" },
   { value: "cash", label: "Cash", hint: "Direct Cash Receipt" },
-  {
-    value: "ipf",
-    label: "Insurance Premium Financing (IPF)",
-    hint: "Bank IPF Facility",
-  },
 ]
 
 export function RecordPaymentModal({
@@ -254,8 +250,8 @@ export function RecordPaymentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <div className="flex items-center gap-2">
             <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
               <CreditCard className="size-4" />
@@ -265,239 +261,248 @@ export function RecordPaymentModal({
                 Cashiering & Payment Ingestion
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Log funds received into agency accounts and allocate against
-                policy invoices.
+                Log cleared funds deposited into bank or M-Pesa paybill and
+                allocate against policy invoices.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          {/* Quick-Fill: M-Pesa SMS / Bank Advice Parser */}
-          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
-                <Sparkles className="size-3.5 text-primary" />
-                Quick-Fill: Paste M-Pesa SMS / Bank Advice
-              </Label>
-              {pasteText && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearPaste}
-                  className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
-                >
-                  <X className="size-3 mr-1" /> Clear
-                </Button>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto space-y-4 py-2 pr-1">
+            {/* Quick-Fill: M-Pesa SMS / Bank Advice Parser */}
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
+                  <Sparkles className="size-3.5 text-primary" />
+                  Quick-Fill: Paste M-Pesa SMS / Bank Advice
+                </Label>
+                {pasteText && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearPaste}
+                    className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <X className="size-3 mr-1" /> Clear
+                  </Button>
+                )}
+              </div>
+              <Textarea
+                placeholder="Paste raw Safaricom M-Pesa SMS confirmation or bank clearing text to auto-fill payment reference, amount, payer, and invoice..."
+                value={pasteText}
+                onChange={(e) => handlePasteChange(e.target.value)}
+                className="text-xs bg-background resize-none min-h-[50px] font-mono"
+                rows={2}
+              />
+              {parsedBanner && (
+                <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded">
+                  <Check className="size-3 shrink-0" />
+                  <span>{parsedBanner}</span>
+                </div>
               )}
             </div>
-            <Textarea
-              placeholder="Paste raw Safaricom M-Pesa SMS confirmation or bank clearing text to auto-fill payment reference, amount, payer, and invoice..."
-              value={pasteText}
-              onChange={(e) => handlePasteChange(e.target.value)}
-              className="text-xs bg-background resize-none min-h-[50px] font-mono"
-              rows={2}
-            />
-            {parsedBanner && (
-              <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded">
-                <Check className="size-3 shrink-0" />
-                <span>{parsedBanner}</span>
+
+            {/* Client Selection */}
+            {!initialClientId && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Client Name *</Label>
+                <Select
+                  value={clientId}
+                  onValueChange={(val) => {
+                    if (val) handleClientChange(val)
+                  }}
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue placeholder="Select insurance client..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientsData?.data?.map((c) => (
+                      <SelectItem key={c.id} value={c.id} className="text-xs">
+                        {c.name} {c.kra_pin ? `(${c.kra_pin})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
-          </div>
 
-          {/* Client Selection */}
-          {!initialClientId && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Client Name *</Label>
-              <Select
-                value={clientId}
-                onValueChange={(val) => {
-                  if (val) handleClientChange(val)
-                }}
-              >
-                <SelectTrigger className="text-xs">
-                  <SelectValue placeholder="Select insurance client..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientsData?.data?.map((c) => (
-                    <SelectItem key={c.id} value={c.id} className="text-xs">
-                      {c.name} {c.kra_pin ? `(${c.kra_pin})` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+            {/* Amount and Payment Date */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">
+                  Amount Received (KES) *
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-xs font-mono font-bold text-muted-foreground">
+                    KES
+                  </span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="pl-12 font-mono text-sm tabular-nums text-right font-bold"
+                    required
+                  />
+                </div>
+              </div>
 
-          {/* Amount and Payment Date */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">
-                Amount Received (KES) *
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-xs font-mono font-bold text-muted-foreground">
-                  KES
-                </span>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Payment Date *</Label>
                 <Input
-                  type="number"
-                  step="0.01"
-                  min="1"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="pl-12 font-mono text-sm tabular-nums text-right font-bold"
+                  type="date"
+                  value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)}
+                  className="text-xs"
                   required
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Payment Date *</Label>
-              <Input
-                type="date"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-                className="text-xs"
-                required
-              />
-            </div>
-          </div>
+            {/* Payment Method & Reference */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">
+                  Payment Channel *
+                </Label>
+                <Select
+                  value={paymentMethod}
+                  onValueChange={(val) =>
+                    setPaymentMethod(val as PaymentMethod)
+                  }
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue placeholder="Select channel">
+                      {PAYMENT_METHODS.find((m) => m.value === paymentMethod)
+                        ?.label ?? "Select channel"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_METHODS.map((m) => (
+                      <SelectItem
+                        key={m.value}
+                        value={m.value}
+                        className="text-xs"
+                      >
+                        {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          {/* Payment Method & Reference */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Payment Channel *</Label>
-              <Select
-                value={paymentMethod}
-                onValueChange={(val) => setPaymentMethod(val as PaymentMethod)}
-              >
-                <SelectTrigger className="text-xs">
-                  <SelectValue placeholder="Select channel" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAYMENT_METHODS.map((m) => (
-                    <SelectItem
-                      key={m.value}
-                      value={m.value}
-                      className="text-xs"
-                    >
-                      {m.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">
+                  Reference Code / Number *
+                </Label>
+                <Input
+                  placeholder="e.g. QHX472910, CHQ-00123"
+                  value={referenceNumber}
+                  onChange={(e) => setReferenceNumber(e.target.value)}
+                  className="text-xs font-mono uppercase"
+                  required
+                />
+              </div>
             </div>
 
+            {/* Payer Name */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">
-                Reference Code / Number *
+                Payer / Remitter Name
               </Label>
               <Input
-                placeholder="e.g. QHX472910, CHQ-00123"
-                value={referenceNumber}
-                onChange={(e) => setReferenceNumber(e.target.value)}
-                className="text-xs font-mono uppercase"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Payer Name */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">
-              Payer / Remitter Name
-            </Label>
-            <Input
-              placeholder="e.g. John Doe, ABC Logistics Ltd"
-              value={payerName}
-              onChange={(e) => setPayerName(e.target.value)}
-              className="text-xs"
-            />
-          </div>
-
-          {/* Allocation Toggle & Selector */}
-          <div className="rounded-lg border p-3.5 bg-muted/20 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-xs font-bold flex items-center gap-1.5">
-                  <Receipt className="size-3.5 text-primary" />
-                  Direct Invoice Allocation
-                </Label>
-                <p className="text-[11px] text-muted-foreground">
-                  Apply payment to extinguish an open client invoice balance
-                  immediately.
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                id="allocate-toggle"
-                checked={allocateToInvoice}
-                onChange={(e) => setAllocateToInvoice(e.target.checked)}
-                className="size-4 rounded border-gray-300 text-primary cursor-pointer"
+                placeholder="e.g. John Doe, ABC Logistics Ltd"
+                value={payerName}
+                onChange={(e) => setPayerName(e.target.value)}
+                className="text-xs"
               />
             </div>
 
-            {allocateToInvoice && (
-              <div className="space-y-2 pt-2 border-t">
-                {unpaidInvoices.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic">
-                    {clientId
-                      ? "No open or unpaid invoices found for this client. Payment will be held as unallocated credit."
-                      : "Please select a client to view outstanding invoices."}
+            {/* Allocation Toggle & Selector */}
+            <div className="rounded-lg border p-3.5 bg-muted/20 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <Label className="text-xs font-bold flex items-center gap-1.5">
+                    <Receipt className="size-3.5 text-primary" />
+                    Direct Invoice Allocation
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground">
+                    Apply payment to extinguish an open client invoice balance
+                    immediately.
                   </p>
-                ) : (
-                  <div className="space-y-1.5">
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase">
-                      Select Outstanding Invoice
-                    </Label>
-                    <Select
-                      value={targetInvoiceId}
-                      onValueChange={(val) => {
-                        if (val) handleInvoiceSelect(val)
-                      }}
-                    >
-                      <SelectTrigger className="text-xs">
-                        <SelectValue placeholder="Choose open invoice..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {unpaidInvoices.map((inv) => (
-                          <SelectItem
-                            key={inv.id}
-                            value={inv.id}
-                            className="text-xs"
-                          >
-                            <span className="font-mono font-bold mr-2">
-                              {inv.invoice_number}
-                            </span>
-                            &bull; Due: KES{" "}
-                            {Number(inv.balance_due || 0).toLocaleString()}{" "}
-                            (Total: KES{" "}
-                            {Number(inv.total_amount || 0).toLocaleString()})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                </div>
+                <input
+                  type="checkbox"
+                  id="allocate-toggle"
+                  checked={allocateToInvoice}
+                  onChange={(e) => setAllocateToInvoice(e.target.checked)}
+                  className="size-4 rounded border-gray-300 text-primary cursor-pointer"
+                />
               </div>
-            )}
+
+              {allocateToInvoice && (
+                <div className="space-y-2 pt-2 border-t">
+                  {unpaidInvoices.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic">
+                      {clientId
+                        ? "No open or unpaid invoices found for this client. Payment will be held as unallocated credit."
+                        : "Please select a client to view outstanding invoices."}
+                    </p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-semibold text-muted-foreground uppercase">
+                        Select Outstanding Invoice
+                      </Label>
+                      <Select
+                        value={targetInvoiceId}
+                        onValueChange={(val) => {
+                          if (val) handleInvoiceSelect(val)
+                        }}
+                      >
+                        <SelectTrigger className="text-xs">
+                          <SelectValue placeholder="Choose open invoice..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {unpaidInvoices.map((inv) => (
+                            <SelectItem
+                              key={inv.id}
+                              value={inv.id}
+                              className="text-xs"
+                            >
+                              <span className="font-mono font-bold mr-2">
+                                {inv.invoice_number}
+                              </span>
+                              &bull; Due: KES{" "}
+                              {Number(inv.balance_due || 0).toLocaleString()}{" "}
+                              (Total: KES{" "}
+                              {Number(inv.total_amount || 0).toLocaleString()})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Proof of Payment Upload */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">
+                Proof of Payment (Bank Slip / M-Pesa SMS / Cheque Leaf)
+              </Label>
+              <FileUploadZone
+                selectedFile={selectedFile}
+                onFileSelect={(file) => setSelectedFile(file)}
+              />
+            </div>
           </div>
 
-          {/* Proof of Payment Upload */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">
-              Proof of Payment (Bank Slip / M-Pesa SMS / Cheque Leaf)
-            </Label>
-            <FileUploadZone
-              selectedFile={selectedFile}
-              onFileSelect={(file) => setSelectedFile(file)}
-            />
-          </div>
-
-          <DialogFooter className="pt-2">
+          <DialogFooter className="shrink-0 pt-3 border-t">
             <Button
               type="button"
               variant="outline"
