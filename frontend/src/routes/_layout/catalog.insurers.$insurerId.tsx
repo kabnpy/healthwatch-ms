@@ -60,7 +60,7 @@ function InsurerProducts({ insurerId }: { insurerId: string }) {
             <Shield className="h-10 w-10 text-muted-foreground mb-2" />
             <p className="font-medium">No products for this insurer</p>
             <p className="text-sm text-muted-foreground">
-              Add products to start issuing policies for this carrier.
+              Add products to start issuing policies for this insurer.
             </p>
           </CardContent>
         </Card>
@@ -117,7 +117,7 @@ function InsurerDetailContent({ insurerId }: { insurerId: string }) {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Management view for insurance carrier details and associated
+              Management view for insurer details and associated
               products.
             </p>
           </CardContent>

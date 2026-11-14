@@ -90,7 +90,7 @@ export const ProductForm = ({
                 disabled={!!initialData}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select insurance carrier" />
+                  <SelectValue placeholder="Select insurer" />
                 </SelectTrigger>
                 <SelectContent>
                   {insurers.map((insurer) => (
