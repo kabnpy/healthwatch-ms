@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 from app.api.deps import CurrentUser, SessionDep
 from app.models import (
     RenewalCreate,
+    RenewalHorizonResponse,
     RenewalPublic,
     RenewalsPublic,
     RenewalStatus,
@@ -60,6 +61,15 @@ def read_renewals(
         session=session, policy_id=policy_id, status=status
     )
     return RenewalsPublic(data=renewals, count=count)
+
+
+@router.get("/horizon", response_model=RenewalHorizonResponse)
+def read_renewals_horizon(
+    session: SessionDep,
+    _current_user: CurrentUser,
+) -> Any:
+    """Retrieve renewal expiration horizon buckets across all active policies."""
+    return RenewalService.get_horizon(session=session)
 
 
 @router.get("/{id}", response_model=RenewalPublic)

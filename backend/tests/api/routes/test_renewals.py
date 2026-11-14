@@ -263,6 +263,51 @@ def test_occ_conflict_on_transition_and_update(
     assert stale_update.status_code == 409
 
 
+def test_read_renewals_horizon(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    from app.models import RiskNote
+
+    today = date.today()
+    buckets_days = {
+        "overdue": -5,
+        "0_30": 10,
+        "31_60": 45,
+        "61_90": 75,
+        "outside": 120,
+    }
+    policy_ids: dict[str, str] = {}
+
+    for label, delta in buckets_days.items():
+        policy = _create_policy(db)
+        note = RiskNote(
+            policy_id=policy.id,
+            risk_note_number=f"RN-{uuid.uuid4().hex[:8].upper()}",
+            transaction_type="New Business",
+            status="Issued",
+            coverage_start=today - timedelta(days=300),
+            coverage_end=today + timedelta(days=delta),
+            net_premium=Decimal("10000.00"),
+            gross_premium=Decimal("10045.00"),
+            commission_rate=Decimal("10.00"),
+            commission_amount=Decimal("1000.00"),
+        )
+        db.add(note)
+        db.commit()
+        policy_ids[label] = str(policy.id)
+
+    res = client.get(
+        f"{settings.API_V1_STR}/renewals/horizon",
+        headers=superuser_token_headers,
+    )
+    assert res.status_code == 200
+    body = res.json()
+    for bucket in ("overdue", "0_30", "31_60", "61_90"):
+        assert bucket in body
+        ids_in_bucket = {item["policy_id"] for item in body[bucket]}
+        assert policy_ids[bucket] in ids_in_bucket
+        assert policy_ids["outside"] not in ids_in_bucket
+
 def test_transition_renewal_completed_route_binds_risk_note_and_exempts_medical(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:

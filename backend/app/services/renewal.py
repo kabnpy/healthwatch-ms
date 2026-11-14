@@ -3,16 +3,23 @@ import uuid
 from datetime import date, timedelta
 from decimal import Decimal
 
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, func, select
 
 from app.models import (
+    Client,
     Invitation,
     InvitationCreate,
     Policy,
+    PolicyPublic,
+    PolicyStatus,
     PremiumCalculation,
     Product,
     Renewal,
     RenewalCreate,
+    RenewalHorizonItem,
+    RenewalHorizonResponse,
+    RenewalPublic,
     RenewalStatus,
     RenewalTransition,
     RenewalUpdate,
@@ -117,6 +124,83 @@ class RenewalService:
             .where(Renewal.deleted_at.is_(None))
         )
         return session.exec(statement).first()
+
+    @staticmethod
+    def get_horizon(*, session: Session) -> RenewalHorizonResponse:
+        """Compute overdue, 0_30, 31_60, and 61_90 expiration buckets across all active policies."""
+        today = date.today()
+        statement = (
+            select(Policy, Client.name)
+            .join(Client, Policy.client_id == Client.id)
+            .where(Policy.deleted_at.is_(None))
+            .where(Policy.status == PolicyStatus.ACTIVE)
+            .options(selectinload(Policy.risk_notes), selectinload(Policy.renewals))  # type: ignore[arg-type]
+        )
+        rows = session.exec(statement).all()
+
+        overdue: list[RenewalHorizonItem] = []
+        bucket_0_30: list[RenewalHorizonItem] = []
+        bucket_31_60: list[RenewalHorizonItem] = []
+        bucket_61_90: list[RenewalHorizonItem] = []
+
+        for policy, client_name in rows:
+            active_notes = [
+                n for n in policy.risk_notes if n.deleted_at is None and n.coverage_end
+            ]
+            if not active_notes:
+                continue
+            active_notes.sort(key=lambda n: n.created_at, reverse=True)
+            active_note = active_notes[0]
+
+            days_left = (active_note.coverage_end - today).days
+            if days_left > 90:
+                continue
+
+            active_renewals = [r for r in policy.renewals if r.deleted_at is None]
+            non_terminal = [
+                r for r in active_renewals if r.status not in TERMINAL_STATUSES
+            ]
+            chosen_renewal = (
+                non_terminal[0]
+                if non_terminal
+                else (active_renewals[0] if active_renewals else None)
+            )
+
+            item = RenewalHorizonItem(
+                policy_id=policy.id,
+                policy_number=policy.policy_number,
+                client_id=policy.client_id,
+                client_name=client_name,
+                coverage_end=active_note.coverage_end,
+                days_left=days_left,
+                policy=PolicyPublic.model_validate(policy),
+                renewal=(
+                    RenewalPublic.model_validate(chosen_renewal)
+                    if chosen_renewal
+                    else None
+                ),
+            )
+
+            if days_left < 0:
+                overdue.append(item)
+            elif days_left <= 30:
+                bucket_0_30.append(item)
+            elif days_left <= 60:
+                bucket_31_60.append(item)
+            else:
+                bucket_61_90.append(item)
+
+        overdue.sort(key=lambda x: x.days_left)
+        bucket_0_30.sort(key=lambda x: x.days_left)
+        bucket_31_60.sort(key=lambda x: x.days_left)
+        bucket_61_90.sort(key=lambda x: x.days_left)
+
+        return RenewalHorizonResponse(
+            overdue=overdue,
+            bucket_0_30=bucket_0_30,
+            bucket_31_60=bucket_31_60,
+            bucket_61_90=bucket_61_90,
+        )
 
     @staticmethod
     def get_renewals(

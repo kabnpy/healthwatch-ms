@@ -2638,6 +2638,60 @@ export type RenewalCreate = {
 };
 
 /**
+ * RenewalHorizonItem
+ */
+export type RenewalHorizonItem = {
+    /**
+     * Policy Id
+     */
+    policy_id: string;
+    /**
+     * Policy Number
+     */
+    policy_number: string;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Coverage End
+     */
+    coverage_end: string;
+    /**
+     * Days Left
+     */
+    days_left: number;
+    policy: PolicyPublic;
+    renewal?: RenewalPublic | null;
+};
+
+/**
+ * RenewalHorizonResponse
+ */
+export type RenewalHorizonResponse = {
+    /**
+     * Overdue
+     */
+    overdue?: Array<RenewalHorizonItem>;
+    /**
+     * 0 30
+     */
+    '0_30'?: Array<RenewalHorizonItem>;
+    /**
+     * 31 60
+     */
+    '31_60'?: Array<RenewalHorizonItem>;
+    /**
+     * 61 90
+     */
+    '61_90'?: Array<RenewalHorizonItem>;
+};
+
+/**
  * RenewalPublic
  */
 export type RenewalPublic = {
@@ -5492,6 +5546,22 @@ export type renewalsCreateRenewalResponses = {
 };
 
 export type renewalsCreateRenewalResponse = renewalsCreateRenewalResponses[keyof renewalsCreateRenewalResponses];
+
+export type renewalsReadRenewalsHorizonData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/renewals/horizon';
+};
+
+export type renewalsReadRenewalsHorizonResponses = {
+    /**
+     * Successful Response
+     */
+    200: RenewalHorizonResponse;
+};
+
+export type renewalsReadRenewalsHorizonResponse = renewalsReadRenewalsHorizonResponses[keyof renewalsReadRenewalsHorizonResponses];
 
 export type renewalsReadRenewalData = {
     body?: never;

@@ -22,7 +22,7 @@ import useAuth from "@/hooks/useAuth"
 import { useClients } from "@/hooks/useClients"
 import { useFinancialSummary } from "@/hooks/useFinancials"
 import { usePolicies } from "@/hooks/usePolicies"
-import { useRenewals } from "@/hooks/useRenewals"
+import { useRenewals, useRenewalsHorizon } from "@/hooks/useRenewals"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 export const Route = createFileRoute("/_layout/")({
@@ -50,6 +50,7 @@ function AgencyDashboard() {
     0,
     200,
   )
+  const { data: horizonData } = useRenewalsHorizon()
   const { summary } = useFinancialSummary()
 
   const [isAddReceiptOpen, setIsAddReceiptOpen] = useState(false)
@@ -70,9 +71,10 @@ function AgencyDashboard() {
 
   // 1. Process Policies for Operational Triage
   const triage = useMemo(() => {
-    const now = Date.now()
-
-    const expiring30: Array<{ policy: PolicyPublic; daysLeft: number }> = []
+    const expiring30 = (horizonData?.["0_30"] ?? []).map((item) => ({
+      policy: item.policy,
+      daysLeft: item.days_left,
+    }))
     const draftRenewals: PolicyPublic[] = []
     let activeCount = 0
     let lapsedCount = 0
@@ -97,17 +99,7 @@ function AgencyDashboard() {
       ) {
         draftRenewals.push(policy)
       }
-
-      const endDate = new Date(activeNote.coverage_end).getTime()
-      const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24))
-
-      if (daysLeft >= 0 && daysLeft <= 30) {
-        expiring30.push({ policy, daysLeft })
-      }
     })
-
-    // Sort expiring ascending by days left (most urgent first)
-    expiring30.sort((a, b) => a.daysLeft - b.daysLeft)
 
     return {
       activeCount,
@@ -115,7 +107,7 @@ function AgencyDashboard() {
       expiring30,
       draftRenewals,
     }
-  }, [policies])
+  }, [policies, horizonData])
 
   const renewals = renewalsData?.data || []
   const inFlightRenewals = useMemo(() => {

@@ -33,6 +33,13 @@ export const useRenewal = (id: string) => {
   })
 }
 
+export const useRenewalsHorizon = () => {
+  return useQuery({
+    queryKey: ["renewals", "horizon"],
+    queryFn: async () => (await RenewalsService.readRenewalsHorizon()).data,
+  })
+}
+
 export const useCreateRenewal = () => {
   const queryClient = useQueryClient()
   return useMutation({
