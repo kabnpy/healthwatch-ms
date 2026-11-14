@@ -6,12 +6,13 @@ import {
   useLocation,
   useMatch,
 } from "@tanstack/react-router"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Check, Copy, Hash, Mail, Phone } from "lucide-react"
 import { Suspense } from "react"
 import { ClientsService } from "@/client"
 import { ClientHubSkeleton } from "@/components/Clients/ClientHubSkeleton"
 import ErrorComponent from "@/components/Common/ErrorComponent"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
 import { queryClient } from "@/queryClient"
 
 // --- Query Options ---
@@ -45,6 +46,7 @@ export const Route = createFileRoute("/_layout/clients/$clientId")({
 
 function ClientHubContent({ clientId }: { clientId: string }) {
   const { data: client } = useSuspenseQuery(getClientQueryOptions(clientId))
+  const [copiedPin, copyPin] = useCopyToClipboard()
   const location = useLocation()
   const isPolicyDetail = Boolean(
     useMatch({
@@ -73,10 +75,10 @@ function ClientHubContent({ clientId }: { clientId: string }) {
 
   // Determine active tab based on path
   const path = location.pathname
-  let activeTab = "overview"
-  if (path.includes("/overview")) activeTab = "overview"
-  else if (path.includes("/policies")) activeTab = "policies"
+  let activeTab = "policies"
+  if (path.includes("/policies")) activeTab = "policies"
   else if (path.includes("/invoices")) activeTab = "invoices"
+  else if (path.includes("/activity")) activeTab = "activity"
   else if (path.includes("/documents")) activeTab = "documents"
   else if (path.includes("/settings")) activeTab = "settings"
 
@@ -92,12 +94,48 @@ function ClientHubContent({ clientId }: { clientId: string }) {
         </Link>
       </div>
 
-      <div className="flex items-center justify-between border-b pb-6">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight">{client.name}</h1>
-          <p className="text-sm text-muted-foreground uppercase tracking-widest font-bold">
-            {client.client_type} &bull; Client Hub
-          </p>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-4xl font-bold tracking-tight">{client.name}</h1>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+          <span className="uppercase tracking-widest font-bold">
+            {client.client_type}
+          </span>
+          {client.kra_pin && (
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border bg-muted/30 font-mono font-medium text-foreground">
+              <Hash className="size-3 text-muted-foreground" />
+              <span>PIN: {client.kra_pin}</span>
+              <button
+                type="button"
+                onClick={() => copyPin(client.kra_pin || "")}
+                className="ml-0.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                title="Copy KRA PIN"
+              >
+                {copiedPin === client.kra_pin ? (
+                  <Check className="size-3 text-emerald-500" />
+                ) : (
+                  <Copy className="size-3" />
+                )}
+              </button>
+            </div>
+          )}
+          {client.phone && (
+            <a
+              href={`tel:${client.phone}`}
+              className="inline-flex items-center gap-1.5 hover:text-foreground font-mono transition-colors"
+            >
+              <Phone className="size-3.5 text-muted-foreground shrink-0" />
+              <span>{client.phone}</span>
+            </a>
+          )}
+          {client.email && (
+            <a
+              href={`mailto:${client.email}`}
+              className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
+            >
+              <Mail className="size-3.5 text-muted-foreground shrink-0" />
+              <span>{client.email}</span>
+            </a>
+          )}
         </div>
       </div>
 
@@ -106,14 +144,6 @@ function ClientHubContent({ clientId }: { clientId: string }) {
           variant="line"
           className="w-full max-w-full overflow-x-auto justify-start border-b"
         >
-          <TabsTrigger
-            value="overview"
-            render={
-              <Link to="/clients/$clientId/overview" params={{ clientId }}>
-                Overview
-              </Link>
-            }
-          />
           <TabsTrigger
             value="policies"
             render={
@@ -127,6 +157,14 @@ function ClientHubContent({ clientId }: { clientId: string }) {
             render={
               <Link to="/clients/$clientId/invoices" params={{ clientId }}>
                 Invoices
+              </Link>
+            }
+          />
+          <TabsTrigger
+            value="activity"
+            render={
+              <Link to="/clients/$clientId/activity" params={{ clientId }}>
+                Activity
               </Link>
             }
           />
