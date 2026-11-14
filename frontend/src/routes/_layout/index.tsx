@@ -11,6 +11,7 @@ import { useMemo, useState } from "react"
 
 import type { PolicyPublic, RenewalPublic } from "@/client"
 import { AddClient } from "@/components/Clients/AddClient"
+import { QueryErrorBanner } from "@/components/Common/QueryErrorBanner"
 import PendingItems from "@/components/Pending/PendingItems"
 import { RenewalTransitionSheet } from "@/components/Renewals/RenewalTransitionSheet"
 import { Button } from "@/components/ui/button"
@@ -83,19 +84,29 @@ function getRenewalStageMeta(status?: string | null) {
 
 function AgencyDashboard() {
   const { user: currentUser } = useAuth()
-  const { data: policiesData, isLoading: isPoliciesLoading } = usePolicies(
-    undefined,
-    0,
-    200,
-  )
-  const { data: clientsData, isLoading: isClientsLoading } = useClients(0, 200)
-  const { data: renewalsData, isLoading: isRenewalsLoading } = useRenewals(
-    undefined,
-    undefined,
-    0,
-    200,
-  )
-  const { summary } = useFinancialSummary()
+  const {
+    data: policiesData,
+    isLoading: isPoliciesLoading,
+    isError: isPoliciesError,
+    refetch: refetchPolicies,
+  } = usePolicies(undefined, 0, 200)
+  const {
+    data: clientsData,
+    isLoading: isClientsLoading,
+    isError: isClientsError,
+    refetch: refetchClients,
+  } = useClients(0, 200)
+  const {
+    data: renewalsData,
+    isLoading: isRenewalsLoading,
+    isError: isRenewalsError,
+    refetch: refetchRenewals,
+  } = useRenewals(undefined, undefined, 0, 200)
+  const {
+    summary,
+    isError: isSummaryError,
+    refetch: refetchSummary,
+  } = useFinancialSummary()
 
   const [selectedRenewalPolicy, setSelectedRenewalPolicy] = useState<{
     policy: PolicyPublic
@@ -176,6 +187,23 @@ function AgencyDashboard() {
 
   const hasExpiringPolicies = triage.expiring30.length > 0
 
+  if (isPoliciesError || isClientsError || isRenewalsError || isSummaryError) {
+    const handleRetry = () => {
+      if (isPoliciesError) void refetchPolicies()
+      if (isClientsError) void refetchClients()
+      if (isRenewalsError) void refetchRenewals()
+      if (isSummaryError) void refetchSummary()
+    }
+    return (
+      <div className="p-6">
+        <QueryErrorBanner
+          message="Failed to load dashboard data. Please try again."
+          onRetry={handleRetry}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-6 pb-12">
       {/* 1. Header with Single Primary Action */}
@@ -239,18 +267,14 @@ function AgencyDashboard() {
             </CardTitle>
             <Clock
               className={`size-4 ${
-                hasExpiringPolicies
-                  ? "text-amber-600"
-                  : "text-muted-foreground"
+                hasExpiringPolicies ? "text-amber-600" : "text-muted-foreground"
               }`}
             />
           </CardHeader>
           <CardContent>
             <div
               className={`text-3xl font-bold font-mono tabular-nums tracking-tight ${
-                hasExpiringPolicies
-                  ? "text-amber-700 dark:text-amber-400"
-                  : ""
+                hasExpiringPolicies ? "text-amber-700 dark:text-amber-400" : ""
               }`}
             >
               {triage.expiring30.length}
