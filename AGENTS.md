@@ -24,6 +24,7 @@ When a skill instructs `"Call the Skill tool with <name>"`, read `/home/kabnpy/.
 ## Context pointers
 
 - **Commands & scripts:** Root `package.json` (`bun run test`, `test:backend`, `test:frontend`, `test:e2e`, `typecheck`, `lint`, `format`, `client`, `migrate`, `seed`, `dev`).
+- **Testing preference:** Prefer Vitest (`bun run test:frontend`) for local frontend verification; do not run Playwright (`test:e2e`) locally.
 - **Coding & review standards:** `CODING_STANDARDS.md` — read during `/code-review` or when touching money, timestamps, policies, risk notes, payments, or API contracts.
 - **Product workflows & rating math:** `docs/01_product_specs.md` — reach when working on new business, renewal state transitions, rating paradigms, IPF, commissions, or claims.
 - **UI, typography & print layouts:** `docs/02_design_system.md` — reach when building or modifying React UI components, tables, wizards, or A4 print/PDF templates.
