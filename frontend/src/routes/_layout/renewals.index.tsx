@@ -20,6 +20,7 @@ import type { PolicyPublic, RenewalHorizonItem, RenewalStatus } from "@/client"
 
 import { DataTable } from "@/components/Common/DataTable"
 import { EmptyState } from "@/components/Common/EmptyState"
+import { QueryErrorBanner } from "@/components/Common/QueryErrorBanner"
 import PendingItems from "@/components/Pending/PendingItems"
 import { RenewalTransitionSheet } from "@/components/Renewals/RenewalTransitionSheet"
 import { Badge } from "@/components/ui/badge"
@@ -93,6 +94,7 @@ function RenewalsDeskPage() {
     data: horizonData,
     isLoading: isHorizonLoading,
     isError: isHorizonError,
+    refetch: refetchHorizon,
   } = useRenewalsHorizon()
 
   const [activeTab, setActiveTab] = useState("expiring_30")
@@ -177,14 +179,13 @@ function RenewalsDeskPage() {
         cell: ({ row }) => {
           const product = row.original.policy.product
           const activeNote = row.original.policy.active_note
-          const snapshot = activeNote?.cover_snapshot as any
           const summary = extractCoverSummary(activeNote?.cover_snapshot)
 
           let assetDescriptor = "Asset / Risk Details"
           if (summary.vehicleReg) {
             assetDescriptor = `${summary.makeModel || "Vehicle"} (${summary.vehicleReg})`
-          } else if (snapshot?.property?.location) {
-            assetDescriptor = snapshot.property.location
+          } else if (summary.propertyLocation) {
+            assetDescriptor = summary.propertyLocation
           } else if (product?.class_of_insurance) {
             assetDescriptor = product.class_of_insurance
           }
@@ -322,9 +323,10 @@ function RenewalsDeskPage() {
   if (isHorizonError) {
     return (
       <div className="p-6">
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          Failed to load renewals pipeline. Please refresh the page to try again.
-        </div>
+        <QueryErrorBanner
+          message="Failed to load renewals pipeline. Please try again."
+          onRetry={() => void refetchHorizon()}
+        />
       </div>
     )
   }

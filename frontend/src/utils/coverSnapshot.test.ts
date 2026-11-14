@@ -164,6 +164,23 @@ describe("coverSnapshot", () => {
       })
     })
 
+    it("extracts propertyLocation from property.location", () => {
+      expect(
+        extractCoverSummary({
+          property: {
+            location: "Westlands, Nairobi",
+            sum_insured: 12000000,
+          },
+        }),
+      ).toEqual({
+        sumInsured: 12000000,
+        vehicleReg: undefined,
+        makeModel: undefined,
+        propertyLocation: "Westlands, Nairobi",
+        extensions: [],
+      })
+    })
+
     it("handles null or empty cover_snapshot safely", () => {
       expect(extractCoverSummary(null)).toEqual({
         sumInsured: 0,

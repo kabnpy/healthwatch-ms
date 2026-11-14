@@ -1,12 +1,12 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { Users } from "lucide-react"
-import { Suspense } from "react"
 import { ClientsService } from "@/client"
 import { AddClient } from "@/components/Clients/AddClient"
 import { ClientsTableSkeleton } from "@/components/Clients/ClientsTableSkeleton"
 import { columns } from "@/components/Clients/columns"
 import { DataTable } from "@/components/Common/DataTable"
+import { QueryErrorBanner } from "@/components/Common/QueryErrorBanner"
 import { queryClient } from "@/queryClient"
 
 function getClientsQueryOptions() {
@@ -31,8 +31,26 @@ export const Route = createFileRoute("/_layout/clients/")({
   }),
 })
 
-function ClientsTableContent() {
-  const { data: clients } = useSuspenseQuery(getClientsQueryOptions())
+function ClientsTable() {
+  const {
+    data: clients,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery(getClientsQueryOptions())
+
+  if (isLoading) {
+    return <ClientsTableSkeleton />
+  }
+
+  if (isError || !clients) {
+    return (
+      <QueryErrorBanner
+        message="Failed to load clients. Please try again."
+        onRetry={() => void refetch()}
+      />
+    )
+  }
 
   if (clients.data.length === 0) {
     return (
@@ -50,14 +68,6 @@ function ClientsTableContent() {
   }
 
   return <DataTable columns={columns} data={clients.data} />
-}
-
-function ClientsTable() {
-  return (
-    <Suspense fallback={<ClientsTableSkeleton />}>
-      <ClientsTableContent />
-    </Suspense>
-  )
 }
 
 function Clients() {
