@@ -117,7 +117,7 @@ def test_document_job_risk_note_pipeline(
     processed = r_job.json()
     assert processed["status"] == DocumentJobStatus.SUCCEEDED.value
     assert processed["document_id"] is not None
-    assert processed["snapshot_data"]["_frozen"] is True
+    assert "_frozen" not in processed["snapshot_data"]
     assert processed["snapshot_data"]["include_digital_stamp"] is True
 
     # 4. Download generated PDF

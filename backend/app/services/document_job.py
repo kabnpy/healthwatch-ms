@@ -143,7 +143,7 @@ class DocumentJobService:
 
         try:
             snapshot = job.snapshot_data or {}
-            if not snapshot.get("_frozen"):
+            if job.resource_type == DocumentJobResourceType.STATEMENT or not snapshot:
                 snapshot = DocumentRenderer.build_snapshot(
                     session=session,
                     resource_type=job.resource_type,
