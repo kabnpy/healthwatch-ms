@@ -8,7 +8,7 @@ import {
 } from "lucide-react"
 import { useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { useDocumentHtmlPreview } from "@/hooks/useDocumentHtmlPreview"
+import { useDocumentHtmlPreview } from "@/hooks/useDocumentJobs"
 
 interface CanonicalDocumentViewerProps {
   resourceType: "risk_note" | "invoice" | "statement"

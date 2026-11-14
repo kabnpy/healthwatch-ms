@@ -9,13 +9,13 @@ import {
 } from "@testing-library/react"
 import type { ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { client } from "@/client"
+import { DocumentJobsService } from "@/client"
 import { CanonicalDocumentViewer } from "./CanonicalDocumentViewer"
 
 vi.mock("@/client", () => ({
-  client: {
-    get: vi.fn(),
-    post: vi.fn(),
+  DocumentJobsService: {
+    jobsPreviewDocumentHtml: vi.fn(),
+    jobsPreviewDocumentHtmlDraft: vi.fn(),
   },
 }))
 
@@ -45,7 +45,7 @@ describe("CanonicalDocumentViewer", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch")
     const getItemSpy = vi.spyOn(Storage.prototype, "getItem")
 
-    vi.mocked(client.get).mockResolvedValueOnce({
+    vi.mocked(DocumentJobsService.jobsPreviewDocumentHtml).mockResolvedValueOnce({
       data: "<html><body><h1>Risk Note Preview</h1></body></html>",
     } as any)
 
@@ -66,14 +66,12 @@ describe("CanonicalDocumentViewer", () => {
       expect(iframe?.getAttribute("srcdoc")).toContain("Risk Note Preview")
     })
 
-    expect(client.get).toHaveBeenCalledWith(
+    expect(DocumentJobsService.jobsPreviewDocumentHtml).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: "/api/v1/document-jobs/preview/html",
         query: {
           resource_type: "risk_note",
           resource_id: "rn-1",
         },
-        responseType: "text",
       }),
     )
     expect(fetchSpy).not.toHaveBeenCalled()
@@ -84,7 +82,9 @@ describe("CanonicalDocumentViewer", () => {
   })
 
   it("loads draft HTML preview via generated client.post when draftSnapshot is provided", async () => {
-    vi.mocked(client.post).mockResolvedValueOnce({
+    vi.mocked(
+      DocumentJobsService.jobsPreviewDocumentHtmlDraft,
+    ).mockResolvedValueOnce({
       data: "<html><body><h1>Draft Preview</h1></body></html>",
     } as any)
 
@@ -102,24 +102,21 @@ describe("CanonicalDocumentViewer", () => {
       expect(iframe?.getAttribute("srcdoc")).toContain("Draft Preview")
     })
 
-    expect(client.post).toHaveBeenCalledWith(
+    expect(
+      DocumentJobsService.jobsPreviewDocumentHtmlDraft,
+    ).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: "/api/v1/document-jobs/preview/html",
         body: {
           resource_type: "risk_note",
           resource_id: "rn-1",
           snapshot_data: { include_digital_stamp: false },
         },
-        headers: {
-          "Content-Type": "application/json",
-        },
-        responseType: "text",
       }),
     )
   })
 
   it("renders error state and retries when Retry is clicked", async () => {
-    vi.mocked(client.get)
+    vi.mocked(DocumentJobsService.jobsPreviewDocumentHtml)
       .mockRejectedValueOnce(new Error("Preview service unavailable"))
       .mockResolvedValueOnce({
         data: "<html><body><h1>Recovered Preview</h1></body></html>",

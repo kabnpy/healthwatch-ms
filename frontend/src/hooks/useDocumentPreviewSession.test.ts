@@ -11,7 +11,7 @@ import {
 const mockExportPdf = vi.fn()
 const mockCreateRiskNoteRevisionMutateAsync = vi.fn()
 
-vi.mock("@/hooks/useDocumentPdfExport", () => ({
+vi.mock("@/hooks/useDocumentJobs", () => ({
   useDocumentPdfExport: () => ({
     exportPdf: mockExportPdf,
     isExporting: false,
