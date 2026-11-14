@@ -859,6 +859,59 @@ export type CommissionSchedulesPublic = {
 };
 
 /**
+ * DashboardExpiringPolicyItem
+ */
+export type DashboardExpiringPolicyItem = {
+    policy: PolicyPublic;
+    /**
+     * Days Left
+     */
+    days_left: number;
+    /**
+     * Client Name
+     */
+    client_name: string;
+};
+
+/**
+ * DashboardInFlightRenewalItem
+ */
+export type DashboardInFlightRenewalItem = {
+    renewal: RenewalPublic;
+    policy: PolicyPublic | null;
+    /**
+     * Client Name
+     */
+    client_name: string;
+};
+
+/**
+ * DashboardSummaryResponse
+ */
+export type DashboardSummaryResponse = {
+    /**
+     * Active Count
+     */
+    active_count: number;
+    /**
+     * Lapsed Count
+     */
+    lapsed_count: number;
+    /**
+     * Expiring 30
+     */
+    expiring_30: Array<DashboardExpiringPolicyItem>;
+    /**
+     * In Flight Renewals Count
+     */
+    in_flight_renewals_count: number;
+    /**
+     * In Flight Renewals
+     */
+    in_flight_renewals: Array<DashboardInFlightRenewalItem>;
+};
+
+/**
  * DocumentEntityType
  */
 export type DocumentEntityType = 'Client' | 'Policy' | 'Renewal' | 'Claim' | 'User' | 'RiskNote' | 'Payment';
@@ -4181,6 +4234,22 @@ export type clientsUpdateClientResponses = {
 };
 
 export type clientsUpdateClientResponse = clientsUpdateClientResponses[keyof clientsUpdateClientResponses];
+
+export type dashboardReadDashboardSummaryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/dashboard/summary';
+};
+
+export type dashboardReadDashboardSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: DashboardSummaryResponse;
+};
+
+export type dashboardReadDashboardSummaryResponse = dashboardReadDashboardSummaryResponses[keyof dashboardReadDashboardSummaryResponses];
 
 export type insurersReadInsurersData = {
     body?: never;
