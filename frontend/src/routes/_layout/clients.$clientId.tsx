@@ -4,7 +4,9 @@ import {
   Link,
   Outlet,
   useLocation,
+  useMatch,
 } from "@tanstack/react-router"
+import { ArrowLeft } from "lucide-react"
 import { Suspense } from "react"
 import { ClientsService } from "@/client"
 import { ClientHubSkeleton } from "@/components/Clients/ClientHubSkeleton"
@@ -44,6 +46,30 @@ export const Route = createFileRoute("/_layout/clients/$clientId")({
 function ClientHubContent({ clientId }: { clientId: string }) {
   const { data: client } = useSuspenseQuery(getClientQueryOptions(clientId))
   const location = useLocation()
+  const isPolicyDetail = Boolean(
+    useMatch({
+      from: "/_layout/clients/$clientId/policies/$policyId",
+      shouldThrow: false,
+    }),
+  )
+
+  if (isPolicyDetail) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center border-b pb-3">
+          <Link
+            to="/clients/$clientId/policies"
+            params={{ clientId }}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors min-w-0"
+          >
+            <ArrowLeft className="h-4 w-4 shrink-0" />
+            <span className="truncate">Back to {client.name} Policies</span>
+          </Link>
+        </div>
+        <Outlet />
+      </div>
+    )
+  }
 
   // Determine active tab based on path
   const path = location.pathname
@@ -66,7 +92,7 @@ function ClientHubContent({ clientId }: { clientId: string }) {
       </div>
 
       <Tabs value={activeTab} className="w-full">
-        <TabsList>
+        <TabsList className="w-full max-w-full overflow-x-auto justify-start">
           <TabsTrigger
             value="overview"
             render={
