@@ -17,7 +17,7 @@ export const Header = () => {
   const breadcrumbs = useBreadcrumbs()
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-background/95 backdrop-blur-sm">
+    <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
       <SidebarTrigger className="-ml-1 text-muted-foreground" />
       <Separator
         orientation="vertical"

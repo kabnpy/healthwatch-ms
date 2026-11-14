@@ -50,4 +50,19 @@ describe("Header", () => {
     expect(commandMenuWrapper?.className).toContain("ml-auto")
     expect(commandMenuWrapper?.className).not.toContain("justify-center")
   })
+
+  it("matches dashboard-01 non-sticky transparent header so SidebarInset rounded corners stay clean", () => {
+    const { container } = render(
+      <SidebarProvider>
+        <Header />
+      </SidebarProvider>,
+    )
+
+    const header = container.querySelector("header")
+    expect(header?.className).toContain("h-12")
+    expect(header?.className).toContain("border-b")
+    expect(header?.className).not.toContain("sticky")
+    expect(header?.className).not.toContain("bg-background/95")
+    expect(header?.className).not.toContain("backdrop-blur-sm")
+  })
 })

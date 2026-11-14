@@ -61,4 +61,18 @@ describe("AppSidebar", () => {
 
     expect(screen.queryByText(/Operational/i)).toBeNull()
   })
+
+  it("wraps SidebarAppearance inside SidebarMenu so no list bullet appears", () => {
+    const { container } = render(
+      <SidebarProvider>
+        <AppSidebar />
+      </SidebarProvider>,
+    )
+
+    const themeButton = container.querySelector('[data-testid="theme-button"]')
+    expect(themeButton).not.toBeNull()
+    const menuItem = themeButton?.closest('[data-sidebar="menu-item"]')
+    expect(menuItem?.parentElement?.tagName).toBe("UL")
+    expect(menuItem?.parentElement?.getAttribute("data-sidebar")).toBe("menu")
+  })
 })
