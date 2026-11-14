@@ -3,6 +3,7 @@ import {
   Link,
   Outlet,
   useLocation,
+  useMatches,
 } from "@tanstack/react-router"
 import AddInsurer from "@/components/Insurers/AddInsurer"
 import { AddProduct } from "@/components/Products/AddProduct"
@@ -14,6 +15,17 @@ export const Route = createFileRoute("/_layout/catalog")({
 
 function CatalogLayout() {
   const location = useLocation()
+  const matches = useMatches()
+
+  // Suppress parent Catalog chrome on detail routes ($insurerId / $productId)
+  const isDetailRoute = matches.some(
+    (m) =>
+      m.routeId === "/_layout/catalog/insurers/$insurerId" ||
+      m.routeId === "/_layout/catalog/products/$productId",
+  )
+  if (isDetailRoute) {
+    return <Outlet />
+  }
 
   // Determine active tab based on path
   const isProducts = location.pathname.includes("/catalog/products")
