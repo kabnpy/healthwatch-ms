@@ -12,7 +12,10 @@ import {
 import { useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useDocumentJobs } from "@/hooks/useDocumentJobs"
+import {
+  downloadDocumentJobArtifact,
+  useDocumentJobs,
+} from "@/hooks/useDocumentJobs"
 
 export function DocumentJobStatusTray() {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -132,16 +135,14 @@ export function DocumentJobStatusTray() {
                           <CheckCircle2 className="size-2.5 mr-1" />
                           Ready
                         </Badge>
-                        <a
-                          href={`/api/v1/document-jobs/${job.id}/download`}
-                          target="_blank"
-                          rel="noreferrer"
-                          download
+                        <button
+                          type="button"
+                          onClick={() => void downloadDocumentJobArtifact(job.id)}
                           className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline ml-1"
                         >
                           <Download className="size-3" />
                           PDF
-                        </a>
+                        </button>
                       </div>
                     )}
                     {isFailed && (

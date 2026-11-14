@@ -6,7 +6,7 @@ import { z } from "zod"
 import { RiskNotesService } from "@/client"
 import { CanonicalDocumentViewer } from "@/components/Documents/CanonicalDocumentViewer"
 import PendingItems from "@/components/Pending/PendingItems"
-import { useDocumentPdfExport } from "@/hooks/useDocumentPdfExport"
+import { useDocumentPdfExport } from "@/hooks/useDocumentJobs"
 
 const searchSchema = z.object({
   mode: z.enum(["invoice", "certificate"]).default("invoice").optional(),
