@@ -11,6 +11,7 @@ vi.mock("@tanstack/react-query", () => ({
 }))
 
 const mockReadRenewals = vi.fn()
+const mockReadRenewalsHorizon = vi.fn()
 const mockReadRenewal = vi.fn()
 const mockCreateRenewal = vi.fn()
 const mockTransitionRenewal = vi.fn()
@@ -19,6 +20,7 @@ const mockUpdateRenewal = vi.fn()
 vi.mock("../client", () => ({
   RenewalsService: {
     readRenewals: (...args: unknown[]) => mockReadRenewals(...args),
+    readRenewalsHorizon: (...args: unknown[]) => mockReadRenewalsHorizon(...args),
     readRenewal: (...args: unknown[]) => mockReadRenewal(...args),
     createRenewal: (...args: unknown[]) => mockCreateRenewal(...args),
     transitionRenewal: (...args: unknown[]) => mockTransitionRenewal(...args),
@@ -30,6 +32,7 @@ import {
   useCreateRenewal,
   useRenewal,
   useRenewals,
+  useRenewalsHorizon,
   useTransitionRenewal,
   useUpdateRenewal,
 } from "./useRenewals"
@@ -64,6 +67,18 @@ describe("useRenewals domain hooks", () => {
     expect(opts.queryKey).toEqual(["renewals", "r1"])
     expect(opts.enabled).toBe(true)
     await expect(opts.queryFn()).resolves.toEqual({ id: "r1" })
+  })
+
+  it("useRenewalsHorizon queries RenewalsService.readRenewalsHorizon and unwraps .data", async () => {
+    const horizon = { overdue: [], "0_30": [], "31_60": [], "61_90": [] }
+    mockReadRenewalsHorizon.mockResolvedValueOnce({ data: horizon })
+
+    const opts = useRenewalsHorizon() as unknown as {
+      queryKey: unknown[]
+      queryFn: () => Promise<unknown>
+    }
+    expect(opts.queryKey).toEqual(["renewals", "horizon"])
+    await expect(opts.queryFn()).resolves.toEqual(horizon)
   })
 
   it("renewal mutations invalidate renewals and policies queries", () => {

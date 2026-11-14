@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 from app.api.deps import CurrentUser, SessionDep
 from app.models import (
     RenewalCreate,
+    RenewalHorizonResponse,
     RenewalPublic,
     RenewalsPublic,
     RenewalStatus,
@@ -62,6 +63,15 @@ def read_renewals(
     return RenewalsPublic(data=renewals, count=count)
 
 
+@router.get("/horizon", response_model=RenewalHorizonResponse)
+def read_renewals_horizon(
+    session: SessionDep,
+    _current_user: CurrentUser,
+) -> Any:
+    """Retrieve renewal expiration horizon buckets across all active policies."""
+    return RenewalService.get_horizon(session=session)
+
+
 @router.get("/{id}", response_model=RenewalPublic)
 def read_renewal(
     id: uuid.UUID,
@@ -94,7 +104,7 @@ def transition_renewal(
     *,
     id: uuid.UUID,
     session: SessionDep,
-    _current_user: CurrentUser,
+    current_user: CurrentUser,
     transition_in: RenewalTransition,
 ) -> Any:
     """
@@ -103,7 +113,10 @@ def transition_renewal(
     """
     try:
         return RenewalService.transition_renewal(
-            session=session, renewal_id=id, transition_in=transition_in
+            session=session,
+            renewal_id=id,
+            transition_in=transition_in,
+            current_user_id=current_user.id,
         )
     except RenewalError as exc:
         _raise_http_for_renewal_error(exc)

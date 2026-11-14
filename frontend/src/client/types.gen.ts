@@ -1924,6 +1924,56 @@ export type PoliciesPublic = {
 };
 
 /**
+ * PolicyClaimsAdvocacySummary
+ */
+export type PolicyClaimsAdvocacySummary = {
+    /**
+     * Policy Id
+     */
+    policy_id: string;
+    /**
+     * Total Earned Premium
+     */
+    total_earned_premium: string;
+    /**
+     * Total Settled
+     */
+    total_settled: string;
+    /**
+     * Total Open Reserves
+     */
+    total_open_reserves: string;
+    /**
+     * Total Incurred Claims
+     */
+    total_incurred_claims: string;
+    /**
+     * Loss Ratio Percent
+     */
+    loss_ratio_percent: string;
+    /**
+     * Claims Count
+     */
+    claims_count: number;
+    /**
+     * Active Claims Count
+     */
+    active_claims_count: number;
+    /**
+     * Closed Or Declined Count
+     */
+    closed_or_declined_count: number;
+    /**
+     * Advocacy Rating
+     */
+    advocacy_rating: 'EXCELLENT' | 'GOOD' | 'HIGH_RISK';
+    /**
+     * Advocacy Note
+     */
+    advocacy_note: string;
+};
+
+/**
  * PolicyCreateExtended
  */
 export type PolicyCreateExtended = {
@@ -2656,6 +2706,60 @@ export type RenewalCreate = {
      * Notes
      */
     notes?: string | null;
+};
+
+/**
+ * RenewalHorizonItem
+ */
+export type RenewalHorizonItem = {
+    /**
+     * Policy Id
+     */
+    policy_id: string;
+    /**
+     * Policy Number
+     */
+    policy_number: string;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Coverage End
+     */
+    coverage_end: string;
+    /**
+     * Days Left
+     */
+    days_left: number;
+    policy: PolicyPublic;
+    renewal?: RenewalPublic | null;
+};
+
+/**
+ * RenewalHorizonResponse
+ */
+export type RenewalHorizonResponse = {
+    /**
+     * Overdue
+     */
+    overdue?: Array<RenewalHorizonItem>;
+    /**
+     * 0 30
+     */
+    '0_30'?: Array<RenewalHorizonItem>;
+    /**
+     * 31 60
+     */
+    '31_60'?: Array<RenewalHorizonItem>;
+    /**
+     * 61 90
+     */
+    '61_90'?: Array<RenewalHorizonItem>;
 };
 
 /**
@@ -5380,12 +5484,12 @@ export type claimsGetPolicyClaimsAdvocacySummaryError = claimsGetPolicyClaimsAdv
 
 export type claimsGetPolicyClaimsAdvocacySummaryResponses = {
     /**
-     * Response Claims-Get Policy Claims Advocacy Summary
-     *
      * Successful Response
      */
-    200: unknown;
+    200: PolicyClaimsAdvocacySummary;
 };
+
+export type claimsGetPolicyClaimsAdvocacySummaryResponse = claimsGetPolicyClaimsAdvocacySummaryResponses[keyof claimsGetPolicyClaimsAdvocacySummaryResponses];
 
 export type claimsDeleteClaimData = {
     body?: never;
@@ -5543,6 +5647,22 @@ export type renewalsCreateRenewalResponses = {
 };
 
 export type renewalsCreateRenewalResponse = renewalsCreateRenewalResponses[keyof renewalsCreateRenewalResponses];
+
+export type renewalsReadRenewalsHorizonData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/renewals/horizon';
+};
+
+export type renewalsReadRenewalsHorizonResponses = {
+    /**
+     * Successful Response
+     */
+    200: RenewalHorizonResponse;
+};
+
+export type renewalsReadRenewalsHorizonResponse = renewalsReadRenewalsHorizonResponses[keyof renewalsReadRenewalsHorizonResponses];
 
 export type renewalsReadRenewalData = {
     body?: never;

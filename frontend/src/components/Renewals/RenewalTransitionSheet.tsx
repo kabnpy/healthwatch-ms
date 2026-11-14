@@ -346,26 +346,26 @@ export function RenewalTransitionSheet({
                 </span>
               </div>
               <div>
-                {claimsSummary.claim_experience_tier === "FAVORABLE" ? (
+                {claimsSummary.advocacy_rating === "EXCELLENT" ? (
                   <Badge
                     variant="outline"
                     className="text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
                   >
-                    Favorable Experience ({claimsSummary.loss_ratio_percent}%)
+                    EXCELLENT ({claimsSummary.loss_ratio_percent}%)
                   </Badge>
-                ) : claimsSummary.claim_experience_tier === "ELEVATED" ? (
+                ) : claimsSummary.advocacy_rating === "GOOD" ? (
                   <Badge
                     variant="outline"
                     className="text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
                   >
-                    Elevated Activity ({claimsSummary.loss_ratio_percent}%)
+                    GOOD ({claimsSummary.loss_ratio_percent}%)
                   </Badge>
                 ) : (
                   <Badge
                     variant="outline"
                     className="text-[10px] font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
                   >
-                    Adverse Experience ({claimsSummary.loss_ratio_percent}%)
+                    HIGH_RISK ({claimsSummary.loss_ratio_percent}%)
                   </Badge>
                 )}
               </div>
@@ -386,7 +386,7 @@ export function RenewalTransitionSheet({
                   Settled Claims
                 </span>
                 <span className="font-mono tabular-nums text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(claimsSummary.total_settled_claims)}
+                  {formatCurrency(claimsSummary.total_settled)}
                 </span>
               </div>
 
@@ -401,11 +401,7 @@ export function RenewalTransitionSheet({
             </div>
 
             <p className="text-[11px] text-muted-foreground italic">
-              {claimsSummary.claim_experience_tier === "FAVORABLE"
-                ? "Low loss ratio supports demanding carrier renewal discounts or no-claim bonus concessions."
-                : claimsSummary.claim_experience_tier === "ELEVATED"
-                  ? "Moderate claims activity. Recommend maintaining current premium rating without punitive load."
-                  : "Adverse loss ratio detected. Anticipate carrier rate loading or review excess / deductible terms."}
+              {claimsSummary.advocacy_note}
             </p>
           </div>
         )}

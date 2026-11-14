@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import ConfigDict, EmailStr
 from sqlalchemy import JSON, Column, Numeric
@@ -833,6 +833,20 @@ class ClaimsPublic(SQLModel):
     count: int
 
 
+class PolicyClaimsAdvocacySummary(SQLModel):
+    policy_id: uuid.UUID
+    total_earned_premium: str
+    total_settled: str
+    total_open_reserves: str
+    total_incurred_claims: str
+    loss_ratio_percent: str
+    claims_count: int
+    active_claims_count: int
+    closed_or_declined_count: int
+    advocacy_rating: Literal["EXCELLENT", "GOOD", "HIGH_RISK"]
+    advocacy_note: str
+
+
 class ClaimEventBase(SQLModel):
     claim_id: uuid.UUID = Field(foreign_key="claim.id", index=True)
     event_type: ClaimEventType
@@ -978,6 +992,32 @@ class Renewal(RenewalBase, table=True):
 class RenewalsPublic(SQLModel):
     data: list[RenewalPublic]
     count: int
+
+
+class RenewalHorizonItem(SQLModel):
+    policy_id: uuid.UUID
+    policy_number: str
+    client_id: uuid.UUID
+    client_name: str
+    coverage_end: date
+    days_left: int
+    policy: PolicyPublic
+    renewal: RenewalPublic | None = None
+
+
+class RenewalHorizonResponse(SQLModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    overdue: list[RenewalHorizonItem] = []
+    bucket_0_30: list[RenewalHorizonItem] = Field(
+        default=[], alias="0_30", serialization_alias="0_30"
+    )
+    bucket_31_60: list[RenewalHorizonItem] = Field(
+        default=[], alias="31_60", serialization_alias="31_60"
+    )
+    bucket_61_90: list[RenewalHorizonItem] = Field(
+        default=[], alias="61_90", serialization_alias="61_90"
+    )
 
 
 # ==========================================

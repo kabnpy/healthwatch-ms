@@ -1,20 +1,35 @@
 import logging
 import uuid
+from datetime import date, timedelta
+from decimal import Decimal
 
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, func, select
 
 from app.models import (
+    Client,
     Invitation,
     InvitationCreate,
     Policy,
+    PolicyPublic,
+    PolicyStatus,
     PremiumCalculation,
+    Product,
     Renewal,
     RenewalCreate,
+    RenewalHorizonItem,
+    RenewalHorizonResponse,
+    RenewalPublic,
     RenewalStatus,
     RenewalTransition,
     RenewalUpdate,
+    RiskNote,
+    RiskNoteCreate,
+    RiskNoteStatus,
+    TransactionType,
     get_datetime_utc,
 )
+from app.services.policy import PolicyService
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +126,83 @@ class RenewalService:
         return session.exec(statement).first()
 
     @staticmethod
+    def get_horizon(*, session: Session) -> RenewalHorizonResponse:
+        """Compute overdue, 0_30, 31_60, and 61_90 expiration buckets across all active policies."""
+        today = date.today()
+        statement = (
+            select(Policy, Client.name)
+            .join(Client, Policy.client_id == Client.id)
+            .where(Policy.deleted_at.is_(None))
+            .where(Policy.status == PolicyStatus.ACTIVE)
+            .options(selectinload(Policy.risk_notes), selectinload(Policy.renewals))  # type: ignore[arg-type]
+        )
+        rows = session.exec(statement).all()
+
+        overdue: list[RenewalHorizonItem] = []
+        bucket_0_30: list[RenewalHorizonItem] = []
+        bucket_31_60: list[RenewalHorizonItem] = []
+        bucket_61_90: list[RenewalHorizonItem] = []
+
+        for policy, client_name in rows:
+            active_notes = [
+                n for n in policy.risk_notes if n.deleted_at is None and n.coverage_end
+            ]
+            if not active_notes:
+                continue
+            active_notes.sort(key=lambda n: n.created_at, reverse=True)
+            active_note = active_notes[0]
+
+            days_left = (active_note.coverage_end - today).days
+            if days_left > 90:
+                continue
+
+            active_renewals = [r for r in policy.renewals if r.deleted_at is None]
+            non_terminal = [
+                r for r in active_renewals if r.status not in TERMINAL_STATUSES
+            ]
+            chosen_renewal = (
+                non_terminal[0]
+                if non_terminal
+                else (active_renewals[0] if active_renewals else None)
+            )
+
+            item = RenewalHorizonItem(
+                policy_id=policy.id,
+                policy_number=policy.policy_number,
+                client_id=policy.client_id,
+                client_name=client_name,
+                coverage_end=active_note.coverage_end,
+                days_left=days_left,
+                policy=PolicyPublic.model_validate(policy),
+                renewal=(
+                    RenewalPublic.model_validate(chosen_renewal)
+                    if chosen_renewal
+                    else None
+                ),
+            )
+
+            if days_left < 0:
+                overdue.append(item)
+            elif days_left <= 30:
+                bucket_0_30.append(item)
+            elif days_left <= 60:
+                bucket_31_60.append(item)
+            else:
+                bucket_61_90.append(item)
+
+        overdue.sort(key=lambda x: x.days_left)
+        bucket_0_30.sort(key=lambda x: x.days_left)
+        bucket_31_60.sort(key=lambda x: x.days_left)
+        bucket_61_90.sort(key=lambda x: x.days_left)
+
+        return RenewalHorizonResponse(
+            overdue=overdue,
+            bucket_0_30=bucket_0_30,
+            bucket_31_60=bucket_31_60,
+            bucket_61_90=bucket_61_90,
+        )
+
+    @staticmethod
     def get_renewals(
         *,
         session: Session,
@@ -185,6 +277,7 @@ class RenewalService:
         session: Session,
         renewal_id: uuid.UUID,
         transition_in: RenewalTransition,
+        current_user_id: uuid.UUID | None = None,
     ) -> Renewal:
         """Transition a renewal to a new status under Optimistic Concurrency Control."""
         renewal = RenewalService._get_active_renewal_row(
@@ -218,6 +311,11 @@ class RenewalService:
             renewal.paid_at = now
         elif target == RenewalStatus.COMPLETED:
             renewal.completed_at = now
+            RenewalService._bind_successor_risk_note_on_completion(
+                session=session,
+                renewal=renewal,
+                current_user_id=current_user_id,
+            )
 
         if transition_in.agreed_premium is not None:
             renewal.agreed_premium = transition_in.agreed_premium
@@ -233,6 +331,87 @@ class RenewalService:
         session.commit()
         session.refresh(renewal)
         return renewal
+
+    @staticmethod
+    def _bind_successor_risk_note_on_completion(
+        *,
+        session: Session,
+        renewal: Renewal,
+        current_user_id: uuid.UUID | None = None,
+    ) -> None:
+        """Bind a successor RiskNote on Renewal completion for non-Medical policies."""
+        policy = session.get(Policy, renewal.policy_id)
+        product = session.get(Product, policy.product_id) if policy else None
+        if product and product.class_of_insurance.strip().lower() == "medical":
+            return
+
+        prior_note = session.exec(
+            select(RiskNote)
+            .where(RiskNote.policy_id == renewal.policy_id)
+            .where(RiskNote.status == RiskNoteStatus.ISSUED)
+            .where(col(RiskNote.deleted_at).is_(None))
+            .order_by(col(RiskNote.created_at).desc())
+        ).first()
+
+        coverage_start = (
+            prior_note.coverage_end + timedelta(days=1)
+            if prior_note and prior_note.coverage_end
+            else date.today()
+        )
+        try:
+            next_year_start = coverage_start.replace(year=coverage_start.year + 1)
+        except ValueError:
+            next_year_start = date(coverage_start.year + 1, 2, 28)
+        coverage_end = next_year_start - timedelta(days=1)
+
+        if prior_note:
+            prior_note.status = RiskNoteStatus.REPLACED
+            session.add(prior_note)
+
+        calc = (
+            session.get(PremiumCalculation, renewal.selected_calculation_id)
+            if renewal.selected_calculation_id
+            else None
+        )
+        if calc is not None:
+            detail = calc.calculation_detail or {}
+            total_amount = calc.total_premium
+            net_premium = Decimal(str(detail.get("net_premium", total_amount)))
+            commission_amount = Decimal(str(detail.get("commission_amount", "0.00")))
+            financial_breakdown = dict(detail)
+            cover_snapshot = dict(calc.input_snapshot or {})
+        else:
+            fallback_total = (
+                renewal.agreed_premium
+                if renewal.agreed_premium is not None
+                else (renewal.proposed_premium or Decimal("0.00"))
+            )
+            total_amount = fallback_total
+            net_premium = fallback_total
+            commission_amount = Decimal("0.00")
+            financial_breakdown = {"total_amount": float(fallback_total)}
+            cover_snapshot = dict(prior_note.cover_snapshot) if prior_note else {}
+
+        risk_note_in = RiskNoteCreate(
+            policy_id=renewal.policy_id,
+            transaction_type=TransactionType.RENEWAL,
+            previous_risk_note_id=prior_note.id if prior_note else None,
+            status=RiskNoteStatus.ISSUED,
+            effective_date=coverage_start,
+            coverage_start=coverage_start,
+            coverage_end=coverage_end,
+            net_premium=net_premium,
+            financial_breakdown=financial_breakdown,
+            commission_amount=commission_amount,
+            total_amount=total_amount,
+            cover_snapshot=cover_snapshot,
+            created_by_id=current_user_id,
+        )
+        PolicyService._add_risk_note(
+            session=session,
+            risk_note_in=risk_note_in,
+            created_by_id=current_user_id,
+        )
 
     @staticmethod
     def update_renewal(
@@ -260,6 +439,87 @@ class RenewalService:
         session.commit()
         session.refresh(renewal)
         return renewal
+
+    @staticmethod
+    def _bind_successor_risk_note_on_completion(
+        *,
+        session: Session,
+        renewal: Renewal,
+        current_user_id: uuid.UUID | None = None,
+    ) -> None:
+        """Bind a successor RiskNote on Renewal completion for non-Medical policies."""
+        policy = session.get(Policy, renewal.policy_id)
+        product = session.get(Product, policy.product_id) if policy else None
+        if product and product.class_of_insurance.strip().lower() == "medical":
+            return
+
+        prior_note = session.exec(
+            select(RiskNote)
+            .where(RiskNote.policy_id == renewal.policy_id)
+            .where(RiskNote.status == RiskNoteStatus.ISSUED)
+            .where(col(RiskNote.deleted_at).is_(None))
+            .order_by(col(RiskNote.created_at).desc())
+        ).first()
+
+        coverage_start = (
+            prior_note.coverage_end + timedelta(days=1)
+            if prior_note and prior_note.coverage_end
+            else date.today()
+        )
+        try:
+            next_year_start = coverage_start.replace(year=coverage_start.year + 1)
+        except ValueError:
+            next_year_start = date(coverage_start.year + 1, 2, 28)
+        coverage_end = next_year_start - timedelta(days=1)
+
+        if prior_note:
+            prior_note.status = RiskNoteStatus.REPLACED
+            session.add(prior_note)
+
+        calc = (
+            session.get(PremiumCalculation, renewal.selected_calculation_id)
+            if renewal.selected_calculation_id
+            else None
+        )
+        if calc is not None:
+            detail = calc.calculation_detail or {}
+            total_amount = calc.total_premium
+            net_premium = Decimal(str(detail.get("net_premium", total_amount)))
+            commission_amount = Decimal(str(detail.get("commission_amount", "0.00")))
+            financial_breakdown = dict(detail)
+            cover_snapshot = dict(calc.input_snapshot or {})
+        else:
+            fallback_total = (
+                renewal.agreed_premium
+                if renewal.agreed_premium is not None
+                else (renewal.proposed_premium or Decimal("0.00"))
+            )
+            total_amount = fallback_total
+            net_premium = fallback_total
+            commission_amount = Decimal("0.00")
+            financial_breakdown = {"total_amount": float(fallback_total)}
+            cover_snapshot = dict(prior_note.cover_snapshot) if prior_note else {}
+
+        risk_note_in = RiskNoteCreate(
+            policy_id=renewal.policy_id,
+            transaction_type=TransactionType.RENEWAL,
+            previous_risk_note_id=prior_note.id if prior_note else None,
+            status=RiskNoteStatus.ISSUED,
+            effective_date=coverage_start,
+            coverage_start=coverage_start,
+            coverage_end=coverage_end,
+            net_premium=net_premium,
+            financial_breakdown=financial_breakdown,
+            commission_amount=commission_amount,
+            total_amount=total_amount,
+            cover_snapshot=cover_snapshot,
+            created_by_id=current_user_id,
+        )
+        PolicyService._add_risk_note(
+            session=session,
+            risk_note_in=risk_note_in,
+            created_by_id=current_user_id,
+        )
 
     @staticmethod
     def create_invitation(

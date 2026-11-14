@@ -132,3 +132,29 @@ def test_claims_lifecycle_and_advocacy_summary(
     assert Decimal(str(summary["loss_ratio_percent"])) == Decimal("22.50")
     assert summary["advocacy_rating"] == "EXCELLENT"
     assert "concessions" in summary["advocacy_note"]
+
+
+def test_advocacy_summary_openapi_schema(client: TestClient) -> None:
+    resp = client.get(f"{settings.API_V1_STR}/openapi.json")
+    assert resp.status_code == 200
+    openapi = resp.json()
+
+    path_item = openapi["paths"][f"{settings.API_V1_STR}/claims/policy/{{policy_id}}/advocacy-summary"]
+    schema_ref = path_item["get"]["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+    assert schema_ref == "#/components/schemas/PolicyClaimsAdvocacySummary"
+
+    schema = openapi["components"]["schemas"]["PolicyClaimsAdvocacySummary"]
+    expected_props = {
+        "policy_id",
+        "total_earned_premium",
+        "total_settled",
+        "total_open_reserves",
+        "total_incurred_claims",
+        "loss_ratio_percent",
+        "claims_count",
+        "active_claims_count",
+        "closed_or_declined_count",
+        "advocacy_rating",
+        "advocacy_note",
+    }
+    assert expected_props.issubset(set(schema["properties"].keys()))

@@ -16,7 +16,11 @@ import {
   User,
 } from "lucide-react"
 import { useCallback, useMemo, useState } from "react"
-import type { PolicyPublic, RenewalPublic, RenewalStatus } from "@/client"
+import type {
+  PolicyPublic,
+  RenewalHorizonItem,
+  RenewalStatus,
+} from "@/client"
 
 import { DataTable } from "@/components/Common/DataTable"
 import { EmptyState } from "@/components/Common/EmptyState"
@@ -26,9 +30,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useClients } from "@/hooks/useClients"
-import { usePolicies } from "@/hooks/usePolicies"
-import { useRenewals } from "@/hooks/useRenewals"
+import { useRenewalsHorizon } from "@/hooks/useRenewals"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/utils"
 import { getPolicyDisplayName } from "@/utils/insurance"
@@ -90,18 +92,7 @@ const STAGE_META: Record<
 }
 
 function RenewalsDeskPage() {
-  const { data: policiesData, isLoading: isPoliciesLoading } = usePolicies(
-    undefined,
-    0,
-    200,
-  )
-  const { data: clientsData, isLoading: isClientsLoading } = useClients(0, 200)
-  const { data: renewalsData, isLoading: isRenewalsLoading } = useRenewals(
-    undefined,
-    undefined,
-    0,
-    200,
-  )
+  const { data: horizonData, isLoading: isHorizonLoading } = useRenewalsHorizon()
 
   const [activeTab, setActiveTab] = useState("expiring_30")
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyPublic | null>(
@@ -109,58 +100,29 @@ function RenewalsDeskPage() {
   )
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
-  const clientMap = useMemo(() => {
-    const map = new Map<string, string>()
-    clientsData?.data?.forEach((c) => {
-      map.set(c.id, c.name)
-    })
-    return map
-  }, [clientsData])
-
-  const renewalMap = useMemo(() => {
-    const map = new Map<string, RenewalPublic>()
-    renewalsData?.data?.forEach((r) => {
-      map.set(r.policy_id, r)
-    })
-    return map
-  }, [renewalsData])
-
-  const policies = policiesData?.data || []
-
-  // Categorize policies into horizons & stages
+  // Categorize policies into horizons & stages from server-side horizon
   const categorized = useMemo(() => {
-    const now = Date.now()
+    const expiring30 = horizonData?.["0_30"] ?? []
+    const expiring60 = horizonData?.["31_60"] ?? []
+    const expired = horizonData?.overdue ?? []
+    const allItems = [
+      ...expired,
+      ...expiring30,
+      ...expiring60,
+      ...(horizonData?.["61_90"] ?? []),
+    ]
+    const inWorkflow: RenewalHorizonItem[] = []
+    const completedRenewals: RenewalHorizonItem[] = []
 
-    const expiring30: PolicyPublic[] = []
-    const expiring60: PolicyPublic[] = []
-    const expired: PolicyPublic[] = []
-    const inWorkflow: PolicyPublic[] = []
-    const completedRenewals: PolicyPublic[] = []
-
-    policies.forEach((policy) => {
-      const activeNote = policy.active_note
-      if (!activeNote?.coverage_end) return
-
-      const endDate = new Date(activeNote.coverage_end).getTime()
-      const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24))
-      const renewal = renewalMap.get(policy.id)
-
-      if (renewal) {
-        if (renewal.status === "completed") {
-          completedRenewals.push(policy)
+    for (const item of allItems) {
+      if (item.renewal) {
+        if (item.renewal.status === "completed") {
+          completedRenewals.push(item)
         } else {
-          inWorkflow.push(policy)
+          inWorkflow.push(item)
         }
       }
-
-      if (daysLeft >= 0 && daysLeft <= 30) {
-        expiring30.push(policy)
-      } else if (daysLeft > 30 && daysLeft <= 60) {
-        expiring60.push(policy)
-      } else if (daysLeft < 0) {
-        expired.push(policy)
-      }
-    })
+    }
 
     return {
       expiring30,
@@ -169,14 +131,14 @@ function RenewalsDeskPage() {
       inWorkflow,
       completedRenewals,
     }
-  }, [policies, renewalMap])
+  }, [horizonData])
 
   const openTriage = useCallback((policy: PolicyPublic) => {
     setSelectedPolicy(policy)
     setIsSheetOpen(true)
   }, [])
 
-  const columns: ColumnDef<PolicyPublic>[] = useMemo(
+  const columns: ColumnDef<RenewalHorizonItem>[] = useMemo(
     () => [
       {
         accessorKey: "policy_number",
@@ -184,7 +146,7 @@ function RenewalsDeskPage() {
         cell: ({ row }) => (
           <button
             type="button"
-            onClick={() => openTriage(row.original)}
+            onClick={() => openTriage(row.original.policy)}
             className="font-mono text-xs font-semibold hover:underline text-primary flex items-center gap-1.5 text-left cursor-pointer"
           >
             <span>{row.original.policy_number}</span>
@@ -195,8 +157,7 @@ function RenewalsDeskPage() {
         id: "client_name",
         header: "Insured Client",
         cell: ({ row }) => {
-          const clientName =
-            clientMap.get(row.original.client_id) || "Unknown Client"
+          const clientName = row.original.client_name
           return (
             <Link
               to="/clients/$clientId/overview"
@@ -213,8 +174,8 @@ function RenewalsDeskPage() {
         id: "cover_details",
         header: "Cover / Asset",
         cell: ({ row }) => {
-          const product = row.original.product
-          const activeNote = row.original.active_note
+          const product = row.original.policy.product
+          const activeNote = row.original.policy.active_note
           const snapshot = activeNote?.cover_snapshot as any
 
           let assetDescriptor = "Asset / Risk Details"
@@ -229,7 +190,7 @@ function RenewalsDeskPage() {
           return (
             <div className="flex flex-col">
               <span className="font-semibold text-xs leading-none">
-                {getPolicyDisplayName(row.original)}
+                {getPolicyDisplayName(row.original.policy)}
               </span>
               <span className="text-[11px] text-muted-foreground mt-0.5 truncate max-w-[220px]">
                 {assetDescriptor}
@@ -242,7 +203,7 @@ function RenewalsDeskPage() {
         id: "expiry_countdown",
         header: "Renewal Horizon",
         cell: ({ row }) => {
-          const activeNote = row.original.active_note
+          const activeNote = row.original.policy.active_note
           if (!activeNote?.coverage_end) return <span>—</span>
 
           const endDate = new Date(activeNote.coverage_end).getTime()
@@ -279,7 +240,7 @@ function RenewalsDeskPage() {
         id: "workflow_stage",
         header: "Workflow Stage",
         cell: ({ row }) => {
-          const renewal = renewalMap.get(row.original.id)
+          const renewal = row.original.renewal
           if (!renewal) {
             return (
               <Badge
@@ -315,7 +276,7 @@ function RenewalsDeskPage() {
         id: "sum_insured",
         header: () => <span className="block text-right">Sum Insured</span>,
         cell: ({ row }) => {
-          const snapshot = row.original.active_note?.cover_snapshot as any
+          const snapshot = row.original.policy.active_note?.cover_snapshot as any
           const rawSum =
             snapshot?.vehicle?.sum_insured || snapshot?.sum_insured || 0
 
@@ -332,13 +293,13 @@ function RenewalsDeskPage() {
         id: "action",
         header: () => <span className="sr-only">Action</span>,
         cell: ({ row }) => {
-          const renewal = renewalMap.get(row.original.id)
+          const renewal = row.original.renewal
           return (
             <div className="text-right">
               <Button
                 size="sm"
                 variant={renewal ? "default" : "outline"}
-                onClick={() => openTriage(row.original)}
+                onClick={() => openTriage(row.original.policy)}
                 className="h-8 gap-1.5 cursor-pointer text-xs"
               >
                 {renewal ? "Advance Stage" : "Review & Renew"}
@@ -349,19 +310,25 @@ function RenewalsDeskPage() {
         },
       },
     ],
-    [clientMap, renewalMap, openTriage],
+    [openTriage],
   )
 
-  if (isPoliciesLoading || isClientsLoading || isRenewalsLoading) {
+  if (isHorizonLoading) {
     return <PendingItems />
   }
 
-  const selectedRenewal = selectedPolicy
-    ? renewalMap.get(selectedPolicy.id) || null
+  const allHorizonItems = [
+    ...(horizonData?.overdue ?? []),
+    ...(horizonData?.["0_30"] ?? []),
+    ...(horizonData?.["31_60"] ?? []),
+    ...(horizonData?.["61_90"] ?? []),
+  ]
+  const selectedItem = selectedPolicy
+    ? allHorizonItems.find((item) => item.policy_id === selectedPolicy.id) ||
+      null
     : null
-  const selectedClientName = selectedPolicy
-    ? clientMap.get(selectedPolicy.client_id)
-    : undefined
+  const selectedRenewal = selectedItem?.renewal || null
+  const selectedClientName = selectedItem?.client_name
 
   return (
     <div className="flex flex-col gap-6">

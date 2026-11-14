@@ -1,18 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { type ClaimCreate, ClaimsService, type ClaimUpdate } from "../client"
 
-export interface PolicyClaimsAdvocacySummary {
-  policy_id: string
-  total_earned_premium: string
-  total_settled_claims: string
-  total_open_reserves: string
-  total_incurred_claims: string
-  loss_ratio_percent: string
-  active_claims_count: number
-  settled_claims_count: number
-  claim_experience_tier: "FAVORABLE" | "ELEVATED" | "POOR"
-}
-
 export const useClaims = (policyId?: string, skip = 0, limit = 100) => {
   return useQuery({
     queryKey: ["claims", { policyId, skip, limit }],
@@ -40,7 +28,7 @@ export const usePolicyClaimsAdvocacySummary = (policyId?: string) => {
       const res = await ClaimsService.getPolicyClaimsAdvocacySummary({
         path: { policy_id: policyId! },
       })
-      return res.data as PolicyClaimsAdvocacySummary
+      return res.data
     },
     enabled: !!policyId,
   })
