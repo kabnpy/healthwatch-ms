@@ -167,28 +167,28 @@ function PolicyDashboardContent({
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-transparent border-b rounded-none w-full justify-start p-0 h-10 gap-6">
+        <TabsList className="bg-transparent border-b rounded-none w-full max-w-full overflow-x-auto justify-start p-0 h-10 gap-6">
           <TabsTrigger
             value="overview"
-            className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
+            className="shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
           >
             Overview
           </TabsTrigger>
           <TabsTrigger
             value="history"
-            className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
+            className="shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
           >
             {isMedical ? "Census & Endorsement History" : "Risk Note Versions"}
           </TabsTrigger>
           <TabsTrigger
             value="timeline"
-            className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
+            className="shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
           >
             Activity & Audit Log
           </TabsTrigger>
           <TabsTrigger
             value="documents"
-            className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
+            className="shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
           >
             Documents
           </TabsTrigger>

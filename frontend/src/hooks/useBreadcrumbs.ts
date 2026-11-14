@@ -13,7 +13,9 @@ const routeConfig: Record<string, string> = {
   users: "User Management",
   settings: "Settings",
   clients: "Clients",
+  overview: "Overview",
   policies: "Policies",
+  invoices: "Invoices",
   "risk-notes": "Risk Notes",
   documents: "Documents",
 }
@@ -34,9 +36,9 @@ export const useBreadcrumbs = () => {
         // Try to get a label from our config
         let label = routeConfig[lastSegment] || lastSegment
 
-        // Check if we have data from loader
+        // Check if we have data from loader (only override dynamic segments, not known static routes)
         const data = match.loaderData as any
-        if (data) {
+        if (data && !(lastSegment in routeConfig)) {
           if (data.name) {
             label = data.name
           } else if (data.policy_number) {
