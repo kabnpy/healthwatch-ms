@@ -32,7 +32,24 @@ import { cn } from "@/lib/utils"
 import { extractCoverSummary } from "@/utils/coverSnapshot"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
+const RENEWAL_TABS = [
+  "expiring_30",
+  "in_workflow",
+  "expiring_60",
+  "lapsed",
+  "completed",
+] as const
+
+type RenewalTab = (typeof RENEWAL_TABS)[number]
+
 export const Route = createFileRoute("/_layout/renewals/")({
+  validateSearch: (search: Record<string, unknown>): { tab?: RenewalTab } => {
+    const tab = search.tab
+    if (typeof tab === "string" && (RENEWAL_TABS as readonly string[]).includes(tab)) {
+      return { tab: tab as RenewalTab }
+    }
+    return {}
+  },
   component: RenewalsDeskPage,
   head: () => ({
     meta: [
@@ -250,7 +267,24 @@ function RenewalsDeskPage() {
   } = useRenewalsHorizon()
   const { data: renewalsData } = useRenewals()
 
-  const [activeTab, setActiveTab] = useState("expiring_30")
+  const [activeTab, setActiveTabState] = useState<RenewalTab>(() => {
+    if (typeof window === "undefined") return "expiring_30"
+    const param = new URLSearchParams(window.location.search).get("tab")
+    return param && (RENEWAL_TABS as readonly string[]).includes(param)
+      ? (param as RenewalTab)
+      : "expiring_30"
+  })
+  const setActiveTab = useCallback((nextTab: string) => {
+    const validTab = (RENEWAL_TABS as readonly string[]).includes(nextTab)
+      ? (nextTab as RenewalTab)
+      : "expiring_30"
+    setActiveTabState(validTab)
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href)
+      url.searchParams.set("tab", validTab)
+      window.history.replaceState(null, "", url.toString())
+    }
+  }, [])
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyPublic | null>(
     null,
   )
@@ -611,34 +645,34 @@ function RenewalsDeskPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-muted/60 p-1 max-w-full overflow-x-auto justify-start">
-          <TabsTrigger value="expiring_30" className="gap-2 text-xs">
+        <TabsList className="h-10 bg-muted/60 p-1 w-full sm:w-fit max-w-full overflow-x-auto justify-start">
+          <TabsTrigger value="expiring_30" className="gap-2 px-3 py-1.5 text-sm">
             Expiring in ≤30 Days
-            <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+            <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">
               {categorized.expiring30.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="in_workflow" className="gap-2 text-xs">
+          <TabsTrigger value="in_workflow" className="gap-2 px-3 py-1.5 text-sm">
             Active Workflows
-            <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+            <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">
               {categorized.inWorkflow.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="expiring_60" className="gap-2 text-xs">
+          <TabsTrigger value="expiring_60" className="gap-2 px-3 py-1.5 text-sm">
             Next 60 Days
-            <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+            <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">
               {categorized.expiring60.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="lapsed" className="gap-2 text-xs">
+          <TabsTrigger value="lapsed" className="gap-2 px-3 py-1.5 text-sm">
             Lapsed / Expired
-            <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+            <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">
               {categorized.expired.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="completed" className="gap-2 text-xs">
+          <TabsTrigger value="completed" className="gap-2 px-3 py-1.5 text-sm">
             Bound & Completed
-            <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+            <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">
               {categorized.completedRenewals.length}
             </Badge>
           </TabsTrigger>
