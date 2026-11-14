@@ -53,6 +53,13 @@ def test_documents_http_routes_lifecycle(
     assert get_res.status_code == 200
     assert get_res.json()["id"] == doc_id
 
+    dl_res = client.get(
+        f"{settings.API_V1_STR}/documents/{doc_id}/download",
+        headers=superuser_token_headers,
+    )
+    assert dl_res.status_code == 200
+    assert dl_res.content == b"%PDF-1.4\n"
+
     del_res = client.delete(
         f"{settings.API_V1_STR}/documents/{doc_id}",
         headers=superuser_token_headers,
@@ -64,6 +71,48 @@ def test_documents_http_routes_lifecycle(
         headers=superuser_token_headers,
     )
     assert missing_res.status_code == 404
+
+
+def test_documents_http_routes_error_mapping(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    entity_id = uuid.uuid4()
+
+    # Invalid metadata_json -> 400 or 422
+    bad_upload = client.post(
+        f"{settings.API_V1_STR}/documents/upload",
+        headers=superuser_token_headers,
+        data={
+            "entity_type": DocumentEntityType.CLIENT.value,
+            "entity_id": str(entity_id),
+            "document_type": DocumentType.ID.value,
+            "metadata_json": "{not-valid-json",
+        },
+        files={"file": ("id_card.pdf", io.BytesIO(b"%PDF-1.4\n"), "application/pdf")},
+    )
+    assert bad_upload.status_code in (400, 422)
+
+    # Document linked to document_job_id -> 409 on DELETE
+    job_upload = client.post(
+        f"{settings.API_V1_STR}/documents/upload",
+        headers=superuser_token_headers,
+        data={
+            "entity_type": DocumentEntityType.CLIENT.value,
+            "entity_id": str(entity_id),
+            "document_type": DocumentType.ID.value,
+            "metadata_json": f'{{"document_job_id": "{uuid.uuid4()}"}}',
+        },
+        files={"file": ("job.pdf", io.BytesIO(b"%PDF-1.4\n"), "application/pdf")},
+    )
+    assert job_upload.status_code == 200
+    job_doc_id = job_upload.json()["id"]
+
+    conflict_del = client.delete(
+        f"{settings.API_V1_STR}/documents/{job_doc_id}",
+        headers=superuser_token_headers,
+    )
+    assert conflict_del.status_code == 409
 
 
 def test_document_jobs_http_routes_reads_and_error_mapping(

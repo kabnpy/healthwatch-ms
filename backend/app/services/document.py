@@ -1,16 +1,98 @@
+import json
 import uuid
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, BinaryIO
 
 from sqlmodel import Session, func, select
 
+from app.core.storage import StorageProvider, storage
 from app.models import Document, DocumentCreate, DocumentUpdate
 
 
 class DocumentNotFoundError(LookupError):
-    """Raised when a Document record cannot be found."""
+    """Raised when a Document record or its physical artifact cannot be found."""
+
+
+class DocumentValidationError(ValueError):
+    """Raised when document input or metadata fails validation."""
+
+
+class DocumentConflictError(ValueError):
+    """Raised when a document operation conflicts with domain invariants (e.g. ADR-0006)."""
+
+
+@dataclass(frozen=True)
+class ResolvedDocumentArtifact:
+    """Resolved physical artifact metadata for downloading a Document."""
+
+    path: Path
+    media_type: str | None
+    filename: str
+
+
+def _parse_metadata(metadata: dict[str, Any] | str | None) -> dict[str, Any]:
+    if metadata is None or metadata == "":
+        return {}
+    if isinstance(metadata, str):
+        try:
+            parsed = json.loads(metadata)
+        except json.JSONDecodeError as exc:
+            raise DocumentValidationError("Invalid metadata JSON") from exc
+    else:
+        parsed = metadata
+    if not isinstance(parsed, dict):
+        raise DocumentValidationError("Document metadata must be a JSON object")
+    return parsed
 
 
 class DocumentService:
     """Owns Document persistence, queries, and mutations."""
+
+    @staticmethod
+    def store_document(
+        *,
+        session: Session,
+        file: BinaryIO,
+        filename: str,
+        entity_type: str,
+        entity_id: uuid.UUID,
+        document_type: str,
+        mime_type: str | None = None,
+        metadata: dict[str, Any] | str | None = None,
+        folder: str | None = None,
+        storage_provider: StorageProvider = storage,
+        commit: bool = True,
+    ) -> Document:
+        """Save binary to storage and persist Document metadata atomically."""
+        parsed_metadata = _parse_metadata(metadata)
+        target_folder = folder if folder is not None else entity_type.lower()
+        relative_path = storage_provider.save_file(
+            file,
+            filename=filename or "unnamed_file",
+            folder=target_folder,
+        )
+
+        document_in = DocumentCreate(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            document_type=document_type,
+            file_path=relative_path,
+            mime_type=mime_type,
+            doc_metadata=parsed_metadata,
+        )
+        db_obj = Document.model_validate(document_in)
+        try:
+            session.add(db_obj)
+            if commit:
+                session.commit()
+                session.refresh(db_obj)
+            else:
+                session.flush()
+            return db_obj
+        except Exception:
+            storage_provider.delete_file(relative_path)
+            raise
 
     @staticmethod
     def create_document(*, session: Session, document_in: DocumentCreate) -> Document:
@@ -20,6 +102,37 @@ class DocumentService:
         session.commit()
         session.refresh(db_obj)
         return db_obj
+
+    @staticmethod
+    def resolve_download(
+        *,
+        session: Session,
+        document_id: uuid.UUID,
+        storage_provider: StorageProvider = storage,
+    ) -> ResolvedDocumentArtifact:
+        """Resolve a Document's physical file path, media type, and download filename."""
+        document = session.get(Document, document_id)
+        if not document:
+            raise DocumentNotFoundError("Document not found")
+
+        absolute_path = storage_provider.get_file_path(document.file_path)
+        if not absolute_path.exists():
+            raise DocumentNotFoundError(
+                f"Physical file missing from storage: {document.file_path}"
+            )
+
+        meta = document.doc_metadata or {}
+        suffix = Path(document.file_path).suffix
+        filename = (
+            meta.get("filename")
+            or meta.get("original_filename")
+            or f"{document.document_type}_{document.id}{suffix}"
+        )
+        return ResolvedDocumentArtifact(
+            path=absolute_path,
+            media_type=document.mime_type,
+            filename=filename,
+        )
 
     @staticmethod
     def get_document(*, session: Session, document_id: uuid.UUID) -> Document | None:
@@ -74,4 +187,28 @@ class DocumentService:
 
         session.delete(db_document)
         session.commit()
+        return db_document
+
+    @staticmethod
+    def remove_document(
+        *,
+        session: Session,
+        document_id: uuid.UUID,
+        storage_provider: StorageProvider = storage,
+    ) -> Document:
+        """Delete a Document record and its physical file, enforcing ADR-0006."""
+        db_document = session.get(Document, document_id)
+        if not db_document:
+            raise DocumentNotFoundError("Document not found")
+
+        meta = db_document.doc_metadata or {}
+        if meta.get("document_job_id"):
+            raise DocumentConflictError(
+                "Cannot delete a document generated by a DocumentJob"
+            )
+
+        file_path = db_document.file_path
+        session.delete(db_document)
+        session.commit()
+        storage_provider.delete_file(file_path)
         return db_document
