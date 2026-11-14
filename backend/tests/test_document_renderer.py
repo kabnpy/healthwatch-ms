@@ -326,10 +326,8 @@ def test_document_job_service_process_job_uses_document_renderer_and_uploads_pdf
     assert filename.startswith("Statement_Job_Pipeline_Client_")
     assert folder == "documents/statement"
 
-    import uuid
-
-    doc_id = uuid.UUID(processed.snapshot_data["document_id"])
-    doc = db.get(Document, doc_id)
+    assert processed.document_id is not None
+    doc = db.get(Document, processed.document_id)
     assert doc is not None
     assert doc.mime_type == "application/pdf"
 
@@ -555,3 +553,53 @@ def test_render_risk_note_compact_certification_and_pending_issue_fallback() -> 
 
     assert "CERTIFIED OFFICIAL" not in draft_html
     assert "Digitally Authenticated — Agency Operations" not in draft_html
+
+
+def test_build_snapshot_fallback_resource_type_is_frozen(db: Session) -> None:
+    import uuid
+
+    resource_id = uuid.uuid4()
+    snapshot = DocumentRenderer.build_snapshot(
+        session=db,
+        resource_type=DocumentJobResourceType.INVITATION,
+        resource_id=resource_id,
+        snapshot_override={"custom_key": "custom_value"},
+    )
+
+    assert snapshot["_frozen"] is True
+    assert snapshot["found"] is False
+    assert snapshot["entity_type"] is None
+    assert snapshot["entity_id"] == str(resource_id)
+    assert snapshot["filename"] == f"invitation_{resource_id}.pdf"
+    assert snapshot["custom_key"] == "custom_value"
+
+
+def test_enqueue_job_freezes_risk_note_and_invoice_but_defers_statement(
+    db: Session,
+) -> None:
+    import uuid
+
+    from app.services.document_job import DocumentJobService
+
+    rn_job = DocumentJobService.enqueue_job(
+        session=db,
+        resource_type=DocumentJobResourceType.RISK_NOTE,
+        resource_id=uuid.uuid4(),
+    )
+    assert rn_job.snapshot_data.get("_frozen") is True
+
+    inv_job = DocumentJobService.enqueue_job(
+        session=db,
+        resource_type=DocumentJobResourceType.INVOICE,
+        resource_id=uuid.uuid4(),
+    )
+    assert inv_job.snapshot_data.get("_frozen") is True
+
+    stmt_job = DocumentJobService.enqueue_job(
+        session=db,
+        resource_type=DocumentJobResourceType.STATEMENT,
+        resource_id=uuid.uuid4(),
+        snapshot_data={"client_name": "Deferred Statement Client"},
+    )
+    assert "_frozen" not in stmt_job.snapshot_data
+    assert stmt_job.snapshot_data["client_name"] == "Deferred Statement Client"

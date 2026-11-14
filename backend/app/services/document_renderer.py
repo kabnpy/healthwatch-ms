@@ -194,8 +194,12 @@ class DocumentRenderer:
         # Invitation, InvoiceBatch, or other non-Statement resources
         return {
             "_frozen": True,
+            "found": False,
             "resource_type": resource_type.value,
             "resource_id": str(resource_id) if resource_id else None,
+            "entity_type": None,
+            "entity_id": str(resource_id) if resource_id else None,
+            "filename": f"{resource_type.value}_{resource_id or 'preview'}.pdf",
             **jsonable_encoder(override),
         }
 
@@ -594,6 +598,28 @@ class DocumentRenderer:
             fallback_lines=fallback_lines,
         )
 
+    @staticmethod
+    def _resolve_snapshot_metadata(
+        snapshot: dict[str, Any],
+        *,
+        default_filename: str,
+        default_entity_type: DocumentEntityType = DocumentEntityType.CLIENT,
+        default_entity_id: uuid.UUID | None = None,
+    ) -> tuple[str, DocumentEntityType, uuid.UUID | None]:
+        """Resolve filename, entity_type, and entity_id from a frozen snapshot with fallbacks."""
+        resolved_filename = snapshot.get("filename") or default_filename
+        resolved_entity_type = (
+            DocumentEntityType(snapshot["entity_type"])
+            if snapshot.get("entity_type")
+            else default_entity_type
+        )
+        resolved_entity_id = (
+            uuid.UUID(str(snapshot["entity_id"]))
+            if snapshot.get("entity_id")
+            else default_entity_id
+        )
+        return resolved_filename, resolved_entity_type, resolved_entity_id
+
     @classmethod
     def _render_invoice(
         cls,
@@ -641,16 +667,12 @@ class DocumentRenderer:
         inv_number = invoice.get("invoice_number") or invoice.get("id")
         inv_client_id = invoice.get("client_id")
         inv_id = uuid.UUID(str(invoice["id"]))
-        resolved_filename = snapshot.get("filename") or f"Invoice_{inv_number}.pdf"
-        resolved_entity_type = (
-            DocumentEntityType(snapshot["entity_type"])
-            if snapshot.get("entity_type")
-            else DocumentEntityType.CLIENT
-        )
-        resolved_entity_id = (
-            uuid.UUID(str(snapshot["entity_id"]))
-            if snapshot.get("entity_id")
-            else (uuid.UUID(str(inv_client_id)) if inv_client_id else inv_id)
+        resolved_filename, resolved_entity_type, resolved_entity_id = (
+            cls._resolve_snapshot_metadata(
+                snapshot,
+                default_filename=f"Invoice_{inv_number}.pdf",
+                default_entity_id=uuid.UUID(str(inv_client_id)) if inv_client_id else inv_id,
+            )
         )
         fallback_lines.extend(
             [
@@ -718,16 +740,12 @@ class DocumentRenderer:
             },
         )
         client_slug = client_name.replace(" ", "_")
-        resolved_filename = snapshot.get("filename") or f"Statement_{client_slug}_{client_id_val}.pdf"
-        resolved_entity_type = (
-            DocumentEntityType(snapshot["entity_type"])
-            if snapshot.get("entity_type")
-            else DocumentEntityType.CLIENT
-        )
-        resolved_entity_id = (
-            uuid.UUID(str(snapshot["entity_id"]))
-            if snapshot.get("entity_id")
-            else client_id_val
+        resolved_filename, resolved_entity_type, resolved_entity_id = (
+            cls._resolve_snapshot_metadata(
+                snapshot,
+                default_filename=f"Statement_{client_slug}_{client_id_val}.pdf",
+                default_entity_id=client_id_val,
+            )
         )
         fallback_lines.extend(
             [
