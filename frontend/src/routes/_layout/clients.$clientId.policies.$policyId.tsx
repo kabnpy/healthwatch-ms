@@ -167,29 +167,20 @@ function PolicyDashboardContent({
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-transparent border-b rounded-none w-full max-w-full overflow-x-auto justify-start p-0 h-10 gap-6">
-          <TabsTrigger
-            value="overview"
-            className="shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
-          >
-            Overview
+        <TabsList
+          variant="line"
+          className="w-full max-w-full overflow-x-auto justify-start border-b"
+        >
+          <TabsTrigger value="overview" className="flex-none px-3">
+            Coverage
           </TabsTrigger>
-          <TabsTrigger
-            value="history"
-            className="shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
-          >
+          <TabsTrigger value="history" className="flex-none px-3">
             {isMedical ? "Census & Endorsement History" : "Risk Note Versions"}
           </TabsTrigger>
-          <TabsTrigger
-            value="timeline"
-            className="shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
-          >
+          <TabsTrigger value="timeline" className="flex-none px-3">
             Activity & Audit Log
           </TabsTrigger>
-          <TabsTrigger
-            value="documents"
-            className="shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 font-semibold text-xs pb-2.5 transition-none"
-          >
+          <TabsTrigger value="documents" className="flex-none px-3">
             Documents
           </TabsTrigger>
         </TabsList>
@@ -207,8 +198,11 @@ function PolicyDashboardContent({
             ) : (
               <>
                 {/* Policy Schedule Header & Primary Actions */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl border bg-card shadow-sm">
-                  <div className="space-y-1">
+                <div
+                  data-testid="policy-schedule-strip"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border/80 bg-card shadow-xs"
+                >
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-wider">
                         Official Policy Schedule
@@ -223,12 +217,9 @@ function PolicyDashboardContent({
                         {latestRiskNote?.status || "Final"}
                       </span>
                     </div>
-                    <h3 className="text-lg font-bold text-foreground">
-                      {displayName}
-                    </h3>
                     <p className="text-xs text-muted-foreground">
                       Ref:{" "}
-                      <span className="font-mono font-medium">
+                      <span className="font-mono font-medium text-foreground">
                         {latestRiskNote?.risk_note_number || "DRAFT"}
                       </span>
                       {latestRiskNote?.coverage_start &&
@@ -244,11 +235,11 @@ function PolicyDashboardContent({
 
                   <div className="flex items-center gap-2 shrink-0">
                     <Button
-                      variant="default"
+                      variant="outline"
                       size="sm"
                       onClick={() => setPreviewDrawerOpen(true)}
                       disabled={!latestRiskNote?.id}
-                      className="gap-2 h-9 cursor-pointer shadow-sm text-xs font-semibold"
+                      className="gap-2 h-8 cursor-pointer text-xs font-semibold"
                     >
                       <FileText className="size-4" />
                       <span>View Schedule</span>
@@ -277,9 +268,12 @@ function PolicyDashboardContent({
                   </div>
                 </div>
 
-                {/* Key Figures Strip */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="p-4 rounded-xl border bg-card shadow-sm space-y-1">
+                {/* Key Figures Summary Strip */}
+                <div
+                  data-testid="policy-summary-strip"
+                  className="rounded-xl border border-border/80 bg-card shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border/80"
+                >
+                  <div className="p-4 space-y-1">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
                       Sum Insured
                     </span>
@@ -291,7 +285,7 @@ function PolicyDashboardContent({
                     </span>
                   </div>
 
-                  <div className="p-4 rounded-xl border bg-card shadow-sm space-y-1">
+                  <div className="p-4 space-y-1">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
                       Net Premium
                     </span>
@@ -307,7 +301,7 @@ function PolicyDashboardContent({
                     </span>
                   </div>
 
-                  <div className="p-4 rounded-xl border bg-card shadow-sm space-y-1">
+                  <div className="p-4 space-y-1">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
                       Invoice Balance
                     </span>
@@ -331,7 +325,7 @@ function PolicyDashboardContent({
                     </span>
                   </div>
 
-                  <div className="p-4 rounded-xl border bg-card shadow-sm space-y-1">
+                  <div className="p-4 space-y-1">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
                       Policy Expiry
                     </span>
@@ -410,14 +404,13 @@ function PolicyDashboardContent({
               </span>
             </div>
 
-            <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
-              <DataTable
-                columns={getRiskNoteColumns((rn) =>
-                  handleViewRiskNote(rn.id, "risknote"),
-                )}
-                data={riskNotes}
-              />
-            </div>
+            <DataTable
+              columns={getRiskNoteColumns((rn) =>
+                handleViewRiskNote(rn.id, "risknote"),
+              )}
+              data={riskNotes}
+              searchPlaceholder="Search risk notes..."
+            />
           </div>
         </TabsContent>
 

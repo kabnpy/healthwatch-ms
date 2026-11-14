@@ -99,7 +99,7 @@ export function MedicalPolicyView({
       </div>
 
       {/* 2. THE FORMAL MASTER SCHEDULE CARD */}
-      <div className="border rounded-xl shadow-lg bg-card overflow-hidden">
+      <div className="border border-border/80 rounded-xl shadow-xs bg-card overflow-hidden">
         {/* Slip Header */}
         <div className="p-6 border-b bg-muted/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="space-y-1">
