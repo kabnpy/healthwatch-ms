@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { InvoicePublic, PaymentRecordPublic } from "@/client"
 import { AllocatePaymentDialog } from "./AllocatePaymentDialog"
@@ -62,6 +62,7 @@ const invoices: InvoicePublic[] = [
 
 describe("AllocatePaymentDialog", () => {
   beforeEach(() => {
+    cleanup()
     vi.clearAllMocks()
     mockMutateAsync.mockResolvedValue({})
   })
@@ -151,5 +152,69 @@ describe("AllocatePaymentDialog", () => {
     expect(mockShowErrorToast).toHaveBeenCalledWith(
       "Please enter a valid positive allocation amount.",
     )
+  })
+
+  it("displays live remaining unallocated amount and invoice balance due as amount changes", () => {
+    render(
+      <AllocatePaymentDialog
+        record={baseRecord}
+        invoices={invoices}
+        onOpenChange={vi.fn()}
+      />,
+    )
+
+    // Select INV-001 (balance_due: 4500.00, unallocated: 3000.00)
+    fireEvent.click(screen.getByRole("combobox"))
+    fireEvent.click(screen.getByText("INV-001"))
+
+    const amountInput = screen.getByRole("spinbutton") as HTMLInputElement
+    fireEvent.change(amountInput, { target: { value: "1250.25" } })
+
+    // Remaining unallocated: 3000.00 - 1250.25 = 1,749.75
+    expect(screen.getByText(/1,749\.75/)).toBeTruthy()
+    // Remaining invoice balance: 4500.00 - 1250.25 = 3,249.75
+    expect(screen.getByText(/3,249\.75/)).toBeTruthy()
+  })
+
+  it("blocks over-allocation when amount exceeds unallocated_amount or invoice.balance_due", () => {
+    render(
+      <AllocatePaymentDialog
+        record={baseRecord}
+        invoices={invoices}
+        onOpenChange={vi.fn()}
+      />,
+    )
+
+    // Select INV-001 (balance_due: 4500.00, unallocated: 3000.00)
+    fireEvent.click(screen.getByRole("combobox"))
+    fireEvent.click(screen.getByText("INV-001"))
+
+    const amountInput = screen.getByRole("spinbutton") as HTMLInputElement
+    const submitBtn = screen.getByRole("button", {
+      name: "Post Allocation",
+    }) as HTMLButtonElement
+
+    // Exceeds unallocated_amount (3000.00) by 0.01
+    fireEvent.change(amountInput, { target: { value: "3000.01" } })
+    expect(
+      screen.getByText(
+        "Allocation amount cannot exceed available unallocated funds.",
+      ),
+    ).toBeTruthy()
+    expect(submitBtn.disabled).toBe(true)
+
+    // Select INV-002 (balance_due: 1200.00, unallocated: 3000.00)
+    fireEvent.click(screen.getByRole("combobox"))
+    fireEvent.click(screen.getByText("INV-002"))
+
+    // Exceeds invoice.balance_due (1200.00) by 0.01
+    fireEvent.change(amountInput, { target: { value: "1200.01" } })
+    expect(
+      screen.getByText("Allocation amount cannot exceed invoice balance due."),
+    ).toBeTruthy()
+    expect(submitBtn.disabled).toBe(true)
+
+    fireEvent.submit(amountInput.closest("form")!)
+    expect(mockMutateAsync).not.toHaveBeenCalled()
   })
 })

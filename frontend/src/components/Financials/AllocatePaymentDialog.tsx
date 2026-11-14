@@ -28,6 +28,22 @@ export interface AllocatePaymentDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
+function toCents(value: string | number | null | undefined): number | null {
+  if (value === null || value === undefined) return null
+  const str = String(value).trim()
+  if (str === "") return null
+  const num = Number(str)
+  if (!Number.isFinite(num)) return null
+  return Math.round(num * 100)
+}
+
+function formatKesFromCents(cents: number): string {
+  return (cents / 100).toLocaleString("en-KE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
 export function AllocatePaymentDialog({
   record,
   invoices,
@@ -54,15 +70,50 @@ export function AllocatePaymentDialog({
     )
   }, [invoices, record])
 
+  const selectedInvoice = useMemo(
+    () => availableInvoices.find((inv) => inv.id === targetInvoiceId) ?? null,
+    [availableInvoices, targetInvoiceId],
+  )
+
+  const unallocatedCents = record
+    ? (toCents(record.unallocated_amount || record.amount) ?? 0)
+    : 0
+  const invoiceBalanceCents = selectedInvoice
+    ? (toCents(selectedInvoice.balance_due || 0) ?? 0)
+    : null
+  const amountCents = toCents(amount)
+
+  const validationError = useMemo(() => {
+    if (amountCents === null || amountCents <= 0) {
+      return "Please enter a valid positive allocation amount."
+    }
+    if (amountCents > unallocatedCents) {
+      return "Allocation amount cannot exceed available unallocated funds."
+    }
+    if (invoiceBalanceCents !== null && amountCents > invoiceBalanceCents) {
+      return "Allocation amount cannot exceed invoice balance due."
+    }
+    return null
+  }, [amountCents, unallocatedCents, invoiceBalanceCents])
+
+  const effectiveAmountCents =
+    amountCents !== null && amountCents > 0 ? amountCents : 0
+  const remainingUnallocatedCents = unallocatedCents - effectiveAmountCents
+  const remainingInvoiceCents =
+    invoiceBalanceCents !== null
+      ? invoiceBalanceCents - effectiveAmountCents
+      : null
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!record || !targetInvoiceId) {
       showErrorToast("Please select an invoice to allocate to.")
       return
     }
-    const parsed = parseFloat(amount)
-    if (Number.isNaN(parsed) || parsed <= 0) {
-      showErrorToast("Please enter a valid positive allocation amount.")
+    if (validationError || amountCents === null) {
+      showErrorToast(
+        validationError || "Please enter a valid positive allocation amount.",
+      )
       return
     }
 
@@ -72,7 +123,7 @@ export function AllocatePaymentDialog({
         data: {
           payment_record_id: record.id,
           invoice_id: targetInvoiceId,
-          amount: parsed.toFixed(2) as any,
+          amount: (amountCents / 100).toFixed(2) as any,
         },
       })
       onOpenChange(false)
@@ -169,12 +220,54 @@ export function AllocatePaymentDialog({
               <Input
                 type="number"
                 step="0.01"
-                min="1"
+                min="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="font-mono text-xs tabular-nums text-right font-bold"
+                aria-invalid={!!validationError}
                 required
               />
+              {validationError && (
+                <p role="alert" className="text-xs text-rose-600 font-medium">
+                  {validationError}
+                </p>
+              )}
+            </div>
+
+            <div
+              data-testid="allocation-preview"
+              className="rounded-lg border p-3 bg-muted/20 text-xs space-y-1.5 font-mono"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">
+                  Remaining Unallocated:
+                </span>
+                <span
+                  className={
+                    remainingUnallocatedCents < 0
+                      ? "font-bold text-rose-600 tabular-nums"
+                      : "font-bold tabular-nums"
+                  }
+                >
+                  KES {formatKesFromCents(remainingUnallocatedCents)}
+                </span>
+              </div>
+              {remainingInvoiceCents !== null && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">
+                    Remaining Invoice Balance:
+                  </span>
+                  <span
+                    className={
+                      remainingInvoiceCents < 0
+                        ? "font-bold text-rose-600 tabular-nums"
+                        : "font-bold tabular-nums"
+                    }
+                  >
+                    KES {formatKesFromCents(remainingInvoiceCents)}
+                  </span>
+                </div>
+              )}
             </div>
 
             <DialogFooter className="pt-2">
@@ -193,7 +286,8 @@ export function AllocatePaymentDialog({
                 disabled={
                   allocateMutation.isPending ||
                   !targetInvoiceId ||
-                  availableInvoices.length === 0
+                  availableInvoices.length === 0 ||
+                  !!validationError
                 }
                 className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
               >
