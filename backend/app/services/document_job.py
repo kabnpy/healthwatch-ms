@@ -68,12 +68,16 @@ class DocumentJobService:
         """
         Enqueues an asynchronous document rendering job with idempotency check.
         """
-        frozen_snapshot = DocumentRenderer.build_snapshot(
-            session=session,
-            resource_type=resource_type,
-            resource_id=resource_id,
-            snapshot_override=snapshot_data,
-        )
+        if resource_type == DocumentJobResourceType.STATEMENT:
+            # ADR-0005: Statement snapshots are deferred until process_job
+            frozen_snapshot = dict(snapshot_data or {})
+        else:
+            frozen_snapshot = DocumentRenderer.build_snapshot(
+                session=session,
+                resource_type=resource_type,
+                resource_id=resource_id,
+                snapshot_override=snapshot_data,
+            )
 
         if idempotency_key:
             existing = session.exec(
@@ -138,11 +142,17 @@ class DocumentJobService:
         session.commit()
 
         try:
+            snapshot = job.snapshot_data or {}
+            if not snapshot.get("_frozen"):
+                snapshot = DocumentRenderer.build_snapshot(
+                    session=session,
+                    resource_type=job.resource_type,
+                    resource_id=job.resource_id,
+                    snapshot_override=snapshot,
+                )
             rendered = DocumentRenderer.render_pdf(
-                session=session,
+                snapshot,
                 resource_type=job.resource_type,
-                resource_id=job.resource_id,
-                snapshot_override=job.snapshot_data,
                 job_id=job.id,
             )
             filename = rendered.filename
