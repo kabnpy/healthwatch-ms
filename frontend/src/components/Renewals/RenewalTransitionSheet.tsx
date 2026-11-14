@@ -136,10 +136,7 @@ export function RenewalTransitionSheet({
   const handleApplyRating = (result: CalculationQuoteResponse) => {
     const grossTotal = Number(result.total_amount || 0)
     const netPremium = Number(result.net_premium || 0)
-    const totalLevies =
-      Number(result.training_levy || 0) +
-      Number(result.phcf || 0) +
-      Number(result.stamp_duty || 0)
+    const totalLevies = Number(result.total_taxes || 0)
     setProposedPremium(grossTotal)
     setAgreedPremium(grossTotal)
     const breakdownNote = `Advisory rating calculated: Gross KES ${grossTotal.toLocaleString()} (Net KES ${netPremium.toLocaleString()}, Levies KES ${totalLevies.toLocaleString()})`

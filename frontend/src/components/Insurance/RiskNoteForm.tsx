@@ -96,12 +96,9 @@ export const RiskNoteForm = ({
   }, [policy, form, initialTransactionType])
 
   const handleApplyRating = (res: CalculationQuoteResponse) => {
-    const netPremium = Number(res.breakdown.net_premium || 0)
+    const netPremium = Number(res.net_premium || 0)
     form.setValue("net_premium", netPremium)
-    form.setValue(
-      "commission_amount",
-      Number(res.breakdown.commission_amount || 0),
-    )
+    form.setValue("commission_amount", Number(res.commission_amount || 0))
 
     const currentDetails = form.getValues("details") || {}
     form.setValue("details", {
