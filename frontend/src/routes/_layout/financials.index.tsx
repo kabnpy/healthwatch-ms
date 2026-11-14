@@ -426,7 +426,7 @@ function FinancialsHub() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <Link
-                            to="/clients/$clientId/overview"
+                            to="/clients/$clientId/policies"
                             params={{ clientId: p.client_id }}
                             className="font-semibold text-primary hover:underline block truncate"
                           >
@@ -522,7 +522,7 @@ function FinancialsHub() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <Link
-                            to="/clients/$clientId/overview"
+                            to="/clients/$clientId/policies"
                             params={{ clientId: inv.client_id }}
                             className="font-semibold text-primary hover:underline block truncate"
                           >

@@ -301,7 +301,7 @@ describe("FinancialsHub UX & formatting (#168)", () => {
     expect(screen.queryByText(/agency accounts/i)).toBeNull()
   })
 
-  it("links client names in Payment Records and Invoices to /clients/$clientId/overview", () => {
+  it("links client names in Payment Records and Invoices to /clients/$clientId/policies", () => {
     mockUseClients.mockReturnValue({
       data: { data: [{ id: "c-1", name: "Acme Corp" }], count: 1 },
     })
@@ -331,7 +331,7 @@ describe("FinancialsHub UX & formatting (#168)", () => {
     const clientLinks = screen.getAllByRole("link", { name: "Acme Corp" })
     expect(clientLinks.length).toBeGreaterThan(0)
     for (const link of clientLinks) {
-      expect(link.getAttribute("href")).toBe("/clients/c-1/overview")
+      expect(link.getAttribute("href")).toBe("/clients/c-1/policies")
     }
   })
 

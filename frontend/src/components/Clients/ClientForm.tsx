@@ -89,110 +89,148 @@ export const ClientForm = ({
   return (
     <form
       onSubmit={form.handleSubmit(handleFormSubmit)}
-      className="space-y-4"
+      className="space-y-6"
     >
-      <Controller
-        control={form.control}
-        name="client_type"
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel>Client Type</FieldLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <SelectTrigger aria-invalid={fieldState.invalid}>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Individual">Individual</SelectItem>
-                <SelectItem value="Corporate">Corporate</SelectItem>
-              </SelectContent>
-            </Select>
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+            Identity &amp; Tax
+          </h3>
+          <Separator className="mt-2" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Controller
+            control={form.control}
+            name="client_type"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>Client Type</FieldLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <SelectTrigger aria-invalid={fieldState.invalid}>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Individual">Individual</SelectItem>
+                    <SelectItem value="Corporate">Corporate</SelectItem>
+                  </SelectContent>
+                </Select>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
 
-      <Controller
-        control={form.control}
-        name="kra_pin"
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel>KRA PIN</FieldLabel>
-            <Input
-              placeholder="A00..."
-              aria-invalid={fieldState.invalid}
-              {...field}
+          <Controller
+            control={form.control}
+            name="kra_pin"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>KRA PIN</FieldLabel>
+                <Input
+                  placeholder="A00..."
+                  aria-invalid={fieldState.invalid}
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+
+          <div className="md:col-span-2">
+            <Controller
+              control={form.control}
+              name="name"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Client Name</FieldLabel>
+                  <Input
+                    placeholder="Full Name or Company Name"
+                    aria-invalid={fieldState.invalid}
+                    {...field}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
             />
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
+          </div>
+        </div>
+      </div>
 
-      <Controller
-        control={form.control}
-        name="name"
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel>Client Name</FieldLabel>
-            <Input
-              placeholder="Full Name or Company Name"
-              aria-invalid={fieldState.invalid}
-              {...field}
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+            Contact &amp; Address
+          </h3>
+          <Separator className="mt-2" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Controller
+            control={form.control}
+            name="email"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>Email</FieldLabel>
+                <Input
+                  type="email"
+                  placeholder="client@example.com"
+                  aria-invalid={fieldState.invalid}
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name="phone"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>Phone Number</FieldLabel>
+                <Input
+                  placeholder="07..."
+                  aria-invalid={fieldState.invalid}
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+
+          <div className="md:col-span-2">
+            <Controller
+              control={form.control}
+              name="physical_address"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Physical Address</FieldLabel>
+                  <Input
+                    placeholder="Building, Street, Area"
+                    aria-invalid={fieldState.invalid}
+                    {...field}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
             />
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
+          </div>
+        </div>
 
-      <Controller
-        control={form.control}
-        name="email"
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel>Email</FieldLabel>
-            <Input
-              type="email"
-              placeholder="client@example.com"
-              aria-invalid={fieldState.invalid}
-              {...field}
-            />
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-
-      <Controller
-        control={form.control}
-        name="phone"
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel>Phone Number</FieldLabel>
-            <Input
-              placeholder="07..."
-              aria-invalid={fieldState.invalid}
-              {...field}
-            />
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-
-      <Controller
-        control={form.control}
-        name="physical_address"
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel>Physical Address</FieldLabel>
-            <Input
-              placeholder="Building, Street, Area"
-              aria-invalid={fieldState.invalid}
-              {...field}
-            />
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-
-      <div className="grid grid-cols-3 gap-4 border-t pt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
         <Controller
           control={form.control}
           name="postal_number"
@@ -238,12 +276,13 @@ export const ClientForm = ({
             </Field>
           )}
         />
+        </div>
       </div>
 
       <div className="space-y-4 pt-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-            Client Contacts
+            Key Contacts
           </h3>
           <Button
             type="button"
