@@ -12,6 +12,7 @@ interface StepReviewProps {
   state: WizardState
   onIssue: () => void
   onBack: () => void
+  onJumpToStep?: (step: number) => void
   isSubmitting?: boolean
 }
 
@@ -19,6 +20,7 @@ export function StepReview({
   state,
   onIssue,
   onBack,
+  onJumpToStep,
   isSubmitting,
 }: StepReviewProps) {
   const { data: productsData } = useProducts()
@@ -63,10 +65,32 @@ export function StepReview({
       <div className="space-y-6">
         {/* Identity & Asset Summary */}
         <Card className="shadow-sm border-muted/60">
-          <CardHeader className="pb-3 bg-muted/10">
+          <CardHeader className="pb-3 bg-muted/10 flex flex-row items-center justify-between">
             <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">
               Identity & Asset
             </CardTitle>
+            {onJumpToStep && (
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-xs font-semibold"
+                  onClick={() => onJumpToStep(0)}
+                >
+                  Change<span className="sr-only"> Identity</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-xs font-semibold"
+                  onClick={() => onJumpToStep(1)}
+                >
+                  Change<span className="sr-only"> Asset</span>
+                </Button>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="pt-4 space-y-3">
             <div className="flex justify-between items-baseline">
@@ -132,13 +156,26 @@ export function StepReview({
         {/* Financial Summary */}
         <Card className="shadow-sm border-muted/60">
           <CardHeader className="pb-3 bg-muted/10">
-            <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground flex justify-between">
+            <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground flex justify-between items-center">
               <span>Financial Summary</span>
-              {breakdown && (
-                <span className="text-[9px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200">
-                  AUTHORITATIVE
-                </span>
-              )}
+              <div className="flex items-center gap-3">
+                {breakdown && (
+                  <span className="text-[9px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200">
+                    AUTHORITATIVE
+                  </span>
+                )}
+                {onJumpToStep && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs font-semibold"
+                    onClick={() => onJumpToStep(2)}
+                  >
+                    Change<span className="sr-only"> Financials</span>
+                  </Button>
+                )}
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4 space-y-3">

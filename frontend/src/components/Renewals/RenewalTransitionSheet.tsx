@@ -559,7 +559,7 @@ export function RenewalTransitionSheet({
                 <Button
                   onClick={() => handleTransition("client_invited")}
                   disabled={isPending}
-                  className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="w-full gap-2"
                 >
                   <Send className="size-4" />
                   Issue Renewal Invitation to Client
@@ -593,7 +593,7 @@ export function RenewalTransitionSheet({
                 <Button
                   onClick={() => handleTransition("client_invited")}
                   disabled={isPending}
-                  className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="w-full gap-2"
                 >
                   <Send className="size-4" />
                   Re-Issue Revised Quote to Client
