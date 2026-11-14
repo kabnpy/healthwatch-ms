@@ -9,6 +9,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useBreadcrumbs } from "@/hooks/useBreadcrumbs"
 
@@ -18,6 +19,10 @@ export const Header = () => {
   return (
     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-background/95 backdrop-blur-sm">
       <SidebarTrigger className="-ml-1 text-muted-foreground" />
+      <Separator
+        orientation="vertical"
+        className="mr-2 data-[orientation=vertical]:h-4"
+      />
       <div className="flex min-w-0 items-center gap-2 px-2 sm:px-4 overflow-hidden">
         <Breadcrumb className="min-w-0">
           <BreadcrumbList className="flex-nowrap">
@@ -41,7 +46,7 @@ export const Header = () => {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-      <div className="min-w-0 flex-1 flex justify-center px-2 sm:px-4">
+      <div className="ml-auto flex items-center">
         <CommandMenu />
       </div>
     </header>
