@@ -444,3 +444,206 @@ def test_invoice_batch_reads(db: Session) -> None:
     batches = ClientLedgerService.get_invoice_batches(session=db, client_id=client.id)
     assert [b.id for b in batches] == [batch.id]
     assert ClientLedgerService.count_invoice_batches(session=db, client_id=client.id) == 1
+
+
+def _create_invoice(
+    db: Session,
+    client_id: uuid.UUID,
+    amount: Decimal,
+    date_issued: date,
+    balance_due: Decimal | None = None,
+) -> "Invoice":
+    from app.models import Invoice
+
+    inv = Invoice(
+        client_id=client_id,
+        invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
+        date_issued=date_issued,
+        total_amount=amount,
+        balance_due=amount if balance_due is None else balance_due,
+    )
+    db.add(inv)
+    db.flush()
+    return inv
+
+
+def test_generate_statement_computes_decimal_aging_buckets_with_as_of_date(
+    db: Session,
+) -> None:
+    from datetime import timedelta
+
+    client = _create_client(db, "aging")
+    as_of = date(2026, 6, 15)
+
+    # 0 days -> current_0_30
+    _create_invoice(db, client.id, Decimal("100.11"), as_of)
+    # 30 days -> current_0_30
+    _create_invoice(db, client.id, Decimal("200.22"), as_of - timedelta(days=30))
+    # 31 days -> days_31_60
+    _create_invoice(db, client.id, Decimal("300.33"), as_of - timedelta(days=31))
+    # 60 days -> days_31_60
+    _create_invoice(db, client.id, Decimal("400.44"), as_of - timedelta(days=60))
+    # 61 days -> days_61_90
+    _create_invoice(db, client.id, Decimal("500.55"), as_of - timedelta(days=61))
+    # 90 days -> days_61_90
+    _create_invoice(db, client.id, Decimal("600.66"), as_of - timedelta(days=90))
+    # 91 days -> over_90
+    _create_invoice(db, client.id, Decimal("700.77"), as_of - timedelta(days=91))
+    # Paid invoice (balance_due == 0) -> excluded
+    _create_invoice(
+        db,
+        client.id,
+        Decimal("999.99"),
+        as_of - timedelta(days=120),
+        balance_due=Decimal("0.00"),
+    )
+
+    db.commit()
+
+    statement = ClientLedgerService.generate_statement(
+        db, client.id, as_of_date=as_of
+    )
+
+    assert statement.aging_buckets.current_0_30 == "300.33"
+    assert statement.aging_buckets.days_31_60 == "700.77"
+    assert statement.aging_buckets.days_61_90 == "1101.21"
+    assert statement.aging_buckets.over_90 == "700.77"
+    assert statement.aging_buckets.total_overdue == "2803.08"
+def test_record_payment_with_initial_allocations_atomic_commit_and_rollback(
+    db: Session,
+) -> None:
+    from app.models import InitialPaymentAllocation
+
+    client = _create_client(db, "atomic")
+    db.commit()
+
+    inv1 = ClientLedgerService.create_invoice(
+        session=db,
+        invoice_in=InvoiceCreate(
+            invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
+            client_id=client.id,
+            date_issued=date.today(),
+            total_amount=Decimal("2000.00"),
+            balance_due=Decimal("2000.00"),
+            status=InvoiceStatus.UNPAID,
+        ),
+    )
+    inv2 = ClientLedgerService.create_invoice(
+        session=db,
+        invoice_in=InvoiceCreate(
+            invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
+            client_id=client.id,
+            date_issued=date.today(),
+            total_amount=Decimal("1000.00"),
+            balance_due=Decimal("1000.00"),
+            status=InvoiceStatus.UNPAID,
+        ),
+    )
+
+    # Valid atomic payment + initial allocation
+    pmt = ClientLedgerService.record_payment(
+        session=db,
+        payment_in=PaymentRecordCreate(
+            client_id=client.id,
+            amount=Decimal("2500.00"),
+            payment_date=date.today(),
+            payment_method=PaymentMethod.MPESA,
+            reference_number=f"REF-{uuid.uuid4().hex[:6]}",
+            initial_allocations=[
+                InitialPaymentAllocation(invoice_id=inv1.id, amount=Decimal("2000.00")),
+            ],
+        ),
+    )
+    assert pmt.unallocated_amount == Decimal("500.00")
+    db.refresh(inv1)
+    assert inv1.balance_due == Decimal("0.00")
+    assert inv1.status == InvoiceStatus.PAID
+
+    # Failed second allocation must roll back the entire PaymentRecord
+    with pytest.raises(LedgerValidationError):
+        ClientLedgerService.record_payment(
+            session=db,
+            payment_in=PaymentRecordCreate(
+                client_id=client.id,
+                amount=Decimal("1500.00"),
+                payment_date=date.today(),
+                payment_method=PaymentMethod.MPESA,
+                reference_number=f"REF-{uuid.uuid4().hex[:6]}",
+                initial_allocations=[
+                    InitialPaymentAllocation(
+                        invoice_id=inv2.id, amount=Decimal("1500.00")
+                    ),
+                ],
+            ),
+        )
+
+    assert ClientLedgerService.count_payment_records(session=db, client_id=client.id) == 1
+    db.refresh(inv2)
+    assert inv2.balance_due == Decimal("1000.00")
+    assert inv2.status == InvoiceStatus.UNPAID
+def test_get_ledger_summary_global_and_by_client(db: Session) -> None:
+    client_a = _create_client(db, "summary-a")
+    client_b = _create_client(db, "summary-b")
+    db.commit()
+
+    # Client A: invoice 1000.50, payment 600.25 -> 400.25 allocated, 200.00 unallocated
+    inv_a = ClientLedgerService.create_invoice(
+        session=db,
+        invoice_in=InvoiceCreate(
+            client_id=client_a.id,
+            invoice_number="INV-SUM-A1",
+            total_amount=Decimal("1000.50"),
+            balance_due=Decimal("1000.50"),
+        ),
+    )
+    pmt_a = ClientLedgerService.record_payment(
+        session=db,
+        payment_in=PaymentRecordCreate(
+            client_id=client_a.id,
+            amount=Decimal("600.25"),
+            payment_method="mpesa",
+            reference_number="MP-SUM-A1",
+        ),
+    )
+    ClientLedgerService.allocate_payment(
+        session=db,
+        allocation_in=PaymentAllocationCreate(
+            payment_record_id=pmt_a.id,
+            invoice_id=inv_a.id,
+            amount=Decimal("400.25"),
+        ),
+    )
+
+    # Client B: invoice 500.00, no payments
+    ClientLedgerService.create_invoice(
+        session=db,
+        invoice_in=InvoiceCreate(
+            client_id=client_b.id,
+            invoice_number="INV-SUM-B1",
+            total_amount=Decimal("500.00"),
+            balance_due=Decimal("500.00"),
+        ),
+    )
+
+    summary_a = ClientLedgerService.get_ledger_summary(
+        session=db, client_id=client_a.id
+    )
+    assert summary_a.total_invoiced == Decimal("1000.50")
+    assert summary_a.total_paid == Decimal("400.25")
+    assert summary_a.total_due == Decimal("600.25")
+    assert summary_a.total_unallocated == Decimal("200.00")
+
+    summary_b = ClientLedgerService.get_ledger_summary(
+        session=db, client_id=client_b.id
+    )
+    assert summary_b.total_invoiced == Decimal("500.00")
+    assert summary_b.total_paid == Decimal("0.00")
+    assert summary_b.total_due == Decimal("500.00")
+    assert summary_b.total_unallocated == Decimal("0.00")
+
+    summary_all = ClientLedgerService.get_ledger_summary(session=db)
+    assert summary_all.total_invoiced >= Decimal("1500.50")
+    assert summary_all.total_paid >= Decimal("400.25")
+    assert summary_all.total_due >= Decimal("1100.25")
+    assert summary_all.total_unallocated >= Decimal("200.00")
+

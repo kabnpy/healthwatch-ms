@@ -760,6 +760,13 @@ class InvoicesPublic(SQLModel):
     count: int
 
 
+class LedgerSummary(SQLModel):
+    total_invoiced: Decimal
+    total_paid: Decimal
+    total_due: Decimal
+    total_unallocated: Decimal
+
+
 # ==========================================
 # Claim Models
 # ==========================================
@@ -1044,6 +1051,12 @@ class PaymentRecordBase(AuditMixin, SQLModel):
     reversal_reason: str | None = None
 
 
+class InitialPaymentAllocation(SQLModel):
+    invoice_id: uuid.UUID
+    amount: Decimal
+    risk_note_id: uuid.UUID | None = None
+
+
 class PaymentRecordCreate(SQLModel):
     client_id: uuid.UUID
     amount: Decimal
@@ -1052,6 +1065,7 @@ class PaymentRecordCreate(SQLModel):
     reference_number: str | None = None
     payer_name: str | None = None
     proof_document_id: uuid.UUID | None = None
+    initial_allocations: list[InitialPaymentAllocation] | None = None
 
 
 class PaymentRecordPublic(PaymentRecordBase):

@@ -6,7 +6,6 @@ import {
   Printer,
   ShieldCheck,
 } from "lucide-react"
-import { useMemo } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -18,11 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useInvoices } from "@/hooks/useFinancials"
-import {
-  type StatementLedgerEntry,
-  useClientStatement,
-} from "@/hooks/useStatements"
+import { useClientStatement } from "@/hooks/useStatements"
 import { formatCurrency } from "@/utils"
 
 interface ClientStatementViewProps {
@@ -31,96 +26,24 @@ interface ClientStatementViewProps {
   kraPin?: string
 }
 
-interface RunningLedgerItem extends StatementLedgerEntry {
-  debitNum: number
-  creditNum: number
-  runningBalance: number
-}
-
-interface AgingBuckets {
-  current: number // 0 - 30 days
-  days31To60: number
-  days61To90: number
-  over90: number
-  total: number
-}
-
 export function ClientStatementView({
   clientId,
   clientName,
   kraPin,
 }: ClientStatementViewProps) {
   const { data: statement, isLoading, error } = useClientStatement(clientId)
-  const { data: invoicesData } = useInvoices(clientId)
+  const ledgerEntries = statement?.ledger_entries ?? []
+  const aging = statement?.aging_buckets ?? {
+    current_0_30: "0.00",
+    days_31_60: "0.00",
+    days_61_90: "0.00",
+    over_90: "0.00",
+    total_overdue: "0.00",
+  }
 
-  const invoices = invoicesData?.data || []
-
-  // 1. Calculate Running Balance sequentially
-  const runningLedger = useMemo<RunningLedgerItem[]>(() => {
-    if (!statement?.ledger_entries) return []
-
-    let currentBalance = 0
-    return statement.ledger_entries.map((entry) => {
-      const debitNum = Number(entry.debit || 0)
-      const creditNum = Number(entry.credit || 0)
-      currentBalance =
-        Math.round((currentBalance + debitNum - creditNum) * 100) / 100
-
-      return {
-        ...entry,
-        debitNum,
-        creditNum,
-        runningBalance: currentBalance,
-      }
-    })
-  }, [statement?.ledger_entries])
-
-  // 2. Compute Aged Debt Buckets from open invoices
-  const aging = useMemo<AgingBuckets>(() => {
-    const buckets: AgingBuckets = {
-      current: 0,
-      days31To60: 0,
-      days61To90: 0,
-      over90: 0,
-      total: 0,
-    }
-
-    const now = Date.now()
-
-    for (const inv of invoices) {
-      const balance = Number(inv.balance_due || 0)
-      if (balance <= 0) continue
-
-      buckets.total += balance
-      const issueDate = inv.date_issued
-        ? new Date(inv.date_issued).getTime()
-        : now
-      const days = Math.floor((now - issueDate) / (1000 * 60 * 60 * 24))
-
-      if (days <= 30) {
-        buckets.current += balance
-      } else if (days <= 60) {
-        buckets.days31To60 += balance
-      } else if (days <= 90) {
-        buckets.days61To90 += balance
-      } else {
-        buckets.over90 += balance
-      }
-    }
-
-    // Round all to 2 decimal places
-    buckets.current = Math.round(buckets.current * 100) / 100
-    buckets.days31To60 = Math.round(buckets.days31To60 * 100) / 100
-    buckets.days61To90 = Math.round(buckets.days61To90 * 100) / 100
-    buckets.over90 = Math.round(buckets.over90 * 100) / 100
-    buckets.total = Math.round(buckets.total * 100) / 100
-
-    return buckets
-  }, [invoices])
-
-  // 3. Export CSV handler
+  // Export CSV handler
   const handleExportCSV = () => {
-    if (!runningLedger.length) return
+    if (!ledgerEntries.length) return
 
     const headers = [
       "Date",
@@ -132,14 +55,14 @@ export function ClientStatementView({
       "Running Balance (KES)",
     ]
 
-    const rows = runningLedger.map((row) => [
+    const rows = ledgerEntries.map((row) => [
       `"${row.date}"`,
       `"${row.type}"`,
       `"${row.reference}"`,
       `"${row.description.replace(/"/g, '""')}"`,
-      row.debitNum.toFixed(2),
-      row.creditNum.toFixed(2),
-      row.runningBalance.toFixed(2),
+      Number(row.debit || 0).toFixed(2),
+      Number(row.credit || 0).toFixed(2),
+      Number(row.running_balance || 0).toFixed(2),
     ])
 
     const csvContent =
@@ -210,7 +133,7 @@ export function ClientStatementView({
             size="sm"
             onClick={handleExportCSV}
             className="gap-1.5 h-8 text-xs font-medium"
-            disabled={runningLedger.length === 0}
+            disabled={ledgerEntries.length === 0}
           >
             <Download className="size-3.5" />
             Export CSV
@@ -362,7 +285,7 @@ export function ClientStatementView({
               Aged Debt Schedule (Unpaid Invoices)
             </span>
             <span className="text-[11px] font-mono text-muted-foreground">
-              Total Overdue: {formatCurrency(aging.total)}
+              Total Overdue: {formatCurrency(aging.total_overdue)}
             </span>
           </div>
 
@@ -372,7 +295,7 @@ export function ClientStatementView({
                 Current (0–30 Days)
               </span>
               <span className="font-mono tabular-nums text-sm font-bold text-foreground block">
-                {formatCurrency(aging.current)}
+                {formatCurrency(aging.current_0_30)}
               </span>
               <span className="text-[10px] text-muted-foreground">
                 Standard credit terms
@@ -385,12 +308,12 @@ export function ClientStatementView({
               </span>
               <span
                 className={`font-mono tabular-nums text-sm font-bold block ${
-                  aging.days31To60 > 0
+                  Number(aging.days_31_60) > 0
                     ? "text-amber-600 dark:text-amber-400"
                     : "text-foreground"
                 }`}
               >
-                {formatCurrency(aging.days31To60)}
+                {formatCurrency(aging.days_31_60)}
               </span>
               <span className="text-[10px] text-muted-foreground">
                 First reminder cycle
@@ -403,12 +326,12 @@ export function ClientStatementView({
               </span>
               <span
                 className={`font-mono tabular-nums text-sm font-bold block ${
-                  aging.days61To90 > 0
+                  Number(aging.days_61_90) > 0
                     ? "text-amber-700 dark:text-amber-300"
                     : "text-foreground"
                 }`}
               >
-                {formatCurrency(aging.days61To90)}
+                {formatCurrency(aging.days_61_90)}
               </span>
               <span className="text-[10px] text-muted-foreground">
                 Second escalation
@@ -421,12 +344,12 @@ export function ClientStatementView({
               </span>
               <span
                 className={`font-mono tabular-nums text-sm font-bold block ${
-                  aging.over90 > 0
+                  Number(aging.over_90) > 0
                     ? "text-rose-600 dark:text-rose-400"
                     : "text-foreground"
                 }`}
               >
-                {formatCurrency(aging.over90)}
+                {formatCurrency(aging.over_90)}
               </span>
               <span className="text-[10px] text-muted-foreground">
                 Default review tier
@@ -444,7 +367,7 @@ export function ClientStatementView({
               Reconciled Financial Ledger
             </span>
             <span className="text-[11px] font-mono text-muted-foreground">
-              {runningLedger.length} Transaction Events
+              {ledgerEntries.length} Transaction Events
             </span>
           </div>
 
@@ -476,7 +399,7 @@ export function ClientStatementView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {runningLedger.length === 0 ? (
+                {ledgerEntries.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={7}
@@ -486,8 +409,10 @@ export function ClientStatementView({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  runningLedger.map((item, idx) => {
-                    const isDebit = item.debitNum > 0
+                  ledgerEntries.map((item, idx) => {
+                    const debitNum = Number(item.debit || 0)
+                    const creditNum = Number(item.credit || 0)
+                    const isDebit = debitNum > 0
                     return (
                       <TableRow
                         key={`${item.reference}-${idx}`}
@@ -522,15 +447,15 @@ export function ClientStatementView({
                           {item.description}
                         </TableCell>
                         <TableCell className="font-mono tabular-nums text-right text-foreground">
-                          {isDebit ? formatCurrency(item.debitNum) : "—"}
+                          {isDebit ? formatCurrency(item.debit) : "—"}
                         </TableCell>
                         <TableCell className="font-mono tabular-nums text-right text-emerald-600 dark:text-emerald-400">
-                          {item.creditNum > 0
-                            ? formatCurrency(item.creditNum)
+                          {creditNum > 0
+                            ? formatCurrency(item.credit)
                             : "—"}
                         </TableCell>
                         <TableCell className="font-mono tabular-nums text-right font-bold text-foreground">
-                          {formatCurrency(item.runningBalance)}
+                          {formatCurrency(item.running_balance ?? "0.00")}
                         </TableCell>
                       </TableRow>
                     )

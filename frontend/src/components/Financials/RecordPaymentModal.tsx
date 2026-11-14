@@ -25,7 +25,7 @@ import { useClients } from "@/hooks/useClients"
 import useCustomToast from "@/hooks/useCustomToast"
 import { useUploadDocument } from "@/hooks/useDocuments"
 import { useInvoices } from "@/hooks/useFinancials"
-import { useAllocatePayment, useCreatePaymentRecord } from "@/hooks/usePayments"
+import { useCreatePaymentRecord } from "@/hooks/usePayments"
 import { parsePaymentConfirmation } from "@/utils/paymentParser"
 
 interface RecordPaymentModalProps {
@@ -94,13 +94,10 @@ export function RecordPaymentModal({
   )
 
   const createPaymentMutation = useCreatePaymentRecord()
-  const allocatePaymentMutation = useAllocatePayment()
   const uploadDocMutation = useUploadDocument()
 
   const isSubmitting =
-    createPaymentMutation.isPending ||
-    allocatePaymentMutation.isPending ||
-    uploadDocMutation.isPending
+    createPaymentMutation.isPending || uploadDocMutation.isPending
 
   const [pasteText, setPasteText] = useState("")
   const [parsedBanner, setParsedBanner] = useState<string | null>(null)
@@ -197,48 +194,50 @@ export function RecordPaymentModal({
     }
 
     try {
-      // 1. Record Gross Payment Record
-      const paymentRecord = await createPaymentMutation.mutateAsync({
-        client_id: clientId,
-        amount: parsedAmount.toFixed(2),
-        payment_date: paymentDate,
-        payment_method: paymentMethod,
-        reference_number: referenceNumber.trim(),
-        payer_name: payerName.trim() || undefined,
-      })
-
-      // 2. Upload proof if provided
-      if (selectedFile && paymentRecord?.id) {
-        await uploadDocMutation.mutateAsync({
+      // 1. Upload proof under Client first if provided
+      let proofDocumentId: string | undefined
+      if (selectedFile) {
+        const uploadedDoc = await uploadDocMutation.mutateAsync({
           file: selectedFile,
-          entity_type: "PaymentRecord",
-          entity_id: paymentRecord.id,
+          entity_type: "Client",
+          entity_id: clientId,
           document_type: "Proof of Payment",
           metadata: {
             method: paymentMethod,
             reference: referenceNumber.trim(),
           },
         })
+        proofDocumentId = uploadedDoc?.id
       }
 
-      // 3. If immediate allocation requested and target invoice selected
-      if (allocateToInvoice && targetInvoiceId && paymentRecord?.id) {
-        const allocAmount = Math.min(
-          parsedAmount,
-          Number(
-            unpaidInvoices.find((i) => i.id === targetInvoiceId)?.balance_due ||
-              parsedAmount,
-          ),
-        )
-        await allocatePaymentMutation.mutateAsync({
-          id: paymentRecord.id,
-          data: {
-            payment_record_id: paymentRecord.id,
-            invoice_id: targetInvoiceId,
-            amount: allocAmount.toFixed(2) as any,
-          },
-        })
-      }
+      // 2. Build optional initial allocations
+      const initialAllocations =
+        allocateToInvoice && targetInvoiceId
+          ? [
+              {
+                invoice_id: targetInvoiceId,
+                amount: Math.min(
+                  parsedAmount,
+                  Number(
+                    unpaidInvoices.find((i) => i.id === targetInvoiceId)
+                      ?.balance_due || parsedAmount,
+                  ),
+                ).toFixed(2),
+              },
+            ]
+          : undefined
+
+      // 3. Record PaymentRecord + initial_allocations atomically in one mutation
+      await createPaymentMutation.mutateAsync({
+        client_id: clientId,
+        amount: parsedAmount.toFixed(2),
+        payment_date: paymentDate,
+        payment_method: paymentMethod,
+        reference_number: referenceNumber.trim(),
+        payer_name: payerName.trim() || undefined,
+        proof_document_id: proofDocumentId,
+        initial_allocations: initialAllocations,
+      })
 
       showSuccessToast(
         allocateToInvoice && targetInvoiceId

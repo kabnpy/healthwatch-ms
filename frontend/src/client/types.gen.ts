@@ -111,6 +111,32 @@ export type AdvisoryQuoteRequest = {
 };
 
 /**
+ * AgingBuckets
+ */
+export type AgingBuckets = {
+    /**
+     * Current 0 30
+     */
+    current_0_30?: string;
+    /**
+     * Days 31 60
+     */
+    days_31_60?: string;
+    /**
+     * Days 61 90
+     */
+    days_61_90?: string;
+    /**
+     * Over 90
+     */
+    over_90?: string;
+    /**
+     * Total Overdue
+     */
+    total_overdue?: string;
+};
+
+/**
  * BenefitCalculationType
  */
 export type BenefitCalculationType = 'percentage' | 'fixed_amount';
@@ -638,6 +664,7 @@ export type ClientStatement = {
      * Ledger Entries
      */
     ledger_entries: Array<ClientStatementEntry>;
+    aging_buckets?: AgingBuckets;
 };
 
 /**
@@ -1184,6 +1211,24 @@ export type IPFAgreementsPublic = {
 export type IPFStatus = 'pending_deposit' | 'guaranteed' | 'disbursed' | 'cancelled';
 
 /**
+ * InitialPaymentAllocation
+ */
+export type InitialPaymentAllocation = {
+    /**
+     * Invoice Id
+     */
+    invoice_id: string;
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Risk Note Id
+     */
+    risk_note_id?: string | null;
+};
+
+/**
  * InsurerCreate
  */
 export type InsurerCreate = {
@@ -1531,6 +1576,28 @@ export type InvoicesPublic = {
 };
 
 /**
+ * LedgerSummary
+ */
+export type LedgerSummary = {
+    /**
+     * Total Invoiced
+     */
+    total_invoiced: string;
+    /**
+     * Total Paid
+     */
+    total_paid: string;
+    /**
+     * Total Due
+     */
+    total_due: string;
+    /**
+     * Total Unallocated
+     */
+    total_unallocated: string;
+};
+
+/**
  * MedicalTierCreate
  */
 export type MedicalTierCreate = {
@@ -1720,6 +1787,10 @@ export type PaymentRecordCreate = {
      * Proof Document Id
      */
     proof_document_id?: string | null;
+    /**
+     * Initial Allocations
+     */
+    initial_allocations?: Array<InitialPaymentAllocation> | null;
 };
 
 /**
@@ -4780,6 +4851,36 @@ export type riskNotesCreateRiskNoteRevisionResponses = {
 };
 
 export type riskNotesCreateRiskNoteRevisionResponse = riskNotesCreateRiskNoteRevisionResponses[keyof riskNotesCreateRiskNoteRevisionResponses];
+
+export type financialsReadFinancialSummaryData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+    };
+    url: '/api/v1/financials/summary';
+};
+
+export type financialsReadFinancialSummaryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type financialsReadFinancialSummaryError = financialsReadFinancialSummaryErrors[keyof financialsReadFinancialSummaryErrors];
+
+export type financialsReadFinancialSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: LedgerSummary;
+};
+
+export type financialsReadFinancialSummaryResponse = financialsReadFinancialSummaryResponses[keyof financialsReadFinancialSummaryResponses];
 
 export type financialsReadInvoicesData = {
     body?: never;
