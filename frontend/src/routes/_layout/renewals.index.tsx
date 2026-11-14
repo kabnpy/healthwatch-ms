@@ -27,7 +27,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useRenewalsHorizon } from "@/hooks/useRenewals"
+import { useRenewals, useRenewalsHorizon } from "@/hooks/useRenewals"
 import { cn } from "@/lib/utils"
 import { extractCoverSummary } from "@/utils/coverSnapshot"
 import { getPolicyDisplayName } from "@/utils/insurance"
@@ -248,6 +248,7 @@ function RenewalsDeskPage() {
     isError: isHorizonError,
     refetch: refetchHorizon,
   } = useRenewalsHorizon()
+  const { data: renewalsData } = useRenewals()
 
   const [activeTab, setActiveTab] = useState("expiring_30")
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyPublic | null>(
@@ -284,6 +285,25 @@ function RenewalsDeskPage() {
       }
     }
 
+    const inWorkflowPolicyIds = new Set(inWorkflow.map((item) => item.policy_id))
+    for (const renewal of renewalsData?.data ?? []) {
+      if (
+        !isTerminalStatus(renewal.status) &&
+        !inWorkflowPolicyIds.has(renewal.policy_id)
+      ) {
+        inWorkflowPolicyIds.add(renewal.policy_id)
+        inWorkflow.push({
+          policy_id: renewal.policy_id,
+          policy_number: renewal.policy_id,
+          client_id: "",
+          client_name: "—",
+          coverage_end: "",
+          days_left: 0,
+          renewal,
+        })
+      }
+    }
+
     return {
       expiring30,
       expiring60,
@@ -291,7 +311,7 @@ function RenewalsDeskPage() {
       inWorkflow,
       completedRenewals,
     }
-  }, [horizonData])
+  }, [horizonData, renewalsData])
 
   const openTriage = useCallback((policy: PolicyPublic) => {
     setSelectedPolicy(policy)
@@ -363,71 +383,19 @@ function RenewalsDeskPage() {
       {
         id: "expiry_countdown",
         header: "Renewal Horizon",
-        cell: ({ row }) => {
-          const { coverage_end: coverageEnd, days_left: daysLeft } =
-            row.original
-          if (!coverageEnd) return <span>—</span>
-
-          return (
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                  daysLeft <= 7
-                    ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
-                    : daysLeft <= 30
-                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
-                      : "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
-                }`}
-              >
-                <Clock className="size-3" />
-                {daysLeft > 0
-                  ? `${daysLeft}d left`
-                  : daysLeft === 0
-                    ? "Expires today"
-                    : `Expired ${Math.abs(daysLeft)}d ago`}
-              </span>
-              <span className="text-xs font-mono text-muted-foreground">
-                ({coverageEnd})
-              </span>
-            </div>
-          )
-        },
+        cell: ({ row }) => (
+          <RenewalHorizonPill
+            coverageEnd={row.original.coverage_end}
+            daysLeft={row.original.days_left}
+          />
+        ),
       },
       {
         id: "workflow_stage",
         header: "Workflow Stage",
-        cell: ({ row }) => {
-          const renewal = row.original.renewal
-          if (!renewal) {
-            return (
-              <Badge
-                variant="outline"
-                className="text-[11px] text-muted-foreground font-normal"
-              >
-                Not Initiated
-              </Badge>
-            )
-          }
-
-          const meta = (renewal.status ? STAGE_META[renewal.status] : null) || {
-            label: renewal.status || "Unknown",
-            color: "bg-muted text-muted-foreground",
-            icon: Clock,
-          }
-          const Icon = meta.icon
-
-          return (
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border",
-                meta.color,
-              )}
-            >
-              <Icon className="size-3" />
-              {meta.label}
-            </span>
-          )
-        },
+        cell: ({ row }) => (
+          <WorkflowStageBadge renewal={row.original.renewal} />
+        ),
       },
       {
         id: "action",
@@ -487,7 +455,7 @@ function RenewalsDeskPage() {
         <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
           Renewals Desk
         </span>
-        <h1 className="text-3xl font-bold tracking-tight">Policy Renewals</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Policy Renewals</h1>
         <p className="text-sm text-muted-foreground">
           Track and manage upcoming policy expirations and renewals.
         </p>
@@ -695,7 +663,7 @@ function RenewalsDeskPage() {
           {categorized.inWorkflow.length === 0 ? (
             <EmptyState
               title="No renewals currently in flight"
-              description="Click 'Review & Renew' on an expiring policy to initiate the carrier terms and invitation workflow."
+              description="Click 'Start Renewal' on an expiring policy to initiate the insurer terms and invitation workflow."
               icon={RefreshCw}
             />
           ) : (
