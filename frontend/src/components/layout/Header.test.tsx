@@ -60,8 +60,8 @@ describe("Header", () => {
 
     const header = container.querySelector("header")
     expect(header?.className).toContain("h-12")
-    expect(header?.className).toContain("px-6")
-    expect(header?.className).toContain("md:px-8")
+    expect(header?.className).toContain("px-4")
+    expect(header?.className).toContain("lg:px-6")
     expect(header?.className).toContain("border-b")
     expect(header?.className).not.toContain("sticky")
     expect(header?.className).not.toContain("bg-background/95")

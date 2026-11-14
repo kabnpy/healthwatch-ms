@@ -46,7 +46,6 @@ export function Main({ items }: MainProps) {
                 <SidebarMenuButton
                   tooltip={item.title}
                   isActive={isActive}
-                  className="font-medium"
                   render={
                     <RouterLink to={item.path} onClick={handleMenuClick}>
                       <item.icon className="size-4" />

@@ -74,5 +74,9 @@ describe("AppSidebar", () => {
     const menuItem = themeButton?.closest('[data-sidebar="menu-item"]')
     expect(menuItem?.parentElement?.tagName).toBe("UL")
     expect(menuItem?.parentElement?.getAttribute("data-sidebar")).toBe("menu")
+    expect(menuItem?.parentElement?.className).toContain("gap-1")
+
+    const navButton = container.querySelector('[data-sidebar="menu-button"]')
+    expect(navButton?.className.split(/\s+/)).not.toContain("font-medium")
   })
 })
