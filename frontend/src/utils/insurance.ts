@@ -1,4 +1,5 @@
 import type { PolicyPublic } from "@/client"
+import { extractCoverSummary } from "./coverSnapshot"
 
 /**
  * Derives a display name for a policy based on its product and latest snapshot.
@@ -10,19 +11,24 @@ export function getPolicyDisplayName(policy: PolicyPublic): string {
   }
 
   const baseName = policy.product.class_of_insurance || policy.product.name
-  const snapshot = (policy as any).active_note?.cover_snapshot || {}
+  const rawSnapshot = (policy as any).active_note?.cover_snapshot as
+    | Record<string, unknown>
+    | null
+    | undefined
 
-  // Look for common identification keys in the snapshot
+  const { vehicleReg, makeModel } = extractCoverSummary(rawSnapshot)
+  if (vehicleReg) {
+    return `${baseName} - ${vehicleReg}`
+  }
+  if (makeModel) {
+    return `${baseName} - ${makeModel}`
+  }
+
+  // Look for non-vehicle identification keys in the snapshot
   function findIdValue(obj: any): string | null {
     if (!obj || typeof obj !== "object") return null
 
-    const priorityKeys = [
-      "registration_number",
-      "reg_no",
-      "serial_number",
-      "id_number",
-      "name",
-    ]
+    const priorityKeys = ["serial_number", "id_number", "name"]
     for (const k of priorityKeys) {
       if (obj[k] && typeof obj[k] === "string") return obj[k]
     }
@@ -34,7 +40,7 @@ export function getPolicyDisplayName(policy: PolicyPublic): string {
     return null
   }
 
-  const idVal = findIdValue(snapshot)
+  const idVal = findIdValue(rawSnapshot || {})
   if (idVal) {
     return `${baseName} - ${idVal}`
   }

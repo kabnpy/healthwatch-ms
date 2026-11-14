@@ -28,6 +28,7 @@ import { usePolicyDashboard } from "@/hooks/usePolicies"
 import { queryClient } from "@/queryClient"
 import type { EnhancedPolicy, EnhancedRiskNote } from "@/types/insurance"
 import { formatCurrency } from "@/utils"
+import { extractCoverSummary } from "@/utils/coverSnapshot"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 // --- Route Definition ---
@@ -142,10 +143,9 @@ function PolicyDashboardContent({
 
   const displayName = getPolicyDisplayName(policy)
 
-  const snapshot = (latestRiskNote?.cover_snapshot as any) || {}
+  const summary = extractCoverSummary(latestRiskNote?.cover_snapshot)
   const rawSum =
-    snapshot.vehicle?.sum_insured ||
-    snapshot.sum_insured ||
+    summary.sumInsured ||
     (vehicle as any)?.insured_value ||
     (vehicle as any)?.sum_insured ||
     (isMedical ? 2000000 : Number(latestRiskNote?.net_premium || 0) * 20)

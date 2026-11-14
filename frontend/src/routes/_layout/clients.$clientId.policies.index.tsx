@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/card"
 import { queryClient } from "@/queryClient"
 import { formatCurrency } from "@/utils"
+import { extractCoverSummary } from "@/utils/coverSnapshot"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 function getPoliciesQueryOptions(clientId: string) {
@@ -77,7 +78,7 @@ function PolicyCard({
   clientId: string
 }) {
   const activeNote = policy.active_note
-  const snapshot = activeNote?.cover_snapshot as any
+  const summary = extractCoverSummary(activeNote?.cover_snapshot)
   const displayName = getPolicyDisplayName(policy)
   const productClass =
     policy.product?.class_of_insurance ||
@@ -94,8 +95,7 @@ function PolicyCard({
     policy.product?.name?.toLowerCase().includes("medical")
 
   const rawSum =
-    snapshot?.vehicle?.sum_insured ||
-    snapshot?.sum_insured ||
+    summary.sumInsured ||
     (policy.vehicles?.[0] as any)?.insured_value ||
     (isMedical ? 2000000 : 0)
 

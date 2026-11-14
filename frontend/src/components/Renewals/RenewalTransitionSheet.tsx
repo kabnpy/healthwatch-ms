@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { extractCoverSummary } from "@/utils/coverSnapshot"
 import {
   AlertCircle,
   ArrowRight,
@@ -732,9 +733,7 @@ export function RenewalTransitionSheet({
         productId={policy?.product?.id}
         initialClass={policy?.product?.class_of_insurance || "Motor Private"}
         initialSumInsured={
-          Number((activeNote?.cover_snapshot as any)?.vehicle?.sum_insured) ||
-          Number((activeNote?.cover_snapshot as any)?.sum_insured) ||
-          2000000
+          extractCoverSummary(activeNote?.cover_snapshot).sumInsured || 2000000
         }
         onApplyCalculation={handleApplyRating}
       />

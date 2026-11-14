@@ -33,6 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRenewalsHorizon } from "@/hooks/useRenewals"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/utils"
+import { extractCoverSummary } from "@/utils/coverSnapshot"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 export const Route = createFileRoute("/_layout/renewals/")({
@@ -177,10 +178,11 @@ function RenewalsDeskPage() {
           const product = row.original.policy.product
           const activeNote = row.original.policy.active_note
           const snapshot = activeNote?.cover_snapshot as any
+          const summary = extractCoverSummary(activeNote?.cover_snapshot)
 
           let assetDescriptor = "Asset / Risk Details"
-          if (snapshot?.vehicle?.reg_no) {
-            assetDescriptor = `${snapshot.vehicle.make || "Vehicle"} ${snapshot.vehicle.model || ""} (${snapshot.vehicle.reg_no})`
+          if (summary.vehicleReg) {
+            assetDescriptor = `${summary.makeModel || "Vehicle"} (${summary.vehicleReg})`
           } else if (snapshot?.property?.location) {
             assetDescriptor = snapshot.property.location
           } else if (product?.class_of_insurance) {
@@ -276,9 +278,9 @@ function RenewalsDeskPage() {
         id: "sum_insured",
         header: () => <span className="block text-right">Sum Insured</span>,
         cell: ({ row }) => {
-          const snapshot = row.original.policy.active_note?.cover_snapshot as any
-          const rawSum =
-            snapshot?.vehicle?.sum_insured || snapshot?.sum_insured || 0
+          const rawSum = extractCoverSummary(
+            row.original.policy.active_note?.cover_snapshot,
+          ).sumInsured
 
           return (
             <div className="text-right">

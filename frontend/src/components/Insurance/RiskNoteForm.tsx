@@ -5,6 +5,7 @@ import { type SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 import type { ApiError, CalculationQuoteResponse } from "@/client"
 import { AdvisoryRatingCalculator } from "@/components/Insurance/AdvisoryRatingCalculator"
+import { extractCoverSummary, extractSumInsured } from "@/utils/coverSnapshot"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -359,12 +360,9 @@ export const RiskNoteForm = ({
         productId={policy?.product?.id}
         initialClass={policy?.product?.class_of_insurance || "Motor Private"}
         initialSumInsured={
-          Number((form.getValues("details") as any)?.sum_insured) ||
-          Number((form.getValues("details") as any)?.vehicle?.sum_insured) ||
-          Number(
-            ((policy as any)?.active_note?.cover_snapshot as any)?.vehicle
-              ?.sum_insured,
-          ) ||
+          extractSumInsured(form.getValues("details")) ||
+          extractCoverSummary((policy as any)?.active_note?.cover_snapshot)
+            .sumInsured ||
           2000000
         }
         onApplyCalculation={handleApplyRating}
