@@ -739,10 +739,10 @@ function RenewalsDeskPage() {
         renewal={selectedRenewal}
         coverageEnd={
           [
-            ...tabsData.expiring30,
-            ...tabsData.expiring60,
-            ...tabsData.expired,
-            ...tabsData.inWorkflow,
+            ...categorized.expiring30,
+            ...categorized.expiring60,
+            ...categorized.expired,
+            ...categorized.inWorkflow,
           ].find((h) => h.policy?.id === selectedPolicy?.id)?.coverage_end ??
           null
         }
