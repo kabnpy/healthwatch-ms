@@ -185,7 +185,7 @@ function ClientsTable() {
                 <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 px-4 pb-0">
                   <div className="min-w-0 flex-1">
                     <Link
-                      to="/clients/$clientId/overview"
+                      to="/clients/$clientId/policies"
                       params={{ clientId: client.id }}
                       className="font-semibold text-primary hover:underline inline-flex items-center gap-1.5 break-words"
                     >
@@ -222,7 +222,7 @@ function ClientsTable() {
                     </span>
                     <div className="flex items-center gap-2">
                       <Link
-                        to="/clients/$clientId/overview"
+                        to="/clients/$clientId/policies"
                         params={{ clientId: client.id }}
                         className="font-medium text-primary hover:underline"
                       >

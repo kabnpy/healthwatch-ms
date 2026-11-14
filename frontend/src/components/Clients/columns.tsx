@@ -31,7 +31,7 @@ export const columns: ColumnDef<ClientRow>[] = [
     header: "Name",
     cell: ({ row }) => (
       <Link
-        to="/clients/$clientId/overview"
+        to="/clients/$clientId/policies"
         params={{ clientId: row.original.id }}
         className="font-medium hover:underline text-primary flex items-center gap-2"
       >
@@ -106,7 +106,7 @@ export const columns: ColumnDef<ClientRow>[] = [
             <DropdownMenuItem
               render={
                 <Link
-                  to="/clients/$clientId/overview"
+                  to="/clients/$clientId/policies"
                   params={{ clientId: client.id }}
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />

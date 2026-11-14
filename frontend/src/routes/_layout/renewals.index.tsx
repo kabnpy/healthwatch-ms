@@ -225,7 +225,7 @@ function RenewalTriageList({
                 </button>
                 <div className="mt-1">
                   <Link
-                    to="/clients/$clientId/overview"
+                    to="/clients/$clientId/policies"
                     params={{ clientId: item.client_id }}
                     className="text-sm font-medium hover:underline flex items-center gap-1.5"
                   >
@@ -409,7 +409,7 @@ function RenewalsDeskPage() {
           const clientName = row.original.client_name
           return (
             <Link
-              to="/clients/$clientId/overview"
+              to="/clients/$clientId/policies"
               params={{ clientId: row.original.client_id }}
               className="text-sm font-medium hover:underline flex items-center gap-1.5"
             >
