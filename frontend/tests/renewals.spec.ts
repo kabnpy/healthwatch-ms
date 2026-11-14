@@ -4,9 +4,17 @@ test.describe("Policy Renewals Desk (/renewals)", () => {
   test("desktop 1440x900: zero overflow, normalized header, calm zero-states, and RenewalTransitionSheet", async ({
     page,
   }) => {
+    const pageErrors: Error[] = []
+    const consoleErrors: string[] = []
+    page.on("pageerror", (err) => pageErrors.push(err))
+    page.on("console", (msg) => {
+      if (msg.type() === "error") consoleErrors.push(msg.text())
+    })
+
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto("/renewals")
 
+    await expect(page.getByText(/Oops! Something went wrong/i)).toHaveCount(0)
     await expect(
       page.getByRole("heading", { name: "Policy Renewals" }),
     ).toBeVisible()
@@ -40,6 +48,9 @@ test.describe("Policy Renewals Desk (/renewals)", () => {
       await actionButtons.first().click()
       await expect(page.getByRole("dialog")).toBeVisible()
     }
+
+    expect(pageErrors).toEqual([])
+    expect(consoleErrors).toEqual([])
   })
 
   test("mobile 390x844: zero overflow and responsive triage cards", async ({
