@@ -110,16 +110,16 @@ function ProductDetailContent({ productId }: { productId: string }) {
             </Link>
           }
         />
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-lg">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="shrink-0 bg-primary/10 p-2 rounded-lg">
               <Shield className="h-6 w-6 text-primary" />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">
+            <div className="min-w-0">
+              <h1 className="truncate text-2xl sm:text-3xl font-bold tracking-tight">
                 {product.name}
               </h1>
-              <p className="text-muted-foreground text-sm">
+              <p className="truncate text-muted-foreground text-sm">
                 {product.class_of_insurance} &bull;{" "}
                 {product.insurer?.name || "No Insurer"}
               </p>
@@ -128,7 +128,7 @@ function ProductDetailContent({ productId }: { productId: string }) {
           <LoadingButton
             onClick={methods.handleSubmit(onSubmit as any)}
             loading={mutation.isPending}
-            className="gap-2"
+            className="gap-2 shrink-0"
           >
             <Save className="h-4 w-4" />
             Save Changes
@@ -145,7 +145,7 @@ function ProductDetailContent({ productId }: { productId: string }) {
           </TabsList>
           <div className="mt-6">
             <TabsContent value="general">
-              <div className="max-w-2xl bg-white p-6 rounded-lg border">
+              <div className="max-w-2xl bg-card p-6 rounded-lg border">
                 <ProductForm
                   onSubmit={onSubmit as any}
                   initialData={product}

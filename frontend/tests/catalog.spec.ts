@@ -140,6 +140,44 @@ test.describe("Catalog (/catalog)", () => {
     await expect(
       page.getByRole("columnheader", { name: "Insurer", exact: true }),
     ).toHaveCount(0)
+  test("Product Detail uses bg-card in dark mode, displays Insurer name, single Save CTA, and has zero overflow", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto("/catalog/products")
+
+    const firstProductLink = page.locator("tbody tr td a").first()
+    await expect(firstProductLink).toBeVisible()
+    await firstProductLink.click()
+    await expect(page).toHaveURL(/\/catalog\/products\/[^/]+$/)
+
+    // Enable dark mode
+    await page.evaluate(() => {
+      document.documentElement.classList.add("dark")
+    })
+
+    // General Settings container uses bg-card, not hardcoded bg-white
+    const generalSettingsForm = page.locator("form").first()
+    await expect(generalSettingsForm).toBeVisible()
+    const hasBgWhite = await page.locator(".bg-white").count()
+    expect(hasBgWhite).toBe(0)
+
+    // Single Save Changes CTA (no duplicate Save Product button)
+    await expect(
+      page.getByRole("button", { name: "Save Changes" }),
+    ).toHaveCount(1)
+    await expect(
+      page.getByRole("button", { name: "Save Product" }),
+    ).toHaveCount(0)
+
+    // Insurer field displays a name rather than a raw UUID
+    const insurerTrigger = page
+      .locator('[data-slot="select-trigger"]')
+      .first()
+    const insurerText = (await insurerTrigger.textContent())?.trim() || ""
+    expect(insurerText).not.toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    )
 
     // Zero horizontal overflow at 1440x900 desktop
     const desktopOverflow = await page.evaluate(
