@@ -57,7 +57,11 @@ describe("AppSidebar", () => {
 
     const header = container.querySelector('[data-sidebar="header"]')
     expect(header?.className).toContain("py-2")
+    expect(header?.className).toContain("pb-3")
     expect(header?.className).not.toContain("py-6")
+
+    const content = container.querySelector('[data-sidebar="content"]')
+    expect(content?.className).toContain("pt-2")
 
     expect(screen.queryByText(/Operational/i)).toBeNull()
   })

@@ -91,7 +91,7 @@ export function CommandMenu() {
       </button>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Type a command or search clients, policies, renewals..." />
-        <CommandList>
+        <CommandList className="max-h-96">
           <CommandEmpty>No results found.</CommandEmpty>
 
           {/* Quick Actions & Navigation */}

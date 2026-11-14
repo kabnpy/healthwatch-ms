@@ -47,10 +47,11 @@ describe("CommandMenu", () => {
 
     fireEvent.click(trigger)
 
-    expect(
-      screen.getByPlaceholderText(
-        "Type a command or search clients, policies, renewals...",
-      ),
-    ).toBeTruthy()
+    const input = screen.getByPlaceholderText(
+      "Type a command or search clients, policies, renewals...",
+    )
+    expect(input).toBeTruthy()
+    const dialog = input.closest('[data-slot="dialog-content"]')
+    expect(dialog?.className).toContain("sm:max-w-xl")
   })
 })

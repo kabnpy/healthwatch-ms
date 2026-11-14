@@ -39,10 +39,10 @@ export function AppSidebar() {
 
   return (
     <Sidebar variant="inset" collapsible="icon">
-      <SidebarHeader className="px-4 py-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
+      <SidebarHeader className="px-4 py-2 pb-3 mb-1 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
         <Logo variant="responsive" />
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="pt-2">
         <Main items={items} />
       </SidebarContent>
       <SidebarFooter>
