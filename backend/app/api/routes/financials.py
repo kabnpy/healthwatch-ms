@@ -9,6 +9,7 @@ from app.models import (
     InvoiceCreate,
     InvoicePublic,
     InvoicesPublic,
+    LedgerSummary,
 )
 from app.services.client_ledger import (
     ClientLedgerService,
@@ -17,6 +18,20 @@ from app.services.client_ledger import (
 )
 
 router = APIRouter()
+
+
+@router.get("/summary", response_model=LedgerSummary)
+def read_financial_summary(
+    session: SessionDep,
+    _current_user: CurrentUser,
+    client_id: uuid.UUID | None = None,
+) -> Any:
+    """
+    Retrieve full-dataset Decimal ledger KPI summary, optionally filtered by client.
+    """
+    return ClientLedgerService.get_ledger_summary(
+        session=session, client_id=client_id
+    )
 
 # ==========================================
 # Invoice Routes

@@ -773,3 +773,35 @@ class ClientLedgerService:
         session.commit()
         session.refresh(invoice)
         return invoice
+
+    @staticmethod
+    def get_ledger_summary(
+        *, session: Session, client_id: uuid.UUID | None = None
+    ) -> "LedgerSummary":
+        from app.models import LedgerSummary
+
+        inv_stmt = select(
+            func.coalesce(func.sum(Invoice.total_amount), Decimal("0.00")),
+            func.coalesce(func.sum(Invoice.balance_due), Decimal("0.00")),
+        )
+        pmt_stmt = select(
+            func.coalesce(func.sum(PaymentRecord.unallocated_amount), Decimal("0.00"))
+        )
+        if client_id is not None:
+            inv_stmt = inv_stmt.where(Invoice.client_id == client_id)
+            pmt_stmt = pmt_stmt.where(PaymentRecord.client_id == client_id)
+
+        total_invoiced_raw, total_due_raw = session.exec(inv_stmt).one()
+        total_unallocated_raw = session.exec(pmt_stmt).one()
+
+        total_invoiced = Decimal(str(total_invoiced_raw))
+        total_due = Decimal(str(total_due_raw))
+        total_paid = total_invoiced - total_due
+        total_unallocated = Decimal(str(total_unallocated_raw))
+
+        return LedgerSummary(
+            total_invoiced=total_invoiced,
+            total_paid=total_paid,
+            total_due=total_due,
+            total_unallocated=total_unallocated,
+        )

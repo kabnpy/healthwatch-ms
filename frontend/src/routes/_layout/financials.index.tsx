@@ -118,12 +118,8 @@ function FinancialsHub() {
     [clients, statementClientId],
   )
 
-  // Compute unallocated pool
-  const totalUnallocated = useMemo(() => {
-    return payments
-      .filter((p) => p.status?.toLowerCase() === "active")
-      .reduce((sum, p) => sum + Number(p.unallocated_amount || 0), 0)
-  }, [payments])
+  // Server-computed unallocated pool
+  const totalUnallocated = summary.totalUnallocated
 
   // Filtered lists
   const filteredPayments = useMemo(() => {

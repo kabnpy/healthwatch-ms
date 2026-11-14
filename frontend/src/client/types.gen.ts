@@ -1531,6 +1531,28 @@ export type InvoicesPublic = {
 };
 
 /**
+ * LedgerSummary
+ */
+export type LedgerSummary = {
+    /**
+     * Total Invoiced
+     */
+    total_invoiced: string;
+    /**
+     * Total Paid
+     */
+    total_paid: string;
+    /**
+     * Total Due
+     */
+    total_due: string;
+    /**
+     * Total Unallocated
+     */
+    total_unallocated: string;
+};
+
+/**
  * MedicalTierCreate
  */
 export type MedicalTierCreate = {
@@ -4780,6 +4802,36 @@ export type riskNotesCreateRiskNoteRevisionResponses = {
 };
 
 export type riskNotesCreateRiskNoteRevisionResponse = riskNotesCreateRiskNoteRevisionResponses[keyof riskNotesCreateRiskNoteRevisionResponses];
+
+export type financialsReadFinancialSummaryData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+    };
+    url: '/api/v1/financials/summary';
+};
+
+export type financialsReadFinancialSummaryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type financialsReadFinancialSummaryError = financialsReadFinancialSummaryErrors[keyof financialsReadFinancialSummaryErrors];
+
+export type financialsReadFinancialSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: LedgerSummary;
+};
+
+export type financialsReadFinancialSummaryResponse = financialsReadFinancialSummaryResponses[keyof financialsReadFinancialSummaryResponses];
 
 export type financialsReadInvoicesData = {
     body?: never;

@@ -444,3 +444,71 @@ def test_invoice_batch_reads(db: Session) -> None:
     batches = ClientLedgerService.get_invoice_batches(session=db, client_id=client.id)
     assert [b.id for b in batches] == [batch.id]
     assert ClientLedgerService.count_invoice_batches(session=db, client_id=client.id) == 1
+
+
+def test_get_ledger_summary_global_and_by_client(db: Session) -> None:
+    client_a = _create_client(db, "summary-a")
+    client_b = _create_client(db, "summary-b")
+    db.commit()
+
+    # Client A: invoice 1000.50, payment 600.25 -> 400.25 allocated, 200.00 unallocated
+    inv_a = ClientLedgerService.create_invoice(
+        session=db,
+        invoice_in=InvoiceCreate(
+            client_id=client_a.id,
+            invoice_number="INV-SUM-A1",
+            total_amount=Decimal("1000.50"),
+            balance_due=Decimal("1000.50"),
+        ),
+    )
+    pmt_a = ClientLedgerService.record_payment(
+        session=db,
+        payment_in=PaymentRecordCreate(
+            client_id=client_a.id,
+            amount=Decimal("600.25"),
+            payment_method="mpesa",
+            reference_number="MP-SUM-A1",
+        ),
+    )
+    ClientLedgerService.allocate_payment(
+        session=db,
+        allocation_in=PaymentAllocationCreate(
+            payment_record_id=pmt_a.id,
+            invoice_id=inv_a.id,
+            amount=Decimal("400.25"),
+        ),
+    )
+
+    # Client B: invoice 500.00, no payments
+    ClientLedgerService.create_invoice(
+        session=db,
+        invoice_in=InvoiceCreate(
+            client_id=client_b.id,
+            invoice_number="INV-SUM-B1",
+            total_amount=Decimal("500.00"),
+            balance_due=Decimal("500.00"),
+        ),
+    )
+
+    summary_a = ClientLedgerService.get_ledger_summary(
+        session=db, client_id=client_a.id
+    )
+    assert summary_a.total_invoiced == Decimal("1000.50")
+    assert summary_a.total_paid == Decimal("400.25")
+    assert summary_a.total_due == Decimal("600.25")
+    assert summary_a.total_unallocated == Decimal("200.00")
+
+    summary_b = ClientLedgerService.get_ledger_summary(
+        session=db, client_id=client_b.id
+    )
+    assert summary_b.total_invoiced == Decimal("500.00")
+    assert summary_b.total_paid == Decimal("0.00")
+    assert summary_b.total_due == Decimal("500.00")
+    assert summary_b.total_unallocated == Decimal("0.00")
+
+    summary_all = ClientLedgerService.get_ledger_summary(session=db)
+    assert summary_all.total_invoiced >= Decimal("1500.50")
+    assert summary_all.total_paid >= Decimal("400.25")
+    assert summary_all.total_due >= Decimal("1100.25")
+    assert summary_all.total_unallocated >= Decimal("200.00")
+
