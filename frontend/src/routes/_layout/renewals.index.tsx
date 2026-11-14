@@ -27,9 +27,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useRenewalsHorizon } from "@/hooks/useRenewals"
+import { useRenewals, useRenewalsHorizon } from "@/hooks/useRenewals"
 import { cn } from "@/lib/utils"
-import { formatCurrency } from "@/utils"
 import { extractCoverSummary } from "@/utils/coverSnapshot"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
@@ -49,7 +48,7 @@ const STAGE_META: Record<
   { label: string; color: string; icon: typeof Clock }
 > = {
   awaiting_carrier: {
-    label: "Awaiting Carrier",
+    label: "Awaiting Insurer",
     color:
       "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
     icon: FileQuestion,
@@ -89,6 +88,159 @@ const STAGE_META: Record<
   },
 }
 
+const NEXT_STAGE_ACTION: Partial<Record<RenewalStatus, string>> = {
+  awaiting_carrier: "Log Insurer Terms",
+  carrier_received: "Prepare Invitation",
+  client_invited: "Follow Up",
+  changes_requested: "Revise Terms",
+  paid: "Complete Renewal",
+}
+
+function getRenewalActionLabel(status?: RenewalStatus | null): string {
+  if (!status) return "Start Renewal"
+  return NEXT_STAGE_ACTION[status] ?? "Start Renewal"
+}
+
+function RenewalHorizonPill({
+  coverageEnd,
+  daysLeft,
+}: {
+  coverageEnd?: string | null
+  daysLeft: number
+}) {
+  if (!coverageEnd) return <span>—</span>
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <span
+        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+          daysLeft <= 7
+            ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
+            : daysLeft <= 30
+              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
+              : "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
+        }`}
+      >
+        <Clock className="size-3" />
+        {daysLeft > 0
+          ? `${daysLeft}d left`
+          : daysLeft === 0
+            ? "Expires today"
+            : `Expired ${Math.abs(daysLeft)}d ago`}
+      </span>
+      <span className="text-xs font-mono text-muted-foreground">
+        ({coverageEnd})
+      </span>
+    </div>
+  )
+}
+
+function WorkflowStageBadge({
+  renewal,
+}: {
+  renewal?: RenewalHorizonItem["renewal"]
+}) {
+  if (!renewal) {
+    return (
+      <Badge
+        variant="outline"
+        className="text-[11px] text-muted-foreground font-normal"
+      >
+        Not Initiated
+      </Badge>
+    )
+  }
+
+  const meta = (renewal.status ? STAGE_META[renewal.status] : null) || {
+    label: renewal.status || "Unknown",
+    color: "bg-muted text-muted-foreground",
+    icon: Clock,
+  }
+  const Icon = meta.icon
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border",
+        meta.color,
+      )}
+    >
+      <Icon className="size-3" />
+      {meta.label}
+    </span>
+  )
+}
+
+function RenewalTriageList({
+  items,
+  columns,
+  searchPlaceholder,
+  onOpenTriage,
+}: {
+  items: RenewalHorizonItem[]
+  columns: ColumnDef<RenewalHorizonItem>[]
+  searchPlaceholder: string
+  onOpenTriage: (policy: PolicyPublic) => void
+}) {
+  return (
+    <>
+      <div className="hidden md:block">
+        <DataTable
+          columns={columns}
+          data={items}
+          searchPlaceholder={searchPlaceholder}
+        />
+      </div>
+      <div className="flex flex-col gap-3 md:hidden">
+        {items.map((item) => (
+          <Card
+            key={item.policy_id}
+            data-testid="renewal-mobile-card"
+            className="p-4 gap-3"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <button
+                  type="button"
+                  onClick={() => onOpenTriage(item.policy)}
+                  className="font-mono text-xs font-semibold hover:underline text-primary text-left cursor-pointer"
+                >
+                  {item.policy_number}
+                </button>
+                <div className="mt-1">
+                  <Link
+                    to="/clients/$clientId/overview"
+                    params={{ clientId: item.client_id }}
+                    className="text-sm font-medium hover:underline flex items-center gap-1.5"
+                  >
+                    <User className="size-3.5 text-muted-foreground shrink-0" />
+                    <span className="truncate">{item.client_name}</span>
+                  </Link>
+                </div>
+              </div>
+              <WorkflowStageBadge renewal={item.renewal} />
+            </div>
+
+            <RenewalHorizonPill
+              coverageEnd={item.coverage_end}
+              daysLeft={item.days_left}
+            />
+
+            <Button
+              size="sm"
+              variant={item.renewal ? "default" : "outline"}
+              onClick={() => onOpenTriage(item.policy)}
+              className="w-full justify-center gap-1.5 cursor-pointer text-xs"
+            >
+              {getRenewalActionLabel(item.renewal?.status)}
+              <ArrowRight className="size-3.5" />
+            </Button>
+          </Card>
+        ))}
+      </div>
+    </>
+  )
+}
+
 function RenewalsDeskPage() {
   const {
     data: horizonData,
@@ -96,6 +248,7 @@ function RenewalsDeskPage() {
     isError: isHorizonError,
     refetch: refetchHorizon,
   } = useRenewalsHorizon()
+  const { data: renewalsData } = useRenewals()
 
   const [activeTab, setActiveTab] = useState("expiring_30")
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyPublic | null>(
@@ -105,12 +258,17 @@ function RenewalsDeskPage() {
 
   // Categorize policies into horizons & stages from server-side horizon
   const categorized = useMemo(() => {
-    const expiring30 = horizonData?.["0_30"] ?? []
+    const isTerminalStatus = (status?: string | null) =>
+      ["completed", "cancelled"].includes(status?.toLowerCase() || "")
+
+    const expiring30 = (horizonData?.["0_30"] ?? []).filter(
+      (item) => !item.renewal || isTerminalStatus(item.renewal.status),
+    )
     const expiring60 = horizonData?.["31_60"] ?? []
     const expired = horizonData?.overdue ?? []
     const allItems = [
       ...expired,
-      ...expiring30,
+      ...(horizonData?.["0_30"] ?? []),
       ...expiring60,
       ...(horizonData?.["61_90"] ?? []),
     ]
@@ -121,9 +279,28 @@ function RenewalsDeskPage() {
       if (item.renewal) {
         if (item.renewal.status === "completed") {
           completedRenewals.push(item)
-        } else {
+        } else if (!isTerminalStatus(item.renewal.status)) {
           inWorkflow.push(item)
         }
+      }
+    }
+
+    const inWorkflowPolicyIds = new Set(inWorkflow.map((item) => item.policy_id))
+    for (const renewal of renewalsData?.data ?? []) {
+      if (
+        !isTerminalStatus(renewal.status) &&
+        !inWorkflowPolicyIds.has(renewal.policy_id)
+      ) {
+        inWorkflowPolicyIds.add(renewal.policy_id)
+        inWorkflow.push({
+          policy_id: renewal.policy_id,
+          policy_number: renewal.policy_id,
+          client_id: "",
+          client_name: "—",
+          coverage_end: "",
+          days_left: 0,
+          renewal,
+        })
       }
     }
 
@@ -134,7 +311,7 @@ function RenewalsDeskPage() {
       inWorkflow,
       completedRenewals,
     }
-  }, [horizonData])
+  }, [horizonData, renewalsData])
 
   const openTriage = useCallback((policy: PolicyPublic) => {
     setSelectedPolicy(policy)
@@ -145,16 +322,46 @@ function RenewalsDeskPage() {
     () => [
       {
         accessorKey: "policy_number",
-        header: "Policy No",
-        cell: ({ row }) => (
-          <button
-            type="button"
-            onClick={() => openTriage(row.original.policy)}
-            className="font-mono text-xs font-semibold hover:underline text-primary flex items-center gap-1.5 text-left cursor-pointer"
-          >
-            <span>{row.original.policy_number}</span>
-          </button>
-        ),
+        header: "Policy / Cover",
+        cell: ({ row }) => {
+          const displayName = getPolicyDisplayName(row.original.policy)
+          const product = row.original.policy.product
+          const activeNote = row.original.policy.active_note
+          const summary = extractCoverSummary(activeNote?.cover_snapshot)
+
+          let assetDescriptor: string | null = null
+          if (summary.vehicleReg) {
+            assetDescriptor = `${summary.makeModel || "Vehicle"} (${summary.vehicleReg})`
+          } else if (summary.propertyLocation) {
+            assetDescriptor = summary.propertyLocation
+          } else if (
+            product?.class_of_insurance &&
+            product.class_of_insurance.trim().toLowerCase() !==
+              displayName.trim().toLowerCase()
+          ) {
+            assetDescriptor = product.class_of_insurance
+          }
+
+          return (
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <button
+                type="button"
+                onClick={() => openTriage(row.original.policy)}
+                className="font-mono text-xs font-semibold hover:underline text-primary flex items-center gap-1.5 text-left cursor-pointer w-fit"
+              >
+                <span>{row.original.policy_number}</span>
+              </button>
+              <span className="font-medium text-xs leading-tight truncate max-w-[220px]">
+                {displayName}
+              </span>
+              {assetDescriptor ? (
+                <span className="text-[11px] text-muted-foreground truncate max-w-[220px]">
+                  {assetDescriptor}
+                </span>
+              ) : null}
+            </div>
+          )
+        },
       },
       {
         id: "client_name",
@@ -174,123 +381,21 @@ function RenewalsDeskPage() {
         },
       },
       {
-        id: "cover_details",
-        header: "Cover / Asset",
-        cell: ({ row }) => {
-          const product = row.original.policy.product
-          const activeNote = row.original.policy.active_note
-          const summary = extractCoverSummary(activeNote?.cover_snapshot)
-
-          let assetDescriptor = "Asset / Risk Details"
-          if (summary.vehicleReg) {
-            assetDescriptor = `${summary.makeModel || "Vehicle"} (${summary.vehicleReg})`
-          } else if (summary.propertyLocation) {
-            assetDescriptor = summary.propertyLocation
-          } else if (product?.class_of_insurance) {
-            assetDescriptor = product.class_of_insurance
-          }
-
-          return (
-            <div className="flex flex-col">
-              <span className="font-semibold text-xs leading-none">
-                {getPolicyDisplayName(row.original.policy)}
-              </span>
-              <span className="text-[11px] text-muted-foreground mt-0.5 truncate max-w-[220px]">
-                {assetDescriptor}
-              </span>
-            </div>
-          )
-        },
-      },
-      {
         id: "expiry_countdown",
         header: "Renewal Horizon",
-        cell: ({ row }) => {
-          const activeNote = row.original.policy.active_note
-          if (!activeNote?.coverage_end) return <span>—</span>
-
-          const endDate = new Date(activeNote.coverage_end).getTime()
-          const daysLeft = Math.ceil(
-            (endDate - Date.now()) / (1000 * 60 * 60 * 24),
-          )
-
-          return (
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                  daysLeft <= 7
-                    ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
-                    : daysLeft <= 30
-                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
-                      : "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
-                }`}
-              >
-                <Clock className="size-3" />
-                {daysLeft > 0
-                  ? `${daysLeft}d left`
-                  : daysLeft === 0
-                    ? "Expires today"
-                    : `Expired ${Math.abs(daysLeft)}d ago`}
-              </span>
-              <span className="text-xs font-mono text-muted-foreground">
-                ({activeNote.coverage_end})
-              </span>
-            </div>
-          )
-        },
+        cell: ({ row }) => (
+          <RenewalHorizonPill
+            coverageEnd={row.original.coverage_end}
+            daysLeft={row.original.days_left}
+          />
+        ),
       },
       {
         id: "workflow_stage",
         header: "Workflow Stage",
-        cell: ({ row }) => {
-          const renewal = row.original.renewal
-          if (!renewal) {
-            return (
-              <Badge
-                variant="outline"
-                className="text-[11px] text-muted-foreground font-normal"
-              >
-                Not Initiated
-              </Badge>
-            )
-          }
-
-          const meta = (renewal.status ? STAGE_META[renewal.status] : null) || {
-            label: renewal.status || "Unknown",
-            color: "bg-muted text-muted-foreground",
-            icon: Clock,
-          }
-          const Icon = meta.icon
-
-          return (
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border",
-                meta.color,
-              )}
-            >
-              <Icon className="size-3" />
-              {meta.label}
-            </span>
-          )
-        },
-      },
-      {
-        id: "sum_insured",
-        header: () => <span className="block text-right">Sum Insured</span>,
-        cell: ({ row }) => {
-          const rawSum = extractCoverSummary(
-            row.original.policy.active_note?.cover_snapshot,
-          ).sumInsured
-
-          return (
-            <div className="text-right">
-              <span className="font-mono tabular-nums text-xs font-medium">
-                {rawSum > 0 ? formatCurrency(rawSum) : "—"}
-              </span>
-            </div>
-          )
-        },
+        cell: ({ row }) => (
+          <WorkflowStageBadge renewal={row.original.renewal} />
+        ),
       },
       {
         id: "action",
@@ -305,7 +410,7 @@ function RenewalsDeskPage() {
                 onClick={() => openTriage(row.original.policy)}
                 className="h-8 gap-1.5 cursor-pointer text-xs"
               >
-                {renewal ? "Advance Stage" : "Review & Renew"}
+                {getRenewalActionLabel(renewal?.status)}
                 <ArrowRight className="size-3.5" />
               </Button>
             </div>
@@ -346,48 +451,94 @@ function RenewalsDeskPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Policy Renewals</h1>
-          <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
-            Track and manage upcoming policy expirations and renewals
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" asChild>
-            <Link to="/clients">Browse Clients</Link>
-          </Button>
-        </div>
+      <div className="flex flex-col gap-1 border-b pb-6">
+        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Renewals Desk
+        </span>
+        <h1 className="text-2xl font-bold tracking-tight">Policy Renewals</h1>
+        <p className="text-sm text-muted-foreground">
+          Track and manage upcoming policy expirations and renewals.
+        </p>
       </div>
 
       {/* Summary KPI Strip */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-amber-500/30 bg-amber-500/5">
+        <Card
+          className={cn(
+            categorized.expiring30.length > 0 &&
+              "border-amber-500/30 bg-amber-500/5",
+          )}
+        >
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center justify-between">
+            <CardTitle
+              className={cn(
+                "text-xs font-semibold uppercase tracking-wider flex items-center justify-between",
+                categorized.expiring30.length > 0
+                  ? "text-amber-700 dark:text-amber-400"
+                  : "text-muted-foreground",
+              )}
+            >
               Expiring in ≤30 Days
-              <Clock className="size-4 text-amber-600" />
+              <Clock
+                className={cn(
+                  "size-4",
+                  categorized.expiring30.length > 0
+                    ? "text-amber-600"
+                    : "text-muted-foreground",
+                )}
+              />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono text-amber-700 dark:text-amber-400">
+            <div
+              className={cn(
+                "text-3xl font-bold font-mono",
+                categorized.expiring30.length > 0 &&
+                  "text-amber-700 dark:text-amber-400",
+              )}
+            >
               {categorized.expiring30.length}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Requires carrier terms & client renewal notice
+              Requires insurer terms & client renewal notice
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-blue-500/30 bg-blue-500/5">
+        <Card
+          className={cn(
+            categorized.inWorkflow.length > 0 &&
+              "border-blue-500/30 bg-blue-500/5",
+          )}
+        >
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center justify-between">
+            <CardTitle
+              className={cn(
+                "text-xs font-semibold uppercase tracking-wider flex items-center justify-between",
+                categorized.inWorkflow.length > 0
+                  ? "text-blue-700 dark:text-blue-400"
+                  : "text-muted-foreground",
+              )}
+            >
               Active In-Flight Renewals
-              <RefreshCw className="size-4 text-blue-600" />
+              <RefreshCw
+                className={cn(
+                  "size-4",
+                  categorized.inWorkflow.length > 0
+                    ? "text-blue-600"
+                    : "text-muted-foreground",
+                )}
+              />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono text-blue-700 dark:text-blue-400">
+            <div
+              className={cn(
+                "text-3xl font-bold font-mono",
+                categorized.inWorkflow.length > 0 &&
+                  "text-blue-700 dark:text-blue-400",
+              )}
+            >
               {categorized.inWorkflow.length}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -413,15 +564,40 @@ function RenewalsDeskPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-rose-500/30 bg-rose-500/5">
+        <Card
+          className={cn(
+            categorized.expired.length > 0 &&
+              "border-rose-500/30 bg-rose-500/5",
+          )}
+        >
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-400 flex items-center justify-between">
+            <CardTitle
+              className={cn(
+                "text-xs font-semibold uppercase tracking-wider flex items-center justify-between",
+                categorized.expired.length > 0
+                  ? "text-rose-700 dark:text-rose-400"
+                  : "text-muted-foreground",
+              )}
+            >
               Overdue / Lapsed
-              <ShieldAlert className="size-4 text-rose-600" />
+              <ShieldAlert
+                className={cn(
+                  "size-4",
+                  categorized.expired.length > 0
+                    ? "text-rose-600"
+                    : "text-muted-foreground",
+                )}
+              />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono text-rose-700 dark:text-rose-400">
+            <div
+              className={cn(
+                "text-3xl font-bold font-mono",
+                categorized.expired.length > 0 &&
+                  "text-rose-700 dark:text-rose-400",
+              )}
+            >
               {categorized.expired.length}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -474,10 +650,11 @@ function RenewalsDeskPage() {
               icon={FileCheck2}
             />
           ) : (
-            <DataTable
+            <RenewalTriageList
+              items={categorized.expiring30}
               columns={columns}
-              data={categorized.expiring30}
               searchPlaceholder="Search urgent renewals..."
+              onOpenTriage={openTriage}
             />
           )}
         </TabsContent>
@@ -486,14 +663,15 @@ function RenewalsDeskPage() {
           {categorized.inWorkflow.length === 0 ? (
             <EmptyState
               title="No renewals currently in flight"
-              description="Click 'Review & Renew' on an expiring policy to initiate the carrier terms and invitation workflow."
+              description="Click 'Start Renewal' on an expiring policy to initiate the insurer terms and invitation workflow."
               icon={RefreshCw}
             />
           ) : (
-            <DataTable
+            <RenewalTriageList
+              items={categorized.inWorkflow}
               columns={columns}
-              data={categorized.inWorkflow}
               searchPlaceholder="Search active renewal workflows..."
+              onOpenTriage={openTriage}
             />
           )}
         </TabsContent>
@@ -506,10 +684,11 @@ function RenewalsDeskPage() {
               icon={Clock}
             />
           ) : (
-            <DataTable
+            <RenewalTriageList
+              items={categorized.expiring60}
               columns={columns}
-              data={categorized.expiring60}
               searchPlaceholder="Search 60-day renewals..."
+              onOpenTriage={openTriage}
             />
           )}
         </TabsContent>
@@ -522,10 +701,11 @@ function RenewalsDeskPage() {
               icon={CheckCircle2}
             />
           ) : (
-            <DataTable
+            <RenewalTriageList
+              items={categorized.expired}
               columns={columns}
-              data={categorized.expired}
               searchPlaceholder="Search lapsed policies..."
+              onOpenTriage={openTriage}
             />
           )}
         </TabsContent>
@@ -538,10 +718,11 @@ function RenewalsDeskPage() {
               icon={Shield}
             />
           ) : (
-            <DataTable
+            <RenewalTriageList
+              items={categorized.completedRenewals}
               columns={columns}
-              data={categorized.completedRenewals}
               searchPlaceholder="Search completed renewals..."
+              onOpenTriage={openTriage}
             />
           )}
         </TabsContent>
