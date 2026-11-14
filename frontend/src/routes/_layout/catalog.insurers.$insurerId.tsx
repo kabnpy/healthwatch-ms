@@ -40,6 +40,10 @@ export const Route = createFileRoute("/_layout/catalog/insurers/$insurerId")({
 
 // --- Components ---
 
+const insurerProductColumns = productColumns.filter((col) =>
+  "accessorKey" in col ? col.accessorKey !== "insurerName" : true,
+)
+
 function InsurerProducts({ insurerId }: { insurerId: string }) {
   const { data: productsData, isLoading } = useProducts(insurerId)
 
@@ -49,7 +53,7 @@ function InsurerProducts({ insurerId }: { insurerId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-lg font-semibold">Insurance Products</h3>
         <AddProduct fixedInsurerId={insurerId} />
       </div>
@@ -65,7 +69,7 @@ function InsurerProducts({ insurerId }: { insurerId: string }) {
           </CardContent>
         </Card>
       ) : (
-        <DataTable columns={productColumns} data={products} />
+        <DataTable columns={insurerProductColumns} data={products} />
       )}
     </div>
   )
@@ -93,7 +97,7 @@ function InsurerDetailContent({ insurerId }: { insurerId: string }) {
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-1">
+        <Card className="min-w-0 md:col-span-1">
           <CardHeader>
             <CardTitle className="text-sm font-medium">
               Contact Information
@@ -111,7 +115,7 @@ function InsurerDetailContent({ insurerId }: { insurerId: string }) {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
+        <Card className="min-w-0 md:col-span-2">
           <CardHeader>
             <CardTitle className="text-sm font-medium">Summary</CardTitle>
           </CardHeader>

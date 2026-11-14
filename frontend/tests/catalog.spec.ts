@@ -115,6 +115,31 @@ test.describe("Catalog (/catalog)", () => {
     expect(productsMobileOverflow).toBe(true)
   })
 
+  test("suppresses parent Catalog chrome on detail routes, omits Insurer column on InsurerDetail, and has zero overflow on desktop and mobile", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto("/catalog/insurers")
+    await page.locator("tbody tr td a").first().click()
+    await expect(page).toHaveURL(/\/catalog\/insurers\/[^/]+$/)
+
+    // Parent Catalog chrome is suppressed
+    await expect(page.getByText("Catalog", { exact: true })).toHaveCount(0)
+    await expect(page.getByRole("tab", { name: "Insurers" })).toHaveCount(0)
+    await expect(page.getByRole("tab", { name: "Products" })).toHaveCount(0)
+    await expect(
+      page.getByRole("button", { name: /Add Insurer/i }),
+    ).toHaveCount(0)
+
+    // Back to Insurers leads cleanly
+    await expect(
+      page.getByRole("link", { name: /Back to Insurers/i }),
+    ).toBeVisible()
+
+    // Insurance Products table omits redundant Insurer column
+    await expect(
+      page.getByRole("columnheader", { name: "Insurer", exact: true }),
+    ).toHaveCount(0)
   test("Product Detail uses bg-card in dark mode, displays Insurer name, single Save CTA, and has zero overflow", async ({
     page,
   }) => {
@@ -170,5 +195,18 @@ test.describe("Catalog (/catalog)", () => {
         document.documentElement.clientWidth,
     )
     expect(mobileOverflow).toBe(true)
+
+    // Product detail route also suppresses parent Catalog chrome
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto("/catalog/products")
+    await page.locator("tbody tr td a").first().click()
+    await expect(page).toHaveURL(/\/catalog\/products\/[^/]+$/)
+
+    await expect(page.getByText("Catalog", { exact: true })).toHaveCount(0)
+    await expect(page.getByRole("tab", { name: "Insurers" })).toHaveCount(0)
+    await expect(page.getByRole("tab", { name: "Products" })).toHaveCount(0)
+    await expect(
+      page.getByRole("link", { name: /Back to Products/i }),
+    ).toBeVisible()
   })
 })

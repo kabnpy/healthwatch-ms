@@ -15,6 +15,14 @@ export const Route = createFileRoute("/_layout/catalog")({
 function CatalogLayout() {
   const location = useLocation()
 
+  // Suppress parent Catalog chrome on detail routes ($insurerId / $productId)
+  const isDetailRoute = /^\/catalog\/(insurers|products)\/[^/]+/.test(
+    location.pathname,
+  )
+  if (isDetailRoute) {
+    return <Outlet />
+  }
+
   // Determine active tab based on path
   const isProducts = location.pathname.includes("/catalog/products")
   const activeTab = isProducts ? "products" : "insurers"
