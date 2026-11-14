@@ -7,9 +7,7 @@ from typing import Any
 from sqlmodel import Session, func, select
 
 from app.core.db import engine
-from app.core.storage import storage
 from app.models import (
-    Document,
     DocumentJob,
     DocumentJobCreate,
     DocumentJobResourceType,
@@ -17,6 +15,7 @@ from app.models import (
     DocumentType,
     get_datetime_utc,
 )
+from app.services.document import DocumentService
 from app.services.document_renderer import DocumentRenderer
 
 logger = logging.getLogger(__name__)
@@ -153,29 +152,23 @@ class DocumentJobService:
             if not rendered.pdf_bytes:
                 raise ValueError("DocumentRenderer did not produce PDF bytes")
 
-            saved_path = storage.save_file(
+            doc = DocumentService.store_document(
+                session=session,
                 file=io.BytesIO(rendered.pdf_bytes),
                 filename=filename,
-                folder=f"documents/{job.resource_type.value.lower()}",
-            )
-
-            # Record generated artifact in Document table
-            doc = Document(
                 entity_type=entity_type,
                 entity_id=entity_id,
                 document_type=DocumentType.OTHER,
-                file_path=saved_path,
                 mime_type="application/pdf",
-                doc_metadata={
+                metadata={
                     "document_job_id": str(job.id),
                     "resource_type": job.resource_type.value,
                     "filename": filename,
                     "pipeline": "playwright_headless",
                 },
+                folder=f"documents/{job.resource_type.value.lower()}",
+                commit=False,
             )
-            session.add(doc)
-            session.commit()
-            session.refresh(doc)
 
             # Mark job succeeded and link persisted Document without mutating snapshot_data
             job.status = DocumentJobStatus.SUCCEEDED
@@ -228,15 +221,8 @@ class DocumentJobService:
         if not job.document_id:
             raise LookupError("Generated document reference not found")
 
-        doc = session.get(Document, job.document_id)
-        if not doc or not doc.file_path:
-            raise LookupError("Generated document storage reference not found")
-
-        abs_path = storage.get_file_path(doc.file_path)
-        if not abs_path.exists():
-            raise LookupError(f"Generated PDF file not found on disk: {doc.file_path}")
-
-        filename = (doc.doc_metadata or {}).get(
-            "filename"
-        ) or f"{job.resource_type.value}_{job.id}.pdf"
-        return abs_path, filename
+        artifact = DocumentService.resolve_download(
+            session=session,
+            document_id=job.document_id,
+        )
+        return artifact.path, artifact.filename

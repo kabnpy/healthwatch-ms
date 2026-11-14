@@ -378,7 +378,7 @@ def test_risk_note_snapshot_frozen_at_enqueue_time(
 
     monkeypatch.setattr(DocumentRenderer, "pdf_rasterizer", CapturingPdfRasterizer())
     monkeypatch.setattr(
-        "app.services.document_job.storage.save_file",
+        "app.services.document.storage.save_file",
         lambda file, filename, folder="": f"{folder}/{filename}",
     )
 
@@ -448,7 +448,7 @@ def test_enqueue_schedules_background_processing_and_process_rejects_succeeded(
     monkeypatch,
 ) -> None:
     monkeypatch.setattr(
-        "app.services.document_job.storage.save_file",
+        "app.services.document.storage.save_file",
         lambda file, filename, folder="": f"{folder}/{filename}",
     )
 
@@ -474,3 +474,30 @@ def test_enqueue_schedules_background_processing_and_process_rejects_succeeded(
         headers=superuser_token_headers,
     )
     assert r_proc.status_code == 409
+
+
+def test_delete_document_job_generated_document_returns_409_conflict(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    r_enq = client.post(
+        f"{settings.API_V1_STR}/document-jobs/",
+        headers=superuser_token_headers,
+        json={"resource_type": DocumentJobResourceType.STATEMENT.value},
+    )
+    assert r_enq.status_code == 202
+    job_id = r_enq.json()["id"]
+
+    r_job = client.get(
+        f"{settings.API_V1_STR}/document-jobs/{job_id}",
+        headers=superuser_token_headers,
+    )
+    assert r_job.status_code == 200
+    doc_id = r_job.json()["document_id"]
+    assert doc_id is not None
+
+    r_del = client.delete(
+        f"{settings.API_V1_STR}/documents/{doc_id}",
+        headers=superuser_token_headers,
+    )
+    assert r_del.status_code == 409
