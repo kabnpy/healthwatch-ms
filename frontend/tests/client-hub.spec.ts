@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test"
 
 test.describe("Client Hub & Policy Detail (/clients/$clientId/*)", () => {
-  async function navigateToFirstClientOverview(
+  async function navigateToFirstClientHub(
     page: import("@playwright/test").Page,
   ) {
     await page.goto("/clients")
@@ -9,20 +9,20 @@ test.describe("Client Hub & Policy Detail (/clients/$clientId/*)", () => {
     await expect(firstClientLink).toBeVisible()
     const clientName = (await firstClientLink.textContent()).trim()
     await firstClientLink.click()
-    await expect(page).toHaveURL(/\/clients\/[^/]+\/overview$/)
-    return { clientName, clientUrl: page.url().replace(/\/overview$/, "") }
+    await expect(page).toHaveURL(/\/clients\/[^/]+\/policies$/)
+    return { clientName, clientUrl: page.url().replace(/\/policies$/, "") }
   }
 
   test("zero horizontal overflow at 390x844 mobile and 1440x900 desktop across all Client Hub routes and Policy Detail", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
-    const { clientUrl } = await navigateToFirstClientOverview(page)
+    const { clientUrl } = await navigateToFirstClientHub(page)
 
     const routes = [
-      `${clientUrl}/overview`,
       `${clientUrl}/policies`,
       `${clientUrl}/invoices`,
+      `${clientUrl}/activity`,
       `${clientUrl}/documents`,
     ]
 
@@ -72,28 +72,58 @@ test.describe("Client Hub & Policy Detail (/clients/$clientId/*)", () => {
     }
   })
 
-  test("/overview breadcrumbs do not duplicate the client name and use KES/GLOSSARY copy", async ({
+  test("Client Hub header, 1-line metadata, underline tabs, /activity, and /documents", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
-    const { clientName } = await navigateToFirstClientOverview(page)
+    const { clientName, clientUrl } = await navigateToFirstClientHub(page)
 
+    // Back to Clients link
+    await expect(
+      page.getByRole("link", { name: /Back to Clients/i }),
+    ).toBeVisible()
+
+    // Breadcrumbs do not duplicate client name
     const breadcrumbNav = page.getByRole("navigation", { name: "breadcrumb" })
     await expect(breadcrumbNav).toBeVisible()
     const breadcrumbText = await breadcrumbNav.textContent()
     const occurrences = breadcrumbText.split(clientName).length - 1
     expect(occurrences).toBe(1)
 
+    // Underline tabs: Policies | Invoices | Activity | Documents | Settings (no Overview)
+    const tablist = page.getByRole("tablist")
+    await expect(tablist).toBeVisible()
+    await expect(tablist.getByRole("tab", { name: "Policies" })).toBeVisible()
+    await expect(tablist.getByRole("tab", { name: "Invoices" })).toBeVisible()
+    await expect(tablist.getByRole("tab", { name: "Activity" })).toBeVisible()
+    await expect(tablist.getByRole("tab", { name: "Documents" })).toBeVisible()
+    await expect(tablist.getByRole("tab", { name: "Settings" })).toBeVisible()
+    await expect(tablist.getByRole("tab", { name: "Overview" })).toHaveCount(0)
+
     // Currency & GLOSSARY invariants: no Ksh/Kshs.
     const bodyText = await page.locator("main").textContent()
     expect(bodyText).not.toMatch(/\bKshs?\.?\b/i)
+
+    // /activity renders Log Operational Activity without KPI or portfolio cards
+    await page.goto(`${clientUrl}/activity`)
+    await expect(
+      page.getByText("Log Operational Activity", { exact: false }),
+    ).toBeVisible()
+    await expect(page.getByText("Client Policies Portfolio")).toHaveCount(0)
+    await expect(page.getByText("Open balance due")).toHaveCount(0)
+
+    // /documents renders KYC & Legal Documents
+    await page.goto(`${clientUrl}/documents`)
+    await expect(
+      page.getByRole("heading", { name: /KYC & Legal Documents/i }),
+    ).toBeVisible()
   })
 
   test("/policies/$policyId renders without stacked double tab bars and provides a working back link", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
-    const { clientName, clientUrl } = await navigateToFirstClientOverview(page)
+    const { clientName, clientUrl } = await navigateToFirstClientHub(page)
 
     await page.goto(`${clientUrl}/policies`)
     const policyLink = page.locator("a[href*='/policies/']").first()
