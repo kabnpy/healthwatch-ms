@@ -973,6 +973,32 @@ class RenewalsPublic(SQLModel):
     count: int
 
 
+class RenewalHorizonItem(SQLModel):
+    policy_id: uuid.UUID
+    policy_number: str
+    client_id: uuid.UUID
+    client_name: str
+    coverage_end: date
+    days_left: int
+    policy: PolicyPublic
+    renewal: RenewalPublic | None = None
+
+
+class RenewalHorizonResponse(SQLModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    overdue: list[RenewalHorizonItem] = []
+    bucket_0_30: list[RenewalHorizonItem] = Field(
+        default=[], alias="0_30", serialization_alias="0_30"
+    )
+    bucket_31_60: list[RenewalHorizonItem] = Field(
+        default=[], alias="31_60", serialization_alias="31_60"
+    )
+    bucket_61_90: list[RenewalHorizonItem] = Field(
+        default=[], alias="61_90", serialization_alias="61_90"
+    )
+
+
 # ==========================================
 # Activity Models (Operational Timeline)
 # ==========================================
