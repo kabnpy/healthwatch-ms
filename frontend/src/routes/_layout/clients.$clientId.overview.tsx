@@ -26,6 +26,7 @@ import { useFinancialSummary } from "@/hooks/useFinancials"
 import { usePolicies } from "@/hooks/usePolicies"
 import { cn } from "@/lib/utils"
 import { queryClient } from "@/queryClient"
+import { formatCurrency } from "@/utils"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 function getClientQueryOptions(clientId: string) {
@@ -47,6 +48,24 @@ function ClientOverview() {
   const { clientId } = Route.useParams()
   const { data: client } = useSuspenseQuery(getClientQueryOptions(clientId))
   const { summary } = useFinancialSummary(clientId)
+  const balanceState =
+    summary.totalDue > 0
+      ? {
+          iconClass: "text-rose-600",
+          amountClass: "text-rose-600 dark:text-rose-400",
+          label: "Open balance due",
+        }
+      : summary.totalInvoiced === 0
+        ? {
+            iconClass: "text-muted-foreground",
+            amountClass: "text-foreground",
+            label: "No issued invoices",
+          }
+        : {
+            iconClass: "text-emerald-600",
+            amountClass: "text-emerald-600 dark:text-emerald-400",
+            label: "Account settled",
+          }
   const { data: policiesData, isLoading: isPoliciesLoading } = usePolicies(
     clientId,
     0,
@@ -259,38 +278,19 @@ function ClientOverview() {
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Outstanding Balance
             </CardTitle>
-            <CreditCard
-              className={cn(
-                "size-4",
-                summary.totalDue > 0
-                  ? "text-rose-600"
-                  : summary.totalInvoiced === 0
-                    ? "text-muted-foreground"
-                    : "text-emerald-600",
-              )}
-            />
+            <CreditCard className={cn("size-4", balanceState.iconClass)} />
           </CardHeader>
           <CardContent>
             <div
               className={cn(
                 "text-2xl font-bold font-mono tabular-nums tracking-tight",
-                summary.totalDue > 0
-                  ? "text-rose-600 dark:text-rose-400"
-                  : summary.totalInvoiced === 0
-                    ? "text-foreground"
-                    : "text-emerald-600 dark:text-emerald-400",
+                balanceState.amountClass,
               )}
             >
-              KES {summary.totalDue.toLocaleString()}
+              {formatCurrency(summary.totalDue)}
             </div>
             <p className="text-xs text-muted-foreground mt-1 flex items-center justify-between">
-              <span>
-                {summary.totalDue > 0
-                  ? "Open balance due"
-                  : summary.totalInvoiced === 0
-                    ? "No issued invoices"
-                    : "Account settled"}
-              </span>
+              <span>{balanceState.label}</span>
               {summary.totalDue > 0 && (
                 <Link
                   to="/clients/$clientId/invoices"

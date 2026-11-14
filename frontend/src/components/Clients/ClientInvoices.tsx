@@ -192,7 +192,7 @@ export function ClientInvoices({ clientId }: ClientInvoicesProps) {
       </div>
 
       <Tabs defaultValue="invoices" className="w-full">
-        <TabsList>
+        <TabsList className="max-w-full overflow-x-auto">
           <TabsTrigger value="invoices">
             Invoices ({invoices.length})
           </TabsTrigger>
