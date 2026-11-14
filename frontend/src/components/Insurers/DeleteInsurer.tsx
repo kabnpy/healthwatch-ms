@@ -77,11 +77,13 @@ const DeleteInsurer = ({ id, onSuccess }: DeleteInsurerProps) => {
           </DialogHeader>
 
           <DialogFooter className="mt-4">
-            <DialogClose asChild>
-              <Button variant="outline" disabled={mutation.isPending}>
-                Cancel
-              </Button>
-            </DialogClose>
+            <DialogClose
+              render={
+                <Button variant="outline" disabled={mutation.isPending}>
+                  Cancel
+                </Button>
+              }
+            />
             <LoadingButton
               variant="destructive"
               type="submit"

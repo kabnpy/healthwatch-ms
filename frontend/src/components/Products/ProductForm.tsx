@@ -1,17 +1,14 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, useFormContext } from "react-hook-form"
+import { Controller, useForm, useFormContext } from "react-hook-form"
 import { z } from "zod"
 import type { ProductCreate, ProductPublic, ProductUpdate } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import {
@@ -81,22 +78,20 @@ export const ProductForm = ({
       className="space-y-4"
     >
       {!fixedInsurerId && (
-        <FormField
+        <Controller
           control={(form as any).control}
           name="insurer_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Insurer</FormLabel>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel>Insurer</FieldLabel>
               <Select
                 onValueChange={field.onChange}
                 defaultValue={field.value}
                 disabled={!!initialData}
               >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select insurance carrier" />
-                  </SelectTrigger>
-                </FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select insurance carrier" />
+                </SelectTrigger>
                 <SelectContent>
                   {insurers.map((insurer) => (
                     <SelectItem key={insurer.id} value={insurer.id}>
@@ -105,42 +100,38 @@ export const ProductForm = ({
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
         />
       )}
 
-      <FormField
+      <Controller
         control={(form as any).control}
         name="name"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Product Name</FormLabel>
-            <FormControl>
-              <Input placeholder="e.g. Motor Comprehensive - Gold" {...field} />
-            </FormControl>
-            <FormDescription>
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel>Product Name</FieldLabel>
+            <Input placeholder="e.g. Motor Comprehensive - Gold" {...field} />
+            <FieldDescription>
               The public name of the insurance product.
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
+            </FieldDescription>
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
         )}
       />
 
       <div className="grid grid-cols-2 gap-4">
-        <FormField
+        <Controller
           control={(form as any).control}
           name="class_of_insurance"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Class of Insurance</FormLabel>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel>Class of Insurance</FieldLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select class" />
-                  </SelectTrigger>
-                </FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select class" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Motor Private">Motor Private</SelectItem>
                   <SelectItem value="Motor Commercial">
@@ -157,21 +148,19 @@ export const ProductForm = ({
                   <SelectItem value="Medical">Medical</SelectItem>
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
         />
-        <FormField
+        <Controller
           control={(form as any).control}
           name="default_commission_rate"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Default Commission %</FormLabel>
-              <FormControl>
-                <Input type="number" step="0.01" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel>Default Commission %</FieldLabel>
+              <Input type="number" step="0.01" {...field} />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
         />
       </div>
@@ -189,10 +178,5 @@ export const ProductForm = ({
     </form>
   )
 
-  // Only wrap in <Form> if we are NOT using external context
-  if (useContext && context) {
-    return content
-  }
-
-  return <Form {...form}>{content}</Form>
+  return content
 }

@@ -79,14 +79,14 @@ function InsurerDetailContent({ insurerId }: { insurerId: string }) {
       <div>
         <Button
           variant="ghost"
-          asChild
           className="mb-4 -ml-2 h-8 px-2 text-muted-foreground"
-        >
-          <Link to="/catalog/insurers">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Insurers
-          </Link>
-        </Button>
+          render={
+            <Link to="/catalog/insurers">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Insurers
+            </Link>
+          }
+        />
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">{insurer.name}</h1>
         </div>

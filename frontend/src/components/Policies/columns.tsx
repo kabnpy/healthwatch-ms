@@ -61,12 +61,14 @@ export const columns: ColumnDef<PolicyPublic>[] = [
 
       return (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            }
+          />
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Policy Actions</DropdownMenuLabel>
             <DropdownMenuItem
@@ -79,44 +81,50 @@ export const columns: ColumnDef<PolicyPublic>[] = [
               Copy ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link
-                to="/clients/$clientId/policies/$policyId"
-                params={{
-                  clientId: policy.client_id,
-                  policyId: policy.id,
-                }}
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                View Dashboard
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link
-                to="/clients/$clientId/policies/$policyId"
-                params={{
-                  clientId: policy.client_id,
-                  policyId: policy.id,
-                }}
-                hash="risk-notes"
-              >
-                <ReceiptText className="mr-2 h-4 w-4" />
-                Risk Notes
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link
-                to="/clients/$clientId/policies/$policyId"
-                params={{
-                  clientId: policy.client_id,
-                  policyId: policy.id,
-                }}
-                hash="certificates"
-              >
-                <ShieldCheck className="mr-2 h-4 w-4" />
-                Certificates
-              </Link>
-            </DropdownMenuItem>
+            <DropdownMenuItem
+              render={
+                <Link
+                  to="/clients/$clientId/policies/$policyId"
+                  params={{
+                    clientId: policy.client_id,
+                    policyId: policy.id,
+                  }}
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  View Dashboard
+                </Link>
+              }
+            />
+            <DropdownMenuItem
+              render={
+                <Link
+                  to="/clients/$clientId/policies/$policyId"
+                  params={{
+                    clientId: policy.client_id,
+                    policyId: policy.id,
+                  }}
+                  hash="risk-notes"
+                >
+                  <ReceiptText className="mr-2 h-4 w-4" />
+                  Risk Notes
+                </Link>
+              }
+            />
+            <DropdownMenuItem
+              render={
+                <Link
+                  to="/clients/$clientId/policies/$policyId"
+                  params={{
+                    clientId: policy.client_id,
+                    policyId: policy.id,
+                  }}
+                  hash="certificates"
+                >
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  Certificates
+                </Link>
+              }
+            />
           </DropdownMenuContent>
         </DropdownMenu>
       )

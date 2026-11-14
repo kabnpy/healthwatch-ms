@@ -23,21 +23,25 @@ export const InsurerActionsMenu = ({ insurer }: InsurerActionsMenuProps) => {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Insurer actions">
-          <EllipsisVertical className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" size="icon" aria-label="Insurer actions">
+            <EllipsisVertical className="h-4 w-4" />
+          </Button>
+        }
+      />
       <DropdownMenuContent align="end">
-        <DropdownMenuItem asChild>
-          <Link
-            to="/catalog/insurers/$insurerId"
-            params={{ insurerId: insurer.id }}
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            View Details
-          </Link>
-        </DropdownMenuItem>
+        <DropdownMenuItem
+          render={
+            <Link
+              to="/catalog/insurers/$insurerId"
+              params={{ insurerId: insurer.id }}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              View Details
+            </Link>
+          }
+        />
         <DropdownMenuSeparator />
         <EditInsurer insurer={insurer} onSuccess={() => setOpen(false)} />
         <DeleteInsurer id={insurer.id} onSuccess={() => setOpen(false)} />

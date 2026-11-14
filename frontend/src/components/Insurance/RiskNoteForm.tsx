@@ -1,19 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Calculator } from "lucide-react"
 import { useEffect, useState } from "react"
-import { type SubmitHandler, useForm } from "react-hook-form"
+import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 import type { ApiError, CalculationQuoteResponse } from "@/client"
 import { AdvisoryRatingCalculator } from "@/components/Insurance/AdvisoryRatingCalculator"
 import { Button } from "@/components/ui/button"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import {
@@ -145,27 +138,24 @@ export const RiskNoteForm = ({
 
   return (
     <>
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit as any)}
-          className="space-y-6"
-        >
+      <form
+        onSubmit={form.handleSubmit(onSubmit as any)}
+        className="space-y-6"
+      >
           <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
-            <FormField
+            <Controller
               control={form.control as any}
               name="transaction_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Transaction Type</FormLabel>
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Transaction Type</FieldLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                    </FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="New Business">New Business</SelectItem>
                       <SelectItem value="Renewal">Renewal</SelectItem>
@@ -173,62 +163,64 @@ export const RiskNoteForm = ({
                       <SelectItem value="Cancellation">Cancellation</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
             />
-            <FormField
+            <Controller
               control={form.control as any}
               name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Status</FieldLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Draft">Draft (Preliminary)</SelectItem>
                       <SelectItem value="Active">Active (Finalized)</SelectItem>
                       <SelectItem value="Cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <FormField
+            <Controller
               control={form.control as any}
               name="coverage_start"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Coverage Start</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Coverage Start</FieldLabel>
+                  <Input type="date" {...field} />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
             />
-            <FormField
+            <Controller
               control={form.control as any}
               name="coverage_end"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Coverage End</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Coverage End</FieldLabel>
+                  <Input type="date" {...field} />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
             />
           </div>
@@ -245,29 +237,29 @@ export const RiskNoteForm = ({
                       f.field_type === "input" || f.field_type === "optional",
                   )
                   .map((field: any) => (
-                    <FormField
+                    <Controller
                       key={field.key}
                       control={form.control as any}
                       name={`details.${field.key}`}
-                      render={({ field: inputField }) => (
-                        <FormItem>
-                          <FormLabel>{field.label}</FormLabel>
-                          <FormControl>
-                            <Input
-                              type={field.type === "number" ? "number" : "text"}
-                              {...inputField}
-                              value={inputField.value || ""}
-                              onChange={(e) =>
-                                inputField.onChange(
-                                  field.type === "number"
-                                    ? e.target.valueAsNumber
-                                    : e.target.value,
-                                )
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                      render={({ field: inputField, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel>{field.label}</FieldLabel>
+                          <Input
+                            type={field.type === "number" ? "number" : "text"}
+                            {...inputField}
+                            value={inputField.value || ""}
+                            onChange={(e) =>
+                              inputField.onChange(
+                                field.type === "number"
+                                  ? e.target.valueAsNumber
+                                  : e.target.value,
+                              )
+                            }
+                          />
+                          {fieldState.invalid && (
+                            <FieldError errors={[fieldState.error]} />
+                          )}
+                        </Field>
                       )}
                     />
                   ))}
@@ -292,40 +284,40 @@ export const RiskNoteForm = ({
               </Button>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <FormField
+              <Controller
                 control={form.control as any}
                 name="net_premium"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Net Premium (KES)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        {...field}
-                        className="font-mono text-sm"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>Net Premium (KES)</FieldLabel>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      className="font-mono text-sm"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
-              <FormField
+              <Controller
                 control={form.control as any}
                 name="commission_amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Commission (KES)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        {...field}
-                        className="font-mono text-sm"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>Commission (KES)</FieldLabel>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      className="font-mono text-sm"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
             </div>
@@ -352,7 +344,6 @@ export const RiskNoteForm = ({
             </LoadingButton>
           </div>
         </form>
-      </Form>
 
       <AdvisoryRatingCalculator
         isOpen={ratingCalcOpen}

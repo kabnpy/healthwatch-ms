@@ -88,14 +88,18 @@ describe("AllocatePaymentDialog", () => {
 
     // Select INV-001 (due 4500, available 3000 -> capped to 3000)
     fireEvent.click(screen.getByRole("combobox"))
-    fireEvent.click(screen.getByText("INV-001"))
+    const opt1 = screen.getByRole("option", { name: /INV-001/ })
+    fireEvent.pointerDown(opt1)
+    fireEvent.click(opt1)
 
     const amountInput = screen.getByRole("spinbutton") as HTMLInputElement
     expect(amountInput.value).toBe("3000")
 
     // Select INV-002 (due 1200, available 3000 -> auto-filled to 1200)
     fireEvent.click(screen.getByRole("combobox"))
-    fireEvent.click(screen.getByText("INV-002"))
+    const opt2 = screen.getByRole("option", { name: /INV-002/ })
+    fireEvent.pointerDown(opt2)
+    fireEvent.click(opt2)
     expect(amountInput.value).toBe("1200")
 
     fireEvent.click(screen.getByRole("button", { name: "Post Allocation" }))
@@ -211,7 +215,9 @@ describe("AllocatePaymentDialog", () => {
 
     // Select INV-002 (balance_due: 1200.00, unallocated: 3000.00)
     fireEvent.click(screen.getByRole("combobox"))
-    fireEvent.click(screen.getByText("INV-002"))
+    const opt2 = screen.getByRole("option", { name: /INV-002/ })
+    fireEvent.pointerDown(opt2)
+    fireEvent.click(opt2)
 
     // Exceeds invoice.balance_due (1200.00) by 0.01
     fireEvent.change(amountInput, { target: { value: "1200.01" } })

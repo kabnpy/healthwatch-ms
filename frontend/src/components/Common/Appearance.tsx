@@ -30,13 +30,15 @@ export const SidebarAppearance = () => {
   return (
     <SidebarMenuItem>
       <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <SidebarMenuButton tooltip="Appearance" data-testid="theme-button">
-            <Icon className="size-4 text-muted-foreground" />
-            <span>Appearance</span>
-            <span className="sr-only">Toggle theme</span>
-          </SidebarMenuButton>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <SidebarMenuButton tooltip="Appearance" data-testid="theme-button">
+              <Icon className="size-4 text-muted-foreground" />
+              <span>Appearance</span>
+              <span className="sr-only">Toggle theme</span>
+            </SidebarMenuButton>
+          }
+        />
         <DropdownMenuContent
           side={isMobile ? "top" : "right"}
           align="end"
@@ -72,13 +74,15 @@ export const Appearance = () => {
   return (
     <div className="flex items-center justify-center">
       <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button data-testid="theme-button" variant="outline" size="icon">
-            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <Button data-testid="theme-button" variant="outline" size="icon">
+              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+          }
+        />
         <DropdownMenuContent align="end">
           <DropdownMenuItem
             data-testid="light-mode"

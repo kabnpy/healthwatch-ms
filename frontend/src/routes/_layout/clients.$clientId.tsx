@@ -67,31 +67,46 @@ function ClientHubContent({ clientId }: { clientId: string }) {
 
       <Tabs value={activeTab} className="w-full">
         <TabsList>
-          <TabsTrigger value="overview" asChild>
-            <Link to="/clients/$clientId/overview" params={{ clientId }}>
-              Overview
-            </Link>
-          </TabsTrigger>
-          <TabsTrigger value="policies" asChild>
-            <Link to="/clients/$clientId/policies" params={{ clientId }}>
-              Policies
-            </Link>
-          </TabsTrigger>
-          <TabsTrigger value="invoices" asChild>
-            <Link to="/clients/$clientId/invoices" params={{ clientId }}>
-              Invoices
-            </Link>
-          </TabsTrigger>
-          <TabsTrigger value="documents" asChild>
-            <Link to="/clients/$clientId/documents" params={{ clientId }}>
-              Documents
-            </Link>
-          </TabsTrigger>
-          <TabsTrigger value="settings" asChild>
-            <Link to="/clients/$clientId/settings" params={{ clientId }}>
-              Settings
-            </Link>
-          </TabsTrigger>
+          <TabsTrigger
+            value="overview"
+            render={
+              <Link to="/clients/$clientId/overview" params={{ clientId }}>
+                Overview
+              </Link>
+            }
+          />
+          <TabsTrigger
+            value="policies"
+            render={
+              <Link to="/clients/$clientId/policies" params={{ clientId }}>
+                Policies
+              </Link>
+            }
+          />
+          <TabsTrigger
+            value="invoices"
+            render={
+              <Link to="/clients/$clientId/invoices" params={{ clientId }}>
+                Invoices
+              </Link>
+            }
+          />
+          <TabsTrigger
+            value="documents"
+            render={
+              <Link to="/clients/$clientId/documents" params={{ clientId }}>
+                Documents
+              </Link>
+            }
+          />
+          <TabsTrigger
+            value="settings"
+            render={
+              <Link to="/clients/$clientId/settings" params={{ clientId }}>
+                Settings
+              </Link>
+            }
+          />
         </TabsList>
         <div className="mt-4">
           <Outlet />

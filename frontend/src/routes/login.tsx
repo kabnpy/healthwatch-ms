@@ -4,19 +4,12 @@ import {
   Link as RouterLink,
   redirect,
 } from "@tanstack/react-router"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
 
 import type { Body_login_login_access_token as AccessToken } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
@@ -69,67 +62,69 @@ function Login() {
 
   return (
     <AuthLayout>
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-6"
-        >
-          <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">Login to your account</h1>
-          </div>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col gap-6"
+      >
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h1 className="text-2xl font-bold">Login to your account</h1>
+        </div>
 
-          <div className="grid gap-4">
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      data-testid="email-input"
-                      placeholder="user@example.com"
-                      type="email"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
+        <div className="grid gap-4">
+          <Controller
+            control={form.control}
+            name="username"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                <Input
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  data-testid="email-input"
+                  placeholder="user@example.com"
+                  type="email"
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError className="text-xs" errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center">
-                    <FormLabel>Password</FormLabel>
-                    <RouterLink
-                      to="/recover-password"
-                      className="ml-auto text-sm underline-offset-4 hover:underline"
-                    >
-                      Forgot your password?
-                    </RouterLink>
-                  </div>
-                  <FormControl>
-                    <PasswordInput
-                      data-testid="password-input"
-                      placeholder="Password"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
+          <Controller
+            control={form.control}
+            name="password"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <div className="flex items-center">
+                  <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                  <RouterLink
+                    to="/recover-password"
+                    className="ml-auto text-sm underline-offset-4 hover:underline"
+                  >
+                    Forgot your password?
+                  </RouterLink>
+                </div>
+                <PasswordInput
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  data-testid="password-input"
+                  placeholder="Password"
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError className="text-xs" errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
 
-            <LoadingButton type="submit" loading={loginMutation.isPending}>
-              Log In
-            </LoadingButton>
-          </div>
+          <LoadingButton type="submit" loading={loginMutation.isPending}>
+            Log In
+          </LoadingButton>
+        </div>
         </form>
-      </Form>
     </AuthLayout>
   )
 }

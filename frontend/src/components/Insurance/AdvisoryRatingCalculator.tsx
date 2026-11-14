@@ -263,6 +263,7 @@ export function AdvisoryRatingCalculator({
               <Select
                 value={selectedProductId}
                 onValueChange={(val) => {
+                  if (!val) return
                   setSelectedProductId(val)
                   const prod = products.find((p) => p.id === val)
                   if (prod?.class_of_insurance) {
@@ -293,7 +294,12 @@ export function AdvisoryRatingCalculator({
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Insurance Product Line
             </Label>
-            <Select value={selectedClass} onValueChange={setSelectedClass}>
+            <Select
+              value={selectedClass}
+              onValueChange={(val) => {
+                if (val) setSelectedClass(val)
+              }}
+            >
               <SelectTrigger className="w-full h-9">
                 <SelectValue placeholder="Select Product Class" />
               </SelectTrigger>

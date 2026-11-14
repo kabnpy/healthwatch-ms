@@ -106,7 +106,9 @@ describe("RenewalsDeskPage data accuracy and terminology", () => {
     mockHorizonState = {
       data: {
         overdue: [],
-        "0_30": [makeHorizonItem({ days_left: 12, coverage_end: "2026-11-26" })],
+        "0_30": [
+          makeHorizonItem({ days_left: 12, coverage_end: "2026-11-26" }),
+        ],
         "31_60": [],
         "61_90": [],
       },
@@ -148,7 +150,11 @@ describe("RenewalsDeskPage data accuracy and terminology", () => {
           makeHorizonItem({
             policy_id: "pol-2",
             policy_number: "POL-002",
-            renewal: { id: "ren-1", policy_id: "pol-2", status: "awaiting_carrier" },
+            renewal: {
+              id: "ren-1",
+              policy_id: "pol-2",
+              status: "awaiting_carrier",
+            },
           }),
         ],
         "31_60": [
@@ -162,7 +168,11 @@ describe("RenewalsDeskPage data accuracy and terminology", () => {
           makeHorizonItem({
             policy_id: "pol-4",
             policy_number: "POL-004",
-            renewal: { id: "ren-2", policy_id: "pol-4", status: "client_invited" },
+            renewal: {
+              id: "ren-2",
+              policy_id: "pol-4",
+              status: "client_invited",
+            },
           }),
         ],
       },
@@ -173,7 +183,9 @@ describe("RenewalsDeskPage data accuracy and terminology", () => {
     const Component = Route.options.component!
     render(<Component />)
 
-    const expiringTab = screen.getByRole("tab", { name: /Expiring in ≤30 Days/i })
+    const expiringTab = screen.getByRole("tab", {
+      name: /Expiring in ≤30 Days/i,
+    })
     expect(expiringTab.textContent).toContain("1")
 
     const activeWorkflowsTab = screen.getByRole("tab", {
@@ -234,13 +246,23 @@ describe("RenewalsDeskPage data accuracy and terminology", () => {
     mockHorizonState = {
       data: {
         overdue: [],
-        "0_30": [makeHorizonItem({ policy_id: "pol-1", policy_number: "POL-001", renewal: null })],
+        "0_30": [
+          makeHorizonItem({
+            policy_id: "pol-1",
+            policy_number: "POL-001",
+            renewal: null,
+          }),
+        ],
         "31_60": [],
         "61_90": [
           makeHorizonItem({
             policy_id: "pol-2",
             policy_number: "POL-002",
-            renewal: { id: "ren-1", policy_id: "pol-2", status: "awaiting_carrier" },
+            renewal: {
+              id: "ren-1",
+              policy_id: "pol-2",
+              status: "awaiting_carrier",
+            },
           }),
         ],
       },
@@ -255,9 +277,9 @@ describe("RenewalsDeskPage data accuracy and terminology", () => {
 
     const [startBtn] = screen.getAllByRole("button", { name: /Start Renewal/i })
     fireEvent.click(startBtn)
-    expect(screen.getByTestId("renewal-transition-sheet").textContent).toContain(
-      "POL-001",
-    )
+    expect(
+      screen.getByTestId("renewal-transition-sheet").textContent,
+    ).toContain("POL-001")
   })
 })
 
@@ -317,7 +339,9 @@ describe("RenewalsDeskPage layout, calm zero-states, and responsive triage", () 
     mockHorizonState = {
       data: {
         overdue: [],
-        "0_30": [makeHorizonItem({ policy_id: "pol-1", policy_number: "POL-001" })],
+        "0_30": [
+          makeHorizonItem({ policy_id: "pol-1", policy_number: "POL-001" }),
+        ],
         "31_60": [],
         "61_90": [],
       },

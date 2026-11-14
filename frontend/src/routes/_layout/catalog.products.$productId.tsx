@@ -102,14 +102,14 @@ function ProductDetailContent({ productId }: { productId: string }) {
       <div className="flex flex-col gap-4">
         <Button
           variant="ghost"
-          asChild
           className="mb-4 -ml-2 h-8 w-fit px-2 text-muted-foreground"
-        >
-          <Link to="/catalog/products">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Products
-          </Link>
-        </Button>
+          render={
+            <Link to="/catalog/products">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Products
+            </Link>
+          }
+        />
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-primary/10 p-2 rounded-lg">

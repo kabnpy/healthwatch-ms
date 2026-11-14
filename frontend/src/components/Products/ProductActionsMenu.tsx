@@ -36,21 +36,25 @@ export const ProductActionsMenu = ({ product }: ProductActionsMenuProps) => {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Product actions">
-          <EllipsisVertical className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" size="icon" aria-label="Product actions">
+            <EllipsisVertical className="h-4 w-4" />
+          </Button>
+        }
+      />
       <DropdownMenuContent align="end">
-        <DropdownMenuItem asChild>
-          <Link
-            to="/catalog/products/$productId"
-            params={{ productId: product.id }}
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            Edit & Schema
-          </Link>
-        </DropdownMenuItem>
+        <DropdownMenuItem
+          render={
+            <Link
+              to="/catalog/products/$productId"
+              params={{ productId: product.id }}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              Edit & Schema
+            </Link>
+          }
+        />
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-destructive"

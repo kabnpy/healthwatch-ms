@@ -1,18 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ArrowLeft } from "lucide-react"
 import { useEffect, useMemo } from "react"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useProducts, useQuote } from "@/hooks/usePolicies"
 import type {
@@ -196,8 +189,7 @@ export function StepFinancials({
   }, [isHighEnd, extensions.excessProtector, extensions.pvt, form.setValue])
 
   return (
-    <Form {...(form as any)}>
-      <form onSubmit={form.handleSubmit(onNext)} className="space-y-8">
+    <form onSubmit={form.handleSubmit(onNext)} className="space-y-8">
         <div className="space-y-1">
           <h3 className="text-lg font-bold tracking-tight">
             Financials & Coverage
@@ -213,79 +205,77 @@ export function StepFinancials({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {!isPA && (
                 <div className="space-y-2">
-                  <FormLabel>Sum Insured (KES)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="text"
-                      value={(Number(sum_insured) || 0).toLocaleString()}
-                      onChange={handleSumInsuredChange}
-                      className="h-12 text-base font-bold"
-                    />
-                  </FormControl>
+                  <FieldLabel>Sum Insured (KES)</FieldLabel>
+                  <Input
+                    type="text"
+                    value={(Number(sum_insured) || 0).toLocaleString()}
+                    onChange={handleSumInsuredChange}
+                    className="h-12 text-base font-bold"
+                  />
                   <p className="text-[10px] text-muted-foreground">
                     Define the authoritative value of the asset.
                   </p>
                 </div>
               )}
-              <FormField
+              <Controller
                 control={form.control as any}
                 name="financials.rate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>
                       {isPA ? "Premium (Flat Amount)" : "Applied Rate (%)"}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        {...field}
-                        value={field.value || 0}
-                        readOnly={!!isMotorPrivate && !isManual}
-                        className={`h-12 text-base ${isMotorPrivate && !isManual ? "bg-muted/50" : ""}`}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                    </FieldLabel>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      value={field.value || 0}
+                      readOnly={!!isMotorPrivate && !isManual}
+                      className={`h-12 text-base ${isMotorPrivate && !isManual ? "bg-muted/50" : ""}`}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
-              <FormField
+              <Controller
                 control={form.control as any}
                 name="financials.startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Coverage Start Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                        value={field.value || ""}
-                        className="h-12 text-base"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>Coverage Start Date</FieldLabel>
+                    <Input
+                      type="date"
+                      {...field}
+                      value={field.value || ""}
+                      className="h-12 text-base"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
-              <FormField
+              <Controller
                 control={form.control as any}
                 name="financials.duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Policy Duration (Months)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        value={field.value || 12}
-                        className="h-12 text-base"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>Policy Duration (Months)</FieldLabel>
+                    <Input
+                      type="number"
+                      {...field}
+                      value={field.value || 12}
+                      className="h-12 text-base"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
             </div>
@@ -304,87 +294,95 @@ export function StepFinancials({
                 </div>
 
                 <div className="space-y-3 border rounded-md p-4 bg-muted/10">
-                  <FormField
+                  <Controller
                     control={form.control as any}
                     name="extensions.pvt"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card">
-                        <FormLabel className="text-sm cursor-pointer w-full">
+                    render={({ field, fieldState }) => (
+                      <Field
+                        data-invalid={fieldState.invalid}
+                        orientation="horizontal"
+                        className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card"
+                      >
+                        <FieldLabel className="text-sm cursor-pointer w-full">
                           Political Violence & Terrorism (0.25%)
                           {isHighEnd && (
                             <span className="ml-2 text-[10px] font-bold text-emerald-600 block">
                               (INCLUDED)
                             </span>
                           )}
-                        </FormLabel>
-                        <FormControl>
-                          <Checkbox
-                            checked={!!field.value}
-                            onCheckedChange={field.onChange}
-                            disabled={isHighEnd}
-                          />
-                        </FormControl>
-                      </FormItem>
+                        </FieldLabel>
+                        <Checkbox
+                          checked={!!field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isHighEnd}
+                        />
+                      </Field>
                     )}
                   />
-                  <FormField
+                  <Controller
                     control={form.control as any}
                     name="extensions.excessProtector"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card">
-                        <FormLabel className="text-sm cursor-pointer w-full">
+                    render={({ field, fieldState }) => (
+                      <Field
+                        data-invalid={fieldState.invalid}
+                        orientation="horizontal"
+                        className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card"
+                      >
+                        <FieldLabel className="text-sm cursor-pointer w-full">
                           Excess Protector (0.25%)
                           {isHighEnd && (
                             <span className="ml-2 text-[10px] font-bold text-emerald-600 block">
                               (INCLUDED)
                             </span>
                           )}
-                        </FormLabel>
-                        <FormControl>
-                          <Checkbox
-                            checked={!!field.value}
-                            onCheckedChange={field.onChange}
-                            disabled={isHighEnd}
-                          />
-                        </FormControl>
-                      </FormItem>
+                        </FieldLabel>
+                        <Checkbox
+                          checked={!!field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isHighEnd}
+                        />
+                      </Field>
                     )}
                   />
                   {isMotorPrivate && (
-                    <FormField
+                    <Controller
                       control={form.control as any}
                       name="extensions.passengerLiability"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card">
-                          <FormLabel className="text-sm cursor-pointer w-full">
+                      render={({ field, fieldState }) => (
+                        <Field
+                          data-invalid={fieldState.invalid}
+                          orientation="horizontal"
+                          className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card"
+                        >
+                          <FieldLabel className="text-sm cursor-pointer w-full">
                             Passenger Liability (KES 500)
-                          </FormLabel>
-                          <FormControl>
-                            <Checkbox
-                              checked={!!field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
+                          </FieldLabel>
+                          <Checkbox
+                            checked={!!field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </Field>
                       )}
                     />
                   )}
                   {isMotorPrivate && (
-                    <FormField
+                    <Controller
                       control={form.control as any}
                       name="extensions.omRescuePlus"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card">
-                          <FormLabel className="text-sm cursor-pointer w-full">
+                      render={({ field, fieldState }) => (
+                        <Field
+                          data-invalid={fieldState.invalid}
+                          orientation="horizontal"
+                          className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card"
+                        >
+                          <FieldLabel className="text-sm cursor-pointer w-full">
                             OM Rescue Plus (KES 1,000)
-                          </FormLabel>
-                          <FormControl>
-                            <Checkbox
-                              checked={!!field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
+                          </FieldLabel>
+                          <Checkbox
+                            checked={!!field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </Field>
                       )}
                     />
                   )}
@@ -552,6 +550,5 @@ export function StepFinancials({
           </Button>
         </div>
       </form>
-    </Form>
   )
 }

@@ -311,7 +311,12 @@ export function RecordPaymentModal({
           {!initialClientId && (
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">Client Name *</Label>
-              <Select value={clientId} onValueChange={handleClientChange}>
+              <Select
+                value={clientId}
+                onValueChange={(val) => {
+                  if (val) handleClientChange(val)
+                }}
+              >
                 <SelectTrigger className="text-xs">
                   <SelectValue placeholder="Select insurance client..." />
                 </SelectTrigger>
@@ -450,7 +455,9 @@ export function RecordPaymentModal({
                     </Label>
                     <Select
                       value={targetInvoiceId}
-                      onValueChange={handleInvoiceSelect}
+                      onValueChange={(val) => {
+                        if (val) handleInvoiceSelect(val)
+                      }}
                     >
                       <SelectTrigger className="text-xs">
                         <SelectValue placeholder="Choose open invoice..." />

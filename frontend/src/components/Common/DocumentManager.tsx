@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Eye, FileIcon, Plus, Trash2 } from "lucide-react"
 import { Suspense, useMemo, useState } from "react"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import * as z from "zod"
 import { DataTable } from "@/components/Common/DataTable"
 import { FileViewer } from "@/components/Documents/FileViewer"
@@ -16,14 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import {
   Select,
   SelectContent,
@@ -164,12 +157,14 @@ export function DocumentManager({
           {title}
         </h2>
         <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-2">
-              <Plus className="size-4" />
-              Upload
-            </Button>
-          </DialogTrigger>
+          <DialogTrigger
+            render={
+              <Button size="sm" className="gap-2">
+                <Plus className="size-4" />
+                Upload
+              </Button>
+            }
+          />
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Upload {entityType} Document</DialogTitle>
@@ -177,73 +172,75 @@ export function DocumentManager({
                 Select a file to attach to this {entityType}.
               </DialogDescription>
             </DialogHeader>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-4"
-              >
-                <FormField
-                  control={form.control}
-                  name="document_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Document Type</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-4"
+            >
+              <Controller
+                control={form.control}
+                name="document_type"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>Document Type</FieldLabel>
+                    <Select
+                      name={field.name}
+                      value={field.value}
+                      onValueChange={(val) => {
+                        if (val) field.onChange(val)
+                      }}
+                    >
+                      <SelectTrigger
+                        id={field.name}
+                        aria-invalid={fieldState.invalid}
                       >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {DOCUMENT_PRESETS[entityType]?.map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DOCUMENT_PRESETS[entityType]?.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="file"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>File</FormLabel>
-                      <FormControl>
-                        <FileUploadZone
-                          selectedFile={field.value}
-                          onFileSelect={(file) => field.onChange(file)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <Controller
+                control={form.control}
+                name="file"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>File</FieldLabel>
+                    <FileUploadZone
+                      selectedFile={field.value}
+                      onFileSelect={(file) => field.onChange(file)}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
 
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button
-                    variant="outline"
-                    type="button"
-                    onClick={() => setIsUploadOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={uploadMutation.isPending}>
-                    {uploadMutation.isPending
-                      ? "Uploading..."
-                      : "Save Document"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => setIsUploadOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={uploadMutation.isPending}>
+                  {uploadMutation.isPending ? "Uploading..." : "Save Document"}
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </div>

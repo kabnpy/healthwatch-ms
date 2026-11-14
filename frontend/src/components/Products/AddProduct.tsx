@@ -39,12 +39,14 @@ export const AddProduct = ({ fixedInsurerId }: AddProductProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="size-4" />
-          Add Product
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button className="gap-2">
+            <Plus className="size-4" />
+            Add Product
+          </Button>
+        }
+      />
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>

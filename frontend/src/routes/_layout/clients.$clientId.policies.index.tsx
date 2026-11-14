@@ -231,32 +231,32 @@ function PolicyCard({
           variant="ghost"
           size="sm"
           className="h-8 text-xs font-semibold px-2"
-          asChild
-        >
-          <Link
-            to="/clients/$clientId/policies/$policyId"
-            params={{ clientId, policyId: policy.id }}
-          >
-            View Policy
-            <ArrowRight className="ml-1 size-3.5" />
-          </Link>
-        </Button>
+          render={
+            <Link
+              to="/clients/$clientId/policies/$policyId"
+              params={{ clientId, policyId: policy.id }}
+            >
+              View Policy
+              <ArrowRight className="ml-1 size-3.5" />
+            </Link>
+          }
+        />
 
         {isExpiringSoon && (
           <Button
             size="sm"
             variant="outline"
             className="h-8 text-xs gap-1 border-amber-500/30 text-amber-700 hover:bg-amber-500/10"
-            asChild
-          >
-            <Link
-              to="/clients/$clientId/policies/$policyId"
-              params={{ clientId, policyId: policy.id }}
-            >
-              <RefreshCw className="size-3" />
-              Renew
-            </Link>
-          </Button>
+            render={
+              <Link
+                to="/clients/$clientId/policies/$policyId"
+                params={{ clientId, policyId: policy.id }}
+              >
+                <RefreshCw className="size-3" />
+                Renew
+              </Link>
+            }
+          />
         )}
       </CardFooter>
     </Card>

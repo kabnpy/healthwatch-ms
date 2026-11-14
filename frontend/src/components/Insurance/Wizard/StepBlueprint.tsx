@@ -1,15 +1,8 @@
 import { ArrowLeft } from "lucide-react"
 import { useMemo } from "react"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useProducts } from "@/hooks/usePolicies"
 import type { EnhancedProduct } from "@/types/insurance"
@@ -60,51 +53,47 @@ export function StepBlueprint({
   if (!selectedProduct) return null
 
   return (
-    <Form {...(form as any)}>
-      <form onSubmit={form.handleSubmit(onNext)} className="space-y-8">
-        <div className="space-y-1">
-          <h3 className="text-lg font-bold tracking-tight">Asset Details</h3>
-          <p className="text-sm text-muted-foreground">
-            Provide the technical specifications of the vehicle to be insured.
-          </p>
-        </div>
+    <form onSubmit={form.handleSubmit(onNext)} className="space-y-8">
+      <div className="space-y-1">
+        <h3 className="text-lg font-bold tracking-tight">Asset Details</h3>
+        <p className="text-sm text-muted-foreground">
+          Provide the technical specifications of the vehicle to be insured.
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {wizardFields.map((field) => (
-            <FormField
-              key={field.path.join(".")}
-              control={form.control}
-              name={field.path.join(".")}
-              render={({ field: inputField }) => (
-                <FormItem>
-                  <FormLabel className="capitalize">
-                    {field.label.replace(/_/g, " ")}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type={field.type === "number" ? "number" : "text"}
-                      placeholder={`Enter ${field.label.replace(/_/g, " ").toLowerCase()}...`}
-                      {...inputField}
-                      value={inputField.value || ""}
-                      className="h-11"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          ))}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {wizardFields.map((field) => (
+          <Controller
+            key={field.path.join(".")}
+            control={form.control}
+            name={field.path.join(".")}
+            render={({ field: inputField, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel className="capitalize">
+                  {field.label.replace(/_/g, " ")}
+                </FieldLabel>
+                <Input
+                  type={field.type === "number" ? "number" : "text"}
+                  placeholder={`Enter ${field.label.replace(/_/g, " ").toLowerCase()}...`}
+                  {...inputField}
+                  value={inputField.value || ""}
+                  className="h-11"
+                />
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+        ))}
+      </div>
 
-        <div className="flex justify-between pt-4">
-          <Button type="button" variant="outline" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back
-          </Button>
-          <Button type="submit" size="lg" className="px-10">
-            Next: Financials
-          </Button>
-        </div>
-      </form>
-    </Form>
+      <div className="flex justify-between pt-4">
+        <Button type="button" variant="outline" onClick={onBack}>
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back
+        </Button>
+        <Button type="submit" size="lg" className="px-10">
+          Next: Financials
+        </Button>
+      </div>
+    </form>
   )
 }

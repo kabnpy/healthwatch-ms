@@ -362,14 +362,14 @@ function AgencyDashboard() {
               <Button
                 variant="ghost"
                 size="sm"
-                asChild
                 className="text-xs whitespace-nowrap"
-              >
-                <Link to="/renewals">
-                  All Renewals
-                  <ArrowRight className="ml-1 size-3.5" />
-                </Link>
-              </Button>
+                render={
+                  <Link to="/renewals">
+                    All Renewals
+                    <ArrowRight className="ml-1 size-3.5" />
+                  </Link>
+                }
+              />
             </CardHeader>
             <CardContent className="p-0 divide-y">
               {triage.expiring30.slice(0, 6).map(({ policy, daysLeft }) => {
@@ -421,19 +421,19 @@ function AgencyDashboard() {
                       size="sm"
                       variant="outline"
                       className="h-8 gap-1 shrink-0 whitespace-nowrap"
-                      asChild
-                    >
-                      <Link
-                        to="/clients/$clientId/policies/$policyId"
-                        params={{
-                          clientId: policy.client_id,
-                          policyId: policy.id,
-                        }}
-                      >
-                        Review Policy
-                        <ArrowRight className="size-3" />
-                      </Link>
-                    </Button>
+                      render={
+                        <Link
+                          to="/clients/$clientId/policies/$policyId"
+                          params={{
+                            clientId: policy.client_id,
+                            policyId: policy.id,
+                          }}
+                        >
+                          Review Policy
+                          <ArrowRight className="size-3" />
+                        </Link>
+                      }
+                    />
                   </div>
                 )
               })}
@@ -464,14 +464,14 @@ function AgencyDashboard() {
             <Button
               variant="ghost"
               size="sm"
-              asChild
               className="text-xs whitespace-nowrap"
-            >
-              <Link to="/renewals">
-                View All Renewals
-                <ArrowRight className="ml-1 size-3.5" />
-              </Link>
-            </Button>
+              render={
+                <Link to="/renewals">
+                  View All Renewals
+                  <ArrowRight className="ml-1 size-3.5" />
+                </Link>
+              }
+            />
           </CardHeader>
           <CardContent className="p-0 divide-y">
             {inFlightRenewals.length === 0 ? (

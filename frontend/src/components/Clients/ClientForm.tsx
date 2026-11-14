@@ -1,17 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Trash2 } from "lucide-react"
-import { useFieldArray, useForm } from "react-hook-form"
+import { Controller, useFieldArray, useForm } from "react-hook-form"
 import { z } from "zod"
 import type { ClientCreate, ClientPublic, ClientUpdate } from "@/client"
 import { Button } from "@/components/ui/button"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import {
@@ -94,258 +87,259 @@ export const ClientForm = ({
   }
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(handleFormSubmit)}
-        className="space-y-4"
-      >
-        <FormField
+    <form
+      onSubmit={form.handleSubmit(handleFormSubmit)}
+      className="space-y-4"
+    >
+      <Controller
+        control={form.control}
+        name="client_type"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel>Client Type</FieldLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <SelectTrigger aria-invalid={fieldState.invalid}>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Individual">Individual</SelectItem>
+                <SelectItem value="Corporate">Corporate</SelectItem>
+              </SelectContent>
+            </Select>
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        )}
+      />
+
+      <Controller
+        control={form.control}
+        name="kra_pin"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel>KRA PIN</FieldLabel>
+            <Input
+              placeholder="A00..."
+              aria-invalid={fieldState.invalid}
+              {...field}
+            />
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        )}
+      />
+
+      <Controller
+        control={form.control}
+        name="name"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel>Client Name</FieldLabel>
+            <Input
+              placeholder="Full Name or Company Name"
+              aria-invalid={fieldState.invalid}
+              {...field}
+            />
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        )}
+      />
+
+      <Controller
+        control={form.control}
+        name="email"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel>Email</FieldLabel>
+            <Input
+              type="email"
+              placeholder="client@example.com"
+              aria-invalid={fieldState.invalid}
+              {...field}
+            />
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        )}
+      />
+
+      <Controller
+        control={form.control}
+        name="phone"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel>Phone Number</FieldLabel>
+            <Input
+              placeholder="07..."
+              aria-invalid={fieldState.invalid}
+              {...field}
+            />
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        )}
+      />
+
+      <Controller
+        control={form.control}
+        name="physical_address"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel>Physical Address</FieldLabel>
+            <Input
+              placeholder="Building, Street, Area"
+              aria-invalid={fieldState.invalid}
+              {...field}
+            />
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        )}
+      />
+
+      <div className="grid grid-cols-3 gap-4 border-t pt-4">
+        <Controller
           control={form.control}
-          name="client_type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Client Type</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="Individual">Individual</SelectItem>
-                  <SelectItem value="Corporate">Corporate</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
+          name="postal_number"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel>P.O. Box</FieldLabel>
+              <Input
+                placeholder="12345"
+                aria-invalid={fieldState.invalid}
+                {...field}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
         />
-
-        <FormField
+        <Controller
           control={form.control}
-          name="kra_pin"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>KRA PIN</FormLabel>
-              <FormControl>
-                <Input placeholder="A00..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          name="postal_code"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel>Postal Code</FieldLabel>
+              <Input
+                placeholder="00100"
+                aria-invalid={fieldState.invalid}
+                {...field}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
         />
-
-        <FormField
+        <Controller
           control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Client Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Full Name or Company Name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          name="town"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel>Town</FieldLabel>
+              <Input
+                placeholder="Nairobi"
+                aria-invalid={fieldState.invalid}
+                {...field}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
         />
+      </div>
 
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  type="email"
-                  placeholder="client@example.com"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phone Number</FormLabel>
-              <FormControl>
-                <Input placeholder="07..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="physical_address"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Physical Address</FormLabel>
-              <FormControl>
-                <Input placeholder="Building, Street, Area" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-3 gap-4 border-t pt-4">
-          <FormField
-            control={form.control}
-            name="postal_number"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>P.O. Box</FormLabel>
-                <FormControl>
-                  <Input placeholder="12345" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="postal_code"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Postal Code</FormLabel>
-                <FormControl>
-                  <Input placeholder="00100" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="town"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Town</FormLabel>
-                <FormControl>
-                  <Input placeholder="Nairobi" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <div className="space-y-4 pt-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+            Client Contacts
+          </h3>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() =>
+              append({ name: "", role: "", phone: "", email: "" })
+            }
+          >
+            <Plus className="size-4" />
+            Add Contact
+          </Button>
         </div>
+        <Separator />
 
-        <div className="space-y-4 pt-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-              Client Contacts
-            </h3>
+        {fields.map((field, index) => (
+          <div
+            key={field.id}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10 relative group"
+          >
             <Button
               type="button"
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() =>
-                append({ name: "", role: "", phone: "", email: "" })
-              }
+              variant="ghost"
+              size="icon"
+              aria-label="Remove contact"
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-destructive"
+              onClick={() => remove(index)}
             >
-              <Plus className="size-4" />
-              Add Contact
+              <Trash2 className="size-4" />
             </Button>
+
+            <Controller
+              control={form.control}
+              name={`contacts.${index}.name`}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Contact Name</FieldLabel>
+                  <Input aria-invalid={fieldState.invalid} {...field} />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+            <Controller
+              control={form.control}
+              name={`contacts.${index}.role`}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Role (e.g. Accountant)</FieldLabel>
+                  <Input aria-invalid={fieldState.invalid} {...field} />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+            <Controller
+              control={form.control}
+              name={`contacts.${index}.phone`}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Phone</FieldLabel>
+                  <Input aria-invalid={fieldState.invalid} {...field} />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+            <Controller
+              control={form.control}
+              name={`contacts.${index}.email`}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Email</FieldLabel>
+                  <Input aria-invalid={fieldState.invalid} {...field} />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
           </div>
-          <Separator />
+        ))}
 
-          {fields.map((field, index) => (
-            <div
-              key={field.id}
-              className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10 relative group"
-            >
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="Remove contact"
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-destructive"
-                onClick={() => remove(index)}
-              >
-                <Trash2 className="size-4" />
-              </Button>
+        {fields.length === 0 && (
+          <p className="text-center text-xs text-muted-foreground italic py-4">
+            No additional contacts added.
+          </p>
+        )}
+      </div>
 
-              <FormField
-                control={form.control}
-                name={`contacts.${index}.name`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contact Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name={`contacts.${index}.role`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role (e.g. Accountant)</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name={`contacts.${index}.phone`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name={`contacts.${index}.email`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          ))}
-
-          {fields.length === 0 && (
-            <p className="text-center text-xs text-muted-foreground italic py-4">
-              No additional contacts added.
-            </p>
-          )}
-        </div>
-
-        <div className="flex justify-end gap-4 pt-4">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-          )}
-          <LoadingButton type="submit" loading={isLoading}>
-            {submitLabel}
-          </LoadingButton>
-        </div>
-      </form>
-    </Form>
+      <div className="flex justify-end gap-4 pt-4">
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+        <LoadingButton type="submit" loading={isLoading}>
+          {submitLabel}
+        </LoadingButton>
+      </div>
+    </form>
   )
 }

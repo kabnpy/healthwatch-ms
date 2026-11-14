@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus } from "lucide-react"
 import { useState } from "react"
-import { type SubmitHandler, useForm } from "react-hook-form"
+import { Controller, type SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 
 import type { ApiError, PolicyStatus } from "@/client"
@@ -14,14 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import {
@@ -98,12 +91,14 @@ export const AddPolicy = ({ clientId }: AddPolicyProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="gap-2">
-          <Plus className="size-4" />
-          Add Policy
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button size="sm" className="gap-2">
+            <Plus className="size-4" />
+            Add Policy
+          </Button>
+        }
+      />
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Policy</DialogTitle>
@@ -111,111 +106,137 @@ export const AddPolicy = ({ clientId }: AddPolicyProps) => {
             Create a new insurance policy for this client.
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="policy_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Policy Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="P/001/..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="product_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Product</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            isLoadingProducts
-                              ? "Loading products..."
-                              : "Select a product"
-                          }
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {productsData?.data.map((product) => (
-                        <SelectItem key={product.id} value={product.id}>
-                          {product.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Expired">Expired</SelectItem>
-                      <SelectItem value="Cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4 border-t pt-4">
-              <FormField
-                control={form.control}
-                name="coverage_start"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <Controller
+            control={form.control}
+            name="policy_number"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Policy Number</FieldLabel>
+                <Input
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="P/001/..."
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
                 )}
-              />
-              <FormField
-                control={form.control}
-                name="coverage_end"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name="product_id"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Product</FieldLabel>
+                <Select
+                  name={field.name}
+                  value={field.value}
+                  onValueChange={(val) => {
+                    if (val) field.onChange(val)
+                  }}
+                >
+                  <SelectTrigger
+                    id={field.name}
+                    aria-invalid={fieldState.invalid}
+                  >
+                    <SelectValue
+                      placeholder={
+                        isLoadingProducts
+                          ? "Loading products..."
+                          : "Select a product"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {productsData?.data.map((product) => (
+                      <SelectItem key={product.id} value={product.id}>
+                        {product.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
                 )}
-              />
-            </div>
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name="status"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Status</FieldLabel>
+                <Select
+                  name={field.name}
+                  value={field.value}
+                  onValueChange={(val) => {
+                    if (val) field.onChange(val)
+                  }}
+                >
+                  <SelectTrigger
+                    id={field.name}
+                    aria-invalid={fieldState.invalid}
+                  >
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Expired">Expired</SelectItem>
+                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+
+          <div className="grid grid-cols-2 gap-4 border-t pt-4">
+            <Controller
+              control={form.control}
+              name="coverage_start"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={field.name}>Start Date</FieldLabel>
+                  <Input
+                    id={field.name}
+                    aria-invalid={fieldState.invalid}
+                    type="date"
+                    {...field}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="coverage_end"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={field.name}>End Date</FieldLabel>
+                  <Input
+                    id={field.name}
+                    aria-invalid={fieldState.invalid}
+                    type="date"
+                    {...field}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+          </div>
 
             <div className="flex justify-end gap-4 pt-4">
               <Button
@@ -234,7 +255,6 @@ export const AddPolicy = ({ clientId }: AddPolicyProps) => {
               </LoadingButton>
             </div>
           </form>
-        </Form>
       </DialogContent>
     </Dialog>
   )

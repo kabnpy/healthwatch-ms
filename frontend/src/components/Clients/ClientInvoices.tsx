@@ -400,6 +400,7 @@ export function ClientInvoices({ clientId }: ClientInvoicesProps) {
                 <Select
                   value={targetInvoiceId}
                   onValueChange={(val) => {
+                    if (!val) return
                     setTargetInvoiceId(val)
                     const inv = openInvoices.find((i) => i.id === val)
                     if (inv && selectedRecordForAllocation) {

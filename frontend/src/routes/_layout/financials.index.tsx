@@ -403,7 +403,9 @@ function FinancialsHub() {
               <div className="w-full sm:w-80">
                 <Select
                   value={statementClientId}
-                  onValueChange={(val) => setSelectedStatementClientId(val)}
+                  onValueChange={(val) => {
+                    if (val) setSelectedStatementClientId(val)
+                  }}
                 >
                   <SelectTrigger className="h-9 text-xs bg-background">
                     <SelectValue placeholder="Choose a client..." />

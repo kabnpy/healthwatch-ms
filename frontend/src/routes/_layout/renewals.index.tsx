@@ -285,7 +285,9 @@ function RenewalsDeskPage() {
       }
     }
 
-    const inWorkflowPolicyIds = new Set(inWorkflow.map((item) => item.policy_id))
+    const inWorkflowPolicyIds = new Set(
+      inWorkflow.map((item) => item.policy_id),
+    )
     for (const renewal of renewalsData?.data ?? []) {
       if (
         !isTerminalStatus(renewal.status) &&

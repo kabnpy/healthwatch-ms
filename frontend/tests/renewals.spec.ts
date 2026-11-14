@@ -31,7 +31,9 @@ test.describe("Policy Renewals Desk (/renewals)", () => {
     await expect(page.getByText("Sum Insured")).toHaveCount(0)
 
     // If there are rows in the active tab, verify action button is visible and opens RenewalTransitionSheet
-    const actionButtons = page.locator("table tbody tr button:has-text('Start Renewal'), table tbody tr button:has-text('Log Insurer Terms'), table tbody tr button:has-text('Prepare Invitation'), table tbody tr button:has-text('Follow Up'), table tbody tr button:has-text('Revise Terms'), table tbody tr button:has-text('Complete Renewal')")
+    const actionButtons = page.locator(
+      "table tbody tr button:has-text('Start Renewal'), table tbody tr button:has-text('Log Insurer Terms'), table tbody tr button:has-text('Prepare Invitation'), table tbody tr button:has-text('Follow Up'), table tbody tr button:has-text('Revise Terms'), table tbody tr button:has-text('Complete Renewal')",
+    )
     const count = await actionButtons.count()
     if (count > 0) {
       await expect(actionButtons.first()).toBeVisible()

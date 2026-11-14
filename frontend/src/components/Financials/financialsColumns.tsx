@@ -240,16 +240,16 @@ export function getInvoiceColumns(opts: {
           <Button
             size="sm"
             variant="outline"
-            asChild
             className="h-7 text-[11px] px-2.5"
-          >
-            <Link
-              to="/clients/$clientId/invoices"
-              params={{ clientId: row.original.client_id }}
-            >
-              View File &rarr;
-            </Link>
-          </Button>
+            render={
+              <Link
+                to="/clients/$clientId/invoices"
+                params={{ clientId: row.original.client_id }}
+              >
+                View File &rarr;
+              </Link>
+            }
+          />
         </div>
       ),
     },

@@ -1,19 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { UsersService, type UserUpdateMe } from "@/client"
 import { Button } from "@/components/ui/button"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useAuth from "@/hooks/useAuth"
@@ -83,26 +76,30 @@ const UserInformation = () => {
   return (
     <div className="max-w-md">
       <h3 className="text-lg font-semibold py-4">User Information</h3>
-      <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col gap-4"
         >
-          <FormField
+          <Controller
             control={form.control}
             name="full_name"
-            render={({ field }) =>
+            render={({ field, fieldState }) =>
               editMode ? (
-                <FormItem>
-                  <FormLabel>Full name</FormLabel>
-                  <FormControl>
-                    <Input type="text" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={field.name}>Full name</FieldLabel>
+                  <Input
+                    id={field.name}
+                    aria-invalid={fieldState.invalid}
+                    type="text"
+                    {...field}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               ) : (
-                <FormItem>
-                  <FormLabel>Full name</FormLabel>
+                <Field>
+                  <FieldLabel>Full name</FieldLabel>
                   <p
                     className={cn(
                       "py-2 truncate max-w-sm",
@@ -111,28 +108,33 @@ const UserInformation = () => {
                   >
                     {field.value || "N/A"}
                   </p>
-                </FormItem>
+                </Field>
               )
             }
           />
 
-          <FormField
+          <Controller
             control={form.control}
             name="email"
-            render={({ field }) =>
+            render={({ field, fieldState }) =>
               editMode ? (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                  <Input
+                    id={field.name}
+                    aria-invalid={fieldState.invalid}
+                    type="email"
+                    {...field}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               ) : (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
+                <Field>
+                  <FieldLabel>Email</FieldLabel>
                   <p className="py-2 truncate max-w-sm">{field.value}</p>
-                </FormItem>
+                </Field>
               )
             }
           />
@@ -163,7 +165,6 @@ const UserInformation = () => {
             )}
           </div>
         </form>
-      </Form>
     </div>
   )
 }

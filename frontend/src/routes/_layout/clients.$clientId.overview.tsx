@@ -162,26 +162,36 @@ function ClientOverview() {
 
             {/* Quick Actions */}
             <div className="flex items-center gap-2 shrink-0 border-t lg:border-t-0 pt-3 lg:pt-0">
-              <Button size="sm" variant="outline" asChild className="text-xs">
-                <Link
-                  to="/clients/$clientId/policies"
-                  params={{ clientId }}
-                  className="gap-1.5"
-                >
-                  <ShieldCheck className="size-3.5" />
-                  View All Policies
-                </Link>
-              </Button>
-              <Button size="sm" variant="outline" asChild className="text-xs">
-                <Link
-                  to="/clients/$clientId/invoices"
-                  params={{ clientId }}
-                  className="gap-1.5"
-                >
-                  <Receipt className="size-3.5" />
-                  View Ledger
-                </Link>
-              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                render={
+                  <Link
+                    to="/clients/$clientId/policies"
+                    params={{ clientId }}
+                    className="gap-1.5"
+                  >
+                    <ShieldCheck className="size-3.5" />
+                    View All Policies
+                  </Link>
+                }
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                render={
+                  <Link
+                    to="/clients/$clientId/invoices"
+                    params={{ clientId }}
+                    className="gap-1.5"
+                  >
+                    <Receipt className="size-3.5" />
+                    View Ledger
+                  </Link>
+                }
+              />
             </div>
           </div>
 
@@ -332,12 +342,17 @@ function ClientOverview() {
                 Client Policies Portfolio ({policies.length})
               </h3>
             </div>
-            <Button variant="ghost" size="sm" asChild className="text-xs">
-              <Link to="/clients/$clientId/policies" params={{ clientId }}>
-                Manage All
-                <ArrowRight className="ml-1 size-3.5" />
-              </Link>
-            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs"
+              render={
+                <Link to="/clients/$clientId/policies" params={{ clientId }}>
+                  Manage All
+                  <ArrowRight className="ml-1 size-3.5" />
+                </Link>
+              }
+            />
           </div>
 
           <Card>
@@ -411,16 +426,16 @@ function ClientOverview() {
                         size="sm"
                         variant="outline"
                         className="h-8 gap-1 shrink-0 text-xs"
-                        asChild
-                      >
-                        <Link
-                          to="/clients/$clientId/policies/$policyId"
-                          params={{ clientId, policyId: pol.id }}
-                        >
-                          View Policy
-                          <ArrowRight className="size-3" />
-                        </Link>
-                      </Button>
+                        render={
+                          <Link
+                            to="/clients/$clientId/policies/$policyId"
+                            params={{ clientId, policyId: pol.id }}
+                          >
+                            View Policy
+                            <ArrowRight className="size-3" />
+                          </Link>
+                        }
+                      />
                     </div>
                   )
                 })

@@ -662,18 +662,18 @@ export function RenewalTransitionSheet({
                         variant="outline"
                         size="sm"
                         className="h-9 justify-start text-xs gap-2 bg-background hover:bg-muted/80 cursor-pointer"
-                        asChild
-                      >
-                        <Link
-                          to="/clients/$clientId/invoices"
-                          params={{ clientId: policy.client_id }}
-                        >
-                          <Receipt className="size-3.5 text-primary" />
-                          <span className="truncate">
-                            Client Billing Invoice
-                          </span>
-                        </Link>
-                      </Button>
+                        render={
+                          <Link
+                            to="/clients/$clientId/invoices"
+                            params={{ clientId: policy.client_id }}
+                          >
+                            <Receipt className="size-3.5 text-primary" />
+                            <span className="truncate">
+                              Client Billing Invoice
+                            </span>
+                          </Link>
+                        }
+                      />
                     </div>
 
                     {/* Copy Client Renewal Notice */}
@@ -703,20 +703,20 @@ export function RenewalTransitionSheet({
           <Button
             variant="ghost"
             size="sm"
-            asChild
             className="gap-1.5 text-xs text-muted-foreground"
-          >
-            <Link
-              to="/clients/$clientId/policies/$policyId"
-              params={{
-                clientId: policy.client_id,
-                policyId: policy.id,
-              }}
-            >
-              View Policy
-              <ExternalLink className="size-3" />
-            </Link>
-          </Button>
+            render={
+              <Link
+                to="/clients/$clientId/policies/$policyId"
+                params={{
+                  clientId: policy.client_id,
+                  policyId: policy.id,
+                }}
+              >
+                View Policy
+                <ExternalLink className="size-3" />
+              </Link>
+            }
+          />
           <Button
             variant="outline"
             size="sm"

@@ -6,19 +6,12 @@ import {
   redirect,
   useNavigate,
 } from "@tanstack/react-router"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { LoginService } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import { isLoggedIn } from "@/hooks/useAuth"
@@ -98,51 +91,54 @@ function ResetPassword() {
 
   return (
     <AuthLayout>
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-6"
-        >
-          <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">Reset Password</h1>
-          </div>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col gap-6"
+      >
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h1 className="text-2xl font-bold">Reset Password</h1>
+        </div>
 
-          <div className="grid gap-4">
-            <FormField
-              control={form.control}
-              name="new_password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>New Password</FormLabel>
-                  <FormControl>
-                    <PasswordInput
-                      data-testid="new-password-input"
-                      placeholder="New Password"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <div className="grid gap-4">
+          <Controller
+            control={form.control}
+            name="new_password"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>New Password</FieldLabel>
+                <PasswordInput
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  data-testid="new-password-input"
+                  placeholder="New Password"
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="confirm_password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <PasswordInput
-                      data-testid="confirm-password-input"
-                      placeholder="Confirm Password"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <Controller
+            control={form.control}
+            name="confirm_password"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Confirm Password</FieldLabel>
+                <PasswordInput
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  data-testid="confirm-password-input"
+                  placeholder="Confirm Password"
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
 
             <LoadingButton
               type="submit"
@@ -160,7 +156,6 @@ function ResetPassword() {
             </RouterLink>
           </div>
         </form>
-      </Form>
     </AuthLayout>
   )
 }

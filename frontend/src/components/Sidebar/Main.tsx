@@ -47,13 +47,13 @@ export function Main({ items }: MainProps) {
                   tooltip={item.title}
                   isActive={isActive}
                   className="font-medium"
-                  asChild
-                >
-                  <RouterLink to={item.path} onClick={handleMenuClick}>
-                    <item.icon className="size-4" />
-                    <span>{item.title}</span>
-                  </RouterLink>
-                </SidebarMenuButton>
+                  render={
+                    <RouterLink to={item.path} onClick={handleMenuClick}>
+                      <item.icon className="size-4" />
+                      <span>{item.title}</span>
+                    </RouterLink>
+                  }
+                />
               </SidebarMenuItem>
             )
           })}

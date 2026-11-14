@@ -184,6 +184,7 @@ export function AllocatePaymentDialog({
                 <Select
                   value={targetInvoiceId}
                   onValueChange={(val) => {
+                    if (!val) return
                     setTargetInvoiceId(val)
                     const inv = availableInvoices.find((i) => i.id === val)
                     if (inv) {

@@ -1,14 +1,11 @@
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -38,89 +35,81 @@ export function StepAsset({ defaultValues, onNext }: StepAssetProps) {
   const policyNumber = form.watch("policy_number")
 
   return (
-    <Form {...(form as any)}>
-      <form onSubmit={form.handleSubmit(onNext)} className="space-y-8">
-        <div className="space-y-1">
-          <h3 className="text-lg font-bold tracking-tight">Policy Identity</h3>
-          <p className="text-sm text-muted-foreground">
-            Identify the insurance product and record the official policy
-            number.
-          </p>
-        </div>
+    <form onSubmit={form.handleSubmit(onNext)} className="space-y-8">
+      <div className="space-y-1">
+        <h3 className="text-lg font-bold tracking-tight">Policy Identity</h3>
+        <p className="text-sm text-muted-foreground">
+          Identify the insurance product and record the official policy number.
+        </p>
+      </div>
 
-        <div className="grid gap-6">
-          <FormField
-            control={form.control}
-            name="product_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Insurance Product</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger className="h-12 text-base">
-                      <SelectValue placeholder="Select a product..." />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {productsData?.data
-                      .filter((p) =>
-                        p.class_of_insurance
-                          .toLowerCase()
-                          .includes("motor private"),
-                      )
-                      .map((product) => (
-                        <SelectItem key={product.id} value={product.id}>
-                          {product.name} ({product.class_of_insurance})
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  The baseline coverage rules will be derived from this
-                  selection.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <div className="grid gap-6">
+        <Controller
+          control={form.control}
+          name="product_id"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel>Insurance Product</FieldLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+              >
+                <SelectTrigger className="h-12 text-base">
+                  <SelectValue placeholder="Select a product..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {productsData?.data
+                    .filter((p) =>
+                      p.class_of_insurance
+                        .toLowerCase()
+                        .includes("motor private"),
+                    )
+                    .map((product) => (
+                      <SelectItem key={product.id} value={product.id}>
+                        {product.name} ({product.class_of_insurance})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <FieldDescription>
+                The baseline coverage rules will be derived from this selection.
+              </FieldDescription>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
 
-          <FormField
-            control={form.control}
-            name="policy_number"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Policy Number</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="e.g. POL/2026/001"
-                    className="h-12 text-base"
-                  />
-                </FormControl>
-                <FormDescription>
-                  Enter the unique reference number provided by the insurance
-                  company.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <Controller
+          control={form.control}
+          name="policy_number"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel>Policy Number</FieldLabel>
+              <Input
+                {...field}
+                placeholder="e.g. POL/2026/001"
+                className="h-12 text-base"
+              />
+              <FieldDescription>
+                Enter the unique reference number provided by the insurance
+                company.
+              </FieldDescription>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+      </div>
 
-        <div className="flex justify-end pt-4">
-          <Button
-            type="submit"
-            disabled={!selectedProductId || !policyNumber}
-            size="lg"
-            className="px-10"
-          >
-            Next: Asset Details
-          </Button>
-        </div>
-      </form>
-    </Form>
+      <div className="flex justify-end pt-4">
+        <Button
+          type="submit"
+          disabled={!selectedProductId || !policyNumber}
+          size="lg"
+          className="px-10"
+        >
+          Next: Asset Details
+        </Button>
+      </div>
+    </form>
   )
 }

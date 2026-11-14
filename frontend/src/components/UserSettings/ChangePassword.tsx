@@ -1,17 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { type UpdatePassword, UsersService } from "@/client"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import useCustomToast from "@/hooks/useCustomToast"
@@ -68,65 +61,67 @@ const ChangePassword = () => {
   return (
     <div className="max-w-md">
       <h3 className="text-lg font-semibold py-4">Change Password</h3>
-      <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col gap-4"
         >
-          <FormField
+          <Controller
             control={form.control}
             name="current_password"
             render={({ field, fieldState }) => (
-              <FormItem>
-                <FormLabel>Current Password</FormLabel>
-                <FormControl>
-                  <PasswordInput
-                    data-testid="current-password-input"
-                    placeholder="••••••••"
-                    aria-invalid={fieldState.invalid}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Current Password</FieldLabel>
+                <PasswordInput
+                  id={field.name}
+                  data-testid="current-password-input"
+                  placeholder="••••••••"
+                  aria-invalid={fieldState.invalid}
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
             )}
           />
 
-          <FormField
+          <Controller
             control={form.control}
             name="new_password"
             render={({ field, fieldState }) => (
-              <FormItem>
-                <FormLabel>New Password</FormLabel>
-                <FormControl>
-                  <PasswordInput
-                    data-testid="new-password-input"
-                    placeholder="••••••••"
-                    aria-invalid={fieldState.invalid}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>New Password</FieldLabel>
+                <PasswordInput
+                  id={field.name}
+                  data-testid="new-password-input"
+                  placeholder="••••••••"
+                  aria-invalid={fieldState.invalid}
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
             )}
           />
 
-          <FormField
+          <Controller
             control={form.control}
             name="confirm_password"
             render={({ field, fieldState }) => (
-              <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
-                <FormControl>
-                  <PasswordInput
-                    data-testid="confirm-password-input"
-                    placeholder="••••••••"
-                    aria-invalid={fieldState.invalid}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Confirm Password</FieldLabel>
+                <PasswordInput
+                  id={field.name}
+                  data-testid="confirm-password-input"
+                  placeholder="••••••••"
+                  aria-invalid={fieldState.invalid}
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
             )}
           />
 
@@ -138,7 +133,6 @@ const ChangePassword = () => {
             Update Password
           </LoadingButton>
         </form>
-      </Form>
     </div>
   )
 }

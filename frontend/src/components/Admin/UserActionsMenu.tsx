@@ -26,11 +26,13 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="User actions">
-          <EllipsisVertical />
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" size="icon" aria-label="User actions">
+            <EllipsisVertical />
+          </Button>
+        }
+      />
       <DropdownMenuContent align="end">
         <EditUser user={user} onSuccess={() => setOpen(false)} />
         <DeleteUser id={user.id} onSuccess={() => setOpen(false)} />

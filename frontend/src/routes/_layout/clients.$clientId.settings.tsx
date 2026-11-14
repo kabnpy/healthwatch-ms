@@ -110,12 +110,14 @@ function ClientSettings() {
             </p>
           </div>
           <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="gap-2">
-                <Trash2 className="size-4" />
-                Delete Client
-              </Button>
-            </AlertDialogTrigger>
+            <AlertDialogTrigger
+              render={
+                <Button variant="destructive" className="gap-2">
+                  <Trash2 className="size-4" />
+                  Delete Client
+                </Button>
+              }
+            />
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

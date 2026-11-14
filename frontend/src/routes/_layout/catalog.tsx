@@ -30,12 +30,14 @@ function CatalogLayout() {
 
       <Tabs value={activeTab} className="w-full">
         <TabsList>
-          <TabsTrigger value="insurers" asChild>
-            <Link to="/catalog/insurers">Insurers</Link>
-          </TabsTrigger>
-          <TabsTrigger value="products" asChild>
-            <Link to="/catalog/products">Products</Link>
-          </TabsTrigger>
+          <TabsTrigger
+            value="insurers"
+            render={<Link to="/catalog/insurers">Insurers</Link>}
+          />
+          <TabsTrigger
+            value="products"
+            render={<Link to="/catalog/products">Products</Link>}
+          />
         </TabsList>
         <div className="mt-4">
           <Outlet />
