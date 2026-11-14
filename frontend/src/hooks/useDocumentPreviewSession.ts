@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import type { ClientPublic, DocumentJobResourceType } from "@/client"
-import { useDocumentPdfExport } from "@/hooks/useDocumentPdfExport"
+import { useDocumentPdfExport } from "@/hooks/useDocumentJobs"
 import { useCreateRiskNoteRevision } from "@/hooks/usePolicies"
 import type { EnhancedPolicy, EnhancedRiskNote } from "@/types/insurance"
 import {
