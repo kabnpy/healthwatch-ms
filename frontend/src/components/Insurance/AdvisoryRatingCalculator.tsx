@@ -1,7 +1,7 @@
 import { Calculator, Check, CheckCircle2, Copy } from "lucide-react"
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
-import type { QuoteResponse } from "@/client"
+import type { CalculationQuoteResponse } from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -32,7 +32,7 @@ interface AdvisoryRatingCalculatorProps {
   productId?: string
   initialClass?: string
   initialSumInsured?: number
-  onApplyCalculation?: (result: QuoteResponse) => void
+  onApplyCalculation?: (result: CalculationQuoteResponse) => void
 }
 
 export function AdvisoryRatingCalculator({
@@ -151,30 +151,21 @@ export function AdvisoryRatingCalculator({
 
   const { data: quoteResponse, isLoading: isQuoteLoading } = useQuoteQuery(
     effectiveProductId
-      ? { product_id: effectiveProductId, risk_details: riskDetails }
+      ? { product_id: effectiveProductId, inputs: riskDetails }
       : null,
   )
 
-  const breakdown = quoteResponse?.breakdown as
-    | Record<string, unknown>
-    | undefined
-  const calcDetail = (quoteResponse?.calculation_detail ?? {}) as Record<
-    string,
-    unknown
-  >
-  const provenance = (quoteResponse?.rule_provenance ?? {}) as Record<
-    string,
-    unknown
-  >
+  const calcDetail = quoteResponse?.calculation_detail ?? {}
+  const provenance = quoteResponse?.rule_provenance ?? {}
 
   const basePremium = Number(
-    calcDetail.base_premium ?? breakdown?.basic_premium ?? 0,
+    calcDetail.base_premium ?? quoteResponse?.basic_premium ?? 0,
   )
-  const netPremium = Number(breakdown?.net_premium ?? 0)
-  const itl = Number(breakdown?.itl ?? 0)
-  const phcf = Number(breakdown?.phcf ?? 0)
-  const stampDuty = Number(breakdown?.stamp_duty ?? 0)
-  const totalAmount = Number(breakdown?.total_amount ?? 0)
+  const netPremium = Number(quoteResponse?.net_premium ?? 0)
+  const itl = Number(quoteResponse?.training_levy ?? 0)
+  const phcf = Number(quoteResponse?.phcf ?? 0)
+  const stampDuty = Number(quoteResponse?.stamp_duty ?? 0)
+  const totalAmount = Number(quoteResponse?.total_amount ?? 0)
   const appliedRate =
     calcDetail.applied_rate !== undefined
       ? Number(calcDetail.applied_rate)

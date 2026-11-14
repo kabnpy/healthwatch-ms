@@ -1,7 +1,6 @@
 import { ArrowLeft } from "lucide-react"
 import type React from "react"
 import { useMemo } from "react"
-import type { MotorFinancialBreakdown } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LoadingButton } from "@/components/ui/loading-button"
@@ -37,7 +36,7 @@ export function StepReview({
     if (!state.product_id || !isMotorPrivate) return null
     return {
       product_id: state.product_id,
-      risk_details: {
+      inputs: {
         vehicle: {
           sum_insured: state.sum_insured,
         },
@@ -51,12 +50,15 @@ export function StepReview({
     }
   }, [state.product_id, state.sum_insured, state.extensions, isMotorPrivate])
 
-  const { data: quoteData } = useQuoteQuery(quoteRequest as any)
+  const { data: quoteData } = useQuoteQuery(quoteRequest)
 
-  const breakdown =
-    isMotorPrivate && quoteData?.breakdown
-      ? (quoteData.breakdown as MotorFinancialBreakdown)
-      : null
+  const breakdown = isMotorPrivate && quoteData ? quoteData : null
+  const benefits = Array.isArray(quoteData?.calculation_detail?.benefits)
+    ? (quoteData.calculation_detail.benefits as Array<{
+        name: string
+        amount: number | string
+      }>)
+    : []
 
   const isPA = selectedProduct?.class_of_insurance
     ?.toLowerCase()
@@ -169,7 +171,7 @@ export function StepReview({
                     })}
                   </span>
                 </div>
-                {breakdown.benefits?.map((benefit) => (
+                {benefits.map((benefit) => (
                   <div
                     key={benefit.name}
                     className="flex justify-between text-[10px] pl-4 italic"

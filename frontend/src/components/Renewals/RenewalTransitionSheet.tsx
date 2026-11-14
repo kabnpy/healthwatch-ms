@@ -21,8 +21,8 @@ import {
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import type {
+  CalculationQuoteResponse,
   PolicyPublic,
-  QuoteResponse,
   RenewalPublic,
   RenewalStatus,
 } from "@/client"
@@ -133,14 +133,13 @@ export function RenewalTransitionSheet({
   const [notes, setNotes] = useState<string>("")
   const [ratingCalcOpen, setRatingCalcOpen] = useState<boolean>(false)
 
-  const handleApplyRating = (result: QuoteResponse) => {
-    const { breakdown } = result
-    const grossTotal = Number(breakdown.total_amount || 0)
-    const netPremium = Number(breakdown.net_premium || 0)
+  const handleApplyRating = (result: CalculationQuoteResponse) => {
+    const grossTotal = Number(result.total_amount || 0)
+    const netPremium = Number(result.net_premium || 0)
     const totalLevies =
-      Number(breakdown.itl || 0) +
-      Number(breakdown.phcf || 0) +
-      Number(breakdown.stamp_duty || 0)
+      Number(result.training_levy || 0) +
+      Number(result.phcf || 0) +
+      Number(result.stamp_duty || 0)
     setProposedPremium(grossTotal)
     setAgreedPremium(grossTotal)
     const breakdownNote = `Advisory rating calculated: Gross KES ${grossTotal.toLocaleString()} (Net KES ${netPremium.toLocaleString()}, Levies KES ${totalLevies.toLocaleString()})`
