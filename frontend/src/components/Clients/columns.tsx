@@ -21,13 +21,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export const columns: ColumnDef<ClientPublic>[] = [
+export type ClientRow = ClientPublic & {
+  activePoliciesCount: number
+}
+
+export const columns: ColumnDef<ClientRow>[] = [
   {
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => (
       <Link
-        to="/clients/$clientId/policies"
+        to="/clients/$clientId/overview"
         params={{ clientId: row.original.id }}
         className="font-medium hover:underline text-primary flex items-center gap-2"
       >
@@ -48,6 +52,15 @@ export const columns: ColumnDef<ClientPublic>[] = [
     header: "KRA PIN",
     cell: ({ row }) => (
       <span className="font-mono text-xs">{row.original.kra_pin}</span>
+    ),
+  },
+  {
+    accessorKey: "activePoliciesCount",
+    header: "Active Policies",
+    cell: ({ row }) => (
+      <span className="tabular-nums font-medium">
+        {row.original.activePoliciesCount}
+      </span>
     ),
   },
   {
@@ -93,7 +106,7 @@ export const columns: ColumnDef<ClientPublic>[] = [
             <DropdownMenuItem
               render={
                 <Link
-                  to="/clients/$clientId/policies"
+                  to="/clients/$clientId/overview"
                   params={{ clientId: client.id }}
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />
