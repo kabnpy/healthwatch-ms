@@ -728,3 +728,157 @@ def test_rate_table_draft_mutability_and_forward_only_status_transitions(
         ).status_code
         == 409
     )
+
+
+def test_calculations_quote_with_product_id_and_rate_table_id_and_medical_exemption(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    from app.models import (
+        Insurer,
+        Product,
+        RateBracket,
+        RateTableStatus,
+        RateTableVersion,
+    )
+
+    insurer = Insurer(name="Quote Seam Insurer")
+    db.add(insurer)
+    db.commit()
+    db.refresh(insurer)
+
+    motor_product = Product(
+        insurer_id=insurer.id,
+        name="Motor Private Comprehensive",
+        class_of_insurance="Motor Private",
+        pricing_rules={
+            "rate": 0.05,
+            "minimum_premium": 30000,
+            "commission_rate": 0.10,
+        },
+    )
+    medical_product = Product(
+        insurer_id=insurer.id,
+        name="Afya Individual Medical",
+        class_of_insurance="Medical Individual",
+        pricing_rules={"base_premium": 20000, "commission_rate": 0.10},
+    )
+    db.add(motor_product)
+    db.add(medical_product)
+    db.commit()
+    db.refresh(motor_product)
+    db.refresh(medical_product)
+
+    rt = RateTableVersion(
+        insurer_id=insurer.id,
+        product_id=motor_product.id,
+        class_of_insurance="Motor Private",
+        pricing_method=PricingMethod.FIXED_TIER,
+        currency="KES",
+        version_number=1,
+        status=RateTableStatus.PUBLISHED,
+        source_reference="Quote Seam Motor 2026",
+    )
+    db.add(rt)
+    db.commit()
+    db.refresh(rt)
+
+    bracket = RateBracket(
+        rate_table_version_id=rt.id,
+        min_value=Decimal("0.00"),
+        max_value=None,
+        rate_percent=Decimal("0.0000"),
+        minimum_premium=Decimal("50000.00"),
+        display_label="Fixed Tier 50k",
+    )
+    db.add(bracket)
+    db.commit()
+
+    med_rt = RateTableVersion(
+        insurer_id=insurer.id,
+        product_id=medical_product.id,
+        class_of_insurance="Medical Individual",
+        pricing_method=PricingMethod.FIXED_TIER,
+        currency="KES",
+        version_number=1,
+        status=RateTableStatus.PUBLISHED,
+        source_reference="Quote Seam Medical 2026",
+    )
+    db.add(med_rt)
+    db.commit()
+    db.refresh(med_rt)
+
+    med_bracket = RateBracket(
+        rate_table_version_id=med_rt.id,
+        min_value=Decimal("0.00"),
+        max_value=None,
+        rate_percent=Decimal("0.0000"),
+        minimum_premium=Decimal("20000.00"),
+        display_label="Medical Fixed 20k",
+    )
+    db.add(med_bracket)
+    db.commit()
+
+    # 1. Quote by product_id (Motor)
+    r_prod = client.post(
+        f"{settings.API_V1_STR}/calculations/quote",
+        headers=superuser_token_headers,
+        json={
+            "product_id": str(motor_product.id),
+            "inputs": {
+                "vehicle": {
+                    "registration_number": "KAA 123A",
+                    "make": "Toyota",
+                    "sum_insured": 1000000,
+                }
+            },
+        },
+    )
+    assert r_prod.status_code == 200, r_prod.json()
+    d_prod = r_prod.json()
+    assert Decimal(str(d_prod["basic_premium"])) == Decimal("50000.00")
+    assert Decimal(str(d_prod["net_premium"])) == Decimal("50000.00")
+    assert Decimal(str(d_prod["training_levy"])) == Decimal("100.00")
+    assert Decimal(str(d_prod["phcf"])) == Decimal("125.00")
+    assert Decimal(str(d_prod["stamp_duty"])) == Decimal("40.00")
+    assert Decimal(str(d_prod["total_amount"])) == Decimal("50265.00")
+    assert "taxes" in d_prod
+    assert "calculation_detail" in d_prod
+    assert "rule_provenance" in d_prod
+    assert "input_snapshot" in d_prod
+
+    # 2. Quote by rate_table_id
+    r_rt = client.post(
+        f"{settings.API_V1_STR}/calculations/quote",
+        headers=superuser_token_headers,
+        json={
+            "rate_table_id": str(rt.id),
+            "inputs": {
+                "vehicle": {
+                    "registration_number": "KAA 123A",
+                    "make": "Toyota",
+                    "sum_insured": 1000000,
+                }
+            },
+        },
+    )
+    assert r_rt.status_code == 200, r_rt.json()
+    d_rt = r_rt.json()
+    assert Decimal(str(d_rt["net_premium"])) == Decimal("50000.00")
+    assert Decimal(str(d_rt["stamp_duty"])) == Decimal("40.00")
+
+    # 3. Quote by product_id (Medical -> stamp_duty exempt)
+    r_med = client.post(
+        f"{settings.API_V1_STR}/calculations/quote",
+        headers=superuser_token_headers,
+        json={
+            "product_id": str(medical_product.id),
+            "inputs": {"principal_age": 30},
+        },
+    )
+    assert r_med.status_code == 200, r_med.json()
+    d_med = r_med.json()
+    assert Decimal(str(d_med["basic_premium"])) == Decimal("20000.00")
+    assert Decimal(str(d_med["stamp_duty"])) == Decimal("0.00")
+    assert Decimal(str(d_med["training_levy"])) == Decimal("40.00")
+    assert Decimal(str(d_med["phcf"])) == Decimal("50.00")
+    assert Decimal(str(d_med["total_amount"])) == Decimal("20090.00")

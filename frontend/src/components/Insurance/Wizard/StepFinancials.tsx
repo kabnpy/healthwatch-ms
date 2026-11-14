@@ -3,7 +3,6 @@ import { ArrowLeft } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import type { MotorFinancialBreakdown } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -120,7 +119,7 @@ export function StepFinancials({
     const timer = setTimeout(() => {
       quoteMutation.mutate({
         product_id: productId,
-        risk_details: {
+        inputs: {
           vehicle: {
             sum_insured: sum_insured,
           },
@@ -150,9 +149,14 @@ export function StepFinancials({
   ])
 
   // 2. authoritative source of truth
-  const breakdown = quoteMutation.data?.breakdown as
-    | MotorFinancialBreakdown
-    | undefined
+  const breakdown = quoteMutation.data
+  const calcDetail = (quoteMutation.data?.calculation_detail ?? {}) as Record<
+    string,
+    unknown
+  >
+  const benefits = Array.isArray(calcDetail.benefits)
+    ? (calcDetail.benefits as Array<{ name: string; amount: number | string }>)
+    : []
 
   // Auto-set rate for Motor Private
   useEffect(() => {
@@ -166,21 +170,21 @@ export function StepFinancials({
         }
       }
 
-      if (breakdown.basic_rate !== undefined) {
+      if (calcDetail.basic_rate !== undefined) {
         form.setValue(
           "financials.basicRate",
-          Number(breakdown.basic_rate) * 100,
+          Number(calcDetail.basic_rate) * 100,
         )
       }
-      if (breakdown.is_high_end !== undefined) {
-        form.setValue("financials.isHighEnd", breakdown.is_high_end)
+      if (calcDetail.is_high_end !== undefined) {
+        form.setValue("financials.isHighEnd", Boolean(calcDetail.is_high_end))
       }
     }
   }, [
     isMotorPrivate,
     breakdown?.net_premium,
-    breakdown?.basic_rate,
-    breakdown?.is_high_end,
+    calcDetail.basic_rate,
+    calcDetail.is_high_end,
     sum_insured,
     financials.rate,
     form.setValue,
@@ -461,8 +465,8 @@ export function StepFinancials({
                       <span className="text-[10px] font-bold uppercase text-slate-500 tracking-tight">
                         Benefits
                       </span>
-                      {breakdown?.benefits && breakdown.benefits.length > 0 ? (
-                        breakdown.benefits.map((benefit: any) => (
+                      {benefits.length > 0 ? (
+                        benefits.map((benefit) => (
                           <div
                             key={benefit.name}
                             className={`flex justify-between text-xs py-1 border-b border-slate-800 last:border-0 ${

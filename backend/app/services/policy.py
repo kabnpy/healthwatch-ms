@@ -13,7 +13,7 @@ from app.models import (
     Policy,
     PolicyCreate,
     PolicyUpdate,
-    PremiumCalculation,
+    PremiumCalculationCreate,
     Product,
     RiskNote,
     RiskNoteCreate,
@@ -24,6 +24,7 @@ from app.models import (
 )
 from app.services.premium_calculation import (
     PremiumCalculationResult,
+    PremiumCalculationService,
     calculate_premium,
 )
 
@@ -217,19 +218,24 @@ class PolicyService:
 
         PolicyService._add_risk_note(session=session, risk_note_in=risk_note_in)
 
-        calc = PremiumCalculation(
-            policy_id=policy.id,
-            business_event=BusinessEvent.NEW_BUSINESS,
-            rating_date=coverage_start,
-            rate_table_version_id=result.rate_table_version_id,
-            input_snapshot=PolicyService.to_numeric_dict(result.input_snapshot),
-            rule_provenance=PolicyService.to_numeric_dict(result.rule_provenance),
-            calculation_detail=PolicyService.to_numeric_dict(result.calculation_detail),
-            total_premium=result.total_premium,
-            is_selected=True,
-            created_by_id=current_user_id,
+        PremiumCalculationService.record_calculation(
+            session,
+            calc_in=PremiumCalculationCreate(
+                policy_id=policy.id,
+                business_event=BusinessEvent.NEW_BUSINESS,
+                rating_date=coverage_start,
+                rate_table_version_id=result.rate_table_version_id,
+                input_snapshot=PolicyService.to_numeric_dict(result.input_snapshot),
+                rule_provenance=PolicyService.to_numeric_dict(result.rule_provenance),
+                calculation_detail=PolicyService.to_numeric_dict(
+                    result.calculation_detail
+                ),
+                total_premium=result.total_premium,
+                is_selected=True,
+            ),
+            user_id=current_user_id,
+            commit=False,
         )
-        session.add(calc)
         session.commit()
         session.refresh(policy)
 
@@ -417,21 +423,26 @@ class PolicyService:
             session=session, risk_note_in=risk_note_in
         )
 
-        endorsement_calc = PremiumCalculation(
-            policy_id=policy.id,
-            business_event=BusinessEvent.COVER_CHANGE,
-            rating_date=effective_date,
-            rate_table_version_id=new_result.rate_table_version_id,
-            input_snapshot=PolicyService.to_numeric_dict(new_result.input_snapshot),
-            rule_provenance=PolicyService.to_numeric_dict(new_result.rule_provenance),
-            calculation_detail=PolicyService.to_numeric_dict(
-                new_result.calculation_detail
+        PremiumCalculationService.record_calculation(
+            session,
+            calc_in=PremiumCalculationCreate(
+                policy_id=policy.id,
+                business_event=BusinessEvent.COVER_CHANGE,
+                rating_date=effective_date,
+                rate_table_version_id=new_result.rate_table_version_id,
+                input_snapshot=PolicyService.to_numeric_dict(new_result.input_snapshot),
+                rule_provenance=PolicyService.to_numeric_dict(
+                    new_result.rule_provenance
+                ),
+                calculation_detail=PolicyService.to_numeric_dict(
+                    new_result.calculation_detail
+                ),
+                total_premium=new_result.total_premium,
+                is_selected=True,
             ),
-            total_premium=new_result.total_premium,
-            is_selected=True,
-            created_by_id=current_user_id,
+            user_id=current_user_id,
+            commit=False,
         )
-        session.add(endorsement_calc)
         session.commit()
         session.refresh(endorsement_rn)
 
