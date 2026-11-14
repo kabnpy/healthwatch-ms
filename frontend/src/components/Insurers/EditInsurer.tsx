@@ -89,7 +89,7 @@ const EditInsurer = ({ insurer, onSuccess }: EditInsurerProps) => {
           <DialogHeader>
             <DialogTitle>Edit Insurer</DialogTitle>
             <DialogDescription>
-              Update the insurance carrier details.
+              Update the insurer details.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

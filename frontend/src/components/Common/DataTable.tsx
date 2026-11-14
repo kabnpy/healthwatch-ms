@@ -39,6 +39,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   searchPlaceholder?: string
   isLoading?: boolean
+  toolbar?: React.ReactNode
 }
 
 export function DataTable<TData, TValue>({
@@ -46,6 +47,7 @@ export function DataTable<TData, TValue>({
   data,
   searchPlaceholder = "Search records...",
   isLoading = false,
+  toolbar,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState("")
 
@@ -63,7 +65,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -73,6 +75,7 @@ export function DataTable<TData, TValue>({
             className="pl-9 h-9"
           />
         </div>
+        {toolbar}
       </div>
 
       <div className="border rounded-md">

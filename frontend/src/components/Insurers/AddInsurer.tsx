@@ -84,7 +84,7 @@ const AddInsurer = () => {
           <DialogHeader>
             <DialogTitle>Add Insurer</DialogTitle>
             <DialogDescription>
-              Create a new insurance carrier in the catalog.
+              Create a new insurer in the catalog.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

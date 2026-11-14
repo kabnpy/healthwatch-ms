@@ -1,13 +1,14 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import { Search } from "lucide-react"
 import { Suspense } from "react"
 
 import { InsurersService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
-import AddInsurer from "@/components/Insurers/AddInsurer"
+import { InsurerActionsMenu } from "@/components/Insurers/InsurerActionsMenu"
 import { columns } from "@/components/Insurers/columns"
 import PendingItems from "@/components/Pending/PendingItems"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 function getInsurersQueryOptions() {
   return {
@@ -40,13 +41,41 @@ function InsurersTableContent() {
         </div>
         <h3 className="text-lg font-semibold">No insurers found</h3>
         <p className="text-muted-foreground">
-          Add a new insurance carrier to get started
+          Add a new insurer to get started
         </p>
       </div>
     )
   }
 
-  return <DataTable columns={columns} data={insurers.data} />
+  return (
+    <>
+      <div className="hidden md:block">
+        <DataTable columns={columns} data={insurers.data} />
+      </div>
+      <div className="grid gap-3 md:hidden">
+        {insurers.data.map((insurer) => (
+          <Card key={insurer.id}>
+            <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+              <CardTitle className="text-base font-medium">
+                <Link
+                  to="/catalog/insurers/$insurerId"
+                  params={{ insurerId: insurer.id }}
+                  className="hover:underline"
+                >
+                  {insurer.name}
+                </Link>
+              </CardTitle>
+              <InsurerActionsMenu insurer={insurer} />
+            </CardHeader>
+            <CardContent className="grid gap-1 text-sm text-muted-foreground">
+              <div className="truncate">{insurer.email || "N/A"}</div>
+              <div>{insurer.phone || "N/A"}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </>
+  )
 }
 
 function InsurersTable() {
@@ -58,20 +87,5 @@ function InsurersTable() {
 }
 
 function Insurers() {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">
-            Insurance Carriers
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            List of all registered insurers in the system.
-          </p>
-        </div>
-        <AddInsurer />
-      </div>
-      <InsurersTable />
-    </div>
-  )
+  return <InsurersTable />
 }

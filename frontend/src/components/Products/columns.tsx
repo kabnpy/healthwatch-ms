@@ -1,46 +1,35 @@
 import type { ColumnDef } from "@tanstack/react-table"
-import { Check, Copy } from "lucide-react"
+import { Link } from "@tanstack/react-router"
 
 import type { ProductPublic } from "@/client"
-import { Button } from "@/components/ui/button"
-import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
 import { ProductActionsMenu } from "./ProductActionsMenu"
 
-function CopyId({ id }: { id: string }) {
-  const [copiedText, copy] = useCopyToClipboard()
-  const isCopied = copiedText === id
-
-  return (
-    <div className="flex items-center gap-1.5 group">
-      <span className="font-mono text-xs text-muted-foreground">{id}</span>
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label="Copy product ID"
-        className="size-6 opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={() => copy(id)}
-      >
-        {isCopied ? (
-          <Check className="size-3 text-green-500" />
-        ) : (
-          <Copy className="size-3" />
-        )}
-        <span className="sr-only">Copy ID</span>
-      </Button>
-    </div>
-  )
+export type ProductRow = ProductPublic & {
+  insurerName?: string
 }
 
-export const columns: ColumnDef<ProductPublic>[] = [
-  {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => <CopyId id={row.original.id} />,
-  },
+export const columns: ColumnDef<ProductRow>[] = [
   {
     accessorKey: "name",
     header: "Product Name",
-    cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+    cell: ({ row }) => (
+      <Link
+        to="/catalog/products/$productId"
+        params={{ productId: row.original.id }}
+        className="font-medium hover:underline"
+      >
+        {row.original.name}
+      </Link>
+    ),
+  },
+  {
+    accessorKey: "insurerName",
+    header: "Insurer",
+    cell: ({ row }) => (
+      <span className="text-muted-foreground">
+        {row.original.insurerName || "—"}
+      </span>
+    ),
   },
   {
     accessorKey: "class_of_insurance",
@@ -55,7 +44,7 @@ export const columns: ColumnDef<ProductPublic>[] = [
     accessorKey: "default_commission_rate",
     header: "Comm. %",
     cell: ({ row }) => (
-      <span className="text-muted-foreground">
+      <span className="text-muted-foreground tabular-nums">
         {row.original.default_commission_rate}%
       </span>
     ),

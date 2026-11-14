@@ -110,7 +110,7 @@ export function PricingRulesInspector({ product }: PricingRulesInspectorProps) {
           </div>
           <p className="text-xs text-muted-foreground">
             Actuarial brackets and statutory levies for {product.name} (
-            {product.insurer?.name || "General Carrier"}).
+            {product.insurer?.name || "General Insurer"}).
           </p>
         </div>
 
