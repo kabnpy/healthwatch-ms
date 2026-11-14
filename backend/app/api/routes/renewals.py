@@ -94,7 +94,7 @@ def transition_renewal(
     *,
     id: uuid.UUID,
     session: SessionDep,
-    _current_user: CurrentUser,
+    current_user: CurrentUser,
     transition_in: RenewalTransition,
 ) -> Any:
     """
@@ -103,7 +103,10 @@ def transition_renewal(
     """
     try:
         return RenewalService.transition_renewal(
-            session=session, renewal_id=id, transition_in=transition_in
+            session=session,
+            renewal_id=id,
+            transition_in=transition_in,
+            current_user_id=current_user.id,
         )
     except RenewalError as exc:
         _raise_http_for_renewal_error(exc)
