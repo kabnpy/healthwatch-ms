@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import ConfigDict, EmailStr
 from sqlalchemy import JSON, Column, Numeric
@@ -824,6 +824,20 @@ class Claim(ClaimBase, table=True):
 class ClaimsPublic(SQLModel):
     data: list[ClaimPublic]
     count: int
+
+
+class PolicyClaimsAdvocacySummary(SQLModel):
+    policy_id: uuid.UUID
+    total_earned_premium: str
+    total_settled: str
+    total_open_reserves: str
+    total_incurred_claims: str
+    loss_ratio_percent: str
+    claims_count: int
+    active_claims_count: int
+    closed_or_declined_count: int
+    advocacy_rating: Literal["EXCELLENT", "GOOD", "HIGH_RISK"]
+    advocacy_note: str
 
 
 class ClaimEventBase(SQLModel):

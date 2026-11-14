@@ -10,6 +10,7 @@ from app.models import (
     ClaimsPublic,
     ClaimUpdate,
     Message,
+    PolicyClaimsAdvocacySummary,
 )
 from app.services.claim import (
     ClaimNotFoundError,
@@ -35,7 +36,7 @@ def read_claims(
     return ClaimsPublic(data=claims, count=count)
 
 
-@router.get("/policy/{policy_id}/advocacy-summary")
+@router.get("/policy/{policy_id}/advocacy-summary", response_model=PolicyClaimsAdvocacySummary)
 def get_policy_claims_advocacy_summary(
     policy_id: uuid.UUID,
     session: SessionDep,

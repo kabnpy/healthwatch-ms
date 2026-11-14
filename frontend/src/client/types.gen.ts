@@ -1853,6 +1853,56 @@ export type PoliciesPublic = {
 };
 
 /**
+ * PolicyClaimsAdvocacySummary
+ */
+export type PolicyClaimsAdvocacySummary = {
+    /**
+     * Policy Id
+     */
+    policy_id: string;
+    /**
+     * Total Earned Premium
+     */
+    total_earned_premium: string;
+    /**
+     * Total Settled
+     */
+    total_settled: string;
+    /**
+     * Total Open Reserves
+     */
+    total_open_reserves: string;
+    /**
+     * Total Incurred Claims
+     */
+    total_incurred_claims: string;
+    /**
+     * Loss Ratio Percent
+     */
+    loss_ratio_percent: string;
+    /**
+     * Claims Count
+     */
+    claims_count: number;
+    /**
+     * Active Claims Count
+     */
+    active_claims_count: number;
+    /**
+     * Closed Or Declined Count
+     */
+    closed_or_declined_count: number;
+    /**
+     * Advocacy Rating
+     */
+    advocacy_rating: 'EXCELLENT' | 'GOOD' | 'HIGH_RISK';
+    /**
+     * Advocacy Note
+     */
+    advocacy_note: string;
+};
+
+/**
  * PolicyCreateExtended
  */
 export type PolicyCreateExtended = {
@@ -5279,12 +5329,12 @@ export type claimsGetPolicyClaimsAdvocacySummaryError = claimsGetPolicyClaimsAdv
 
 export type claimsGetPolicyClaimsAdvocacySummaryResponses = {
     /**
-     * Response Claims-Get Policy Claims Advocacy Summary
-     *
      * Successful Response
      */
-    200: unknown;
+    200: PolicyClaimsAdvocacySummary;
 };
+
+export type claimsGetPolicyClaimsAdvocacySummaryResponse = claimsGetPolicyClaimsAdvocacySummaryResponses[keyof claimsGetPolicyClaimsAdvocacySummaryResponses];
 
 export type claimsDeleteClaimData = {
     body?: never;
