@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { InvoicePublic, PaymentRecordPublic } from "@/client"
 import { AllocatePaymentDialog } from "./AllocatePaymentDialog"
