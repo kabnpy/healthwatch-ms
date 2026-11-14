@@ -236,4 +236,59 @@ describe("CanonicalDocumentViewer", () => {
     expect(iframe.style.height).toBe("1320px")
     expect(iframe.className).toContain("min-h-[950px]")
   })
+
+  it("resets iframeHeight when Refresh is clicked or htmlContent updates", async () => {
+    vi.mocked(DocumentJobsService.jobsPreviewDocumentHtml)
+      .mockResolvedValueOnce({
+        data: "<html><body><h1>Tall Risk Note</h1></body></html>",
+      } as any)
+      .mockResolvedValueOnce({
+        data: "<html><body><h1>Short Risk Note</h1></body></html>",
+      } as any)
+
+    renderWithQueryClient(
+      <CanonicalDocumentViewer
+        resourceType="risk_note"
+        resourceId="rn-1"
+        title="Risk Note"
+      />,
+    )
+
+    await waitFor(() => {
+      expect(document.querySelector("iframe")).toBeTruthy()
+    })
+
+    const iframe = document.querySelector("iframe") as HTMLIFrameElement
+    Object.defineProperty(iframe, "contentDocument", {
+      configurable: true,
+      value: {
+        documentElement: {
+          scrollHeight: 1320,
+        },
+      },
+    })
+
+    fireEvent.load(iframe)
+    expect(iframe.style.height).toBe("1320px")
+
+    fireEvent.click(screen.getByRole("button", { name: /Refresh/i }))
+    expect(iframe.style.height).toBe("")
+
+    await waitFor(() => {
+      expect(iframe.getAttribute("srcdoc")).toContain("Short Risk Note")
+    })
+    expect(iframe.style.height).toBe("")
+
+    Object.defineProperty(iframe, "contentDocument", {
+      configurable: true,
+      value: {
+        documentElement: {
+          scrollHeight: 980,
+        },
+      },
+    })
+
+    fireEvent.load(iframe)
+    expect(iframe.style.height).toBe("980px")
+  })
 })

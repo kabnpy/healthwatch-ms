@@ -92,7 +92,7 @@ describe("RiskNotePrintContent (/print/risk-notes/$id)", () => {
     expect(wrapper.className).toContain("print:bg-white")
     expect(wrapper.className).not.toMatch(/(^|\s)bg-white(\s|$)/)
 
-    const backButton = screen.getByRole("button", { name: /← Back/i })
+    const backButton = screen.getByRole("button", { name: /Back/i })
     expect(backButton).toBeTruthy()
     expect(backButton.closest(".print\\:hidden")).toBeTruthy()
   })
@@ -108,7 +108,7 @@ describe("RiskNotePrintContent (/print/risk-notes/$id)", () => {
 
     renderWithQueryClient(<RiskNotePrintContent id="rn-123" />)
 
-    const backButton = await screen.findByRole("button", { name: /← Back/i })
+    const backButton = await screen.findByRole("button", { name: /Back/i })
     fireEvent.click(backButton)
 
     expect(backSpy).toHaveBeenCalledTimes(1)
@@ -124,7 +124,7 @@ describe("RiskNotePrintContent (/print/risk-notes/$id)", () => {
 
     renderWithQueryClient(<RiskNotePrintContent id="rn-123" />)
 
-    const backButton = await screen.findByRole("button", { name: /← Back/i })
+    const backButton = await screen.findByRole("button", { name: /Back/i })
     fireEvent.click(backButton)
 
     expect(mockNavigate).toHaveBeenCalledWith({ to: "/policies" })

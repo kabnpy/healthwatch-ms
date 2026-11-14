@@ -1,5 +1,19 @@
 import { expect, type Page, test } from "@playwright/test"
 
+async function tryOpenRiskNoteLink(page: Page): Promise<string | null> {
+  const printLink = page.locator('a[href*="/print/risk-notes/"]').first()
+  if (!(await printLink.isVisible())) {
+    return null
+  }
+  const href = await printLink.getAttribute("href")
+  if (!href) {
+    return null
+  }
+  await page.goto(href)
+  await page.waitForURL(/\/print\/risk-notes\/.+/)
+  return href
+}
+
 async function openFirstPrintableRiskNote(page: Page): Promise<string> {
   await page.goto("/policies")
   await page.waitForSelector("table")
@@ -11,14 +25,9 @@ async function openFirstPrintableRiskNote(page: Page): Promise<string> {
   await policyLink.click()
   await page.waitForURL(/\/policies\/.+/)
 
-  const printLink = page.locator('a[href*="/print/risk-notes/"]').first()
-  if (await printLink.isVisible()) {
-    const href = await printLink.getAttribute("href")
-    if (href) {
-      await page.goto(href)
-      await page.waitForURL(/\/print\/risk-notes\/.+/)
-      return href
-    }
+  const directHref = await tryOpenRiskNoteLink(page)
+  if (directHref) {
+    return directHref
   }
 
   // Fallback: extract policy/risk-note route from History tab if available
@@ -26,16 +35,9 @@ async function openFirstPrintableRiskNote(page: Page): Promise<string> {
   if (await historyTab.isVisible()) {
     await historyTab.click()
     await page.waitForSelector("table")
-    const historyPrintLink = page
-      .locator('a[href*="/print/risk-notes/"]')
-      .first()
-    if (await historyPrintLink.isVisible()) {
-      const href = await historyPrintLink.getAttribute("href")
-      if (href) {
-        await page.goto(href)
-        await page.waitForURL(/\/print\/risk-notes\/.+/)
-        return href
-      }
+    const historyHref = await tryOpenRiskNoteLink(page)
+    if (historyHref) {
+      return historyHref
     }
   }
 
@@ -83,11 +85,19 @@ test.describe("Printable Risk Note Viewer (/print/risk-notes/$id)", () => {
       await expect(btn).toBeVisible()
       const colors = await btn.evaluate((el) => {
         const style = window.getComputedStyle(el)
+        let bg = style.backgroundColor
+        let parent: HTMLElement | null = el.parentElement
+        while (parent && (bg === "transparent" || bg === "rgba(0, 0, 0, 0)")) {
+          bg = window.getComputedStyle(parent).backgroundColor
+          parent = parent.parentElement
+        }
         return {
           color: style.color,
-          backgroundColor: style.backgroundColor,
+          backgroundColor: bg,
         }
       })
+      expect(colors.backgroundColor).not.toBe("rgba(0, 0, 0, 0)")
+      expect(colors.backgroundColor).not.toBe("transparent")
       expect(colors.color).not.toBe(colors.backgroundColor)
     }
 
@@ -114,8 +124,8 @@ test.describe("Printable Risk Note Viewer (/print/risk-notes/$id)", () => {
       expect(box!.x + box!.width).toBeLessThanOrEqual(390)
     }
 
-    // 5. print:hidden ← Back action
-    const backBtn = page.getByRole("button", { name: /← Back/i })
+    // 5. print:hidden Back action
+    const backBtn = page.getByRole("button", { name: /Back/i })
     await expect(backBtn).toBeVisible()
     await expect(backBtn.locator("..")).toHaveClass(/print:hidden/)
     await backBtn.click()

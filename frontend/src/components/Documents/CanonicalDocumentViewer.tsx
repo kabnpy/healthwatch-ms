@@ -6,7 +6,7 @@ import {
   RefreshCw,
   X,
 } from "lucide-react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useDocumentHtmlPreview } from "@/hooks/useDocumentJobs"
 
@@ -47,6 +47,12 @@ export function CanonicalDocumentViewer({
     draftSnapshot,
   })
 
+  useEffect(() => {
+    if (htmlContent !== undefined) {
+      setIframeHeight(null)
+    }
+  }, [htmlContent])
+
   const error = queryError
     ? queryError instanceof Error
       ? queryError.message
@@ -54,6 +60,7 @@ export function CanonicalDocumentViewer({
     : null
 
   const handleRefresh = () => {
+    setIframeHeight(null)
     void refetch()
   }
 

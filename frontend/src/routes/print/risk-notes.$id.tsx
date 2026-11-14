@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { ArrowLeft } from "lucide-react"
 import { Suspense } from "react"
 import { z } from "zod"
 
@@ -60,7 +61,8 @@ export function RiskNotePrintContent({ id }: { id: string }) {
           onClick={handleBack}
           className="gap-1.5 cursor-pointer"
         >
-          ← Back
+          <ArrowLeft className="size-4" />
+          Back
         </Button>
       </div>
       <CanonicalDocumentViewer
