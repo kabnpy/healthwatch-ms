@@ -1,32 +1,12 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { Search } from "lucide-react"
-import { Suspense } from "react"
 
-import { InsurersService, ProductsService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingItems from "@/components/Pending/PendingItems"
 import { ProductActionsMenu } from "@/components/Products/ProductActionsMenu"
 import { columns, type ProductRow } from "@/components/Products/columns"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
-function getProductsQueryOptions() {
-  return {
-    queryFn: async () =>
-      (await ProductsService.readProducts({ query: { skip: 0, limit: 100 } }))
-        .data,
-    queryKey: ["products"],
-  }
-}
-
-function getInsurersQueryOptions() {
-  return {
-    queryFn: async () =>
-      (await InsurersService.readInsurers({ query: { skip: 0, limit: 100 } }))
-        .data,
-    queryKey: ["insurers"],
-  }
-}
+import { useInsurers, useProducts } from "@/hooks/useCatalog"
 
 export const Route = createFileRoute("/_layout/catalog/products/")({
   component: Products,
@@ -40,8 +20,12 @@ export const Route = createFileRoute("/_layout/catalog/products/")({
 })
 
 function ProductsTableContent() {
-  const { data: products } = useSuspenseQuery(getProductsQueryOptions())
-  const { data: insurers } = useSuspenseQuery(getInsurersQueryOptions())
+  const { data: products, isPending: isProductsPending } = useProducts()
+  const { data: insurers, isPending: isInsurersPending } = useInsurers()
+
+  if (isProductsPending || isInsurersPending || !products || !insurers) {
+    return <PendingItems />
+  }
 
   if (products.data.length === 0) {
     return (
@@ -101,14 +85,6 @@ function ProductsTableContent() {
   )
 }
 
-function ProductsTable() {
-  return (
-    <Suspense fallback={<PendingItems />}>
-      <ProductsTableContent />
-    </Suspense>
-  )
-}
-
 function Products() {
-  return <ProductsTable />
+  return <ProductsTableContent />
 }

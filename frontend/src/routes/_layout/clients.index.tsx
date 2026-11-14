@@ -10,6 +10,7 @@ import { DataTable } from "@/components/Common/DataTable"
 import { QueryErrorBanner } from "@/components/Common/QueryErrorBanner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { usePolicies } from "@/hooks/usePolicies"
 import { queryClient } from "@/queryClient"
@@ -180,11 +181,8 @@ function ClientsTable() {
         ) : (
           <div className="flex flex-col gap-3">
             {mobileFilteredClients.map((client) => (
-              <div
-                key={client.id}
-                className="rounded-lg border bg-card p-4 shadow-xs flex flex-col gap-3"
-              >
-                <div className="flex items-start justify-between gap-2">
+              <Card key={client.id} className="gap-3 py-4">
+                <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 px-4 pb-0">
                   <div className="min-w-0 flex-1">
                     <Link
                       to="/clients/$clientId/overview"
@@ -201,44 +199,46 @@ function ClientsTable() {
                   <Badge variant="secondary" className="shrink-0">
                     {client.client_type}
                   </Badge>
-                </div>
+                </CardHeader>
 
-                <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Mail className="size-3.5 shrink-0" />
-                    <span className="truncate">{client.email || "N/A"}</span>
+                <CardContent className="flex flex-col gap-3 px-4">
+                  <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Mail className="size-3.5 shrink-0" />
+                      <span className="truncate">{client.email || "N/A"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="size-3.5 shrink-0" />
+                      <span>{client.phone}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="size-3.5 shrink-0" />
-                    <span>{client.phone}</span>
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between border-t pt-3 text-xs">
-                  <span className="text-muted-foreground">
-                    Active Policies:{" "}
-                    <span className="tabular-nums font-semibold text-foreground">
-                      {client.activePoliciesCount}
+                  <div className="flex items-center justify-between border-t pt-3 text-xs">
+                    <span className="text-muted-foreground">
+                      Active Policies:{" "}
+                      <span className="tabular-nums font-semibold text-foreground">
+                        {client.activePoliciesCount}
+                      </span>
                     </span>
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to="/clients/$clientId/overview"
-                      params={{ clientId: client.id }}
-                      className="font-medium text-primary hover:underline"
-                    >
-                      View Hub
-                    </Link>
-                    <Link
-                      to="/clients/$clientId/settings"
-                      params={{ clientId: client.id }}
-                      className="font-medium text-muted-foreground hover:text-foreground hover:underline"
-                    >
-                      Edit
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to="/clients/$clientId/overview"
+                        params={{ clientId: client.id }}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        View Hub
+                      </Link>
+                      <Link
+                        to="/clients/$clientId/settings"
+                        params={{ clientId: client.id }}
+                        className="font-medium text-muted-foreground hover:text-foreground hover:underline"
+                      >
+                        Edit
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}

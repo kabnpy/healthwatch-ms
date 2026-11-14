@@ -1,0 +1,117 @@
+import { expect, test } from "@playwright/test"
+
+test.describe("Catalog (/catalog)", () => {
+  test("renders unified Catalog header, Insurers table without ID column, and navigates to insurer detail", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto("/catalog/insurers")
+
+    await expect(
+      page.getByRole("heading", { name: "Catalog", exact: true }),
+    ).toBeVisible()
+
+    // Zero occurrences of "Carrier"
+    await expect(page.locator("body")).not.toContainText("Carrier")
+
+    // Active tab CTA for Insurers
+    await expect(
+      page.getByRole("button", { name: /Add Insurer/i }),
+    ).toBeVisible()
+
+    // No raw UUID ID column header
+    await expect(
+      page.getByRole("columnheader", { name: "ID", exact: true }),
+    ).toHaveCount(0)
+
+    // Zero horizontal overflow at 1440x900
+    const desktopOverflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    )
+    expect(desktopOverflow).toBe(true)
+
+    // Clicking an Insurer name navigates to /catalog/insurers/$insurerId
+    const firstInsurerLink = page.locator("tbody tr td a").first()
+    await expect(firstInsurerLink).toBeVisible()
+    await firstInsurerLink.click()
+    await expect(page).toHaveURL(/\/catalog\/insurers\/[^/]+$/)
+  })
+
+  test("renders Products table with Insurer column, tabular-nums on Comm. %, no ID column, and navigates to product detail", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto("/catalog/products")
+
+    await expect(
+      page.getByRole("heading", { name: "Catalog", exact: true }),
+    ).toBeVisible()
+
+    // Zero occurrences of "Carrier"
+    await expect(page.locator("body")).not.toContainText("Carrier")
+
+    // Active tab CTA for Products
+    await expect(
+      page.getByRole("button", { name: /Add Product/i }),
+    ).toBeVisible()
+
+    // No raw UUID ID column header
+    await expect(
+      page.getByRole("columnheader", { name: "ID", exact: true }),
+    ).toHaveCount(0)
+
+    // Insurer column header is visible
+    await expect(
+      page.getByRole("columnheader", { name: "Insurer", exact: true }),
+    ).toBeVisible()
+
+    // tabular-nums on Comm. % cell
+    await expect(page.locator("table .tabular-nums").first()).toBeVisible()
+
+    // Zero horizontal overflow at 1440x900
+    const desktopOverflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    )
+    expect(desktopOverflow).toBe(true)
+
+    // Clicking a Product name navigates to /catalog/products/$productId
+    const firstProductLink = page.locator("tbody tr td a").first()
+    await expect(firstProductLink).toBeVisible()
+    await firstProductLink.click()
+    await expect(page).toHaveURL(/\/catalog\/products\/[^/]+$/)
+  })
+
+  test("renders mobile cards with zero horizontal overflow at 390x844", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+
+    await page.goto("/catalog/insurers")
+    await expect(
+      page.getByRole("heading", { name: "Catalog", exact: true }),
+    ).toBeVisible()
+    await expect(page.locator("table")).toBeHidden()
+    const insurersMobileOverflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    )
+    expect(insurersMobileOverflow).toBe(true)
+
+    await page.goto("/catalog/products")
+    await expect(
+      page.getByRole("heading", { name: "Catalog", exact: true }),
+    ).toBeVisible()
+    await expect(page.locator("table")).toBeHidden()
+    const productsMobileOverflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    )
+    expect(productsMobileOverflow).toBe(true)
+  })
+})
