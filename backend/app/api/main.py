@@ -6,6 +6,7 @@ from app.api.routes import (
     claims,
     clients,
     commissions,
+    dashboard,
     document_jobs,
     documents,
     financials,
@@ -33,6 +34,7 @@ api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(utils.router, prefix="/utils", tags=["utils"])
 api_router.include_router(documents.router, prefix="/documents", tags=["documents"])
 api_router.include_router(clients.router, prefix="/clients", tags=["clients"])
+api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(insurers.router, prefix="/insurers", tags=["insurers"])
 api_router.include_router(products.router, prefix="/products", tags=["products"])
 api_router.include_router(policies.router, prefix="/policies", tags=["policies"])

@@ -9,7 +9,7 @@ import {
   RefreshCw,
   ShieldCheck,
 } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useState } from "react"
 
 import type { PolicyPublic, RenewalPublic } from "@/client"
 import { AddClient } from "@/components/Clients/AddClient"
@@ -19,10 +19,8 @@ import { RenewalTransitionSheet } from "@/components/Renewals/RenewalTransitionS
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import useAuth from "@/hooks/useAuth"
-import { useClients } from "@/hooks/useClients"
+import { useDashboardSummary } from "@/hooks/useDashboard"
 import { useFinancialSummary } from "@/hooks/useFinancials"
-import { usePolicies } from "@/hooks/usePolicies"
-import { useRenewals, useRenewalsHorizon } from "@/hooks/useRenewals"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 export const Route = createFileRoute("/_layout/")({
@@ -38,96 +36,34 @@ export const Route = createFileRoute("/_layout/")({
 
 function AgencyDashboard() {
   const { user: currentUser } = useAuth()
-  const { data: policiesData, isLoading: isPoliciesLoading } = usePolicies(
-    undefined,
-    0,
-    200,
-  )
-  const { data: clientsData, isLoading: isClientsLoading } = useClients(0, 200)
-  const { data: renewalsData, isLoading: isRenewalsLoading } = useRenewals(
-    undefined,
-    undefined,
-    0,
-    200,
-  )
-  const { data: horizonData } = useRenewalsHorizon()
+  const { data: dashboardSummary, isLoading: isDashboardLoading } =
+    useDashboardSummary()
   const { summary } = useFinancialSummary()
 
   const [isAddReceiptOpen, setIsAddReceiptOpen] = useState(false)
   const [selectedRenewalPolicy, setSelectedRenewalPolicy] = useState<{
     policy: PolicyPublic
     renewal: RenewalPublic | null
+    clientName: string
   } | null>(null)
 
-  const clientMap = useMemo(() => {
-    const map = new Map<string, string>()
-    clientsData?.data?.forEach((c) => {
-      map.set(c.id, c.name)
-    })
-    return map
-  }, [clientsData])
-
-  const policies = policiesData?.data || []
-
-  // 1. Process Policies for Operational Triage
-  const triage = useMemo(() => {
-    const expiring30 = (horizonData?.["0_30"] ?? []).map((item) => ({
-      policy: item.policy,
-      daysLeft: item.days_left,
-    }))
-    const draftRenewals: PolicyPublic[] = []
-    let activeCount = 0
-    let lapsedCount = 0
-
-    policies.forEach((policy) => {
-      if (policy.status?.toLowerCase() === "active") {
-        activeCount++
-      } else if (
-        ["expired", "lapsed", "cancelled"].includes(
-          policy.status?.toLowerCase() || "",
-        )
-      ) {
-        lapsedCount++
-      }
-
-      const activeNote = policy.active_note
-      if (!activeNote?.coverage_end) return
-
-      if (
-        activeNote.transaction_type === "Renewal" &&
-        activeNote.status === "Draft"
-      ) {
-        draftRenewals.push(policy)
-      }
-    })
-
-    return {
-      activeCount,
-      lapsedCount,
-      expiring30,
-      draftRenewals,
-    }
-  }, [policies, horizonData])
-
-  const renewals = renewalsData?.data || []
-  const inFlightRenewals = useMemo(() => {
-    return renewals.filter(
-      (r) =>
-        !["completed", "cancelled"].includes(r.status?.toLowerCase() || ""),
-    )
-  }, [renewals])
-
-  const policyMap = useMemo(() => {
-    const map = new Map<string, PolicyPublic>()
-    policies.forEach((p) => {
-      map.set(p.id, p)
-    })
-    return map
-  }, [policies])
-
-  if (isPoliciesLoading || isClientsLoading || isRenewalsLoading) {
+  if (isDashboardLoading) {
     return <PendingItems />
   }
+
+  const triage = {
+    activeCount: dashboardSummary?.active_count ?? 0,
+    lapsedCount: dashboardSummary?.lapsed_count ?? 0,
+    expiring30: (dashboardSummary?.expiring_30 ?? []).map((item) => ({
+      policy: item.policy,
+      daysLeft: item.days_left,
+      clientName: item.client_name,
+    })),
+  }
+
+  const inFlightRenewals = dashboardSummary?.in_flight_renewals ?? []
+  const inFlightRenewalsCount =
+    dashboardSummary?.in_flight_renewals_count ?? inFlightRenewals.length
 
   const today = new Intl.DateTimeFormat("en-KE", {
     weekday: "long",
@@ -238,7 +174,7 @@ function AgencyDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-mono tabular-nums tracking-tight text-blue-600 dark:text-blue-400">
-              {inFlightRenewals.length}
+              {inFlightRenewalsCount}
             </div>
             <p className="text-xs text-muted-foreground mt-1 flex items-center justify-between">
               <span>Navigating 6-stage lifecycle</span>
@@ -306,8 +242,7 @@ function AgencyDashboard() {
                   </p>
                 </div>
               ) : (
-                triage.expiring30.slice(0, 6).map(({ policy, daysLeft }) => {
-                  const clientName = clientMap.get(policy.client_id) || "Client"
+                triage.expiring30.slice(0, 6).map(({ policy, daysLeft, clientName }) => {
                   const displayName = getPolicyDisplayName(policy)
 
                   return (
@@ -398,7 +333,7 @@ function AgencyDashboard() {
               <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
                 <span>Active Renewals</span>
                 <span className="font-mono text-blue-600 font-bold">
-                  {inFlightRenewals.length} in progress
+                  {inFlightRenewalsCount} in progress
                 </span>
               </CardTitle>
             </CardHeader>
@@ -414,11 +349,7 @@ function AgencyDashboard() {
                   </p>
                 </div>
               ) : (
-                inFlightRenewals.slice(0, 5).map((ren) => {
-                  const policy = policyMap.get(ren.policy_id)
-                  const clientName = policy
-                    ? clientMap.get(policy.client_id) || "Client"
-                    : "Client"
+                inFlightRenewals.slice(0, 5).map(({ renewal: ren, policy, client_name: clientName }) => {
                   const displayName = policy
                     ? getPolicyDisplayName(policy)
                     : "Insurance Policy"
@@ -452,7 +383,11 @@ function AgencyDashboard() {
                           size="sm"
                           variant="outline"
                           onClick={() =>
-                            setSelectedRenewalPolicy({ policy, renewal: ren })
+                            setSelectedRenewalPolicy({
+                              policy,
+                              renewal: ren,
+                              clientName,
+                            })
                           }
                           className="h-8 gap-1 shrink-0 text-xs cursor-pointer"
                         >
@@ -513,9 +448,7 @@ function AgencyDashboard() {
           onOpenChange={(open) => !open && setSelectedRenewalPolicy(null)}
           policy={selectedRenewalPolicy.policy}
           renewal={selectedRenewalPolicy.renewal}
-          clientName={
-            clientMap.get(selectedRenewalPolicy.policy.client_id) || "Client"
-          }
+          clientName={selectedRenewalPolicy.clientName}
         />
       )}
     </div>
