@@ -93,35 +93,36 @@ function ClientPolicies() {
           }}
         />
       ) : (
-        <div className="space-y-3">
-          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg w-fit">
-            {(
-              [
-                { key: "all", label: "All", count: policies.length },
-                { key: "active", label: "Active", count: activePolicies.length },
-                {
-                  key: "historical",
-                  label: "Historical",
-                  count: inactivePolicies.length,
-                },
-              ] as const
-            ).map((tab) => (
-              <Button
-                key={tab.key}
-                variant={statusFilter === tab.key ? "secondary" : "ghost"}
-                size="sm"
-                className="h-7 text-xs px-2.5"
-                onClick={() => setStatusFilter(tab.key)}
-              >
-                {tab.label} ({tab.count})
-              </Button>
-            ))}
-          </div>
-
-          <div className="border rounded-lg overflow-hidden bg-card">
-            <DataTable columns={policyColumns} data={filteredPolicies} />
-          </div>
-        </div>
+        <DataTable
+          columns={policyColumns}
+          data={filteredPolicies}
+          searchPlaceholder="Search policies..."
+          toolbar={
+            <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg w-fit">
+              {(
+                [
+                  { key: "all", label: "All", count: policies.length },
+                  { key: "active", label: "Active", count: activePolicies.length },
+                  {
+                    key: "historical",
+                    label: "Historical",
+                    count: inactivePolicies.length,
+                  },
+                ] as const
+              ).map((tab) => (
+                <Button
+                  key={tab.key}
+                  variant={statusFilter === tab.key ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-7 text-xs px-2.5"
+                  onClick={() => setStatusFilter(tab.key)}
+                >
+                  {tab.label} ({tab.count})
+                </Button>
+              ))}
+            </div>
+          }
+        />
       )}
 
       {/* New Policy Wizard Modal */}
