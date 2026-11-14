@@ -6,7 +6,7 @@ import {
   RefreshCw,
   X,
 } from "lucide-react"
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useDocumentHtmlPreview } from "@/hooks/useDocumentJobs"
 
@@ -34,6 +34,7 @@ export function CanonicalDocumentViewer({
   onClose,
 }: CanonicalDocumentViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const [iframeHeight, setIframeHeight] = useState<number | null>(null)
   const {
     data: htmlContent = "",
     isLoading,
@@ -69,20 +70,30 @@ export function CanonicalDocumentViewer({
     window.open(url, "_blank")
   }
 
+  const handleIframeLoad = () => {
+    const doc = iframeRef.current?.contentDocument
+    if (!doc) return
+    const scrollHeight =
+      doc.documentElement?.scrollHeight ?? doc.body?.scrollHeight
+    if (scrollHeight && scrollHeight > 0) {
+      setIframeHeight(scrollHeight)
+    }
+  }
+
   return (
     <div
-      className={`flex flex-col h-full bg-slate-100 rounded-lg overflow-hidden border ${className}`}
+      className={`flex flex-col h-full bg-muted/40 rounded-lg overflow-hidden border ${className}`}
     >
       {/* Control Header Bar */}
       {!hideToolbar && (
-        <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b text-xs">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-900">{title}</span>
-            <span className="text-[10px] font-mono uppercase bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-card text-foreground border-b text-xs">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
+            <span className="font-bold text-foreground truncate">{title}</span>
+            <span className="text-[10px] font-mono uppercase bg-muted text-muted-foreground px-2 py-0.5 rounded whitespace-nowrap">
               Canonical Print Engine (A4)
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <Button
               size="sm"
               variant="ghost"
@@ -121,7 +132,7 @@ export function CanonicalDocumentViewer({
                 size="sm"
                 onClick={onDownloadPdf}
                 disabled={isDownloadingPdf}
-                className="h-7 text-xs px-2.5 gap-1.5 cursor-pointer bg-slate-900 text-white hover:bg-slate-800"
+                className="h-7 text-xs px-2.5 gap-1.5 cursor-pointer"
               >
                 {isDownloadingPdf ? (
                   <Loader2 className="size-3 animate-spin" />
@@ -137,7 +148,7 @@ export function CanonicalDocumentViewer({
                   size="sm"
                   variant="ghost"
                   onClick={onClose}
-                  className="h-7 w-7 p-0 cursor-pointer text-slate-500 hover:text-slate-900"
+                  className="h-7 w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
                   title="Close"
                 >
                   <X className="size-4" />
@@ -152,14 +163,14 @@ export function CanonicalDocumentViewer({
       {/* Document View Area */}
       <div className="flex-1 p-4 sm:p-6 overflow-auto flex justify-center items-start">
         {isLoading ? (
-          <div className="p-16 flex flex-col items-center justify-center gap-3 text-slate-500">
+          <div className="p-16 flex flex-col items-center justify-center gap-3 text-muted-foreground">
             <Loader2 className="size-8 animate-spin text-primary" />
             <span className="text-xs font-mono font-medium">
               Compiling authoritative document layout...
             </span>
           </div>
         ) : error ? (
-          <div className="p-8 max-w-md bg-white border border-destructive/20 rounded-lg text-center space-y-2">
+          <div className="p-8 max-w-md bg-card text-card-foreground border border-destructive/20 rounded-lg text-center space-y-2">
             <p className="text-sm font-bold text-destructive">Preview Error</p>
             <p className="text-xs text-muted-foreground">{error}</p>
             <Button
@@ -176,6 +187,8 @@ export function CanonicalDocumentViewer({
             <iframe
               ref={iframeRef}
               srcDoc={htmlContent}
+              onLoad={handleIframeLoad}
+              style={iframeHeight ? { height: `${iframeHeight}px` } : undefined}
               className="w-full min-h-[950px] border-0"
               title="Canonical Document Schedule"
             />

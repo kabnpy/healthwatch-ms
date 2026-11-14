@@ -130,3 +130,43 @@ def test_render_html_fallback_resource_pure_in_process() -> None:
     assert rendered.filename == "Invitation_001.pdf"
     assert rendered.entity_type == DocumentEntityType.CLIENT
     assert rendered.entity_id == entity_id
+
+
+def test_render_html_risk_note_renders_phcf_uppercase() -> None:
+    risk_note_id = uuid.uuid4()
+    snapshot = {
+        "found": True,
+        "entity_type": DocumentEntityType.POLICY.value,
+        "entity_id": str(risk_note_id),
+        "filename": "RiskNote_RN-002.pdf",
+        "risk_note": {
+            "id": str(risk_note_id),
+            "risk_note_number": "RN-002",
+            "transaction_type": "New Business",
+            "status": "Issued",
+            "sum_insured": "1500000.00",
+            "net_premium": "45000.00",
+            "total_amount": "45112.50",
+        },
+        "policy": {"policy_number": "POL-002"},
+        "client": {"name": "Acme Logistics Ltd", "kra_pin": "P051234567X"},
+        "product": {"name": "Motor Private", "class_of_business": "Motor Private"},
+        "insurer": {"name": "Jubilee Insurance"},
+        "vehicle": {},
+        "vehicles": [],
+        "taxes": {"PHCF": "112.50"},
+        "benefits": [],
+        "special_conditions": None,
+        "coverage_start_formatted": "01 January 2026",
+        "coverage_end_formatted": "31 December 2026",
+        "stamp_date": "01 January 2026",
+        "include_digital_stamp": True,
+    }
+
+    rendered = DocumentRenderer.render_html(
+        snapshot,
+        resource_type=DocumentJobResourceType.RISK_NOTE,
+    )
+
+    assert "PHCF" in rendered.html
+    assert "Phcf" not in rendered.html

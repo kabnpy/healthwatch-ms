@@ -144,4 +144,96 @@ describe("CanonicalDocumentViewer", () => {
       expect(iframe?.getAttribute("srcdoc")).toContain("Recovered Preview")
     })
   })
+
+  it("uses semantic theme tokens on toolbar and error card while keeping A4 paper bg-white", async () => {
+    vi.mocked(
+      DocumentJobsService.jobsPreviewDocumentHtml,
+    ).mockResolvedValueOnce({
+      data: "<html><body><h1>Risk Note</h1></body></html>",
+    } as any)
+
+    const { container } = renderWithQueryClient(
+      <CanonicalDocumentViewer
+        resourceType="risk_note"
+        resourceId="rn-1"
+        title="Risk Note"
+        onDownloadPdf={vi.fn()}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(
+        document.querySelector("iframe")?.getAttribute("srcdoc"),
+      ).toContain("Risk Note")
+    })
+
+    const badge = screen.getByText("Canonical Print Engine (A4)")
+    expect(badge.className).toContain("whitespace-nowrap")
+    const toolbar = badge.closest("div")?.parentElement
+    expect(toolbar?.className).toContain("flex-wrap")
+    expect(toolbar?.className).not.toContain("bg-white")
+
+    const officialPdfBtn = screen.getByRole("button", { name: /Official PDF/i })
+    expect(officialPdfBtn.className).not.toContain("bg-slate-900")
+
+    const paperSheet = container.querySelector("iframe")?.parentElement
+    expect(paperSheet?.className).toContain("bg-white")
+  })
+
+  it("uses semantic theme tokens on the error card", async () => {
+    vi.mocked(
+      DocumentJobsService.jobsPreviewDocumentHtml,
+    ).mockRejectedValueOnce(new Error("Boom"))
+
+    renderWithQueryClient(
+      <CanonicalDocumentViewer
+        resourceType="risk_note"
+        resourceId="rn-1"
+        title="Risk Note"
+      />,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText("Preview Error")).toBeTruthy()
+    })
+
+    const errorCard = screen.getByText("Preview Error").parentElement
+    expect(errorCard?.className).not.toContain("bg-white")
+    expect(errorCard?.className).toContain("bg-card")
+  })
+
+  it("auto-fits iframe height to contentDocument.documentElement.scrollHeight on load", async () => {
+    vi.mocked(
+      DocumentJobsService.jobsPreviewDocumentHtml,
+    ).mockResolvedValueOnce({
+      data: "<html><body><h1>Tall Risk Note</h1></body></html>",
+    } as any)
+
+    renderWithQueryClient(
+      <CanonicalDocumentViewer
+        resourceType="risk_note"
+        resourceId="rn-1"
+        title="Risk Note"
+      />,
+    )
+
+    await waitFor(() => {
+      expect(document.querySelector("iframe")).toBeTruthy()
+    })
+
+    const iframe = document.querySelector("iframe") as HTMLIFrameElement
+    Object.defineProperty(iframe, "contentDocument", {
+      configurable: true,
+      value: {
+        documentElement: {
+          scrollHeight: 1320,
+        },
+      },
+    })
+
+    fireEvent.load(iframe)
+
+    expect(iframe.style.height).toBe("1320px")
+    expect(iframe.className).toContain("min-h-[950px]")
+  })
 })

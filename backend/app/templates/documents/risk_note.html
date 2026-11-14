@@ -760,14 +760,14 @@
 
           {% set tax_labels = {
             'training_levy': 'Insurance Training Levy (0.20%)',
-            'phcf': 'Policyholders Compensation Fund (0.25%)',
-            'pcf': 'Policyholders Compensation Fund (0.25%)',
+            'phcf': 'Policyholders Compensation Fund (PHCF 0.25%)',
+            'pcf': 'Policyholders Compensation Fund (PHCF 0.25%)',
             'stamp_duty': 'Stamp Duty',
             'vat': 'Value Added Tax (16%)'
           } %}
           {% for tax_name, tax_amt in (taxes or {}).items() %}
           <tr>
-            <td>{{ tax_labels.get(tax_name, tax_name | replace('_', ' ') | title) }}</td>
+            <td>{{ tax_labels.get(tax_name | lower, tax_name | replace('_', ' ') | title) }}</td>
             <td class="amount">KES&nbsp;{{ (tax_amt or 0) | kes }}</td>
           </tr>
           {% endfor %}
