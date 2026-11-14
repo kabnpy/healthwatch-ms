@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import {
   AlertCircle,
   CheckCircle2,
@@ -14,10 +14,14 @@ import { QueryErrorBanner } from "@/components/Common/QueryErrorBanner"
 import { AllocatePaymentDialog } from "@/components/Financials/AllocatePaymentDialog"
 import { ClientStatementView } from "@/components/Financials/ClientStatementView"
 import {
+  formatPaymentChannel,
+  formatStatusLabel,
   getAllocationColumns,
   getInvoiceColumns,
   getPaymentColumns,
+  RowReverseMenu,
 } from "@/components/Financials/financialsColumns"
+import { Badge } from "@/components/ui/badge"
 import {
   LedgerReversalDialog,
   type LedgerReversalTarget,
@@ -39,13 +43,14 @@ import { useClients } from "@/hooks/useClients"
 import { useFinancialSummary, useInvoices } from "@/hooks/useFinancials"
 import { usePaymentAllocations, usePaymentRecords } from "@/hooks/usePayments"
 import { cn } from "@/lib/utils"
+import { formatCurrency } from "@/utils"
 
 export const Route = createFileRoute("/_layout/financials/")({
   component: FinancialsHub,
   head: () => ({
     meta: [
       {
-        title: "Financials & Accounts Hub - HealthWatch MS",
+        title: "Financials Hub - HealthWatch MS",
       },
     ],
   }),
@@ -213,7 +218,7 @@ function FinancialsHub() {
         <div className="flex items-center gap-2">
           <Button
             onClick={() => setIsRecordPaymentOpen(true)}
-            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+            className="gap-2 cursor-pointer"
           >
             <Plus className="size-4" />
             Record Payment
@@ -233,7 +238,7 @@ function FinancialsHub() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono tabular-nums tracking-tight">
-              KES {summary.totalInvoiced.toLocaleString()}
+              {formatCurrency(summary.totalInvoiced)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Across {invoices.length} issued policy invoices
@@ -251,10 +256,10 @@ function FinancialsHub() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
-              KES {summary.totalPaid.toLocaleString()}
+              {formatCurrency(summary.totalPaid)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Deposited in agency accounts
+              Deposited in agency bank & M-Pesa
             </p>
           </CardContent>
         </Card>
@@ -269,32 +274,82 @@ function FinancialsHub() {
           )}
         >
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">
+            <CardTitle
+              className={cn(
+                "text-xs font-bold uppercase tracking-wider",
+                summary.totalDue > 0
+                  ? "text-rose-700 dark:text-rose-400"
+                  : "text-muted-foreground",
+              )}
+            >
               Outstanding Balance
             </CardTitle>
-            <AlertCircle className="size-4 text-rose-600" />
+            <AlertCircle
+              className={cn(
+                "size-4",
+                summary.totalDue > 0 ? "text-rose-600" : "text-muted-foreground",
+              )}
+            />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono tabular-nums tracking-tight text-rose-600 dark:text-rose-400">
-              KES {summary.totalDue.toLocaleString()}
+            <div
+              className={cn(
+                "text-2xl font-bold font-mono tabular-nums tracking-tight",
+                summary.totalDue > 0 && "text-rose-600 dark:text-rose-400",
+              )}
+            >
+              {formatCurrency(summary.totalDue)}
             </div>
-            <p className="text-xs text-rose-700/80 dark:text-rose-400/80 mt-1">
+            <p
+              className={cn(
+                "text-xs mt-1",
+                summary.totalDue > 0
+                  ? "text-rose-700/80 dark:text-rose-400/80"
+                  : "text-muted-foreground",
+              )}
+            >
               Open debtor balance awaiting collection
             </p>
           </CardContent>
         </Card>
 
         {/* Metric 4: Unallocated Client Funds */}
-        <Card className="hover:border-primary/50 transition-colors">
+        <Card
+          className={cn(
+            "transition-colors",
+            totalUnallocated > 0
+              ? "border-amber-500/40 bg-amber-500/5 hover:border-amber-500/60"
+              : "hover:border-primary/50",
+          )}
+        >
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <CardTitle
+              className={cn(
+                "text-xs font-bold uppercase tracking-wider",
+                totalUnallocated > 0
+                  ? "text-amber-700 dark:text-amber-400"
+                  : "text-muted-foreground",
+              )}
+            >
               Unallocated Funds
             </CardTitle>
-            <Wallet className="size-4 text-amber-600" />
+            <Wallet
+              className={cn(
+                "size-4",
+                totalUnallocated > 0
+                  ? "text-amber-600"
+                  : "text-muted-foreground",
+              )}
+            />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono tabular-nums tracking-tight text-amber-600 dark:text-amber-400">
-              KES {totalUnallocated.toLocaleString()}
+            <div
+              className={cn(
+                "text-2xl font-bold font-mono tabular-nums tracking-tight",
+                totalUnallocated > 0 && "text-amber-600 dark:text-amber-400",
+              )}
+            >
+              {formatCurrency(totalUnallocated)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Cleared funds awaiting invoice allocation
@@ -343,15 +398,99 @@ function FinancialsHub() {
       {activeTab === "payments" && (
         <Card>
           <CardContent className="p-4">
-            <DataTable
-              columns={getPaymentColumns({
-                clientMap,
-                onAllocate: handleOpenAllocate,
-                onReverse: setReversalTarget,
-              })}
-              data={filteredPayments}
-              searchPlaceholder="Search payment records..."
-            />
+            <div className="hidden md:block">
+              <DataTable
+                columns={getPaymentColumns({
+                  clientMap,
+                  onAllocate: handleOpenAllocate,
+                  onReverse: setReversalTarget,
+                })}
+                data={filteredPayments}
+                hideSearch
+              />
+            </div>
+            <div className="flex flex-col gap-3 md:hidden" data-testid="payments-mobile-cards">
+              {filteredPayments.length === 0 ? (
+                <p className="text-center text-xs text-muted-foreground py-6">
+                  No payment records found.
+                </p>
+              ) : (
+                filteredPayments.map((p) => {
+                  const unalloc = Number(p.unallocated_amount || 0)
+                  const isReversed = p.status?.toLowerCase() === "reversed"
+                  return (
+                    <div
+                      key={p.id}
+                      className="rounded-lg border p-3 space-y-2 text-xs"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <Link
+                            to="/clients/$clientId/overview"
+                            params={{ clientId: p.client_id }}
+                            className="font-semibold text-primary hover:underline block truncate"
+                          >
+                            {clientMap.get(p.client_id) || "Client"}
+                          </Link>
+                          <div className="font-mono text-muted-foreground mt-0.5">
+                            {p.reference_number || "NO-REF"} · {p.payment_date}
+                          </div>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[10px] font-bold px-1.5 py-0 shrink-0",
+                            isReversed
+                              ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
+                              : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
+                          )}
+                        >
+                          {formatStatusLabel(p.status || "active")}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 pt-1">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-muted border">
+                          {formatPaymentChannel(p.payment_method)}
+                        </span>
+                        <div className="text-right font-mono tabular-nums">
+                          <div className="font-bold">
+                            {formatCurrency(p.amount)}
+                          </div>
+                          {unalloc > 0 && (
+                            <div className="text-amber-600 dark:text-amber-400">
+                              Unalloc: {formatCurrency(unalloc)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {!isReversed && (
+                        <div className="flex items-center justify-end gap-1.5 pt-1 border-t">
+                          {unalloc > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleOpenAllocate(p)}
+                              className="h-7 text-[11px] px-2 cursor-pointer"
+                            >
+                              Allocate
+                            </Button>
+                          )}
+                          <RowReverseMenu
+                            onReverse={() =>
+                              setReversalTarget({
+                                type: "payment",
+                                id: p.id,
+                                title: `Payment ${p.reference_number || p.id.substring(0, 8)}`,
+                              })
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -360,11 +499,93 @@ function FinancialsHub() {
       {activeTab === "invoices" && (
         <Card>
           <CardContent className="p-4">
-            <DataTable
-              columns={getInvoiceColumns({ clientMap })}
-              data={filteredInvoices}
-              searchPlaceholder="Search invoices..."
-            />
+            <div className="hidden md:block">
+              <DataTable
+                columns={getInvoiceColumns({ clientMap })}
+                data={filteredInvoices}
+                hideSearch
+              />
+            </div>
+            <div className="flex flex-col gap-3 md:hidden" data-testid="invoices-mobile-cards">
+              {filteredInvoices.length === 0 ? (
+                <p className="text-center text-xs text-muted-foreground py-6">
+                  No invoices found.
+                </p>
+              ) : (
+                filteredInvoices.map((inv) => {
+                  const balDue = Number(inv.balance_due || 0)
+                  return (
+                    <div
+                      key={inv.id}
+                      className="rounded-lg border p-3 space-y-2 text-xs"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <Link
+                            to="/clients/$clientId/overview"
+                            params={{ clientId: inv.client_id }}
+                            className="font-semibold text-primary hover:underline block truncate"
+                          >
+                            {clientMap.get(inv.client_id) || "Client"}
+                          </Link>
+                          <div className="font-mono font-bold mt-0.5">
+                            {inv.invoice_number}
+                          </div>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[10px] font-bold px-1.5 py-0 shrink-0",
+                            balDue === 0
+                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                              : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+                          )}
+                        >
+                          {formatStatusLabel(inv.status)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 font-mono tabular-nums">
+                        <span className="text-muted-foreground">
+                          Due: {inv.due_date || "—"}
+                        </span>
+                        <div className="text-right">
+                          <div className="font-semibold">
+                            {formatCurrency(inv.total_amount)}
+                          </div>
+                          <div
+                            className={cn(
+                              "font-bold",
+                              balDue > 0
+                                ? "text-rose-600 dark:text-rose-400"
+                                : "text-emerald-600 dark:text-emerald-400",
+                            )}
+                          >
+                            {balDue > 0
+                              ? `Bal: ${formatCurrency(balDue)}`
+                              : "Settled"}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex justify-end pt-1 border-t">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-[11px] px-2.5"
+                          render={
+                            <Link
+                              to="/clients/$clientId/invoices"
+                              params={{ clientId: inv.client_id }}
+                            >
+                              View File &rarr;
+                            </Link>
+                          }
+                        />
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -373,13 +594,73 @@ function FinancialsHub() {
       {activeTab === "allocations" && (
         <Card>
           <CardContent className="p-4">
-            <DataTable
-              columns={getAllocationColumns({
-                onReverse: setReversalTarget,
-              })}
-              data={filteredAllocations}
-              searchPlaceholder="Search allocations..."
-            />
+            <div className="hidden md:block">
+              <DataTable
+                columns={getAllocationColumns({
+                  onReverse: setReversalTarget,
+                })}
+                data={filteredAllocations}
+                hideSearch
+              />
+            </div>
+            <div className="flex flex-col gap-3 md:hidden" data-testid="allocations-mobile-cards">
+              {filteredAllocations.length === 0 ? (
+                <p className="text-center text-xs text-muted-foreground py-6">
+                  No allocations found.
+                </p>
+              ) : (
+                filteredAllocations.map((a) => {
+                  const isReversed = a.status?.toLowerCase() === "reversed"
+                  return (
+                    <div
+                      key={a.id}
+                      className="rounded-lg border p-3 space-y-2 text-xs"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-mono text-muted-foreground">
+                          {a.allocated_at
+                            ? new Date(a.allocated_at).toLocaleDateString()
+                            : "—"}
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[10px] font-bold px-1.5 py-0 shrink-0",
+                            isReversed
+                              ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
+                              : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
+                          )}
+                        >
+                          {formatStatusLabel(a.status)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="font-mono text-[11px] text-muted-foreground">
+                          Pay {a.payment_record_id.substring(0, 8)} → Inv{" "}
+                          {a.invoice_id.substring(0, 8)}
+                        </div>
+                        <div className="text-right font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
+                          +{formatCurrency(a.amount)}
+                        </div>
+                      </div>
+                      {!isReversed && (
+                        <div className="flex justify-end pt-1 border-t">
+                          <RowReverseMenu
+                            onReverse={() =>
+                              setReversalTarget({
+                                type: "allocation",
+                                id: a.id,
+                                title: `Allocation ${a.id.substring(0, 8)} (${formatCurrency(a.amount)})`,
+                              })
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
