@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -p tsconfig.build.json && vite build",
     "test": "vitest run",
-    "lint": "biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true ./",
+    "lint": "biome check --no-errors-on-unmatched --files-ignore-unknown=true ./",
+    "format": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true ./",
     "preview": "vite preview",
     "generate-client": "openapi-ts && printf \"\\nexport { client } from './client.gen';\\nimport type { AxiosError } from 'axios';\\nexport type ApiError = AxiosError;\\n\" >> src/client/index.ts"
   },
@@ -55,7 +56,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.14",
+    "@biomejs/biome": "^2.6.7",
     "@hey-api/client-axios": "^0.9.1",
     "@hey-api/openapi-ts": "0.97.3",
     "@playwright/test": "1.63.0",

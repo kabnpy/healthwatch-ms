@@ -5,7 +5,9 @@ test.describe("Policy Detail (/clients/$clientId/policies/$policyId)", () => {
     page: import("@playwright/test").Page,
   ) {
     await page.goto("/clients")
-    const token = await page.evaluate(() => localStorage.getItem("access_token"))
+    const token = await page.evaluate(() =>
+      localStorage.getItem("access_token"),
+    )
     const res = await page.request.get(
       "http://localhost:8000/api/v1/policies/?limit=1",
       {

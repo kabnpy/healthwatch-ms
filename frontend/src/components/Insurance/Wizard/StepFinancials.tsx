@@ -190,365 +190,358 @@ export function StepFinancials({
 
   return (
     <form onSubmit={form.handleSubmit(onNext)} className="space-y-8">
-        <div className="space-y-1">
-          <h3 className="text-lg font-bold tracking-tight">
-            Financials & Coverage
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Review the insured value and define the duration of protection.
-          </p>
-        </div>
+      <div className="space-y-1">
+        <h3 className="text-lg font-bold tracking-tight">
+          Financials & Coverage
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Review the insured value and define the duration of protection.
+        </p>
+      </div>
 
-        <div className="space-y-8">
-          {/* Inputs Section */}
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {!isPA && (
-                <div className="space-y-2">
-                  <FieldLabel>Sum Insured (KES)</FieldLabel>
-                  <Input
-                    type="text"
-                    value={(Number(sum_insured) || 0).toLocaleString()}
-                    onChange={handleSumInsuredChange}
-                    className="h-12 text-base font-bold"
-                  />
-                  <p className="text-[10px] text-muted-foreground">
-                    Define the authoritative value of the asset.
-                  </p>
-                </div>
-              )}
-              <Controller
-                control={form.control as any}
-                name="financials.rate"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel>
-                      {isPA ? "Premium (Flat Amount)" : "Applied Rate (%)"}
-                    </FieldLabel>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...field}
-                      value={field.value || 0}
-                      readOnly={!!isMotorPrivate && !isManual}
-                      className={`h-12 text-base ${isMotorPrivate && !isManual ? "bg-muted/50" : ""}`}
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
-              <Controller
-                control={form.control as any}
-                name="financials.startDate"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel>Coverage Start Date</FieldLabel>
-                    <Input
-                      type="date"
-                      {...field}
-                      value={field.value || ""}
-                      className="h-12 text-base"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-              <Controller
-                control={form.control as any}
-                name="financials.duration"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel>Policy Duration (Months)</FieldLabel>
-                    <Input
-                      type="number"
-                      {...field}
-                      value={field.value || 12}
-                      className="h-12 text-base"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-            </div>
-
-            {isMotor && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider">
-                    Benefits (Extensions)
-                  </h3>
-                  {isHighEnd && (
-                    <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
-                      High-End: All Inclusive
-                    </span>
-                  )}
-                </div>
-
-                <div className="space-y-3 border rounded-md p-4 bg-muted/10">
-                  <Controller
-                    control={form.control as any}
-                    name="extensions.pvt"
-                    render={({ field, fieldState }) => (
-                      <Field
-                        data-invalid={fieldState.invalid}
-                        orientation="horizontal"
-                        className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card"
-                      >
-                        <FieldLabel className="text-sm cursor-pointer w-full">
-                          Political Violence & Terrorism (0.25%)
-                          {isHighEnd && (
-                            <span className="ml-2 text-[10px] font-bold text-emerald-600 block">
-                              (INCLUDED)
-                            </span>
-                          )}
-                        </FieldLabel>
-                        <Checkbox
-                          checked={!!field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={isHighEnd}
-                        />
-                      </Field>
-                    )}
-                  />
-                  <Controller
-                    control={form.control as any}
-                    name="extensions.excessProtector"
-                    render={({ field, fieldState }) => (
-                      <Field
-                        data-invalid={fieldState.invalid}
-                        orientation="horizontal"
-                        className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card"
-                      >
-                        <FieldLabel className="text-sm cursor-pointer w-full">
-                          Excess Protector (0.25%)
-                          {isHighEnd && (
-                            <span className="ml-2 text-[10px] font-bold text-emerald-600 block">
-                              (INCLUDED)
-                            </span>
-                          )}
-                        </FieldLabel>
-                        <Checkbox
-                          checked={!!field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={isHighEnd}
-                        />
-                      </Field>
-                    )}
-                  />
-                  {isMotorPrivate && (
-                    <Controller
-                      control={form.control as any}
-                      name="extensions.passengerLiability"
-                      render={({ field, fieldState }) => (
-                        <Field
-                          data-invalid={fieldState.invalid}
-                          orientation="horizontal"
-                          className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card"
-                        >
-                          <FieldLabel className="text-sm cursor-pointer w-full">
-                            Passenger Liability (KES 500)
-                          </FieldLabel>
-                          <Checkbox
-                            checked={!!field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </Field>
-                      )}
-                    />
-                  )}
-                  {isMotorPrivate && (
-                    <Controller
-                      control={form.control as any}
-                      name="extensions.omRescuePlus"
-                      render={({ field, fieldState }) => (
-                        <Field
-                          data-invalid={fieldState.invalid}
-                          orientation="horizontal"
-                          className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card"
-                        >
-                          <FieldLabel className="text-sm cursor-pointer w-full">
-                            OM Rescue Plus (KES 1,000)
-                          </FieldLabel>
-                          <Checkbox
-                            checked={!!field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </Field>
-                      )}
-                    />
-                  )}
-                </div>
+      <div className="space-y-8">
+        {/* Inputs Section */}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {!isPA && (
+              <div className="space-y-2">
+                <FieldLabel>Sum Insured (KES)</FieldLabel>
+                <Input
+                  type="text"
+                  value={(Number(sum_insured) || 0).toLocaleString()}
+                  onChange={handleSumInsuredChange}
+                  className="h-12 text-base font-bold"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Define the authoritative value of the asset.
+                </p>
               </div>
             )}
+            <Controller
+              control={form.control as any}
+              name="financials.rate"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>
+                    {isPA ? "Premium (Flat Amount)" : "Applied Rate (%)"}
+                  </FieldLabel>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...field}
+                    value={field.value || 0}
+                    readOnly={!!isMotorPrivate && !isManual}
+                    className={`h-12 text-base ${isMotorPrivate && !isManual ? "bg-muted/50" : ""}`}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
           </div>
 
-          {/* Preview Section */}
-          <div className="bg-slate-900 text-white rounded-lg p-6 shadow-xl border border-slate-800">
-            <div className="flex items-center justify-between border-b border-slate-700 pb-4 mb-4">
-              <h3 className="font-bold text-sm uppercase tracking-widest text-slate-400">
-                Premium Preview
-              </h3>
-              <div className="text-right text-[10px] font-mono text-slate-500 flex items-center gap-2">
-                {quoteMutation.isPending && (
-                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                )}
-                {breakdown ? "AUTHORITATIVE MATH" : "ESTIMATED"}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+            <Controller
+              control={form.control as any}
+              name="financials.startDate"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Coverage Start Date</FieldLabel>
+                  <Input
+                    type="date"
+                    {...field}
+                    value={field.value || ""}
+                    className="h-12 text-base"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              control={form.control as any}
+              name="financials.duration"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Policy Duration (Months)</FieldLabel>
+                  <Input
+                    type="number"
+                    {...field}
+                    value={field.value || 12}
+                    className="h-12 text-base"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+          </div>
 
-            <div className="space-y-6">
-              {!breakdown && !quoteMutation.isPending ? (
-                <div className="py-12 text-center space-y-2">
-                  <p className="text-slate-500 text-xs uppercase tracking-widest font-bold">
-                    Awaiting Input
-                  </p>
-                  <p className="text-slate-600 text-[10px] italic">
-                    Enter sum insured to generate authoritative quote
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-sm">
-                      <div className="flex flex-col">
-                        <span className="text-slate-400">
-                          {isPA ? "Base Premium" : "Basic Premium"}
-                        </span>
-                        {isMotorPrivate && (
-                          <span className="text-[10px] text-slate-500 font-mono">
-                            Applied Rate:{" "}
-                            {(financials as any).basicRate || financials.rate}%
+          {isMotor && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider">
+                  Benefits (Extensions)
+                </h3>
+                {isHighEnd && (
+                  <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                    High-End: All Inclusive
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-3 border rounded-md p-4 bg-muted/10">
+                <Controller
+                  control={form.control as any}
+                  name="extensions.pvt"
+                  render={({ field, fieldState }) => (
+                    <Field
+                      data-invalid={fieldState.invalid}
+                      orientation="horizontal"
+                      className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card"
+                    >
+                      <FieldLabel className="text-sm cursor-pointer w-full">
+                        Political Violence & Terrorism (0.25%)
+                        {isHighEnd && (
+                          <span className="ml-2 text-[10px] font-bold text-emerald-600 block">
+                            (INCLUDED)
                           </span>
                         )}
-                      </div>
-                      <span
-                        className={`font-mono font-bold ${
-                          quoteMutation.isPending ? "opacity-40" : ""
-                        }`}
+                      </FieldLabel>
+                      <Checkbox
+                        checked={!!field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isHighEnd}
+                      />
+                    </Field>
+                  )}
+                />
+                <Controller
+                  control={form.control as any}
+                  name="extensions.excessProtector"
+                  render={({ field, fieldState }) => (
+                    <Field
+                      data-invalid={fieldState.invalid}
+                      orientation="horizontal"
+                      className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card"
+                    >
+                      <FieldLabel className="text-sm cursor-pointer w-full">
+                        Excess Protector (0.25%)
+                        {isHighEnd && (
+                          <span className="ml-2 text-[10px] font-bold text-emerald-600 block">
+                            (INCLUDED)
+                          </span>
+                        )}
+                      </FieldLabel>
+                      <Checkbox
+                        checked={!!field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isHighEnd}
+                      />
+                    </Field>
+                  )}
+                />
+                {isMotorPrivate && (
+                  <Controller
+                    control={form.control as any}
+                    name="extensions.passengerLiability"
+                    render={({ field, fieldState }) => (
+                      <Field
+                        data-invalid={fieldState.invalid}
+                        orientation="horizontal"
+                        className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card"
                       >
-                        {breakdown
-                          ? Number(breakdown.net_premium).toLocaleString(
-                              undefined,
-                              {
-                                minimumFractionDigits: 2,
-                              },
-                            )
-                          : "0.00"}
-                      </span>
-                    </div>
+                        <FieldLabel className="text-sm cursor-pointer w-full">
+                          Passenger Liability (KES 500)
+                        </FieldLabel>
+                        <Checkbox
+                          checked={!!field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </Field>
+                    )}
+                  />
+                )}
+                {isMotorPrivate && (
+                  <Controller
+                    control={form.control as any}
+                    name="extensions.omRescuePlus"
+                    render={({ field, fieldState }) => (
+                      <Field
+                        data-invalid={fieldState.invalid}
+                        orientation="horizontal"
+                        className="flex items-center justify-between space-y-0 rounded-lg p-2 border bg-card"
+                      >
+                        <FieldLabel className="text-sm cursor-pointer w-full">
+                          OM Rescue Plus (KES 1,000)
+                        </FieldLabel>
+                        <Checkbox
+                          checked={!!field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </Field>
+                    )}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold uppercase text-slate-500 tracking-tight">
-                        Benefits
+        {/* Preview Section */}
+        <div className="bg-slate-900 text-white rounded-lg p-6 shadow-xl border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-700 pb-4 mb-4">
+            <h3 className="font-bold text-sm uppercase tracking-widest text-slate-400">
+              Premium Preview
+            </h3>
+            <div className="text-right text-[10px] font-mono text-slate-500 flex items-center gap-2">
+              {quoteMutation.isPending && (
+                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              )}
+              {breakdown ? "AUTHORITATIVE MATH" : "ESTIMATED"}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {!breakdown && !quoteMutation.isPending ? (
+              <div className="py-12 text-center space-y-2">
+                <p className="text-slate-500 text-xs uppercase tracking-widest font-bold">
+                  Awaiting Input
+                </p>
+                <p className="text-slate-600 text-[10px] italic">
+                  Enter sum insured to generate authoritative quote
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <div className="flex flex-col">
+                      <span className="text-slate-400">
+                        {isPA ? "Base Premium" : "Basic Premium"}
                       </span>
-                      {benefits.length > 0 ? (
-                        benefits.map((benefit) => (
-                          <div
-                            key={benefit.name}
-                            className={`flex justify-between text-xs py-1 border-b border-slate-800 last:border-0 ${
-                              quoteMutation.isPending ? "opacity-40" : ""
-                            }`}
-                          >
-                            <span className="text-slate-300 italic">
-                              {benefit.name}
-                            </span>
-                            <span className="font-mono">
-                              {Number(benefit.amount).toLocaleString(
+                      {isMotorPrivate && (
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          Applied Rate:{" "}
+                          {(financials as any).basicRate || financials.rate}%
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className={`font-mono font-bold ${
+                        quoteMutation.isPending ? "opacity-40" : ""
+                      }`}
+                    >
+                      {breakdown
+                        ? Number(breakdown.net_premium).toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                            },
+                          )
+                        : "0.00"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase text-slate-500 tracking-tight">
+                      Benefits
+                    </span>
+                    {benefits.length > 0 ? (
+                      benefits.map((benefit) => (
+                        <div
+                          key={benefit.name}
+                          className={`flex justify-between text-xs py-1 border-b border-slate-800 last:border-0 ${
+                            quoteMutation.isPending ? "opacity-40" : ""
+                          }`}
+                        >
+                          <span className="text-slate-300 italic">
+                            {benefit.name}
+                          </span>
+                          <span className="font-mono">
+                            {Number(benefit.amount).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                            })}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[10px] text-slate-600 italic">
+                        No additional benefits included.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4 border-t border-slate-800 pt-4">
+                  <div className="bg-slate-800/50 p-3 rounded space-y-2">
+                    {breakdown?.taxes ? (
+                      Object.entries(breakdown.taxes).map(([name, amount]) => (
+                        <div
+                          key={name}
+                          className={`flex justify-between text-xs ${
+                            quoteMutation.isPending ? "opacity-40" : ""
+                          }`}
+                        >
+                          <span className="text-slate-400">
+                            {name.replace("_", " ").toUpperCase()}
+                          </span>
+                          <span className="font-mono text-slate-300">
+                            {Number(amount).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                            })}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-[10px] text-slate-600 italic py-2">
+                        Taxes will be calculated on quote
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-700">
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-xs font-bold text-slate-400 uppercase">
+                        Total Amount
+                      </span>
+                      <div className="text-right">
+                        <span
+                          className={`text-2xl font-black text-emerald-400 font-mono ${
+                            quoteMutation.isPending ? "opacity-40" : ""
+                          }`}
+                        >
+                          <span className="text-sm font-normal mr-1">KES</span>
+                          {breakdown
+                            ? Number(breakdown.total_amount).toLocaleString(
                                 undefined,
                                 {
                                   minimumFractionDigits: 2,
                                 },
-                              )}
-                            </span>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-[10px] text-slate-600 italic">
-                          No additional benefits included.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 border-t border-slate-800 pt-4">
-                    <div className="bg-slate-800/50 p-3 rounded space-y-2">
-                      {breakdown?.taxes ? (
-                        Object.entries(breakdown.taxes).map(
-                          ([name, amount]) => (
-                            <div
-                              key={name}
-                              className={`flex justify-between text-xs ${
-                                quoteMutation.isPending ? "opacity-40" : ""
-                              }`}
-                            >
-                              <span className="text-slate-400">
-                                {name.replace("_", " ").toUpperCase()}
-                              </span>
-                              <span className="font-mono text-slate-300">
-                                {Number(amount).toLocaleString(undefined, {
-                                  minimumFractionDigits: 2,
-                                })}
-                              </span>
-                            </div>
-                          ),
-                        )
-                      ) : (
-                        <div className="text-[10px] text-slate-600 italic py-2">
-                          Taxes will be calculated on quote
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-700">
-                      <div className="flex justify-between items-baseline">
-                        <span className="text-xs font-bold text-slate-400 uppercase">
-                          Total Amount
+                              )
+                            : "0.00"}
                         </span>
-                        <div className="text-right">
-                          <span
-                            className={`text-2xl font-black text-emerald-400 font-mono ${
-                              quoteMutation.isPending ? "opacity-40" : ""
-                            }`}
-                          >
-                            <span className="text-sm font-normal mr-1">
-                              KES
-                            </span>
-                            {breakdown
-                              ? Number(breakdown.total_amount).toLocaleString(
-                                  undefined,
-                                  {
-                                    minimumFractionDigits: 2,
-                                  },
-                                )
-                              : "0.00"}
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </div>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
+      </div>
 
-        <div className="flex justify-between pt-6 border-t mt-4">
-          <Button type="button" variant="outline" onClick={onBack} size="lg">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back: Asset Details
-          </Button>
-          <Button type="submit" size="lg" className="px-10">
-            Next: Review & Issue
-          </Button>
-        </div>
-      </form>
+      <div className="flex justify-between pt-6 border-t mt-4">
+        <Button type="button" variant="outline" onClick={onBack} size="lg">
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back: Asset Details
+        </Button>
+        <Button type="submit" size="lg" className="px-10">
+          Next: Review & Issue
+        </Button>
+      </div>
+    </form>
   )
 }

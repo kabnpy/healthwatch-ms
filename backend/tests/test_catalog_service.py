@@ -44,9 +44,7 @@ def test_catalog_insurer_lifecycle_and_soft_delete(db: Session) -> None:
 
     catalog_service.delete_insurer(session=db, insurer_id=created.id)
     assert catalog_service.get_insurer(session=db, insurer_id=created.id) is None
-    assert (
-        catalog_service.get_insurer_by_name(session=db, name=insurer_in.name) is None
-    )
+    assert catalog_service.get_insurer_by_name(session=db, name=insurer_in.name) is None
 
     with pytest.raises(CatalogNotFoundError):
         catalog_service.delete_insurer(session=db, insurer_id=created.id)
@@ -97,9 +95,7 @@ def test_catalog_product_lifecycle_and_filters(db: Session) -> None:
             class_of_insurance="Medical",
         ),
     )
-    items, count = catalog_service.list_products(
-        session=db, insurer_id=insurer1.id
-    )
+    items, count = catalog_service.list_products(session=db, insurer_id=insurer1.id)
     assert count == 1
     assert items[0].id == p1.id
     assert all(p.id != p2.id for p in items)

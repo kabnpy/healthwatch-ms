@@ -165,22 +165,22 @@ function SignUp() {
             )}
           />
 
-            <LoadingButton
-              type="submit"
-              className="w-full"
-              loading={signUpMutation.isPending}
-            >
-              Sign Up
-            </LoadingButton>
-          </div>
+          <LoadingButton
+            type="submit"
+            className="w-full"
+            loading={signUpMutation.isPending}
+          >
+            Sign Up
+          </LoadingButton>
+        </div>
 
-          <div className="text-center text-sm">
-            Already have an account?{" "}
-            <RouterLink to="/login" className="underline underline-offset-4">
-              Log in
-            </RouterLink>
-          </div>
-        </form>
+        <div className="text-center text-sm">
+          Already have an account?{" "}
+          <RouterLink to="/login" className="underline underline-offset-4">
+            Log in
+          </RouterLink>
+        </div>
+      </form>
     </AuthLayout>
   )
 }

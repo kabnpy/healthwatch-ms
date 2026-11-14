@@ -140,22 +140,22 @@ function ResetPassword() {
             )}
           />
 
-            <LoadingButton
-              type="submit"
-              className="w-full"
-              loading={mutation.isPending}
-            >
-              Reset Password
-            </LoadingButton>
-          </div>
+          <LoadingButton
+            type="submit"
+            className="w-full"
+            loading={mutation.isPending}
+          >
+            Reset Password
+          </LoadingButton>
+        </div>
 
-          <div className="text-center text-sm">
-            Remember your password?{" "}
-            <RouterLink to="/login" className="underline underline-offset-4">
-              Log in
-            </RouterLink>
-          </div>
-        </form>
+        <div className="text-center text-sm">
+          Remember your password?{" "}
+          <RouterLink to="/login" className="underline underline-offset-4">
+            Log in
+          </RouterLink>
+        </div>
+      </form>
     </AuthLayout>
   )
 }

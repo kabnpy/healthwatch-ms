@@ -357,9 +357,7 @@ def test_commission_service_and_routes(
     assert len(schedules) == 1
 
     with pytest.raises(CommissionNotFoundError):
-        CommissionService.get_commission_schedule(
-            session=db, schedule_id=uuid.uuid4()
-        )
+        CommissionService.get_commission_schedule(session=db, schedule_id=uuid.uuid4())
 
     r_post = client.post(
         f"{settings.API_V1_STR}/commissions/",

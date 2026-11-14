@@ -27,7 +27,11 @@ def stub_pdf_rasterizer(monkeypatch):
     class StubPdfRasterizer:
         def render(self, html_content: str) -> bytes:
             assert html_content
-            return b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n" + (b"0" * 100) + b"\n%%EOF\n"
+            return (
+                b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n"
+                + (b"0" * 100)
+                + b"\n%%EOF\n"
+            )
 
     monkeypatch.setattr(DocumentRenderer, "pdf_rasterizer", StubPdfRasterizer())
 
@@ -325,6 +329,8 @@ def test_document_job_idempotency_key_deduplication(
         select(DocumentJob).where(DocumentJob.idempotency_key == idem_key)
     ).all()
     assert len(rows) == 1
+
+
 def test_document_job_process_failure_marks_job_failed(
     client: TestClient,
     superuser_token_headers: dict[str, str],

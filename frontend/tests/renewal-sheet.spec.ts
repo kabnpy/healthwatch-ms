@@ -16,7 +16,10 @@ test.describe("RenewalTransitionSheet", () => {
 
     const actionButtons = page.locator(ACTION_BUTTON_SELECTOR)
     const count = await actionButtons.count()
-    test.skip(count === 0, "No renewal rows available to open RenewalTransitionSheet")
+    test.skip(
+      count === 0,
+      "No renewal rows available to open RenewalTransitionSheet",
+    )
 
     await actionButtons.first().click()
     const dialog = page.getByRole("dialog")
@@ -58,7 +61,10 @@ test.describe("RenewalTransitionSheet", () => {
 
     const mobileCards = page.getByTestId("renewal-mobile-card")
     const count = await mobileCards.count()
-    test.skip(count === 0, "No mobile renewal cards available to open RenewalTransitionSheet")
+    test.skip(
+      count === 0,
+      "No mobile renewal cards available to open RenewalTransitionSheet",
+    )
 
     const actionBtn = mobileCards.first().getByRole("button").first()
     await actionBtn.click()

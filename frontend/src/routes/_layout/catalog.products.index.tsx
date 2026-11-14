@@ -3,8 +3,8 @@ import { Search } from "lucide-react"
 
 import { DataTable } from "@/components/Common/DataTable"
 import PendingItems from "@/components/Pending/PendingItems"
-import { ProductActionsMenu } from "@/components/Products/ProductActionsMenu"
 import { columns, type ProductRow } from "@/components/Products/columns"
+import { ProductActionsMenu } from "@/components/Products/ProductActionsMenu"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useInsurers, useProducts } from "@/hooks/useCatalog"
 

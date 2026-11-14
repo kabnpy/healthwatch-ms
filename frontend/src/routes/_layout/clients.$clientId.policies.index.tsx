@@ -102,7 +102,11 @@ function ClientPolicies() {
               {(
                 [
                   { key: "all", label: "All", count: policies.length },
-                  { key: "active", label: "Active", count: activePolicies.length },
+                  {
+                    key: "active",
+                    label: "Active",
+                    count: activePolicies.length,
+                  },
                   {
                     key: "historical",
                     label: "Historical",

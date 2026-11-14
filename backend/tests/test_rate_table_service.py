@@ -149,9 +149,7 @@ def test_update_version_transitions_and_draft_only_guards(db: Session) -> None:
 
     # Non-status metadata edit on published version is rejected
     with pytest.raises(RateTableConflictError):
-        service.update_version(
-            rt.id, RateTableVersionUpdate(source_reference="Tamper")
-        )
+        service.update_version(rt.id, RateTableVersionUpdate(source_reference="Tamper"))
 
     # Invalid transition: published -> draft
     with pytest.raises(RateTableConflictError):

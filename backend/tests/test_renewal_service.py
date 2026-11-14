@@ -199,9 +199,7 @@ def test_get_list_count_and_soft_delete_exclusion(db: Session) -> None:
     assert RenewalService.get_renewal(session=db, renewal_id=r1.id).id == r1.id
     assert RenewalService.count_renewals(session=db, policy_id=policy1.id) == 1
     assert (
-        RenewalService.count_renewals(
-            session=db, status=RenewalStatus.CARRIER_RECEIVED
-        )
+        RenewalService.count_renewals(session=db, status=RenewalStatus.CARRIER_RECEIVED)
         >= 1
     )
     listed = RenewalService.get_renewals(

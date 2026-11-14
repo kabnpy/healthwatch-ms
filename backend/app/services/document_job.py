@@ -125,7 +125,9 @@ class DocumentJobService:
             try:
                 cls.process_job(session=session, job_id=job_id)
             except Exception:
-                logger.exception("Background processing failed for document job %s", job_id)
+                logger.exception(
+                    "Background processing failed for document job %s", job_id
+                )
 
     @classmethod
     def process_job(cls, session: Session, job_id: uuid.UUID) -> DocumentJob:

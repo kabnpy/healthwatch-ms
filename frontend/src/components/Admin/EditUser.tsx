@@ -122,7 +122,9 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                     {...field}
                     required
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -139,7 +141,9 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                     aria-invalid={fieldState.invalid}
                     {...field}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -156,7 +160,9 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                     aria-invalid={fieldState.invalid}
                     {...field}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -173,7 +179,9 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                     aria-invalid={fieldState.invalid}
                     {...field}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -191,7 +199,9 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                     onCheckedChange={field.onChange}
                   />
                   <FieldLabel className="font-normal">Is superuser?</FieldLabel>
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -209,7 +219,9 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                     onCheckedChange={field.onChange}
                   />
                   <FieldLabel className="font-normal">Is active?</FieldLabel>
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />

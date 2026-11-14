@@ -155,7 +155,9 @@ class DocumentService:
         if entity_type:
             statement = statement.where(Document.entity_type == entity_type)
 
-        count = session.exec(select(func.count()).select_from(statement.subquery())).one()
+        count = session.exec(
+            select(func.count()).select_from(statement.subquery())
+        ).one()
         items = list(session.exec(statement.offset(skip).limit(limit)).all())
         return items, count
 

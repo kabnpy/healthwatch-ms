@@ -21,13 +21,13 @@ import {
   getPaymentColumns,
   RowReverseMenu,
 } from "@/components/Financials/financialsColumns"
-import { Badge } from "@/components/ui/badge"
 import {
   LedgerReversalDialog,
   type LedgerReversalTarget,
 } from "@/components/Financials/LedgerReversalDialog"
 import { RecordPaymentModal } from "@/components/Financials/RecordPaymentModal"
 import PendingItems from "@/components/Pending/PendingItems"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -287,7 +287,9 @@ function FinancialsHub() {
             <AlertCircle
               className={cn(
                 "size-4",
-                summary.totalDue > 0 ? "text-rose-600" : "text-muted-foreground",
+                summary.totalDue > 0
+                  ? "text-rose-600"
+                  : "text-muted-foreground",
               )}
             />
           </CardHeader>
@@ -412,7 +414,10 @@ function FinancialsHub() {
                 hideSearch
               />
             </div>
-            <div className="flex flex-col gap-3 md:hidden" data-testid="payments-mobile-cards">
+            <div
+              className="flex flex-col gap-3 md:hidden"
+              data-testid="payments-mobile-cards"
+            >
               {filteredPayments.length === 0 ? (
                 <p className="text-center text-xs text-muted-foreground py-6">
                   No payment records found.
@@ -509,7 +514,10 @@ function FinancialsHub() {
                 hideSearch
               />
             </div>
-            <div className="flex flex-col gap-3 md:hidden" data-testid="invoices-mobile-cards">
+            <div
+              className="flex flex-col gap-3 md:hidden"
+              data-testid="invoices-mobile-cards"
+            >
               {filteredInvoices.length === 0 ? (
                 <p className="text-center text-xs text-muted-foreground py-6">
                   No invoices found.
@@ -606,7 +614,10 @@ function FinancialsHub() {
                 hideSearch
               />
             </div>
-            <div className="flex flex-col gap-3 md:hidden" data-testid="allocations-mobile-cards">
+            <div
+              className="flex flex-col gap-3 md:hidden"
+              data-testid="allocations-mobile-cards"
+            >
               {filteredAllocations.length === 0 ? (
                 <p className="text-center text-xs text-muted-foreground py-6">
                   No allocations found.

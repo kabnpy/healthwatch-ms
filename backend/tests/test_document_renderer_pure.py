@@ -30,7 +30,11 @@ def test_render_html_risk_note_pure_in_process() -> None:
         "client": {"name": "Acme Logistics Ltd", "kra_pin": "P051234567X"},
         "product": {"name": "Motor Private", "class_of_business": "Motor Private"},
         "insurer": {"name": "Jubilee Insurance"},
-        "vehicle": {"registration_number": "KAA 123A", "make": "Toyota", "model": "Corolla"},
+        "vehicle": {
+            "registration_number": "KAA 123A",
+            "make": "Toyota",
+            "model": "Corolla",
+        },
         "vehicles": [],
         "taxes": {"itl": "90.00", "pcf": "112.50", "stamp_duty": "40.00"},
         "benefits": [],

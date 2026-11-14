@@ -60,7 +60,9 @@ def read_renewals(
     count = RenewalService.count_renewals(
         session=session, policy_id=policy_id, status=status
     )
-    return RenewalsPublic(data=renewals, count=count)
+    return RenewalsPublic(
+        data=[RenewalPublic.model_validate(r) for r in renewals], count=count
+    )
 
 
 @router.get("/horizon", response_model=RenewalHorizonResponse)

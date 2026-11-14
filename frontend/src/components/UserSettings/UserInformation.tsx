@@ -76,95 +76,95 @@ const UserInformation = () => {
   return (
     <div className="max-w-md">
       <h3 className="text-lg font-semibold py-4">User Information</h3>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-4"
-        >
-          <Controller
-            control={form.control}
-            name="full_name"
-            render={({ field, fieldState }) =>
-              editMode ? (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={field.name}>Full name</FieldLabel>
-                  <Input
-                    id={field.name}
-                    aria-invalid={fieldState.invalid}
-                    type="text"
-                    {...field}
-                  />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              ) : (
-                <Field>
-                  <FieldLabel>Full name</FieldLabel>
-                  <p
-                    className={cn(
-                      "py-2 truncate max-w-sm",
-                      !field.value && "text-muted-foreground",
-                    )}
-                  >
-                    {field.value || "N/A"}
-                  </p>
-                </Field>
-              )
-            }
-          />
-
-          <Controller
-            control={form.control}
-            name="email"
-            render={({ field, fieldState }) =>
-              editMode ? (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={field.name}>Email</FieldLabel>
-                  <Input
-                    id={field.name}
-                    aria-invalid={fieldState.invalid}
-                    type="email"
-                    {...field}
-                  />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              ) : (
-                <Field>
-                  <FieldLabel>Email</FieldLabel>
-                  <p className="py-2 truncate max-w-sm">{field.value}</p>
-                </Field>
-              )
-            }
-          />
-
-          <div className="flex gap-3">
-            {editMode ? (
-              <>
-                <LoadingButton
-                  type="submit"
-                  loading={mutation.isPending}
-                  disabled={!form.formState.isDirty}
-                >
-                  Save
-                </LoadingButton>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onCancel}
-                  disabled={mutation.isPending}
-                >
-                  Cancel
-                </Button>
-              </>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col gap-4"
+      >
+        <Controller
+          control={form.control}
+          name="full_name"
+          render={({ field, fieldState }) =>
+            editMode ? (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Full name</FieldLabel>
+                <Input
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  type="text"
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
             ) : (
-              <Button type="button" onClick={toggleEditMode}>
-                Edit
+              <Field>
+                <FieldLabel>Full name</FieldLabel>
+                <p
+                  className={cn(
+                    "py-2 truncate max-w-sm",
+                    !field.value && "text-muted-foreground",
+                  )}
+                >
+                  {field.value || "N/A"}
+                </p>
+              </Field>
+            )
+          }
+        />
+
+        <Controller
+          control={form.control}
+          name="email"
+          render={({ field, fieldState }) =>
+            editMode ? (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                <Input
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  type="email"
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            ) : (
+              <Field>
+                <FieldLabel>Email</FieldLabel>
+                <p className="py-2 truncate max-w-sm">{field.value}</p>
+              </Field>
+            )
+          }
+        />
+
+        <div className="flex gap-3">
+          {editMode ? (
+            <>
+              <LoadingButton
+                type="submit"
+                loading={mutation.isPending}
+                disabled={!form.formState.isDirty}
+              >
+                Save
+              </LoadingButton>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={mutation.isPending}
+              >
+                Cancel
               </Button>
-            )}
-          </div>
-        </form>
+            </>
+          ) : (
+            <Button type="button" onClick={toggleEditMode}>
+              Edit
+            </Button>
+          )}
+        </div>
+      </form>
     </div>
   )
 }

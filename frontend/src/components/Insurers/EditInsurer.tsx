@@ -88,9 +88,7 @@ const EditInsurer = ({ insurer, onSuccess }: EditInsurerProps) => {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>Edit Insurer</DialogTitle>
-            <DialogDescription>
-              Update the insurer details.
-            </DialogDescription>
+            <DialogDescription>Update the insurer details.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <Controller
@@ -107,7 +105,9 @@ const EditInsurer = ({ insurer, onSuccess }: EditInsurerProps) => {
                     aria-invalid={fieldState.invalid}
                     {...field}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -124,7 +124,9 @@ const EditInsurer = ({ insurer, onSuccess }: EditInsurerProps) => {
                     aria-invalid={fieldState.invalid}
                     {...field}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -141,7 +143,9 @@ const EditInsurer = ({ insurer, onSuccess }: EditInsurerProps) => {
                     aria-invalid={fieldState.invalid}
                     {...field}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />

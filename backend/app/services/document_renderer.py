@@ -211,7 +211,7 @@ class DocumentRenderer:
         risk_note = session.get(RiskNote, target_id) if target_id else None
         if not risk_note:
             return {
-                    "found": False,
+                "found": False,
                 "target_id": str(target_id) if target_id else None,
                 **jsonable_encoder(override),
             }
@@ -303,7 +303,7 @@ class DocumentRenderer:
         invoice = session.get(Invoice, target_id) if target_id else None
         if not invoice:
             return {
-                    "found": False,
+                "found": False,
                 "target_id": str(target_id) if target_id else None,
                 **jsonable_encoder(override),
             }
@@ -417,7 +417,9 @@ class DocumentRenderer:
         """Render HTML content purely in-process from a frozen snapshot."""
         ref_id = job_id or uuid.uuid4()
 
-        filename = snapshot.get("filename") or f"Document_{resource_type.value}_{ref_id}.pdf"
+        filename = (
+            snapshot.get("filename") or f"Document_{resource_type.value}_{ref_id}.pdf"
+        )
         raw_entity_type = snapshot.get("entity_type")
         entity_type = (
             DocumentEntityType(raw_entity_type)
@@ -663,7 +665,9 @@ class DocumentRenderer:
             cls._resolve_snapshot_metadata(
                 snapshot,
                 default_filename=f"Invoice_{inv_number}.pdf",
-                default_entity_id=uuid.UUID(str(inv_client_id)) if inv_client_id else inv_id,
+                default_entity_id=uuid.UUID(str(inv_client_id))
+                if inv_client_id
+                else inv_id,
             )
         )
         fallback_lines.extend(
@@ -690,7 +694,11 @@ class DocumentRenderer:
         snapshot: dict[str, Any],
         fallback_lines: list[str],
     ) -> RenderedDocument:
-        raw_client_id = snapshot.get("client_id") or snapshot.get("resource_id") or snapshot.get("entity_id")
+        raw_client_id = (
+            snapshot.get("client_id")
+            or snapshot.get("resource_id")
+            or snapshot.get("entity_id")
+        )
         client_uuid: uuid.UUID | None = None
         if raw_client_id:
             try:
@@ -701,7 +709,9 @@ class DocumentRenderer:
         if "statement" in snapshot and isinstance(snapshot["statement"], dict):
             statement_data = snapshot["statement"]
             client_name = statement_data.get("client_name", "Valued Client")
-            client_id_val = uuid.UUID(str(statement_data.get("client_id") or client_uuid or ref_id))
+            client_id_val = uuid.UUID(
+                str(statement_data.get("client_id") or client_uuid or ref_id)
+            )
         else:
             client_name = snapshot.get("client_name", "Valued Client")
             client_id_val = client_uuid or ref_id

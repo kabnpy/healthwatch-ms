@@ -183,7 +183,9 @@ def test_packaged_medical_exempts_stamp_duty_and_halts_on_missing_tier() -> None
 
     result = calculate_premium(
         rate_table=rt,
-        inputs={"members": [{"role": "principal"}, {"role": "spouse"}, {"role": "child"}]},
+        inputs={
+            "members": [{"role": "principal"}, {"role": "spouse"}, {"role": "child"}]
+        },
     )
     assert result.net_premium == Decimal("88000.00")
     assert result.stamp_duty == Decimal("0.00")

@@ -29,9 +29,8 @@ def read_financial_summary(
     """
     Retrieve full-dataset Decimal ledger KPI summary, optionally filtered by client.
     """
-    return ClientLedgerService.get_ledger_summary(
-        session=session, client_id=client_id
-    )
+    return ClientLedgerService.get_ledger_summary(session=session, client_id=client_id)
+
 
 # ==========================================
 # Invoice Routes
@@ -99,12 +98,8 @@ def create_bulk_invoice(
     Create an invoice from multiple Risk Notes.
     """
     try:
-        return ClientLedgerService.create_bulk_invoice(
-            session=session, bulk_in=bulk_in
-        )
+        return ClientLedgerService.create_bulk_invoice(session=session, bulk_in=bulk_in)
     except LedgerNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except LedgerValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
-
-

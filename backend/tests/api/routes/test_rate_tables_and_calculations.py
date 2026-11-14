@@ -351,7 +351,10 @@ def test_calculation_selection_scopes_and_atomic_create(
         phone=f"+2547{suffix[:8]}",
         kra_pin=f"A{suffix[:9]}",
     )
-    insurer = Insurer(name=f"Selection Scope Insurer {suffix}", contact_email=f"selscope-{suffix}@ins.co.ke")
+    insurer = Insurer(
+        name=f"Selection Scope Insurer {suffix}",
+        contact_email=f"selscope-{suffix}@ins.co.ke",
+    )
     db.add(client_obj)
     db.add(insurer)
     db.commit()
@@ -467,8 +470,20 @@ def test_calculation_selection_scopes_and_atomic_create(
     assert c_a2.json()["is_selected"] is True
 
     # c_a1 should now be unselected, c_b1 should remain selected
-    assert client.get(f"{settings.API_V1_STR}/calculations/{c_a1_id}", headers=superuser_token_headers).json()["is_selected"] is False
-    assert client.get(f"{settings.API_V1_STR}/calculations/{c_b1_id}", headers=superuser_token_headers).json()["is_selected"] is True
+    assert (
+        client.get(
+            f"{settings.API_V1_STR}/calculations/{c_a1_id}",
+            headers=superuser_token_headers,
+        ).json()["is_selected"]
+        is False
+    )
+    assert (
+        client.get(
+            f"{settings.API_V1_STR}/calculations/{c_b1_id}",
+            headers=superuser_token_headers,
+        ).json()["is_selected"]
+        is True
+    )
 
     # 2. Renewal-scoped selection unselects sibling renewal calcs and updates renewal atomically
     c_r1 = client.post(
@@ -508,7 +523,13 @@ def test_calculation_selection_scopes_and_atomic_create(
     )
     assert sel_r2.status_code == 200
     assert sel_r2.json()["is_selected"] is True
-    assert client.get(f"{settings.API_V1_STR}/calculations/{c_r1_id}", headers=superuser_token_headers).json()["is_selected"] is False
+    assert (
+        client.get(
+            f"{settings.API_V1_STR}/calculations/{c_r1_id}",
+            headers=superuser_token_headers,
+        ).json()["is_selected"]
+        is False
+    )
 
     db.refresh(renewal)
     assert renewal.selected_calculation_id == uuid.UUID(c_r2_id)

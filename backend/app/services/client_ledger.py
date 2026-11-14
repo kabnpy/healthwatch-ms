@@ -20,6 +20,7 @@ from app.models import (
     InvoiceLineItem,
     InvoiceLineItemCreate,
     InvoiceStatus,
+    LedgerSummary,
     PaymentAllocation,
     PaymentAllocationCreate,
     PaymentAllocationStatus,
@@ -88,9 +89,7 @@ def _apply_invoice_allocation_delta(
     Negative delta reduces balance_due (allocation); positive delta restores it (reversal).
     """
     current_balance = (
-        invoice.balance_due
-        if invoice.balance_due is not None
-        else invoice.total_amount
+        invoice.balance_due if invoice.balance_due is not None else invoice.total_amount
     )
     new_balance = (current_balance + delta).quantize(Decimal("0.01"))
     new_balance = max(Decimal("0.00"), min(invoice.total_amount, new_balance))
@@ -160,9 +159,7 @@ class ClientLedgerService:
                 )
 
         existing = session.exec(
-            select(Invoice).where(
-                Invoice.invoice_number == invoice_in.invoice_number
-            )
+            select(Invoice).where(Invoice.invoice_number == invoice_in.invoice_number)
         ).first()
         if existing:
             raise LedgerValidationError(
@@ -235,9 +232,7 @@ class ClientLedgerService:
 
         risk_note = session.get(RiskNote, line_item_in.risk_note_id)
         if not risk_note:
-            raise LedgerNotFoundError(
-                f"RiskNote {line_item_in.risk_note_id} not found"
-            )
+            raise LedgerNotFoundError(f"RiskNote {line_item_in.risk_note_id} not found")
 
         db_item = InvoiceLineItem.model_validate(line_item_in)
         session.add(db_item)
@@ -343,9 +338,7 @@ class ClientLedgerService:
     ) -> PaymentAllocation:
         """Apply a single PaymentAllocation inside an active transaction."""
         invoice = session.exec(
-            select(Invoice)
-            .where(Invoice.id == invoice_id)
-            .with_for_update()
+            select(Invoice).where(Invoice.id == invoice_id).with_for_update()
         ).first()
         if not invoice:
             raise LedgerNotFoundError("Invoice not found")
@@ -381,9 +374,9 @@ class ClientLedgerService:
         session.add(allocation)
         session.flush()
 
-        payment.unallocated_amount = (
-            payment.unallocated_amount - amount
-        ).quantize(Decimal("0.01"))
+        payment.unallocated_amount = (payment.unallocated_amount - amount).quantize(
+            Decimal("0.01")
+        )
         session.add(payment)
 
         _apply_invoice_allocation_delta(session, invoice, -amount)
@@ -503,9 +496,7 @@ class ClientLedgerService:
             session.add(payment)
 
         invoice = session.exec(
-            select(Invoice)
-            .where(Invoice.id == allocation.invoice_id)
-            .with_for_update()
+            select(Invoice).where(Invoice.id == allocation.invoice_id).with_for_update()
         ).first()
         if invoice:
             _apply_invoice_allocation_delta(session, invoice, allocation.amount)
@@ -555,9 +546,7 @@ class ClientLedgerService:
             session.add(alloc)
 
             invoice = session.exec(
-                select(Invoice)
-                .where(Invoice.id == alloc.invoice_id)
-                .with_for_update()
+                select(Invoice).where(Invoice.id == alloc.invoice_id).with_for_update()
             ).first()
             if invoice:
                 _apply_invoice_allocation_delta(session, invoice, alloc.amount)
@@ -676,9 +665,9 @@ class ClientLedgerService:
         days_31_60 = days_31_60.quantize(q, rounding=ROUND_HALF_UP)
         days_61_90 = days_61_90.quantize(q, rounding=ROUND_HALF_UP)
         over_90 = over_90.quantize(q, rounding=ROUND_HALF_UP)
-        total_overdue = (
-            current_0_30 + days_31_60 + days_61_90 + over_90
-        ).quantize(q, rounding=ROUND_HALF_UP)
+        total_overdue = (current_0_30 + days_31_60 + days_61_90 + over_90).quantize(
+            q, rounding=ROUND_HALF_UP
+        )
 
         return ClientStatement(
             client_id=str(client.id),
@@ -810,9 +799,7 @@ class ClientLedgerService:
         if len(risk_notes) != len(requested_ids):
             found_ids = {rn.id for rn in risk_notes}
             missing = [str(rid) for rid in requested_ids if rid not in found_ids]
-            raise LedgerNotFoundError(
-                f"RiskNote(s) not found: {', '.join(missing)}"
-            )
+            raise LedgerNotFoundError(f"RiskNote(s) not found: {', '.join(missing)}")
 
         policy_ids = {rn.policy_id for rn in risk_notes}
         policies = session.exec(
@@ -832,9 +819,7 @@ class ClientLedgerService:
                 f"RiskNote(s) do not belong to client {bulk_in.client_id}: {', '.join(mismatched)}"
             )
 
-        total_amount = sum(
-            (rn.total_amount for rn in risk_notes), Decimal("0.00")
-        )
+        total_amount = sum((rn.total_amount for rn in risk_notes), Decimal("0.00"))
         invoice_in = InvoiceCreate(
             invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
             client_id=bulk_in.client_id,
@@ -864,9 +849,7 @@ class ClientLedgerService:
     @staticmethod
     def get_ledger_summary(
         *, session: Session, client_id: uuid.UUID | None = None
-    ) -> "LedgerSummary":
-        from app.models import LedgerSummary
-
+    ) -> LedgerSummary:
         inv_stmt = select(
             func.coalesce(func.sum(Invoice.total_amount), Decimal("0.00")),
             func.coalesce(func.sum(Invoice.balance_due), Decimal("0.00")),

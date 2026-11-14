@@ -47,6 +47,7 @@ function InputGroupAddon({
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: clicking addon focuses sibling input; keyboard users tab directly to input
     <div
       role="group"
       data-slot="input-group-addon"

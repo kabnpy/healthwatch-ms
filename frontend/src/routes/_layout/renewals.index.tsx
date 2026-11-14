@@ -45,7 +45,10 @@ type RenewalTab = (typeof RENEWAL_TABS)[number]
 export const Route = createFileRoute("/_layout/renewals/")({
   validateSearch: (search: Record<string, unknown>): { tab?: RenewalTab } => {
     const tab = search.tab
-    if (typeof tab === "string" && (RENEWAL_TABS as readonly string[]).includes(tab)) {
+    if (
+      typeof tab === "string" &&
+      (RENEWAL_TABS as readonly string[]).includes(tab)
+    ) {
       return { tab: tab as RenewalTab }
     }
     return {}
@@ -652,19 +655,28 @@ function RenewalsDeskPage() {
           variant="line"
           className="w-full max-w-full overflow-x-auto justify-start border-b"
         >
-          <TabsTrigger value="expiring_30" className="gap-2 px-3 py-1.5 text-sm">
+          <TabsTrigger
+            value="expiring_30"
+            className="gap-2 px-3 py-1.5 text-sm"
+          >
             Expiring in ≤30 Days
             <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">
               {categorized.expiring30.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="in_workflow" className="gap-2 px-3 py-1.5 text-sm">
+          <TabsTrigger
+            value="in_workflow"
+            className="gap-2 px-3 py-1.5 text-sm"
+          >
             Active Workflows
             <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">
               {categorized.inWorkflow.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="expiring_60" className="gap-2 px-3 py-1.5 text-sm">
+          <TabsTrigger
+            value="expiring_60"
+            className="gap-2 px-3 py-1.5 text-sm"
+          >
             Next 60 Days
             <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">
               {categorized.expiring60.length}

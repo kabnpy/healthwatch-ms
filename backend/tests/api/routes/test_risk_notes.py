@@ -40,7 +40,11 @@ def _create_issued_risk_note(db: Session) -> RiskNote:
         coverage_start=today,
         coverage_end=today + timedelta(days=365),
         net_premium=Decimal("50000.00"),
-        financial_breakdown={"training_levy": 100.0, "pcf_levy": 125.0, "stamp_duty": 40.0},
+        financial_breakdown={
+            "training_levy": 100.0,
+            "pcf_levy": 125.0,
+            "stamp_duty": 40.0,
+        },
         commission_amount=Decimal("5000.00"),
         total_amount=Decimal("50265.00"),
         cover_snapshot={"sum_insured": 1000000},

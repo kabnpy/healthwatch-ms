@@ -35,12 +35,15 @@ test.describe("Financials Hub (/financials)", () => {
     })
     if ((await rowActionBtns.count()) > 0) {
       await rowActionBtns.first().click()
-      await expect(page.getByRole("menuitem", { name: "Reverse" })).toBeVisible()
+      await expect(
+        page.getByRole("menuitem", { name: "Reverse" }),
+      ).toBeVisible()
       await page.keyboard.press("Escape")
     }
 
-    const clientLinks = page
-      .locator("table a[href^='/clients/'][href$='/overview']")
+    const clientLinks = page.locator(
+      "table a[href^='/clients/'][href$='/overview']",
+    )
     if ((await clientLinks.count()) > 0) {
       const href = await clientLinks.first().getAttribute("href")
       expect(href).toMatch(/^\/clients\/[^/]+\/overview$/)

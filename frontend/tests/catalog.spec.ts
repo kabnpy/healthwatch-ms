@@ -190,9 +190,7 @@ test.describe("Catalog (/catalog)", () => {
     ).toHaveCount(0)
 
     // Insurer field displays a name rather than a raw UUID
-    const insurerTrigger = page
-      .locator('[data-slot="select-trigger"]')
-      .first()
+    const insurerTrigger = page.locator('[data-slot="select-trigger"]').first()
     const insurerText = (await insurerTrigger.textContent())?.trim() || ""
     expect(insurerText).not.toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,

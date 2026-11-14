@@ -87,10 +87,7 @@ export const ClientForm = ({
   }
 
   return (
-    <form
-      onSubmit={form.handleSubmit(handleFormSubmit)}
-      className="space-y-6"
-    >
+    <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
       <div className="space-y-4">
         <div>
           <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
@@ -231,51 +228,57 @@ export const ClientForm = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-        <Controller
-          control={form.control}
-          name="postal_number"
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel>P.O. Box</FieldLabel>
-              <Input
-                placeholder="12345"
-                aria-invalid={fieldState.invalid}
-                {...field}
-              />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-        <Controller
-          control={form.control}
-          name="postal_code"
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel>Postal Code</FieldLabel>
-              <Input
-                placeholder="00100"
-                aria-invalid={fieldState.invalid}
-                {...field}
-              />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-        <Controller
-          control={form.control}
-          name="town"
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel>Town</FieldLabel>
-              <Input
-                placeholder="Nairobi"
-                aria-invalid={fieldState.invalid}
-                {...field}
-              />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
+          <Controller
+            control={form.control}
+            name="postal_number"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>P.O. Box</FieldLabel>
+                <Input
+                  placeholder="12345"
+                  aria-invalid={fieldState.invalid}
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+          <Controller
+            control={form.control}
+            name="postal_code"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>Postal Code</FieldLabel>
+                <Input
+                  placeholder="00100"
+                  aria-invalid={fieldState.invalid}
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+          <Controller
+            control={form.control}
+            name="town"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>Town</FieldLabel>
+                <Input
+                  placeholder="Nairobi"
+                  aria-invalid={fieldState.invalid}
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
         </div>
       </div>
 
@@ -289,9 +292,7 @@ export const ClientForm = ({
             variant="outline"
             size="sm"
             className="gap-2"
-            onClick={() =>
-              append({ name: "", role: "", phone: "", email: "" })
-            }
+            onClick={() => append({ name: "", role: "", phone: "", email: "" })}
           >
             <Plus className="size-4" />
             Add Contact
@@ -322,7 +323,9 @@ export const ClientForm = ({
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel>Contact Name</FieldLabel>
                   <Input aria-invalid={fieldState.invalid} {...field} />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -333,7 +336,9 @@ export const ClientForm = ({
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel>Role (e.g. Accountant)</FieldLabel>
                   <Input aria-invalid={fieldState.invalid} {...field} />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -344,7 +349,9 @@ export const ClientForm = ({
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel>Phone</FieldLabel>
                   <Input aria-invalid={fieldState.invalid} {...field} />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -355,7 +362,9 @@ export const ClientForm = ({
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel>Email</FieldLabel>
                   <Input aria-invalid={fieldState.invalid} {...field} />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />

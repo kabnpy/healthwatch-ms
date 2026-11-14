@@ -44,7 +44,9 @@ test.describe("Clients Directory (/clients)", () => {
 
     // Zero horizontal overflow at 1440x900
     const desktopOverflow = await page.evaluate(
-      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
     )
     expect(desktopOverflow).toBe(true)
 
@@ -73,7 +75,9 @@ test.describe("Clients Directory (/clients)", () => {
 
     // Zero horizontal overflow at 390x844
     const mobileOverflow = await page.evaluate(
-      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
     )
     expect(mobileOverflow).toBe(true)
   })

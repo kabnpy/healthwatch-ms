@@ -87,7 +87,9 @@ def update_rate_table(
     except RateTableNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except RateTableConflictError as exc:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
 
 
 @router.post(

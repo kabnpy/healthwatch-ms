@@ -391,6 +391,3 @@ def test_remove_document_enforces_adr0006_and_deletes_file_after_commit(
         DocumentService.remove_document(
             session=db, document_id=uuid.uuid4(), storage_provider=provider
         )
-
-
-

@@ -139,8 +139,12 @@ def test_advocacy_summary_openapi_schema(client: TestClient) -> None:
     assert resp.status_code == 200
     openapi = resp.json()
 
-    path_item = openapi["paths"][f"{settings.API_V1_STR}/claims/policy/{{policy_id}}/advocacy-summary"]
-    schema_ref = path_item["get"]["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+    path_item = openapi["paths"][
+        f"{settings.API_V1_STR}/claims/policy/{{policy_id}}/advocacy-summary"
+    ]
+    schema_ref = path_item["get"]["responses"]["200"]["content"]["application/json"][
+        "schema"
+    ]["$ref"]
     assert schema_ref == "#/components/schemas/PolicyClaimsAdvocacySummary"
 
     schema = openapi["components"]["schemas"]["PolicyClaimsAdvocacySummary"]

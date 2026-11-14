@@ -70,7 +70,10 @@ def test_prorata_midterm_increase():
     assert res["delta_levies"]["PHCF"] == Decimal("12.50")
     assert res["delta_levies"]["Stamp Duty"] == Decimal("0.00")
     assert res["delta_total"] == Decimal("5022.50")
-    assert res["financial_breakdown"]["prorata_info"]["remaining_days"] == "180" or res["financial_breakdown"]["prorata_info"]["remaining_days"] == 180
+    assert (
+        res["financial_breakdown"]["prorata_info"]["remaining_days"] == "180"
+        or res["financial_breakdown"]["prorata_info"]["remaining_days"] == 180
+    )
 
 
 def test_prorata_boundary_day_counts():

@@ -138,212 +138,204 @@ export const RiskNoteForm = ({
 
   return (
     <>
-      <form
-        onSubmit={form.handleSubmit(onSubmit as any)}
-        className="space-y-6"
-      >
-          <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
-            <Controller
-              control={form.control as any}
-              name="transaction_type"
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel>Transaction Type</FieldLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="New Business">New Business</SelectItem>
-                      <SelectItem value="Renewal">Renewal</SelectItem>
-                      <SelectItem value="Endorsement">Endorsement</SelectItem>
-                      <SelectItem value="Cancellation">Cancellation</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-            <Controller
-              control={form.control as any}
-              name="status"
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel>Status</FieldLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Draft">Draft (Preliminary)</SelectItem>
-                      <SelectItem value="Active">Active (Finalized)</SelectItem>
-                      <SelectItem value="Cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Controller
-              control={form.control as any}
-              name="coverage_start"
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel>Coverage Start</FieldLabel>
-                  <Input type="date" {...field} />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-            <Controller
-              control={form.control as any}
-              name="coverage_end"
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel>Coverage End</FieldLabel>
-                  <Input type="date" {...field} />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-          </div>
-
-          {productDetails.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-1">
-                Risk Details ({policy?.product?.class_of_insurance})
-              </h3>
-              <div className="grid grid-cols-1 gap-4">
-                {productDetails
-                  .filter(
-                    (f: any) =>
-                      f.field_type === "input" || f.field_type === "optional",
-                  )
-                  .map((field: any) => (
-                    <Controller
-                      key={field.key}
-                      control={form.control as any}
-                      name={`details.${field.key}`}
-                      render={({ field: inputField, fieldState }) => (
-                        <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel>{field.label}</FieldLabel>
-                          <Input
-                            type={field.type === "number" ? "number" : "text"}
-                            {...inputField}
-                            value={inputField.value || ""}
-                            onChange={(e) =>
-                              inputField.onChange(
-                                field.type === "number"
-                                  ? e.target.valueAsNumber
-                                  : e.target.value,
-                              )
-                            }
-                          />
-                          {fieldState.invalid && (
-                            <FieldError errors={[fieldState.error]} />
-                          )}
-                        </Field>
-                      )}
-                    />
-                  ))}
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-4 pt-4 border-t">
-            <div className="flex items-center justify-between border-b pb-1">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                Financial Schedule (Fixed-Point)
-              </h3>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setRatingCalcOpen(true)}
-                className="h-6 text-[11px] gap-1 px-2 border-primary/30 text-primary hover:bg-primary/5"
-              >
-                <Calculator className="size-3" />
-                Run Rating Engine
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Controller
-                control={form.control as any}
-                name="net_premium"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel>Net Premium (KES)</FieldLabel>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...field}
-                      className="font-mono text-sm"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
+      <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6">
+        <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
+          <Controller
+            control={form.control as any}
+            name="transaction_type"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>Transaction Type</FieldLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="New Business">New Business</SelectItem>
+                    <SelectItem value="Renewal">Renewal</SelectItem>
+                    <SelectItem value="Endorsement">Endorsement</SelectItem>
+                    <SelectItem value="Cancellation">Cancellation</SelectItem>
+                  </SelectContent>
+                </Select>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
                 )}
-              />
-              <Controller
-                control={form.control as any}
-                name="commission_amount"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel>Commission (KES)</FieldLabel>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...field}
-                      className="font-mono text-sm"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
+              </Field>
+            )}
+          />
+          <Controller
+            control={form.control as any}
+            name="status"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>Status</FieldLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Draft">Draft (Preliminary)</SelectItem>
+                    <SelectItem value="Active">Active (Finalized)</SelectItem>
+                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
                 )}
-              />
+              </Field>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Controller
+            control={form.control as any}
+            name="coverage_start"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>Coverage Start</FieldLabel>
+                <Input type="date" {...field} />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+          <Controller
+            control={form.control as any}
+            name="coverage_end"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>Coverage End</FieldLabel>
+                <Input type="date" {...field} />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+        </div>
+
+        {productDetails.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-1">
+              Risk Details ({policy?.product?.class_of_insurance})
+            </h3>
+            <div className="grid grid-cols-1 gap-4">
+              {productDetails
+                .filter(
+                  (f: any) =>
+                    f.field_type === "input" || f.field_type === "optional",
+                )
+                .map((field: any) => (
+                  <Controller
+                    key={field.key}
+                    control={form.control as any}
+                    name={`details.${field.key}`}
+                    render={({ field: inputField, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel>{field.label}</FieldLabel>
+                        <Input
+                          type={field.type === "number" ? "number" : "text"}
+                          {...inputField}
+                          value={inputField.value || ""}
+                          onChange={(e) =>
+                            inputField.onChange(
+                              field.type === "number"
+                                ? e.target.valueAsNumber
+                                : e.target.value,
+                            )
+                          }
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                ))}
             </div>
           </div>
+        )}
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="space-y-4 pt-4 border-t">
+          <div className="flex items-center justify-between border-b pb-1">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+              Financial Schedule (Fixed-Point)
+            </h3>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={onCancel}
+              onClick={() => setRatingCalcOpen(true)}
+              className="h-6 text-[11px] gap-1 px-2 border-primary/30 text-primary hover:bg-primary/5"
             >
-              Cancel
+              <Calculator className="size-3" />
+              Run Rating Engine
             </Button>
-            <LoadingButton
-              type="submit"
-              size="sm"
-              loading={isPending}
-              className="font-bold bg-primary text-primary-foreground"
-            >
-              {form.watch("status") === "Active"
-                ? "Issue & Finalize Note"
-                : "Save Draft Changes"}
-            </LoadingButton>
           </div>
-        </form>
+          <div className="grid grid-cols-2 gap-4">
+            <Controller
+              control={form.control as any}
+              name="net_premium"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Net Premium (KES)</FieldLabel>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...field}
+                    className="font-mono text-sm"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              control={form.control as any}
+              name="commission_amount"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Commission (KES)</FieldLabel>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...field}
+                    className="font-mono text-sm"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+          <LoadingButton
+            type="submit"
+            size="sm"
+            loading={isPending}
+            className="font-bold bg-primary text-primary-foreground"
+          >
+            {form.watch("status") === "Active"
+              ? "Issue & Finalize Note"
+              : "Save Draft Changes"}
+          </LoadingButton>
+        </div>
+      </form>
 
       <AdvisoryRatingCalculator
         isOpen={ratingCalcOpen}

@@ -116,8 +116,11 @@ def seed_portfolios_and_assets(
             coverage_end=end_agnes,
         )
         # Endorsement
-        new_snap = cover_snapshot.copy()
-        new_snap["vehicle"]["sum_insured"] = 5000000.0
+        vehicle_snap: dict[str, Any] = {
+            **cover_snapshot["vehicle"],  # type: ignore[dict-item]
+            "sum_insured": 5000000.0,
+        }
+        new_snap: dict[str, Any] = {**cover_snapshot, "vehicle": vehicle_snap}
         policy_service.create_endorsement(
             session=session,
             policy_id=pol_agnes.id,

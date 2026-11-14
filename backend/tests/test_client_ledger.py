@@ -8,6 +8,7 @@ from sqlmodel import Session
 from app.models import (
     Client,
     Insurer,
+    Invoice,
     InvoiceCreate,
     InvoiceLineItemCreate,
     InvoiceStatus,
@@ -91,7 +92,6 @@ def test_generate_statement_computes_unallocated_credits_from_active_payments(
     statement = ClientLedgerService.generate_statement(db, client.id)
 
     assert statement.unallocated_credits == "5000.00"
-
 
 
 def _create_client(db: Session, suffix: str = "1") -> Client:
@@ -221,7 +221,6 @@ def test_create_invoice_validates_optional_policy_ownership(db: Session) -> None
     assert created.client_id == client_b.id
 
 
-
 def _create_risk_note(db: Session, policy_id: uuid.UUID, amount: Decimal) -> RiskNote:
     today = date.today()
     rn = RiskNote(
@@ -294,7 +293,9 @@ def test_invoice_reads_and_soft_delete_exclusion(db: Session) -> None:
     assert fetched.line_items == []
     assert fetched.payment_allocations == []
 
-    assert ClientLedgerService.get_invoice(session=db, invoice_id=inv_deleted.id) is None
+    assert (
+        ClientLedgerService.get_invoice(session=db, invoice_id=inv_deleted.id) is None
+    )
 
     a_invoices = ClientLedgerService.get_invoices(session=db, client_id=client_a.id)
     assert [i.id for i in a_invoices] == [inv1.id]
@@ -355,7 +356,6 @@ def test_create_invoice_line_item_validates_parents(db: Session) -> None:
     assert item.risk_note_id == rn.id
 
 
-
 def test_payment_and_allocation_reads_and_soft_delete(db: Session) -> None:
     client = _create_client(db, "pay")
     db.commit()
@@ -396,11 +396,19 @@ def test_payment_and_allocation_reads_and_soft_delete(db: Session) -> None:
     db.add(pmt_deleted)
     db.commit()
 
-    assert ClientLedgerService.get_payment_record(session=db, payment_id=pmt1.id) is not None
-    assert ClientLedgerService.get_payment_record(session=db, payment_id=pmt_deleted.id) is None
+    assert (
+        ClientLedgerService.get_payment_record(session=db, payment_id=pmt1.id)
+        is not None
+    )
+    assert (
+        ClientLedgerService.get_payment_record(session=db, payment_id=pmt_deleted.id)
+        is None
+    )
     records = ClientLedgerService.get_payment_records(session=db, client_id=client.id)
     assert [r.id for r in records] == [pmt1.id]
-    assert ClientLedgerService.count_payment_records(session=db, client_id=client.id) == 1
+    assert (
+        ClientLedgerService.count_payment_records(session=db, client_id=client.id) == 1
+    )
 
     alloc = ClientLedgerService.allocate_payment(
         session=db,
@@ -443,7 +451,9 @@ def test_invoice_batch_reads(db: Session) -> None:
 
     batches = ClientLedgerService.get_invoice_batches(session=db, client_id=client.id)
     assert [b.id for b in batches] == [batch.id]
-    assert ClientLedgerService.count_invoice_batches(session=db, client_id=client.id) == 1
+    assert (
+        ClientLedgerService.count_invoice_batches(session=db, client_id=client.id) == 1
+    )
 
 
 def _create_invoice(
@@ -452,9 +462,7 @@ def _create_invoice(
     amount: Decimal,
     date_issued: date,
     balance_due: Decimal | None = None,
-) -> "Invoice":
-    from app.models import Invoice
-
+) -> Invoice:
     inv = Invoice(
         client_id=client_id,
         invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
@@ -500,15 +508,15 @@ def test_generate_statement_computes_decimal_aging_buckets_with_as_of_date(
 
     db.commit()
 
-    statement = ClientLedgerService.generate_statement(
-        db, client.id, as_of_date=as_of
-    )
+    statement = ClientLedgerService.generate_statement(db, client.id, as_of_date=as_of)
 
     assert statement.aging_buckets.current_0_30 == "300.33"
     assert statement.aging_buckets.days_31_60 == "700.77"
     assert statement.aging_buckets.days_61_90 == "1101.21"
     assert statement.aging_buckets.over_90 == "700.77"
     assert statement.aging_buckets.total_overdue == "2803.08"
+
+
 def test_record_payment_with_initial_allocations_atomic_commit_and_rollback(
     db: Session,
 ) -> None:
@@ -577,10 +585,14 @@ def test_record_payment_with_initial_allocations_atomic_commit_and_rollback(
             ),
         )
 
-    assert ClientLedgerService.count_payment_records(session=db, client_id=client.id) == 1
+    assert (
+        ClientLedgerService.count_payment_records(session=db, client_id=client.id) == 1
+    )
     db.refresh(inv2)
     assert inv2.balance_due == Decimal("1000.00")
     assert inv2.status == InvoiceStatus.UNPAID
+
+
 def test_get_ledger_summary_global_and_by_client(db: Session) -> None:
     client_a = _create_client(db, "summary-a")
     client_b = _create_client(db, "summary-b")
@@ -646,4 +658,3 @@ def test_get_ledger_summary_global_and_by_client(db: Session) -> None:
     assert summary_all.total_paid >= Decimal("400.25")
     assert summary_all.total_due >= Decimal("1100.25")
     assert summary_all.total_unallocated >= Decimal("200.00")
-

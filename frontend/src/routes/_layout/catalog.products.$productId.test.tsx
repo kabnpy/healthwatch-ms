@@ -9,7 +9,12 @@ afterEach(cleanup)
 vi.mock("@/hooks/useCatalog", () => ({
   useInsurers: () => ({
     data: {
-      data: [{ id: "11111111-1111-1111-1111-111111111111", name: "Jubilee Insurance" }],
+      data: [
+        {
+          id: "11111111-1111-1111-1111-111111111111",
+          name: "Jubilee Insurance",
+        },
+      ],
     },
   }),
 }))
@@ -47,16 +52,10 @@ describe("ProductForm", () => {
     const queryClient = new QueryClient()
     render(
       <QueryClientProvider client={queryClient}>
-        <ProductForm
-          onSubmit={vi.fn()}
-          onCancel={vi.fn()}
-          useContext={true}
-        />
+        <ProductForm onSubmit={vi.fn()} onCancel={vi.fn()} useContext={true} />
       </QueryClientProvider>,
     )
 
-    expect(
-      screen.queryByRole("button", { name: /save product/i }),
-    ).toBeNull()
+    expect(screen.queryByRole("button", { name: /save product/i })).toBeNull()
   })
 })

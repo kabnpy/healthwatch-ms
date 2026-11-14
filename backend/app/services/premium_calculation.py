@@ -370,12 +370,16 @@ def _compute_levies_and_result(
     }
 
     rule_provenance = {
-        "rate_table_version_id": str(rate_table.id) if rate_table and rate_table.id else None,
+        "rate_table_version_id": str(rate_table.id)
+        if rate_table and rate_table.id
+        else None,
         "version_number": rate_table.version_number if rate_table else None,
         "pricing_method": rate_table.pricing_method.value if rate_table else "manual",
         "class_of_insurance": class_of_insurance,
         "applied_bracket": applied_bracket,
-        "source_reference": rate_table.source_reference if rate_table else "Manual Override",
+        "source_reference": rate_table.source_reference
+        if rate_table
+        else "Manual Override",
     }
 
     return PremiumCalculationResult(
@@ -502,7 +506,9 @@ def calculate_premium(
 
     if rate_table is None:
         if product is None:
-            raise RatingValidationError("Either rate_table or product must be provided.")
+            raise RatingValidationError(
+                "Either rate_table or product must be provided."
+            )
         rate_table = _resolve_rate_table(
             product=product, session=session, as_of_date=as_of_date
         )

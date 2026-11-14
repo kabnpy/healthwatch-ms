@@ -136,4 +136,6 @@ def read_policy_risk_notes(
     Get risk notes for a policy.
     """
     risk_notes, count = policy_service.list_risk_notes(session=session, policy_id=id)
-    return RiskNotesPublic(data=risk_notes, count=count)
+    return RiskNotesPublic(
+        data=[RiskNotePublic.model_validate(rn) for rn in risk_notes], count=count
+    )

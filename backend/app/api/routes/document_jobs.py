@@ -55,9 +55,7 @@ def enqueue_document_job(
         idempotency_key=idempotency_key_header or request.idempotency_key,
     )
     if job.status == DocumentJobStatus.PENDING:
-        background_tasks.add_task(
-            DocumentJobService.process_job_in_background, job.id
-        )
+        background_tasks.add_task(DocumentJobService.process_job_in_background, job.id)
     return job
 
 
@@ -70,7 +68,9 @@ def read_document_jobs(
 ) -> Any:
     """Retrieve document generation jobs."""
     jobs, count = DocumentJobService.list_jobs(session=session, skip=skip, limit=limit)
-    return DocumentJobsPublic(data=jobs, count=count)
+    return DocumentJobsPublic(
+        data=[DocumentJobPublic.model_validate(j) for j in jobs], count=count
+    )
 
 
 @router.get("/preview/html", response_class=HTMLResponse)

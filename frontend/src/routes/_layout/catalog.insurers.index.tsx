@@ -5,8 +5,8 @@ import { Suspense } from "react"
 
 import { InsurersService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
-import { InsurerActionsMenu } from "@/components/Insurers/InsurerActionsMenu"
 import { columns } from "@/components/Insurers/columns"
+import { InsurerActionsMenu } from "@/components/Insurers/InsurerActionsMenu"
 import PendingItems from "@/components/Pending/PendingItems"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 

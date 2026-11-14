@@ -103,9 +103,7 @@ def test_portfolio_vehicle_lifecycle_and_policy_filter(db: Session) -> None:
     vehicle = portfolio_service.create_vehicle(session=db, vehicle_in=vehicle_in)
     assert vehicle.policy_id == policy.id
 
-    vehicles, count = portfolio_service.list_vehicles(
-        session=db, policy_id=policy.id
-    )
+    vehicles, count = portfolio_service.list_vehicles(session=db, policy_id=policy.id)
     assert count == 1
     assert vehicles[0].id == vehicle.id
 
@@ -139,8 +137,6 @@ def test_portfolio_activity_create_and_list(db: Session) -> None:
     )
     assert act.client_id == client.id
 
-    items, count = portfolio_service.list_activities(
-        session=db, client_id=client.id
-    )
+    items, count = portfolio_service.list_activities(session=db, client_id=client.id)
     assert count == 1
     assert items[0].id == act.id

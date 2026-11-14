@@ -112,7 +112,9 @@ def test_dashboard_summary_counts_and_queues(
     expiring_ids = [item["policy"]["id"] for item in data["expiring_30"]]
     assert str(expiring_policy.id) in expiring_ids
     matching_exp = next(
-        item for item in data["expiring_30"] if item["policy"]["id"] == str(expiring_policy.id)
+        item
+        for item in data["expiring_30"]
+        if item["policy"]["id"] == str(expiring_policy.id)
     )
     assert matching_exp["days_left"] == 10
     assert matching_exp["client_name"] == db_client.name
@@ -148,7 +150,9 @@ def test_dashboard_summary_no_truncation_over_200_policies(
             policy_id=p.id,
             transaction_type=TransactionType.NEW_BUSINESS,
             coverage_start=today - timedelta(days=180),
-            coverage_end=today + timedelta(days=5) if idx == 204 else today + timedelta(days=180),
+            coverage_end=today + timedelta(days=5)
+            if idx == 204
+            else today + timedelta(days=180),
         )
         for idx, p in enumerate(policies)
     ]

@@ -37,10 +37,8 @@ jobs:
         # To be able to commit it needs the head branch of the PR, the remote one
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      - name: Set up Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: lts/*
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -54,8 +52,7 @@ jobs:
             backend/pyproject.toml
             backend/uv.lock
       - name: Install Frontend Dependencies
-        run: npm ci
-        working-directory: frontend
+        run: bun install --frozen-lockfile
       - name: Install Backend Dependencies
         run: uv sync
         working-directory: backend

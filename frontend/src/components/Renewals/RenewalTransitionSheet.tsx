@@ -284,7 +284,9 @@ export function RenewalTransitionSheet({
             <User className="size-3.5" />
             <span>{clientName || "Client Portfolio"}</span>
             <span>•</span>
-            <span>Expires: {activeNote?.coverage_end || coverageEnd || "N/A"}</span>
+            <span>
+              Expires: {activeNote?.coverage_end || coverageEnd || "N/A"}
+            </span>
           </SheetDescription>
         </SheetHeader>
 

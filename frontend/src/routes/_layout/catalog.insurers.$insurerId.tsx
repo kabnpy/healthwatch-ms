@@ -121,8 +121,7 @@ function InsurerDetailContent({ insurerId }: { insurerId: string }) {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Management view for insurer details and associated
-              products.
+              Management view for insurer details and associated products.
             </p>
           </CardContent>
         </Card>

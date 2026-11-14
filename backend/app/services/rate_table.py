@@ -43,9 +43,7 @@ class RateTableService:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def create_version(
-        self, rate_table_in: RateTableVersionCreate
-    ) -> RateTableVersion:
+    def create_version(self, rate_table_in: RateTableVersionCreate) -> RateTableVersion:
         """Persist a new RateTableVersion atomically."""
         db_obj = RateTableVersion.model_validate(rate_table_in)
         self.session.add(db_obj)
@@ -133,9 +131,7 @@ class RateTableService:
 
         new_status = update_data.get("status")
         if new_status is not None and new_status != db_rate_table.status:
-            allowed = self._ALLOWED_STATUS_TRANSITIONS.get(
-                db_rate_table.status, set()
-            )
+            allowed = self._ALLOWED_STATUS_TRANSITIONS.get(db_rate_table.status, set())
             if new_status not in allowed:
                 raise RateTableConflictError(
                     f"Invalid status transition from '{db_rate_table.status.value}' "

@@ -238,23 +238,23 @@ export const AddPolicy = ({ clientId }: AddPolicyProps) => {
             />
           </div>
 
-            <div className="flex justify-end gap-4 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsOpen(false)}
-              >
-                Cancel
-              </Button>
-              <LoadingButton
-                type="submit"
-                loading={createPolicy.isPending}
-                className="font-bold"
-              >
-                Create Policy
-              </LoadingButton>
-            </div>
-          </form>
+          <div className="flex justify-end gap-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+            >
+              Cancel
+            </Button>
+            <LoadingButton
+              type="submit"
+              loading={createPolicy.isPending}
+              className="font-bold"
+            >
+              Create Policy
+            </LoadingButton>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   )

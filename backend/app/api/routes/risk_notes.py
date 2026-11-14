@@ -36,7 +36,9 @@ def read_risk_notes(
         client_id=client_id,
         uninvoiced_only=uninvoiced_only,
     )
-    return RiskNotesPublic(data=risk_notes, count=count)
+    return RiskNotesPublic(
+        data=[RiskNotePublic.model_validate(rn) for rn in risk_notes], count=count
+    )
 
 
 @router.get("/{id}", response_model=RiskNotePublic)

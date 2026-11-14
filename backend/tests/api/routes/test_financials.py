@@ -200,7 +200,6 @@ def test_create_bulk_invoice_happy_path(
     assert {li.risk_note_id for li in line_items} == {rn1.id, rn2.id}
 
 
-
 def test_create_invoice_missing_client_returns_404(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
@@ -288,4 +287,3 @@ def test_read_financial_summary(
     body_client = resp_client.json()
     assert float(body_client["total_invoiced"]) >= float(inv.total_amount)
     assert float(body_client["total_due"]) >= float(inv.balance_due)
-

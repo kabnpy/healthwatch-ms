@@ -44,9 +44,7 @@ def test_user_authenticate(db: Session) -> None:
         is None
     )
     assert (
-        user_service.authenticate(
-            session=db, email=random_email(), password=password
-        )
+        user_service.authenticate(session=db, email=random_email(), password=password)
         is None
     )
 

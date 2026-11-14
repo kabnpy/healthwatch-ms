@@ -308,6 +308,7 @@ def test_read_renewals_horizon(
         assert policy_ids[bucket] in ids_in_bucket
         assert policy_ids["outside"] not in ids_in_bucket
 
+
 def test_transition_renewal_completed_route_binds_risk_note_and_exempts_medical(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:

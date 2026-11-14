@@ -22,8 +22,12 @@ test.describe("Client Policies Tab (/clients/$clientId/policies)", () => {
     await navigateToFirstClientPolicies(page)
 
     // Cards View / Table View toggle must be absent
-    await expect(page.getByRole("button", { name: "Cards View" })).toHaveCount(0)
-    await expect(page.getByRole("button", { name: "Table View" })).toHaveCount(0)
+    await expect(page.getByRole("button", { name: "Cards View" })).toHaveCount(
+      0,
+    )
+    await expect(page.getByRole("button", { name: "Table View" })).toHaveCount(
+      0,
+    )
 
     // + New Policy primary CTA is visible
     await expect(

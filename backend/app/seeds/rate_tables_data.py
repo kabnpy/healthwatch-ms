@@ -139,9 +139,7 @@ def _populate_schedule_children(
     if "occupational_tiers" in rules:
         for tier_name, tier_val in rules["occupational_tiers"].items():
             if isinstance(tier_val, dict):
-                rate_val = _to_decimal(
-                    tier_val.get("rate", tier_val.get("premium", 0))
-                )
+                rate_val = _to_decimal(tier_val.get("rate", tier_val.get("premium", 0)))
             else:
                 rate_val = _to_decimal(tier_val)
             session.add(
@@ -214,7 +212,9 @@ def _populate_schedule_children(
 
     # 6. Single-rate Percentage (Motor Commercial, PI, Public Liability, Burglary, All Risks, Fire)
     rate_val = _to_decimal(rules.get("rate", 0))
-    min_prem = _to_decimal(min_prem_raw) if min_prem_raw is not None else Decimal("0.00")
+    min_prem = (
+        _to_decimal(min_prem_raw) if min_prem_raw is not None else Decimal("0.00")
+    )
     session.add(
         RateBracket(
             rate_table_version_id=rate_table.id,

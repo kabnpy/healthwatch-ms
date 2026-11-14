@@ -205,9 +205,7 @@ def test_create_policy_persists_policy_risk_note_and_calculation_atomically(
         coverage_end=date.today() + timedelta(days=365),
     )
 
-    persisted_policy = db.exec(
-        select(Policy).where(Policy.id == policy.id)
-    ).first()
+    persisted_policy = db.exec(select(Policy).where(Policy.id == policy.id)).first()
     persisted_rns = db.exec(
         select(RiskNote).where(RiskNote.policy_id == policy.id)
     ).all()

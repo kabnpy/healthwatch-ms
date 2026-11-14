@@ -1,5 +1,5 @@
-import type { ColumnDef } from "@tanstack/react-table"
 import { Link } from "@tanstack/react-router"
+import type { ColumnDef } from "@tanstack/react-table"
 
 import type { InsurerPublic } from "@/client"
 import { InsurerActionsMenu } from "./InsurerActionsMenu"

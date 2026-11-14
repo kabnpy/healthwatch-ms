@@ -1,5 +1,5 @@
-from datetime import date
 import uuid
+from datetime import date
 
 from sqlmodel import Session, SQLModel, func, select
 
@@ -79,7 +79,10 @@ def get_dashboard_summary(session: Session) -> DashboardSummaryResponse:
             .order_by(RiskNote.created_at.desc())
         ).all()
         for policy_id, coverage_end in notes:
-            if policy_id not in latest_coverage_end_by_policy and coverage_end is not None:
+            if (
+                policy_id not in latest_coverage_end_by_policy
+                and coverage_end is not None
+            ):
                 latest_coverage_end_by_policy[policy_id] = coverage_end
 
     expiring_30: list[DashboardExpiringPolicyItem] = []

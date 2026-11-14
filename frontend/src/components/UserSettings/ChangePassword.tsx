@@ -61,78 +61,72 @@ const ChangePassword = () => {
   return (
     <div className="max-w-md">
       <h3 className="text-lg font-semibold py-4">Change Password</h3>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-4"
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col gap-4"
+      >
+        <Controller
+          control={form.control}
+          name="current_password"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Current Password</FieldLabel>
+              <PasswordInput
+                id={field.name}
+                data-testid="current-password-input"
+                placeholder="••••••••"
+                aria-invalid={fieldState.invalid}
+                {...field}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+
+        <Controller
+          control={form.control}
+          name="new_password"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>New Password</FieldLabel>
+              <PasswordInput
+                id={field.name}
+                data-testid="new-password-input"
+                placeholder="••••••••"
+                aria-invalid={fieldState.invalid}
+                {...field}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+
+        <Controller
+          control={form.control}
+          name="confirm_password"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Confirm Password</FieldLabel>
+              <PasswordInput
+                id={field.name}
+                data-testid="confirm-password-input"
+                placeholder="••••••••"
+                aria-invalid={fieldState.invalid}
+                {...field}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+
+        <LoadingButton
+          type="submit"
+          loading={mutation.isPending}
+          className="self-start"
         >
-          <Controller
-            control={form.control}
-            name="current_password"
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={field.name}>Current Password</FieldLabel>
-                <PasswordInput
-                  id={field.name}
-                  data-testid="current-password-input"
-                  placeholder="••••••••"
-                  aria-invalid={fieldState.invalid}
-                  {...field}
-                />
-                {fieldState.invalid && (
-                  <FieldError errors={[fieldState.error]} />
-                )}
-              </Field>
-            )}
-          />
-
-          <Controller
-            control={form.control}
-            name="new_password"
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={field.name}>New Password</FieldLabel>
-                <PasswordInput
-                  id={field.name}
-                  data-testid="new-password-input"
-                  placeholder="••••••••"
-                  aria-invalid={fieldState.invalid}
-                  {...field}
-                />
-                {fieldState.invalid && (
-                  <FieldError errors={[fieldState.error]} />
-                )}
-              </Field>
-            )}
-          />
-
-          <Controller
-            control={form.control}
-            name="confirm_password"
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={field.name}>Confirm Password</FieldLabel>
-                <PasswordInput
-                  id={field.name}
-                  data-testid="confirm-password-input"
-                  placeholder="••••••••"
-                  aria-invalid={fieldState.invalid}
-                  {...field}
-                />
-                {fieldState.invalid && (
-                  <FieldError errors={[fieldState.error]} />
-                )}
-              </Field>
-            )}
-          />
-
-          <LoadingButton
-            type="submit"
-            loading={mutation.isPending}
-            className="self-start"
-          >
-            Update Password
-          </LoadingButton>
-        </form>
+          Update Password
+        </LoadingButton>
+      </form>
     </div>
   )
 }
