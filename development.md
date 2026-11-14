@@ -51,7 +51,7 @@ bun run seed          # Seed realistic underwriting and client portfolio
 ## Container Files
 
 - `Dockerfile`: Unified production build (Stage 1 builds the React SPA with Bun; Stage 2 runs FastAPI on Python 3.14 and serves the embedded SPA).
-- `compose.yml` + `compose.override.yml`: Backing services (`db` PostgreSQL 17, `mailpit`, `adminer`) and CI container targets (`backend`, `frontend`, `playwright`), compatible with both rootless Podman and Docker Compose.
+- `compose.yml` + `compose.override.yml`: Backing services (`db` PostgreSQL 17, `mailpit`, `adminer`) and the unified `backend` app container (built from root `Dockerfile`), compatible with both rootless Podman and Docker Compose.
 
 ---
 

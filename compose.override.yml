@@ -19,49 +19,9 @@ services:
     restart: "no"
     ports:
       - "8000:8000"
-    command:
-      - fastapi
-      - run
-      - --reload
-      - "app/main.py"
     environment:
       POSTGRES_SERVER: "db"
       SMTP_HOST: "mailpit"
       SMTP_PORT: "1025"
       SMTP_TLS: "false"
       EMAILS_FROM_EMAIL: "noreply@example.com"
-
-  frontend:
-    restart: "no"
-    ports:
-      - "5173:80"
-    build:
-      context: ./frontend
-      args:
-        - VITE_API_URL=http://localhost:8000
-        - NODE_ENV=development
-
-  playwright:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.playwright
-      args:
-        - VITE_API_URL=http://backend:8000
-        - NODE_ENV=production
-    ipc: host
-    depends_on:
-      - backend
-      - mailpit
-    env_file:
-      - path: .env
-        required: false
-    environment:
-      - VITE_API_URL=http://backend:8000
-      - MAILCATCHER_HOST=http://mailpit:8025
-      - PLAYWRIGHT_HTML_HOST=0.0.0.0
-      - CI=${CI:-}
-    volumes:
-      - ./frontend/blob-report:/app/blob-report
-      - ./frontend/test-results:/app/test-results
-    ports:
-      - "9323:9323"

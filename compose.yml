@@ -31,10 +31,10 @@ services:
       - ADMINER_DESIGN=pepa-linha-dark
 
   prestart:
-    image: '${DOCKER_IMAGE_BACKEND:-backend}:${TAG:-latest}'
+    image: '${DOCKER_IMAGE_BACKEND:-healthwatch-ms}:${TAG:-latest}'
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: Dockerfile
     depends_on:
       db:
         condition: service_healthy
@@ -53,7 +53,7 @@ services:
       - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD:-changethis}
 
   backend:
-    image: '${DOCKER_IMAGE_BACKEND:-backend}:${TAG:-latest}'
+    image: '${DOCKER_IMAGE_BACKEND:-healthwatch-ms}:${TAG:-latest}'
     restart: unless-stopped
     depends_on:
       db:
@@ -79,16 +79,7 @@ services:
       retries: 5
     build:
       context: .
-      dockerfile: backend/Dockerfile
-
-  frontend:
-    image: '${DOCKER_IMAGE_FRONTEND:-frontend}:${TAG:-latest}'
-    restart: unless-stopped
-    build:
-      context: ./frontend
-      args:
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
-        - NODE_ENV=production
+      dockerfile: Dockerfile
 
 volumes:
   app-db-data:

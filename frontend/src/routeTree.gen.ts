@@ -30,9 +30,9 @@ import { Route as LayoutCatalogInsurersInsurerIdRouteImport } from './routes/_la
 import { Route as LayoutCatalogProductsIndexRouteImport } from './routes/_layout/catalog.products.index'
 import { Route as LayoutCatalogProductsProductIdRouteImport } from './routes/_layout/catalog.products.$productId'
 import { Route as LayoutClientsClientIdIndexRouteImport } from './routes/_layout/clients.$clientId.index'
+import { Route as LayoutClientsClientIdActivityRouteImport } from './routes/_layout/clients.$clientId.activity'
 import { Route as LayoutClientsClientIdDocumentsRouteImport } from './routes/_layout/clients.$clientId.documents'
 import { Route as LayoutClientsClientIdInvoicesRouteImport } from './routes/_layout/clients.$clientId.invoices'
-import { Route as LayoutClientsClientIdOverviewRouteImport } from './routes/_layout/clients.$clientId.overview'
 import { Route as LayoutClientsClientIdSettingsRouteImport } from './routes/_layout/clients.$clientId.settings'
 import { Route as LayoutClientsClientIdPoliciesIndexRouteImport } from './routes/_layout/clients.$clientId.policies.index'
 import { Route as LayoutClientsClientIdPoliciesPolicyIdRouteImport } from './routes/_layout/clients.$clientId.policies.$policyId'
@@ -146,6 +146,12 @@ const LayoutClientsClientIdIndexRoute =
     path: '/',
     getParentRoute: () => LayoutClientsClientIdRoute,
   } as any)
+const LayoutClientsClientIdActivityRoute =
+  LayoutClientsClientIdActivityRouteImport.update({
+    id: '/activity',
+    path: '/activity',
+    getParentRoute: () => LayoutClientsClientIdRoute,
+  } as any)
 const LayoutClientsClientIdDocumentsRoute =
   LayoutClientsClientIdDocumentsRouteImport.update({
     id: '/documents',
@@ -156,12 +162,6 @@ const LayoutClientsClientIdInvoicesRoute =
   LayoutClientsClientIdInvoicesRouteImport.update({
     id: '/invoices',
     path: '/invoices',
-    getParentRoute: () => LayoutClientsClientIdRoute,
-  } as any)
-const LayoutClientsClientIdOverviewRoute =
-  LayoutClientsClientIdOverviewRouteImport.update({
-    id: '/overview',
-    path: '/overview',
     getParentRoute: () => LayoutClientsClientIdRoute,
   } as any)
 const LayoutClientsClientIdSettingsRoute =
@@ -201,9 +201,9 @@ export interface FileRoutesByFullPath {
   '/renewals/': typeof LayoutRenewalsIndexRoute
   '/catalog/insurers/$insurerId': typeof LayoutCatalogInsurersInsurerIdRoute
   '/catalog/products/$productId': typeof LayoutCatalogProductsProductIdRoute
+  '/clients/$clientId/activity': typeof LayoutClientsClientIdActivityRoute
   '/clients/$clientId/documents': typeof LayoutClientsClientIdDocumentsRoute
   '/clients/$clientId/invoices': typeof LayoutClientsClientIdInvoicesRoute
-  '/clients/$clientId/overview': typeof LayoutClientsClientIdOverviewRoute
   '/clients/$clientId/settings': typeof LayoutClientsClientIdSettingsRoute
   '/catalog/insurers/': typeof LayoutCatalogInsurersIndexRoute
   '/catalog/products/': typeof LayoutCatalogProductsIndexRoute
@@ -227,9 +227,9 @@ export interface FileRoutesByTo {
   '/renewals': typeof LayoutRenewalsIndexRoute
   '/catalog/insurers/$insurerId': typeof LayoutCatalogInsurersInsurerIdRoute
   '/catalog/products/$productId': typeof LayoutCatalogProductsProductIdRoute
+  '/clients/$clientId/activity': typeof LayoutClientsClientIdActivityRoute
   '/clients/$clientId/documents': typeof LayoutClientsClientIdDocumentsRoute
   '/clients/$clientId/invoices': typeof LayoutClientsClientIdInvoicesRoute
-  '/clients/$clientId/overview': typeof LayoutClientsClientIdOverviewRoute
   '/clients/$clientId/settings': typeof LayoutClientsClientIdSettingsRoute
   '/catalog/insurers': typeof LayoutCatalogInsurersIndexRoute
   '/catalog/products': typeof LayoutCatalogProductsIndexRoute
@@ -257,9 +257,9 @@ export interface FileRoutesById {
   '/_layout/renewals/': typeof LayoutRenewalsIndexRoute
   '/_layout/catalog/insurers/$insurerId': typeof LayoutCatalogInsurersInsurerIdRoute
   '/_layout/catalog/products/$productId': typeof LayoutCatalogProductsProductIdRoute
+  '/_layout/clients/$clientId/activity': typeof LayoutClientsClientIdActivityRoute
   '/_layout/clients/$clientId/documents': typeof LayoutClientsClientIdDocumentsRoute
   '/_layout/clients/$clientId/invoices': typeof LayoutClientsClientIdInvoicesRoute
-  '/_layout/clients/$clientId/overview': typeof LayoutClientsClientIdOverviewRoute
   '/_layout/clients/$clientId/settings': typeof LayoutClientsClientIdSettingsRoute
   '/_layout/catalog/insurers/': typeof LayoutCatalogInsurersIndexRoute
   '/_layout/catalog/products/': typeof LayoutCatalogProductsIndexRoute
@@ -287,9 +287,9 @@ export interface FileRouteTypes {
     | '/renewals/'
     | '/catalog/insurers/$insurerId'
     | '/catalog/products/$productId'
+    | '/clients/$clientId/activity'
     | '/clients/$clientId/documents'
     | '/clients/$clientId/invoices'
-    | '/clients/$clientId/overview'
     | '/clients/$clientId/settings'
     | '/catalog/insurers/'
     | '/catalog/products/'
@@ -313,9 +313,9 @@ export interface FileRouteTypes {
     | '/renewals'
     | '/catalog/insurers/$insurerId'
     | '/catalog/products/$productId'
+    | '/clients/$clientId/activity'
     | '/clients/$clientId/documents'
     | '/clients/$clientId/invoices'
-    | '/clients/$clientId/overview'
     | '/clients/$clientId/settings'
     | '/catalog/insurers'
     | '/catalog/products'
@@ -342,9 +342,9 @@ export interface FileRouteTypes {
     | '/_layout/renewals/'
     | '/_layout/catalog/insurers/$insurerId'
     | '/_layout/catalog/products/$productId'
+    | '/_layout/clients/$clientId/activity'
     | '/_layout/clients/$clientId/documents'
     | '/_layout/clients/$clientId/invoices'
-    | '/_layout/clients/$clientId/overview'
     | '/_layout/clients/$clientId/settings'
     | '/_layout/catalog/insurers/'
     | '/_layout/catalog/products/'
@@ -511,6 +511,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutClientsClientIdIndexRouteImport
       parentRoute: typeof LayoutClientsClientIdRoute
     }
+    '/_layout/clients/$clientId/activity': {
+      id: '/_layout/clients/$clientId/activity'
+      path: '/activity'
+      fullPath: '/clients/$clientId/activity'
+      preLoaderRoute: typeof LayoutClientsClientIdActivityRouteImport
+      parentRoute: typeof LayoutClientsClientIdRoute
+    }
     '/_layout/clients/$clientId/documents': {
       id: '/_layout/clients/$clientId/documents'
       path: '/documents'
@@ -523,13 +530,6 @@ declare module '@tanstack/react-router' {
       path: '/invoices'
       fullPath: '/clients/$clientId/invoices'
       preLoaderRoute: typeof LayoutClientsClientIdInvoicesRouteImport
-      parentRoute: typeof LayoutClientsClientIdRoute
-    }
-    '/_layout/clients/$clientId/overview': {
-      id: '/_layout/clients/$clientId/overview'
-      path: '/overview'
-      fullPath: '/clients/$clientId/overview'
-      preLoaderRoute: typeof LayoutClientsClientIdOverviewRouteImport
       parentRoute: typeof LayoutClientsClientIdRoute
     }
     '/_layout/clients/$clientId/settings': {
@@ -577,9 +577,9 @@ const LayoutCatalogRouteWithChildren = LayoutCatalogRoute._addFileChildren(
 )
 
 interface LayoutClientsClientIdRouteChildren {
+  LayoutClientsClientIdActivityRoute: typeof LayoutClientsClientIdActivityRoute
   LayoutClientsClientIdDocumentsRoute: typeof LayoutClientsClientIdDocumentsRoute
   LayoutClientsClientIdInvoicesRoute: typeof LayoutClientsClientIdInvoicesRoute
-  LayoutClientsClientIdOverviewRoute: typeof LayoutClientsClientIdOverviewRoute
   LayoutClientsClientIdSettingsRoute: typeof LayoutClientsClientIdSettingsRoute
   LayoutClientsClientIdIndexRoute: typeof LayoutClientsClientIdIndexRoute
   LayoutClientsClientIdPoliciesPolicyIdRoute: typeof LayoutClientsClientIdPoliciesPolicyIdRoute
@@ -587,9 +587,9 @@ interface LayoutClientsClientIdRouteChildren {
 }
 
 const LayoutClientsClientIdRouteChildren: LayoutClientsClientIdRouteChildren = {
+  LayoutClientsClientIdActivityRoute: LayoutClientsClientIdActivityRoute,
   LayoutClientsClientIdDocumentsRoute: LayoutClientsClientIdDocumentsRoute,
   LayoutClientsClientIdInvoicesRoute: LayoutClientsClientIdInvoicesRoute,
-  LayoutClientsClientIdOverviewRoute: LayoutClientsClientIdOverviewRoute,
   LayoutClientsClientIdSettingsRoute: LayoutClientsClientIdSettingsRoute,
   LayoutClientsClientIdIndexRoute: LayoutClientsClientIdIndexRoute,
   LayoutClientsClientIdPoliciesPolicyIdRoute:
