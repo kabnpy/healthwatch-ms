@@ -1184,6 +1184,24 @@ export type IPFAgreementsPublic = {
 export type IPFStatus = 'pending_deposit' | 'guaranteed' | 'disbursed' | 'cancelled';
 
 /**
+ * InitialPaymentAllocation
+ */
+export type InitialPaymentAllocation = {
+    /**
+     * Invoice Id
+     */
+    invoice_id: string;
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Risk Note Id
+     */
+    risk_note_id?: string | null;
+};
+
+/**
  * InsurerCreate
  */
 export type InsurerCreate = {
@@ -1720,6 +1738,10 @@ export type PaymentRecordCreate = {
      * Proof Document Id
      */
     proof_document_id?: string | null;
+    /**
+     * Initial Allocations
+     */
+    initial_allocations?: Array<InitialPaymentAllocation> | null;
 };
 
 /**
