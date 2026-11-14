@@ -58,6 +58,7 @@ interface RenewalTransitionSheetProps {
   policy: PolicyPublic | null
   clientName?: string
   renewal: RenewalPublic | null
+  coverageEnd?: string | null
 }
 
 const STAGES: {
@@ -69,15 +70,15 @@ const STAGES: {
 }[] = [
   {
     status: "awaiting_carrier",
-    label: "Awaiting Carrier Terms",
-    shortLabel: "Carrier Quoting",
+    label: "Awaiting Insurer Terms",
+    shortLabel: "Insurer Quoting",
     icon: FileQuestion,
     color:
       "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
   },
   {
     status: "carrier_received",
-    label: "Carrier Terms Received",
+    label: "Insurer Terms Received",
     shortLabel: "Terms In Hand",
     icon: FileText,
     color: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 border-cyan-500/30",
@@ -121,6 +122,7 @@ export function RenewalTransitionSheet({
   policy,
   clientName,
   renewal,
+  coverageEnd,
 }: RenewalTransitionSheetProps) {
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const createRenewalMutation = useCreateRenewal()
@@ -265,11 +267,7 @@ export function RenewalTransitionSheet({
             <span className="text-xs font-mono font-semibold text-muted-foreground uppercase tracking-wider">
               Renewal Review
             </span>
-            {renewal ? (
-              <Badge variant="outline" className="font-mono text-xs">
-                OCC v{renewal.version}
-              </Badge>
-            ) : (
+            {!renewal && (
               <Badge
                 variant="outline"
                 className="text-xs text-amber-600 border-amber-500/30"
@@ -286,7 +284,7 @@ export function RenewalTransitionSheet({
             <User className="size-3.5" />
             <span>{clientName || "Client Portfolio"}</span>
             <span>•</span>
-            <span>Expires: {activeNote?.coverage_end || "N/A"}</span>
+            <span>Expires: {activeNote?.coverage_end || coverageEnd || "N/A"}</span>
           </SheetDescription>
         </SheetHeader>
 
@@ -411,7 +409,7 @@ export function RenewalTransitionSheet({
         <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-4">
           <div className="flex items-center justify-between border-b pb-2">
             <span className="text-xs font-bold uppercase tracking-wider text-foreground">
-              Financial Schedule (Fixed-Point)
+              Renewal Terms & Premium
             </span>
             <div className="flex items-center gap-2">
               <Button
@@ -452,7 +450,7 @@ export function RenewalTransitionSheet({
 
             <div>
               <Label className="text-[11px] text-muted-foreground uppercase">
-                Carrier Proposed Premium
+                Insurer Proposed Premium
               </Label>
               <div className="mt-1">
                 <CurrencyInput
@@ -480,7 +478,7 @@ export function RenewalTransitionSheet({
 
             <div>
               <Label className="text-[11px] text-muted-foreground uppercase">
-                Carrier Reference / Doc Key
+                Insurer Reference
               </Label>
               <div className="mt-1">
                 <Input
@@ -517,7 +515,7 @@ export function RenewalTransitionSheet({
           <Textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Log carrier discussions, loss ratio adjustments, or client concessions..."
+            placeholder="Log insurer discussions, loss ratio adjustments, or client concessions..."
             rows={3}
             disabled={!renewal && false}
             className="text-xs"
@@ -550,7 +548,7 @@ export function RenewalTransitionSheet({
                   className="w-full gap-2 bg-cyan-600 hover:bg-cyan-700 text-white"
                 >
                   <FileText className="size-4" />
-                  Mark Carrier Terms Received
+                  Mark Insurer Terms Received
                   <ArrowRight className="size-4 ml-auto" />
                 </Button>
               )}
