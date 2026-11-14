@@ -90,7 +90,11 @@ export const ProductForm = ({
                 disabled={!!initialData}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select insurer" />
+                  <SelectValue placeholder="Select insurer">
+                    {insurers.find((i) => i.id === field.value)?.name ||
+                      initialData?.insurer?.name ||
+                      undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {insurers.map((insurer) => (
@@ -121,7 +125,7 @@ export const ProductForm = ({
         )}
       />
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Controller
           control={(form as any).control}
           name="class_of_insurance"
@@ -171,9 +175,11 @@ export const ProductForm = ({
             Cancel
           </Button>
         )}
-        <LoadingButton type="submit" loading={isLoading}>
-          {submitLabel}
-        </LoadingButton>
+        {!useContext && (
+          <LoadingButton type="submit" loading={isLoading}>
+            {submitLabel}
+          </LoadingButton>
+        )}
       </div>
     </form>
   )
