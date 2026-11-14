@@ -49,7 +49,7 @@ const STAGE_META: Record<
   { label: string; color: string; icon: typeof Clock }
 > = {
   awaiting_carrier: {
-    label: "Awaiting Carrier",
+    label: "Awaiting Insurer",
     color:
       "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
     icon: FileQuestion,
@@ -89,6 +89,19 @@ const STAGE_META: Record<
   },
 }
 
+const NEXT_STAGE_ACTION: Partial<Record<RenewalStatus, string>> = {
+  awaiting_carrier: "Log Insurer Terms",
+  carrier_received: "Prepare Invitation",
+  client_invited: "Follow Up",
+  changes_requested: "Revise Terms",
+  paid: "Complete Renewal",
+}
+
+function getRenewalActionLabel(status?: RenewalStatus | null): string {
+  if (!status) return "Start Renewal"
+  return NEXT_STAGE_ACTION[status] ?? "Start Renewal"
+}
+
 function RenewalsDeskPage() {
   const {
     data: horizonData,
@@ -105,12 +118,17 @@ function RenewalsDeskPage() {
 
   // Categorize policies into horizons & stages from server-side horizon
   const categorized = useMemo(() => {
-    const expiring30 = horizonData?.["0_30"] ?? []
+    const isTerminalStatus = (status?: string | null) =>
+      ["completed", "cancelled"].includes(status?.toLowerCase() || "")
+
+    const expiring30 = (horizonData?.["0_30"] ?? []).filter(
+      (item) => !item.renewal || isTerminalStatus(item.renewal.status),
+    )
     const expiring60 = horizonData?.["31_60"] ?? []
     const expired = horizonData?.overdue ?? []
     const allItems = [
       ...expired,
-      ...expiring30,
+      ...(horizonData?.["0_30"] ?? []),
       ...expiring60,
       ...(horizonData?.["61_90"] ?? []),
     ]
@@ -121,7 +139,7 @@ function RenewalsDeskPage() {
       if (item.renewal) {
         if (item.renewal.status === "completed") {
           completedRenewals.push(item)
-        } else {
+        } else if (!isTerminalStatus(item.renewal.status)) {
           inWorkflow.push(item)
         }
       }
@@ -177,27 +195,34 @@ function RenewalsDeskPage() {
         id: "cover_details",
         header: "Cover / Asset",
         cell: ({ row }) => {
+          const displayName = getPolicyDisplayName(row.original.policy)
           const product = row.original.policy.product
           const activeNote = row.original.policy.active_note
           const summary = extractCoverSummary(activeNote?.cover_snapshot)
 
-          let assetDescriptor = "Asset / Risk Details"
+          let assetDescriptor: string | null = null
           if (summary.vehicleReg) {
             assetDescriptor = `${summary.makeModel || "Vehicle"} (${summary.vehicleReg})`
           } else if (summary.propertyLocation) {
             assetDescriptor = summary.propertyLocation
-          } else if (product?.class_of_insurance) {
+          } else if (
+            product?.class_of_insurance &&
+            product.class_of_insurance.trim().toLowerCase() !==
+              displayName.trim().toLowerCase()
+          ) {
             assetDescriptor = product.class_of_insurance
           }
 
           return (
             <div className="flex flex-col">
               <span className="font-semibold text-xs leading-none">
-                {getPolicyDisplayName(row.original.policy)}
+                {displayName}
               </span>
-              <span className="text-[11px] text-muted-foreground mt-0.5 truncate max-w-[220px]">
-                {assetDescriptor}
-              </span>
+              {assetDescriptor ? (
+                <span className="text-[11px] text-muted-foreground mt-0.5 truncate max-w-[220px]">
+                  {assetDescriptor}
+                </span>
+              ) : null}
             </div>
           )
         },
@@ -206,13 +231,9 @@ function RenewalsDeskPage() {
         id: "expiry_countdown",
         header: "Renewal Horizon",
         cell: ({ row }) => {
-          const activeNote = row.original.policy.active_note
-          if (!activeNote?.coverage_end) return <span>—</span>
-
-          const endDate = new Date(activeNote.coverage_end).getTime()
-          const daysLeft = Math.ceil(
-            (endDate - Date.now()) / (1000 * 60 * 60 * 24),
-          )
+          const { coverage_end: coverageEnd, days_left: daysLeft } =
+            row.original
+          if (!coverageEnd) return <span>—</span>
 
           return (
             <div className="flex items-center gap-2">
@@ -233,7 +254,7 @@ function RenewalsDeskPage() {
                     : `Expired ${Math.abs(daysLeft)}d ago`}
               </span>
               <span className="text-xs font-mono text-muted-foreground">
-                ({activeNote.coverage_end})
+                ({coverageEnd})
               </span>
             </div>
           )
@@ -305,7 +326,7 @@ function RenewalsDeskPage() {
                 onClick={() => openTriage(row.original.policy)}
                 className="h-8 gap-1.5 cursor-pointer text-xs"
               >
-                {renewal ? "Advance Stage" : "Review & Renew"}
+                {getRenewalActionLabel(renewal?.status)}
                 <ArrowRight className="size-3.5" />
               </Button>
             </div>
@@ -374,7 +395,7 @@ function RenewalsDeskPage() {
               {categorized.expiring30.length}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Requires carrier terms & client renewal notice
+              Requires insurer terms & client renewal notice
             </p>
           </CardContent>
         </Card>
