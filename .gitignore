@@ -83,3 +83,6 @@ backend/storage/
 .better-design/
 
 .impeccable/
+
+# Local exploratory research notes
+docs/research/
