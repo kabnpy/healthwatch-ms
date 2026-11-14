@@ -17,13 +17,13 @@ export const Header = () => {
   const breadcrumbs = useBreadcrumbs()
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-      <SidebarTrigger className="-ml-1 text-muted-foreground" />
+    <header className="flex h-12 shrink-0 items-center gap-2 border-b px-6 md:px-8">
+      <SidebarTrigger className="text-muted-foreground" />
       <Separator
         orientation="vertical"
-        className="mr-2 data-[orientation=vertical]:h-4"
+        className="mx-1 data-[orientation=vertical]:h-4 data-[orientation=vertical]:self-center"
       />
-      <div className="flex min-w-0 items-center gap-2 px-2 sm:px-4 overflow-hidden">
+      <div className="flex min-w-0 items-center gap-2 overflow-hidden">
         <Breadcrumb className="min-w-0">
           <BreadcrumbList className="flex-nowrap">
             {breadcrumbs.map((crumb, index) => (
