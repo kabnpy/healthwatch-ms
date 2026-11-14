@@ -23,11 +23,7 @@ from app.services.document_renderer import DocumentRenderer, RenderedDocument
 
 
 def test_render_statement_with_snapshot_override(db: Session) -> None:
-    result = DocumentRenderer.render_html(
-        session=db,
-        resource_type=DocumentJobResourceType.STATEMENT,
-        resource_id=None,
-        snapshot_override={
+    snapshot = DocumentRenderer.build_snapshot(session=db, resource_type=DocumentJobResourceType.STATEMENT, resource_id=None, snapshot_override={
             "client_name": "Acme Logistics Ltd",
             "kra_pin": "P051234567X",
             "total_invoiced": "15000.00",
@@ -35,8 +31,8 @@ def test_render_statement_with_snapshot_override(db: Session) -> None:
             "net_outstanding_balance": "10000.00",
             "invoice_count": 2,
             "allocation_count": 1,
-        },
-    )
+        })
+    result = DocumentRenderer.render_html(snapshot, resource_type=DocumentJobResourceType.STATEMENT)
 
     assert isinstance(result, RenderedDocument)
     assert "Acme Logistics Ltd" in result.html
@@ -94,12 +90,8 @@ def test_render_risk_note_from_db_with_snapshot_override(db: Session) -> None:
     db.add(risk_note)
     db.commit()
 
-    result = DocumentRenderer.render_html(
-        session=db,
-        resource_type=DocumentJobResourceType.RISK_NOTE,
-        resource_id=risk_note.id,
-        snapshot_override={"special_conditions": "Excess 2.5% of sum insured"},
-    )
+    snapshot = DocumentRenderer.build_snapshot(session=db, resource_type=DocumentJobResourceType.RISK_NOTE, resource_id=risk_note.id, snapshot_override={"special_conditions": "Excess 2.5% of sum insured"})
+    result = DocumentRenderer.render_html(snapshot, resource_type=DocumentJobResourceType.RISK_NOTE)
 
     assert "RN-2026-001" in result.html
     assert "Safari Traders" in result.html
@@ -131,11 +123,8 @@ def test_render_invoice_from_db(db: Session) -> None:
     db.add(invoice)
     db.commit()
 
-    result = DocumentRenderer.render_html(
-        session=db,
-        resource_type=DocumentJobResourceType.INVOICE,
-        resource_id=invoice.id,
-    )
+    snapshot = DocumentRenderer.build_snapshot(session=db, resource_type=DocumentJobResourceType.INVOICE, resource_id=invoice.id)
+    result = DocumentRenderer.render_html(snapshot, resource_type=DocumentJobResourceType.INVOICE)
 
     assert "INV-2026-042" in result.html
     assert "Nairobi Holdings" in result.html
@@ -169,11 +158,8 @@ def test_render_invoice_omits_duplicate_agency_row_and_renders_balance_due_and_r
     db.add(invoice)
     db.commit()
 
-    result = DocumentRenderer.render_html(
-        session=db,
-        resource_type=DocumentJobResourceType.INVOICE,
-        resource_id=invoice.id,
-    )
+    snapshot = DocumentRenderer.build_snapshot(session=db, resource_type=DocumentJobResourceType.INVOICE, resource_id=invoice.id)
+    result = DocumentRenderer.render_html(snapshot, resource_type=DocumentJobResourceType.INVOICE)
 
     assert '<span class="kv-label">Agency</span>' not in result.html
     assert "Balance Due" in result.html
@@ -188,11 +174,8 @@ def test_render_invoice_omits_duplicate_agency_row_and_renders_balance_due_and_r
 
 
 def test_render_fallback_resource_type(db: Session) -> None:
-    result = DocumentRenderer.render_html(
-        session=db,
-        resource_type=DocumentJobResourceType.INVITATION,
-        resource_id=None,
-    )
+    snapshot = DocumentRenderer.build_snapshot(session=db, resource_type=DocumentJobResourceType.INVITATION, resource_id=None)
+    result = DocumentRenderer.render_html(snapshot, resource_type=DocumentJobResourceType.INVITATION)
 
     assert "INVITATION" in result.html or "invitation" in result.html
     assert result.fallback_title == "Document invitation"
@@ -238,15 +221,11 @@ def test_render_pdf_raises_when_rasterizer_fails(
     monkeypatch.setattr(DocumentRenderer, "pdf_rasterizer", FailingRasterizer())
 
     with pytest.raises(RuntimeError, match="Playwright crashed"):
-        DocumentRenderer.render_pdf(
-            session=db,
-            resource_type=DocumentJobResourceType.STATEMENT,
-            resource_id=None,
-            snapshot_override={
+        snapshot = DocumentRenderer.build_snapshot(session=db, resource_type=DocumentJobResourceType.STATEMENT, resource_id=None, snapshot_override={
                 "client_name": "Failing PDF Client",
                 "net_outstanding_balance": "1200.00",
-            },
-        )
+            })
+        DocumentRenderer.render_pdf(snapshot, resource_type=DocumentJobResourceType.STATEMENT)
 
 
 def test_render_pdf_raises_on_invalid_pdf_output(
@@ -262,11 +241,8 @@ def test_render_pdf_raises_on_invalid_pdf_output(
     monkeypatch.setattr(DocumentRenderer, "pdf_rasterizer", InvalidOutputRasterizer())
 
     with pytest.raises(ValueError, match="Invalid PDF"):
-        DocumentRenderer.render_pdf(
-            session=db,
-            resource_type=DocumentJobResourceType.STATEMENT,
-            resource_id=None,
-        )
+        snapshot = DocumentRenderer.build_snapshot(session=db, resource_type=DocumentJobResourceType.STATEMENT, resource_id=None)
+        DocumentRenderer.render_pdf(snapshot, resource_type=DocumentJobResourceType.STATEMENT)
 
 
 def test_render_pdf_uses_playwright_when_available(
@@ -298,11 +274,8 @@ def test_render_pdf_uses_playwright_when_available(
         "app.services.document_renderer.subprocess.run", fake_subprocess_run
     )
 
-    result = DocumentRenderer.render_pdf(
-        session=db,
-        resource_type=DocumentJobResourceType.INVITATION,
-        resource_id=None,
-    )
+    snapshot = DocumentRenderer.build_snapshot(session=db, resource_type=DocumentJobResourceType.INVITATION, resource_id=None)
+    result = DocumentRenderer.render_pdf(snapshot, resource_type=DocumentJobResourceType.INVITATION)
 
     assert result.pdf_bytes == b"%PDF-1.4 playwright-output\n%%EOF\n"
 
@@ -336,7 +309,7 @@ def test_document_job_service_process_job_uses_document_renderer_and_uploads_pdf
         uploaded_payloads.append((file.read(), filename, folder))
         return f"{folder}/{filename}"
 
-    monkeypatch.setattr("app.services.document_job.storage.save_file", fake_save_file)
+    monkeypatch.setattr("app.services.document.storage.save_file", fake_save_file)
 
     job = DocumentJobService.enqueue_job(
         session=db,
@@ -353,10 +326,8 @@ def test_document_job_service_process_job_uses_document_renderer_and_uploads_pdf
     assert filename.startswith("Statement_Job_Pipeline_Client_")
     assert folder == "documents/statement"
 
-    import uuid
-
-    doc_id = uuid.UUID(processed.snapshot_data["document_id"])
-    doc = db.get(Document, doc_id)
+    assert processed.document_id is not None
+    doc = db.get(Document, processed.document_id)
     assert doc is not None
     assert doc.mime_type == "application/pdf"
 
@@ -400,34 +371,23 @@ def test_render_statement_surfaces_unapplied_funds_when_positive_and_omits_when_
     db.add(payment)
     db.commit()
 
-    db_result = DocumentRenderer.render_html(
-        session=db,
-        resource_type=DocumentJobResourceType.STATEMENT,
-        resource_id=client_rec.id,
-    )
+    snapshot = DocumentRenderer.build_snapshot(session=db, resource_type=DocumentJobResourceType.STATEMENT, resource_id=client_rec.id)
+    db_result = DocumentRenderer.render_html(snapshot, resource_type=DocumentJobResourceType.STATEMENT)
     assert "Unapplied Funds" in db_result.html
     assert "4,500.00" in db_result.html
 
-    zero_result = DocumentRenderer.render_html(
-        session=db,
-        resource_type=DocumentJobResourceType.STATEMENT,
-        resource_id=None,
-        snapshot_override={
+    snapshot = DocumentRenderer.build_snapshot(session=db, resource_type=DocumentJobResourceType.STATEMENT, resource_id=None, snapshot_override={
             "client_name": "Zero Unapplied Client",
             "unallocated_credits": "0.00",
-        },
-    )
+        })
+    zero_result = DocumentRenderer.render_html(snapshot, resource_type=DocumentJobResourceType.STATEMENT)
     assert "Unapplied Funds" not in zero_result.html
 
 
 def test_render_statement_mpesa_invoice_number_ledger_activity_and_date_fallback(
     db: Session,
 ) -> None:
-    result = DocumentRenderer.render_html(
-        session=db,
-        resource_type=DocumentJobResourceType.STATEMENT,
-        resource_id=None,
-        snapshot_override={
+    snapshot = DocumentRenderer.build_snapshot(session=db, resource_type=DocumentJobResourceType.STATEMENT, resource_id=None, snapshot_override={
             "client_name": "Rift Valley Builders",
             "kra_pin": "P051119998C",
             "total_invoiced": "50000.00",
@@ -435,8 +395,8 @@ def test_render_statement_mpesa_invoice_number_ledger_activity_and_date_fallback
             "net_outstanding_balance": "30000.00",
             "invoice_count": 2,
             "allocation_count": 1,
-        },
-    )
+        })
+    result = DocumentRenderer.render_html(snapshot, resource_type=DocumentJobResourceType.STATEMENT)
 
     assert "Ledger Activity" in result.html
     assert "2 Invoices, 1 Payments" in result.html
@@ -521,11 +481,8 @@ def test_render_risk_note_indents_included_benefits_beneath_net_base_premium(
     db.add(risk_note)
     db.commit()
 
-    result = DocumentRenderer.render_html(
-        session=db,
-        resource_type=DocumentJobResourceType.RISK_NOTE,
-        resource_id=risk_note.id,
-    )
+    snapshot = DocumentRenderer.build_snapshot(session=db, resource_type=DocumentJobResourceType.RISK_NOTE, resource_id=risk_note.id)
+    result = DocumentRenderer.render_html(snapshot, resource_type=DocumentJobResourceType.RISK_NOTE)
 
     assert "Net Base Premium" in result.html
     assert "Political Violence &amp; Terrorism" in result.html
@@ -596,3 +553,53 @@ def test_render_risk_note_compact_certification_and_pending_issue_fallback() -> 
 
     assert "CERTIFIED OFFICIAL" not in draft_html
     assert "Digitally Authenticated — Agency Operations" not in draft_html
+
+
+def test_build_snapshot_fallback_resource_type_is_frozen(db: Session) -> None:
+    import uuid
+
+    resource_id = uuid.uuid4()
+    snapshot = DocumentRenderer.build_snapshot(
+        session=db,
+        resource_type=DocumentJobResourceType.INVITATION,
+        resource_id=resource_id,
+        snapshot_override={"custom_key": "custom_value"},
+    )
+
+    assert snapshot["_frozen"] is True
+    assert snapshot["found"] is False
+    assert snapshot["entity_type"] is None
+    assert snapshot["entity_id"] == str(resource_id)
+    assert snapshot["filename"] == f"invitation_{resource_id}.pdf"
+    assert snapshot["custom_key"] == "custom_value"
+
+
+def test_enqueue_job_freezes_risk_note_and_invoice_but_defers_statement(
+    db: Session,
+) -> None:
+    import uuid
+
+    from app.services.document_job import DocumentJobService
+
+    rn_job = DocumentJobService.enqueue_job(
+        session=db,
+        resource_type=DocumentJobResourceType.RISK_NOTE,
+        resource_id=uuid.uuid4(),
+    )
+    assert rn_job.snapshot_data.get("_frozen") is True
+
+    inv_job = DocumentJobService.enqueue_job(
+        session=db,
+        resource_type=DocumentJobResourceType.INVOICE,
+        resource_id=uuid.uuid4(),
+    )
+    assert inv_job.snapshot_data.get("_frozen") is True
+
+    stmt_job = DocumentJobService.enqueue_job(
+        session=db,
+        resource_type=DocumentJobResourceType.STATEMENT,
+        resource_id=uuid.uuid4(),
+        snapshot_data={"client_name": "Deferred Statement Client"},
+    )
+    assert "_frozen" not in stmt_job.snapshot_data
+    assert stmt_job.snapshot_data["client_name"] == "Deferred Statement Client"
