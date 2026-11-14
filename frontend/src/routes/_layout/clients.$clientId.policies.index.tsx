@@ -183,9 +183,9 @@ function PolicyCard({
             {displayName}
           </p>
           <p className="text-xs text-muted-foreground">
-            Carrier:{" "}
+            Insurer:{" "}
             <span className="font-medium text-foreground">
-              {policy.product?.name || "Direct Cover"}
+              {policy.product?.insurer?.name || "Direct Cover"}
             </span>
           </p>
         </div>
