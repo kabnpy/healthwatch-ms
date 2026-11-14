@@ -619,6 +619,7 @@ def _apply_selection(session: Session, calc: PremiumCalculation) -> None:
         other_calcs = session.exec(
             select(PremiumCalculation).where(
                 PremiumCalculation.policy_id == calc.policy_id,
+                PremiumCalculation.renewal_id.is_(None),  # type: ignore[union-attr]
                 PremiumCalculation.id != calc.id,
             )
         ).all()
@@ -630,6 +631,82 @@ def _apply_selection(session: Session, calc: PremiumCalculation) -> None:
     session.add(calc)
 
 
+class PremiumCalculationService:
+    """Deep service for quote evaluation, calculation persistence, and selection."""
+
+    @staticmethod
+    def evaluate_quote(
+        session: Session,
+        *,
+        inputs: dict[str, Any],
+        rate_table_id: uuid.UUID | None = None,
+        product_id: uuid.UUID | None = None,
+        as_of_date: date | None = None,
+    ) -> PremiumCalculationResult:
+        """Evaluate an unpersisted quote from a RateTableVersion or Product."""
+        if rate_table_id is not None:
+            rate_table = session.get(RateTableVersion, rate_table_id)
+            if not rate_table or rate_table.deleted_at is not None:
+                raise RatingValidationError("Rate table version not found")
+            return calculate_premium(
+                rate_table=rate_table,
+                inputs=inputs,
+                session=session,
+                as_of_date=as_of_date,
+            )
+
+        if product_id is not None:
+            product = session.get(Product, product_id)
+            if not product or product.deleted_at is not None:
+                raise RatingValidationError("Product not found")
+            return calculate_premium(
+                product=product,
+                inputs=inputs,
+                session=session,
+                as_of_date=as_of_date,
+            )
+
+        raise RatingValidationError(
+            "Either rate_table_id or product_id must be provided."
+        )
+
+    @staticmethod
+    def record_calculation(
+        session: Session,
+        *,
+        calc_in: PremiumCalculationCreate,
+        user_id: uuid.UUID | None = None,
+        commit: bool = True,
+    ) -> PremiumCalculation:
+        """Persist a PremiumCalculation and, if is_selected, unselect scoped siblings."""
+        db_calc = PremiumCalculation(**calc_in.model_dump(), created_by_id=user_id)
+        session.add(db_calc)
+        session.flush()
+        if calc_in.is_selected:
+            _apply_selection(session, db_calc)
+        if commit:
+            session.commit()
+            session.refresh(db_calc)
+        return db_calc
+
+    @staticmethod
+    def select_calculation(
+        session: Session,
+        *,
+        calc_id: uuid.UUID,
+        commit: bool = True,
+    ) -> PremiumCalculation:
+        """Select a persisted PremiumCalculation and sync its scope."""
+        calc = session.get(PremiumCalculation, calc_id)
+        if not calc:
+            raise ValueError("Calculation not found")
+        _apply_selection(session, calc)
+        if commit:
+            session.commit()
+            session.refresh(calc)
+        return calc
+
+
 def create_premium_calculation(
     session: Session,
     *,
@@ -637,27 +714,18 @@ def create_premium_calculation(
     user_id: uuid.UUID | None = None,
 ) -> PremiumCalculation:
     """Persist a PremiumCalculation and, if is_selected, select it in one transaction."""
-    db_calc = PremiumCalculation(**calc_in.model_dump(), created_by_id=user_id)
-    session.add(db_calc)
-    session.flush()
-    if calc_in.is_selected:
-        _apply_selection(session, db_calc)
-    session.commit()
-    session.refresh(db_calc)
-    return db_calc
+    return PremiumCalculationService.record_calculation(
+        session, calc_in=calc_in, user_id=user_id, commit=True
+    )
 
 
 def select_premium_calculation(
     session: Session, *, calc_id: uuid.UUID
 ) -> PremiumCalculation:
     """Select a persisted PremiumCalculation and sync its scope in one transaction."""
-    calc = session.get(PremiumCalculation, calc_id)
-    if not calc:
-        raise ValueError("Calculation not found")
-    _apply_selection(session, calc)
-    session.commit()
-    session.refresh(calc)
-    return calc
+    return PremiumCalculationService.select_calculation(
+        session, calc_id=calc_id, commit=True
+    )
 
 
 def create_tax_rate_rule(
