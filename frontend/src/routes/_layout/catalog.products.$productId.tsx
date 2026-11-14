@@ -138,7 +138,10 @@ function ProductDetailContent({ productId }: { productId: string }) {
 
       <FormProvider {...methods}>
         <Tabs defaultValue="general" className="w-full">
-          <TabsList>
+          <TabsList
+            variant="line"
+            className="w-full max-w-full overflow-x-auto justify-start border-b"
+          >
             <TabsTrigger value="general">General Settings</TabsTrigger>
             <TabsTrigger value="schema">Form Schema</TabsTrigger>
             <TabsTrigger value="pricing">Pricing Rules</TabsTrigger>
