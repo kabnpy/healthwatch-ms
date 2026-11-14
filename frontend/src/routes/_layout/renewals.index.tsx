@@ -360,9 +360,12 @@ function RenewalsDeskPage() {
         accessorKey: "policy_number",
         header: "Policy / Cover",
         cell: ({ row }) => {
-          const displayName = getPolicyDisplayName(row.original.policy)
-          const product = row.original.policy.product
-          const activeNote = row.original.policy.active_note
+          const policy = row.original.policy
+          const displayName = policy
+            ? getPolicyDisplayName(policy)
+            : row.original.policy_number
+          const product = policy?.product
+          const activeNote = policy?.active_note
           const summary = extractCoverSummary(activeNote?.cover_snapshot)
 
           let assetDescriptor: string | null = null
