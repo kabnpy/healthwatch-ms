@@ -737,6 +737,15 @@ function RenewalsDeskPage() {
         policy={selectedPolicy}
         clientName={selectedClientName}
         renewal={selectedRenewal}
+        coverageEnd={
+          [
+            ...tabsData.expiring30,
+            ...tabsData.expiring60,
+            ...tabsData.expired,
+            ...tabsData.inWorkflow,
+          ].find((h) => h.policy?.id === selectedPolicy?.id)?.coverage_end ??
+          null
+        }
       />
     </div>
   )

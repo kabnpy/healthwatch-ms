@@ -163,7 +163,7 @@ describe("RenewalTransitionSheet", () => {
     )
 
     const transitionBtn = screen.getByRole("button", {
-      name: /mark carrier terms received/i,
+      name: /mark insurer terms received/i,
     })
     fireEvent.click(transitionBtn)
 
