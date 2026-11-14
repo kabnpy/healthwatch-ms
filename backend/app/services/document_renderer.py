@@ -11,6 +11,7 @@ from typing import Any, Protocol
 import jinja2
 from fastapi.encoders import jsonable_encoder
 from markdown_it import MarkdownIt
+from pydantic import ValidationError
 from sqlmodel import Session
 
 from app.models import (
@@ -23,6 +24,7 @@ from app.models import (
     RiskNote,
     get_datetime_utc,
 )
+from app.schemas import MotorPrivateRiskDetails
 from app.services.client_ledger import ClientLedgerService
 
 logger = logging.getLogger(__name__)
@@ -169,7 +171,11 @@ class DocumentRenderer:
             return override
 
         if resource_type == DocumentJobResourceType.STATEMENT:
-            return override
+            return cls._build_statement_snapshot(
+                session=session,
+                target_id=resource_id,
+                override=override,
+            )
 
         if resource_type == DocumentJobResourceType.RISK_NOTE:
             return cls._build_risk_note_snapshot(
@@ -229,13 +235,14 @@ class DocumentRenderer:
         if policy and hasattr(policy, "vehicles") and policy.vehicles:
             vehicles = list(policy.vehicles)
         elif risk_note.cover_snapshot:
-            snap = risk_note.cover_snapshot
-            if "vehicles" in snap and isinstance(snap["vehicles"], list):
-                vehicles = snap["vehicles"]
-            elif "vehicle" in snap:
-                vehicles = [snap["vehicle"]]
-            elif "VEHICLE DETAILS" in snap:
-                vehicles = [snap["VEHICLE DETAILS"]]
+            try:
+                normalized = MotorPrivateRiskDetails.model_validate(
+                    risk_note.cover_snapshot
+                ).model_dump(mode="json")
+                if normalized.get("vehicle"):
+                    vehicles = [normalized["vehicle"]]
+            except ValidationError:
+                vehicles = []
 
         vehicle = vehicles[0] if vehicles else None
         breakdown = risk_note.financial_breakdown or {}
@@ -259,9 +266,13 @@ class DocumentRenderer:
             else None
         )
 
+        rn_number = risk_note.risk_note_number or risk_note.id
         snapshot: dict[str, Any] = {
             "_frozen": True,
             "found": True,
+            "entity_type": DocumentEntityType.RISK_NOTE.value,
+            "entity_id": str(risk_note.id),
+            "filename": f"RiskNote_{rn_number}.pdf",
             "risk_note": jsonable_encoder(risk_note),
             "policy": jsonable_encoder(policy) if policy else None,
             "client": jsonable_encoder(client) if client else None,
@@ -321,9 +332,14 @@ class DocumentRenderer:
             else str(invoice.due_date)
         )
 
+        inv_number = invoice.invoice_number or invoice.id
+        inv_entity_id = invoice.client_id or invoice.id
         snapshot: dict[str, Any] = {
             "_frozen": True,
             "found": True,
+            "entity_type": DocumentEntityType.CLIENT.value,
+            "entity_id": str(inv_entity_id),
+            "filename": f"Invoice_{inv_number}.pdf",
             "invoice": jsonable_encoder(invoice),
             "client": jsonable_encoder(client) if client else None,
             "policy": jsonable_encoder(policy) if policy else None,
@@ -336,33 +352,95 @@ class DocumentRenderer:
         return snapshot
 
     @classmethod
+    def _build_statement_snapshot(
+        cls,
+        *,
+        session: Session,
+        target_id: uuid.UUID | None,
+        override: dict[str, Any],
+    ) -> dict[str, Any]:
+        raw_client_id = (
+            target_id or override.get("client_id") or override.get("resource_id")
+        )
+        client_uuid: uuid.UUID | None = None
+        if raw_client_id:
+            try:
+                client_uuid = uuid.UUID(str(raw_client_id))
+            except ValueError:
+                client_uuid = None
+
+        client = session.get(Client, client_uuid) if client_uuid else None
+        if client:
+            statement_data = jsonable_encoder(
+                ClientLedgerService.generate_statement(session, client.id).model_dump()
+            )
+            client_name = client.name
+            client_id_val = client.id
+            found = True
+        else:
+            client_name = override.get("client_name", "Valued Client")
+            client_id_val = client_uuid or uuid.uuid4()
+            found = False
+            statement_data = {
+                "client_id": str(client_id_val),
+                "client_name": client_name,
+                "kra_pin": override.get("kra_pin", "NOT SPECIFIED"),
+                "total_invoiced": str(override.get("total_invoiced", "0.00")),
+                "total_allocated": str(override.get("total_allocated", "0.00")),
+                "net_outstanding_balance": str(
+                    override.get("net_outstanding_balance", "0.00")
+                ),
+                "unallocated_credits": str(override.get("unallocated_credits", "0.00")),
+                "invoice_count": int(override.get("invoice_count", 0)),
+                "allocation_count": int(override.get("allocation_count", 0)),
+                "ledger_entries": jsonable_encoder(override.get("ledger_entries", [])),
+            }
+
+        client_slug = client_name.replace(" ", "_")
+        snapshot: dict[str, Any] = {
+            "_frozen": True,
+            "found": found,
+            "entity_type": DocumentEntityType.CLIENT.value,
+            "entity_id": str(client_id_val),
+            "filename": f"Statement_{client_slug}_{client_id_val}.pdf",
+            "statement": statement_data,
+        }
+        for key, value in override.items():
+            if key not in {"_frozen", "found"}:
+                snapshot[key] = jsonable_encoder(value)
+        return snapshot
+
+    @classmethod
     def render_html(
         cls,
-        session: Session,
+        snapshot: dict[str, Any],
+        *,
         resource_type: DocumentJobResourceType,
-        resource_id: uuid.UUID | None = None,
-        snapshot_override: dict[str, Any] | None = None,
         job_id: uuid.UUID | None = None,
     ) -> RenderedDocument:
-        """Render HTML content for a domain resource and optional draft snapshot."""
-        snapshot = snapshot_override or {}
-        target_id = resource_id
+        """Render HTML content purely in-process from a frozen snapshot."""
         ref_id = job_id or uuid.uuid4()
 
-        filename = f"Document_{resource_type.value}_{ref_id}.pdf"
-        entity_type = DocumentEntityType.CLIENT
-        entity_id: uuid.UUID | None = target_id or ref_id
+        filename = snapshot.get("filename") or f"Document_{resource_type.value}_{ref_id}.pdf"
+        raw_entity_type = snapshot.get("entity_type")
+        entity_type = (
+            DocumentEntityType(raw_entity_type)
+            if raw_entity_type
+            else DocumentEntityType.CLIENT
+        )
+        raw_entity_id = snapshot.get("entity_id") or snapshot.get("target_id")
+        entity_id: uuid.UUID | None = (
+            uuid.UUID(str(raw_entity_id)) if raw_entity_id else ref_id
+        )
         fallback_title = f"{resource_type.value.replace('_', ' ').title()}"
         fallback_lines: list[str] = [
             f"Resource Type: {resource_type.value}",
-            f"Resource ID: {resource_id}",
+            f"Resource ID: {raw_entity_id}",
             f"Rendered At: {get_datetime_utc().isoformat()}",
         ]
 
         if resource_type == DocumentJobResourceType.RISK_NOTE:
             return cls._render_risk_note(
-                session=session,
-                target_id=target_id,
                 ref_id=ref_id,
                 snapshot=snapshot,
                 filename=filename,
@@ -374,8 +452,6 @@ class DocumentRenderer:
 
         if resource_type == DocumentJobResourceType.INVOICE:
             return cls._render_invoice(
-                session=session,
-                target_id=target_id,
                 ref_id=ref_id,
                 snapshot=snapshot,
                 filename=filename,
@@ -387,8 +463,6 @@ class DocumentRenderer:
 
         if resource_type == DocumentJobResourceType.STATEMENT:
             return cls._render_statement(
-                session=session,
-                target_id=target_id,
                 ref_id=ref_id,
                 snapshot=snapshot,
                 fallback_lines=fallback_lines,
@@ -411,19 +485,16 @@ class DocumentRenderer:
     @classmethod
     def render_pdf(
         cls,
-        session: Session,
+        snapshot: dict[str, Any],
+        *,
         resource_type: DocumentJobResourceType,
-        resource_id: uuid.UUID | None = None,
-        snapshot_override: dict[str, Any] | None = None,
         job_id: uuid.UUID | None = None,
         rasterizer: PdfRasterizer | None = None,
     ) -> RenderedDocument:
-        """Render HTML and PDF bytes for a domain resource and optional draft snapshot."""
+        """Render HTML and PDF bytes purely in-process from a frozen snapshot."""
         rendered = cls.render_html(
-            session=session,
+            snapshot,
             resource_type=resource_type,
-            resource_id=resource_id,
-            snapshot_override=snapshot_override,
             job_id=job_id,
         )
         active_rasterizer = rasterizer or cls.pdf_rasterizer
@@ -436,8 +507,6 @@ class DocumentRenderer:
     def _render_risk_note(
         cls,
         *,
-        session: Session,
-        target_id: uuid.UUID | None,
         ref_id: uuid.UUID,
         snapshot: dict[str, Any],
         filename: str,
@@ -446,13 +515,8 @@ class DocumentRenderer:
         fallback_title: str,
         fallback_lines: list[str],
     ) -> RenderedDocument:
-        built = cls.build_snapshot(
-            session=session,
-            resource_type=DocumentJobResourceType.RISK_NOTE,
-            resource_id=target_id,
-            snapshot_override=snapshot,
-        )
-        if not built.get("found") or not built.get("risk_note"):
+        if not snapshot.get("found") or not snapshot.get("risk_note"):
+            target_id = snapshot.get("target_id")
             rendered_html = (
                 f"<!DOCTYPE html><html><body><h1>Risk Note</h1>"
                 f"<p>ID: {target_id or ref_id}</p></body></html>"
@@ -466,20 +530,20 @@ class DocumentRenderer:
                 fallback_lines=fallback_lines,
             )
 
-        risk_note = built["risk_note"]
-        policy = built.get("policy")
-        client = built.get("client")
-        product = built.get("product")
-        insurer = built.get("insurer")
-        vehicle = built.get("vehicle")
-        vehicles = built.get("vehicles", [])
-        taxes = built.get("taxes", {})
-        benefits = built.get("benefits", [])
-        special_conditions = built.get("special_conditions")
-        cov_start_str = built.get("coverage_start_formatted", "")
-        cov_end_str = built.get("coverage_end_formatted", "")
-        stamp_dt = built.get("stamp_date", "")
-        include_digital_stamp = bool(built.get("include_digital_stamp", True))
+        risk_note = snapshot["risk_note"]
+        policy = snapshot.get("policy")
+        client = snapshot.get("client")
+        product = snapshot.get("product")
+        insurer = snapshot.get("insurer")
+        vehicle = snapshot.get("vehicle")
+        vehicles = snapshot.get("vehicles", [])
+        taxes = snapshot.get("taxes", {})
+        benefits = snapshot.get("benefits", [])
+        special_conditions = snapshot.get("special_conditions")
+        cov_start_str = snapshot.get("coverage_start_formatted", "")
+        cov_end_str = snapshot.get("coverage_end_formatted", "")
+        stamp_dt = snapshot.get("stamp_date", "")
+        include_digital_stamp = bool(snapshot.get("include_digital_stamp", True))
 
         rendered_html = cls.render_template_html(
             "risk_note.html",
@@ -503,6 +567,17 @@ class DocumentRenderer:
         )
         rn_number = risk_note.get("risk_note_number") or risk_note.get("id")
         rn_id = uuid.UUID(str(risk_note["id"]))
+        resolved_filename = snapshot.get("filename") or f"RiskNote_{rn_number}.pdf"
+        resolved_entity_type = (
+            DocumentEntityType(snapshot["entity_type"])
+            if snapshot.get("entity_type")
+            else DocumentEntityType.RISK_NOTE
+        )
+        resolved_entity_id = (
+            uuid.UUID(str(snapshot["entity_id"]))
+            if snapshot.get("entity_id")
+            else rn_id
+        )
         fallback_lines.extend(
             [
                 f"Policy Number: {policy.get('policy_number') if policy else 'N/A'}",
@@ -512,9 +587,9 @@ class DocumentRenderer:
         )
         return RenderedDocument(
             html=rendered_html,
-            filename=f"RiskNote_{rn_number}.pdf",
-            entity_type=DocumentEntityType.RISK_NOTE,
-            entity_id=rn_id,
+            filename=resolved_filename,
+            entity_type=resolved_entity_type,
+            entity_id=resolved_entity_id,
             fallback_title=f"Risk Note {rn_number}",
             fallback_lines=fallback_lines,
         )
@@ -523,8 +598,6 @@ class DocumentRenderer:
     def _render_invoice(
         cls,
         *,
-        session: Session,
-        target_id: uuid.UUID | None,
         ref_id: uuid.UUID,
         snapshot: dict[str, Any],
         filename: str,
@@ -533,13 +606,8 @@ class DocumentRenderer:
         fallback_title: str,
         fallback_lines: list[str],
     ) -> RenderedDocument:
-        built = cls.build_snapshot(
-            session=session,
-            resource_type=DocumentJobResourceType.INVOICE,
-            resource_id=target_id,
-            snapshot_override=snapshot,
-        )
-        if not built.get("found") or not built.get("invoice"):
+        if not snapshot.get("found") or not snapshot.get("invoice"):
+            target_id = snapshot.get("target_id")
             rendered_html = (
                 f"<!DOCTYPE html><html><body><h1>Invoice</h1>"
                 f"<p>ID: {target_id or ref_id}</p></body></html>"
@@ -553,11 +621,11 @@ class DocumentRenderer:
                 fallback_lines=fallback_lines,
             )
 
-        invoice = built["invoice"]
-        client = built.get("client")
-        policy = built.get("policy")
-        inv_date_str = built.get("invoice_date_formatted", "")
-        due_date_str = built.get("due_date_formatted", "")
+        invoice = snapshot["invoice"]
+        client = snapshot.get("client")
+        policy = snapshot.get("policy")
+        inv_date_str = snapshot.get("invoice_date_formatted", "")
+        due_date_str = snapshot.get("due_date_formatted", "")
 
         rendered_html = cls.render_template_html(
             "invoice.html",
@@ -573,6 +641,17 @@ class DocumentRenderer:
         inv_number = invoice.get("invoice_number") or invoice.get("id")
         inv_client_id = invoice.get("client_id")
         inv_id = uuid.UUID(str(invoice["id"]))
+        resolved_filename = snapshot.get("filename") or f"Invoice_{inv_number}.pdf"
+        resolved_entity_type = (
+            DocumentEntityType(snapshot["entity_type"])
+            if snapshot.get("entity_type")
+            else DocumentEntityType.CLIENT
+        )
+        resolved_entity_id = (
+            uuid.UUID(str(snapshot["entity_id"]))
+            if snapshot.get("entity_id")
+            else (uuid.UUID(str(inv_client_id)) if inv_client_id else inv_id)
+        )
         fallback_lines.extend(
             [
                 f"Client: {client.get('name') if client else 'N/A'}",
@@ -582,9 +661,9 @@ class DocumentRenderer:
         )
         return RenderedDocument(
             html=rendered_html,
-            filename=f"Invoice_{inv_number}.pdf",
-            entity_type=DocumentEntityType.CLIENT,
-            entity_id=uuid.UUID(str(inv_client_id)) if inv_client_id else inv_id,
+            filename=resolved_filename,
+            entity_type=resolved_entity_type,
+            entity_id=resolved_entity_id,
             fallback_title=f"Invoice {inv_number}",
             fallback_lines=fallback_lines,
         )
@@ -593,15 +672,11 @@ class DocumentRenderer:
     def _render_statement(
         cls,
         *,
-        session: Session,
-        target_id: uuid.UUID | None,
         ref_id: uuid.UUID,
         snapshot: dict[str, Any],
         fallback_lines: list[str],
     ) -> RenderedDocument:
-        raw_client_id = (
-            target_id or snapshot.get("client_id") or snapshot.get("resource_id")
-        )
+        raw_client_id = snapshot.get("client_id") or snapshot.get("resource_id") or snapshot.get("entity_id")
         client_uuid: uuid.UUID | None = None
         if raw_client_id:
             try:
@@ -609,13 +684,10 @@ class DocumentRenderer:
             except ValueError:
                 client_uuid = None
 
-        client = session.get(Client, client_uuid) if client_uuid else None
-        if client:
-            statement_data = ClientLedgerService.generate_statement(
-                session, client.id
-            ).model_dump()
-            client_name = client.name
-            client_id_val = client.id
+        if "statement" in snapshot and isinstance(snapshot["statement"], dict):
+            statement_data = snapshot["statement"]
+            client_name = statement_data.get("client_name", "Valued Client")
+            client_id_val = uuid.UUID(str(statement_data.get("client_id") or client_uuid or ref_id))
         else:
             client_name = snapshot.get("client_name", "Valued Client")
             client_id_val = client_uuid or ref_id
@@ -646,6 +718,17 @@ class DocumentRenderer:
             },
         )
         client_slug = client_name.replace(" ", "_")
+        resolved_filename = snapshot.get("filename") or f"Statement_{client_slug}_{client_id_val}.pdf"
+        resolved_entity_type = (
+            DocumentEntityType(snapshot["entity_type"])
+            if snapshot.get("entity_type")
+            else DocumentEntityType.CLIENT
+        )
+        resolved_entity_id = (
+            uuid.UUID(str(snapshot["entity_id"]))
+            if snapshot.get("entity_id")
+            else client_id_val
+        )
         fallback_lines.extend(
             [
                 f"Client Name: {client_name}",
@@ -655,9 +738,9 @@ class DocumentRenderer:
         )
         return RenderedDocument(
             html=rendered_html,
-            filename=f"Statement_{client_slug}_{client_id_val}.pdf",
-            entity_type=DocumentEntityType.CLIENT,
-            entity_id=client_id_val,
+            filename=resolved_filename,
+            entity_type=resolved_entity_type,
+            entity_id=resolved_entity_id,
             fallback_title=f"Statement - {client_name}",
             fallback_lines=fallback_lines,
         )

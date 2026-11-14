@@ -82,10 +82,14 @@ def preview_document_html(
     resource_id: uuid.UUID | None = None,
 ) -> Any:
     """Renders the canonical Jinja2 document HTML for instant browser preview with 100% print fidelity."""
-    rendered = DocumentRenderer.render_html(
+    snapshot = DocumentRenderer.build_snapshot(
         session=session,
         resource_type=resource_type,
         resource_id=resource_id,
+    )
+    rendered = DocumentRenderer.render_html(
+        snapshot,
+        resource_type=resource_type,
     )
     return HTMLResponse(content=rendered.html)
 
@@ -98,11 +102,15 @@ def preview_document_html_draft(
     request: DocumentPreviewDraftRequest,
 ) -> Any:
     """Renders the canonical Jinja2 document HTML with live draft snapshot overrides."""
-    rendered = DocumentRenderer.render_html(
+    snapshot = DocumentRenderer.build_snapshot(
         session=session,
         resource_type=request.resource_type,
         resource_id=request.resource_id,
         snapshot_override=request.snapshot_data,
+    )
+    rendered = DocumentRenderer.render_html(
+        snapshot,
+        resource_type=request.resource_type,
     )
     return HTMLResponse(content=rendered.html)
 
