@@ -111,6 +111,32 @@ export type AdvisoryQuoteRequest = {
 };
 
 /**
+ * AgingBuckets
+ */
+export type AgingBuckets = {
+    /**
+     * Current 0 30
+     */
+    current_0_30?: string;
+    /**
+     * Days 31 60
+     */
+    days_31_60?: string;
+    /**
+     * Days 61 90
+     */
+    days_61_90?: string;
+    /**
+     * Over 90
+     */
+    over_90?: string;
+    /**
+     * Total Overdue
+     */
+    total_overdue?: string;
+};
+
+/**
  * BenefitCalculationType
  */
 export type BenefitCalculationType = 'percentage' | 'fixed_amount';
@@ -638,6 +664,7 @@ export type ClientStatement = {
      * Ledger Entries
      */
     ledger_entries: Array<ClientStatementEntry>;
+    aging_buckets?: AgingBuckets;
 };
 
 /**
