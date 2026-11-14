@@ -535,7 +535,7 @@ function FinancialsHub() {
                         <Badge
                           variant="outline"
                           className={cn(
-                            "text-[10px] font-bold px-1.5 py-0 uppercase shrink-0",
+                            "text-[10px] font-bold px-1.5 py-0 shrink-0",
                             balDue === 0
                               ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
                               : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
@@ -625,7 +625,7 @@ function FinancialsHub() {
                         <Badge
                           variant="outline"
                           className={cn(
-                            "text-[10px] font-bold px-1.5 py-0 uppercase shrink-0",
+                            "text-[10px] font-bold px-1.5 py-0 shrink-0",
                             isReversed
                               ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
                               : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
@@ -639,7 +639,7 @@ function FinancialsHub() {
                           Pay {a.payment_record_id.substring(0, 8)} → Inv{" "}
                           {a.invoice_id.substring(0, 8)}
                         </div>
-                        <div className="font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
+                        <div className="text-right font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
                           +{formatCurrency(a.amount)}
                         </div>
                       </div>
