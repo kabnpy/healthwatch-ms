@@ -1,19 +1,20 @@
-import json
 import uuid
-from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from app.api.deps import SecurityDep, SessionDep, StaffUser
-from app.core.storage import storage
 from app.models import (
-    DocumentCreate,
     DocumentPublic,
     DocumentsPublic,
 )
-from app.services.document import DocumentNotFoundError, DocumentService
+from app.services.document import (
+    DocumentConflictError,
+    DocumentNotFoundError,
+    DocumentService,
+    DocumentValidationError,
+)
 
 router = APIRouter()
 
@@ -55,33 +56,18 @@ async def upload_document(
     Upload a document.
     """
     try:
-        # Save file to storage
-        relative_path = storage.save_file(
-            file.file,
+        return DocumentService.store_document(
+            session=session,
+            file=file.file,
             filename=file.filename or "unnamed_file",
-            folder=entity_type.lower(),
-        )
-
-        # Parse metadata
-        metadata = {}
-        if metadata_json:
-            try:
-                metadata = json.loads(metadata_json)
-            except json.JSONDecodeError:
-                pass
-
-        # Create document record
-        document_in = DocumentCreate(
             entity_type=entity_type,
             entity_id=entity_id,
             document_type=document_type,
-            file_path=relative_path,
             mime_type=file.content_type,
-            doc_metadata=metadata,
+            metadata=metadata_json,
         )
-
-        return DocumentService.create_document(session=session, document_in=document_in)
-
+    except DocumentValidationError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to upload document: {str(e)}"
@@ -114,18 +100,12 @@ def remove_document(
     """
     Delete a document.
     """
-    document = DocumentService.get_document(session=session, document_id=id)
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
-
-    # Delete from storage
-    storage.delete_file(document.file_path)
-
-    # Delete from DB
     try:
-        return DocumentService.delete_document(session=session, document_id=id)
+        return DocumentService.remove_document(session=session, document_id=id)
     except DocumentNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except DocumentConflictError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 
 @router.get("/{id}/download")
@@ -138,20 +118,14 @@ def download_document(
     """
     Download/View a document.
     """
-    document = DocumentService.get_document(session=session, document_id=id)
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
-
-    absolute_path = storage.get_file_path(document.file_path)
-    if not absolute_path.exists():
-        raise HTTPException(
-            status_code=404,
-            detail=f"Physical file missing from storage: {document.file_path}",
-        )
+    try:
+        artifact = DocumentService.resolve_download(session=session, document_id=id)
+    except DocumentNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
     return FileResponse(
-        path=absolute_path,
-        media_type=document.mime_type,
+        path=artifact.path,
+        media_type=artifact.media_type,
         content_disposition_type="inline",
-        filename=f"{document.document_type}_{document.id}{Path(document.file_path).suffix}",
+        filename=artifact.filename,
     )
