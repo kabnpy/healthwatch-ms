@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
 import { toast } from "sonner"
 import {
   type PaymentAllocationCreate,
@@ -7,6 +12,20 @@ import {
   PaymentRecordsService,
   type ReversalCreate,
 } from "../client"
+
+const LEDGER_QUERY_KEYS = [
+  ["payment-records"],
+  ["payment-allocations"],
+  ["invoices"],
+  ["client-statement"],
+  ["financial-summary"],
+] as const
+
+export function invalidateLedgerQueries(queryClient: QueryClient) {
+  for (const queryKey of LEDGER_QUERY_KEYS) {
+    queryClient.invalidateQueries({ queryKey: [...queryKey] })
+  }
+}
 
 export const usePaymentRecords = (clientId?: string, skip = 0, limit = 100) => {
   return useQuery({
@@ -80,8 +99,7 @@ export const useCreatePaymentRecord = () => {
       (await PaymentRecordsService.recordsCreatePaymentRecord({ body: data }))
         .data,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["payment-records"] })
-      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      invalidateLedgerQueries(queryClient)
       toast.success("Payment recorded successfully")
     },
     onError: (error: any) => {
@@ -89,8 +107,6 @@ export const useCreatePaymentRecord = () => {
     },
   })
 }
-
-export const useRecordPayment = useCreatePaymentRecord
 
 export const useAllocatePayment = () => {
   const queryClient = useQueryClient()
@@ -109,9 +125,8 @@ export const useAllocatePayment = () => {
         })
       ).data,
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ["payment-records"] })
+      invalidateLedgerQueries(queryClient)
       queryClient.invalidateQueries({ queryKey: ["payment-records", id] })
-      queryClient.invalidateQueries({ queryKey: ["invoices"] })
       toast.success("Payment allocated to invoice")
     },
     onError: (error: any) => {
@@ -131,8 +146,7 @@ export const useReversePaymentRecord = () => {
         })
       ).data,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["payment-records"] })
-      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      invalidateLedgerQueries(queryClient)
       toast.success("Payment reversed and allocations rolled back")
     },
     onError: (error: any) => {
@@ -152,8 +166,7 @@ export const useReversePaymentAllocation = () => {
         })
       ).data,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["payment-records"] })
-      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      invalidateLedgerQueries(queryClient)
       toast.success("Allocation reversed and invoice balance restored")
     },
     onError: (error: any) => {
