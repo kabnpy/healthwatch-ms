@@ -5,27 +5,22 @@ import {
   Plus,
   Receipt,
   Search,
-  ShieldAlert,
   Wallet,
 } from "lucide-react"
 import { useMemo, useState } from "react"
 import type { PaymentRecordPublic } from "@/client"
+import { AllocatePaymentDialog } from "@/components/Financials/AllocatePaymentDialog"
 import { ClientStatementView } from "@/components/Financials/ClientStatementView"
+import {
+  LedgerReversalDialog,
+  type LedgerReversalTarget,
+} from "@/components/Financials/LedgerReversalDialog"
 import { RecordPaymentModal } from "@/components/Financials/RecordPaymentModal"
 import PendingItems from "@/components/Pending/PendingItems"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -34,17 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
 import { useClients } from "@/hooks/useClients"
-import useCustomToast from "@/hooks/useCustomToast"
 import { useFinancialSummary, useInvoices } from "@/hooks/useFinancials"
-import {
-  useAllocatePayment,
-  usePaymentAllocations,
-  usePaymentRecords,
-  useReversePaymentAllocation,
-  useReversePaymentRecord,
-} from "@/hooks/usePayments"
+import { usePaymentAllocations, usePaymentRecords } from "@/hooks/usePayments"
 import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/_layout/financials/")({
@@ -59,7 +46,6 @@ export const Route = createFileRoute("/_layout/financials/")({
 })
 
 function FinancialsHub() {
-  const { showSuccessToast, showErrorToast } = useCustomToast()
   const { summary, isLoading: isSummaryLoading } = useFinancialSummary()
   const { data: clientsData } = useClients(0, 500)
   const { data: invoicesData, isLoading: isInvoicesLoading } = useInvoices(
@@ -71,11 +57,6 @@ function FinancialsHub() {
     usePaymentRecords(undefined, 0, 200)
   const { data: allocationsData, isLoading: isAllocationsLoading } =
     usePaymentAllocations(undefined, undefined, 0, 200)
-
-  // Mutations
-  const allocateMutation = useAllocatePayment()
-  const reversePaymentMutation = useReversePaymentRecord()
-  const reverseAllocMutation = useReversePaymentAllocation()
 
   // State
   const [activeTab, setActiveTab] = useState<
@@ -89,15 +70,8 @@ function FinancialsHub() {
   // Sub-dialogs
   const [selectedRecordForAlloc, setSelectedRecordForAlloc] =
     useState<PaymentRecordPublic | null>(null)
-  const [allocTargetInvoiceId, setAllocTargetInvoiceId] = useState("")
-  const [allocAmount, setAllocAmount] = useState("")
-
-  const [reversalTarget, setReversalTarget] = useState<{
-    type: "payment" | "allocation"
-    id: string
-    title: string
-  } | null>(null)
-  const [reversalReason, setReversalReason] = useState("")
+  const [reversalTarget, setReversalTarget] =
+    useState<LedgerReversalTarget | null>(null)
 
   const clientMap = useMemo(() => {
     const map = new Map<string, string>()
@@ -161,77 +135,8 @@ function FinancialsHub() {
     })
   }, [allocations, searchTerm])
 
-  // Open invoices available for selected record
-  const availableInvoicesForAlloc = useMemo(() => {
-    if (!selectedRecordForAlloc) return []
-    return invoices.filter(
-      (inv) =>
-        inv.client_id === selectedRecordForAlloc.client_id &&
-        Number(inv.balance_due || 0) > 0,
-    )
-  }, [invoices, selectedRecordForAlloc])
-
   const handleOpenAllocate = (record: PaymentRecordPublic) => {
     setSelectedRecordForAlloc(record)
-    setAllocTargetInvoiceId("")
-    setAllocAmount(String(record.unallocated_amount || record.amount))
-  }
-
-  const handleExecuteAllocation = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedRecordForAlloc || !allocTargetInvoiceId) {
-      showErrorToast("Please select an invoice to allocate to.")
-      return
-    }
-    const parsed = parseFloat(allocAmount)
-    if (Number.isNaN(parsed) || parsed <= 0) {
-      showErrorToast("Please enter a valid positive allocation amount.")
-      return
-    }
-
-    try {
-      await allocateMutation.mutateAsync({
-        id: selectedRecordForAlloc.id,
-        data: {
-          payment_record_id: selectedRecordForAlloc.id,
-          invoice_id: allocTargetInvoiceId,
-          amount: parsed.toFixed(2) as any,
-        },
-      })
-      setSelectedRecordForAlloc(null)
-      showSuccessToast("Payment funds allocated successfully.")
-    } catch (err: any) {
-      showErrorToast(err?.detail || err?.message || "Failed to allocate funds.")
-    }
-  }
-
-  const handleExecuteReversal = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!reversalTarget || !reversalReason.trim()) {
-      showErrorToast("A justification reason is required for ledger reversal.")
-      return
-    }
-
-    try {
-      if (reversalTarget.type === "payment") {
-        await reversePaymentMutation.mutateAsync({
-          id: reversalTarget.id,
-          data: { reversal_reason: reversalReason.trim() },
-        })
-      } else {
-        await reverseAllocMutation.mutateAsync({
-          id: reversalTarget.id,
-          data: { reversal_reason: reversalReason.trim() },
-        })
-      }
-      setReversalTarget(null)
-      setReversalReason("")
-      showSuccessToast("Reversal successfully recorded in audit ledger.")
-    } catch (err: any) {
-      showErrorToast(
-        err?.detail || err?.message || "Failed to execute reversal.",
-      )
-    }
   }
 
   if (
@@ -764,211 +669,17 @@ function FinancialsHub() {
       )}
 
       {/* 5. Sub-Dialog: Direct Allocation to Open Invoice */}
-      <Dialog
-        open={!!selectedRecordForAlloc}
+      <AllocatePaymentDialog
+        record={selectedRecordForAlloc}
+        invoices={invoices}
         onOpenChange={(open) => !open && setSelectedRecordForAlloc(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold">
-              Allocate Payment to Invoice
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Apply cleared unallocated funds to extinguish an open client
-              balance.
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedRecordForAlloc && (
-            <form onSubmit={handleExecuteAllocation} className="space-y-4 pt-2">
-              <div className="rounded-lg border p-3 bg-muted/20 text-xs space-y-1 font-mono">
-                <div>
-                  <span className="text-muted-foreground">Payment Ref: </span>
-                  <span className="font-bold">
-                    {selectedRecordForAlloc.reference_number || "NO-REF"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">
-                    Available to Allocate:{" "}
-                  </span>
-                  <span className="font-bold text-amber-600">
-                    KES{" "}
-                    {Number(
-                      selectedRecordForAlloc.unallocated_amount ||
-                        selectedRecordForAlloc.amount,
-                    ).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">
-                  Select Open Invoice *
-                </Label>
-                {availableInvoicesForAlloc.length === 0 ? (
-                  <p className="text-xs text-rose-600 italic">
-                    No open invoices with balance due found for this client.
-                  </p>
-                ) : (
-                  <Select
-                    value={allocTargetInvoiceId}
-                    onValueChange={(val) => {
-                      setAllocTargetInvoiceId(val)
-                      const inv = availableInvoicesForAlloc.find(
-                        (i) => i.id === val,
-                      )
-                      if (inv) {
-                        const maxAvail = Number(
-                          selectedRecordForAlloc.unallocated_amount ||
-                            selectedRecordForAlloc.amount,
-                        )
-                        const due = Number(inv.balance_due || 0)
-                        setAllocAmount(String(Math.min(maxAvail, due)))
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="text-xs">
-                      <SelectValue placeholder="Choose open invoice..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableInvoicesForAlloc.map((inv) => (
-                        <SelectItem
-                          key={inv.id}
-                          value={inv.id}
-                          className="text-xs"
-                        >
-                          <span className="font-mono font-bold mr-2">
-                            {inv.invoice_number}
-                          </span>
-                          &bull; Due: KES{" "}
-                          {Number(inv.balance_due).toLocaleString()}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">
-                  Allocation Amount (KES) *
-                </Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="1"
-                  value={allocAmount}
-                  onChange={(e) => setAllocAmount(e.target.value)}
-                  className="font-mono text-xs tabular-nums text-right font-bold"
-                  required
-                />
-              </div>
-
-              <DialogFooter className="pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedRecordForAlloc(null)}
-                  className="text-xs cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={
-                    allocateMutation.isPending ||
-                    !allocTargetInvoiceId ||
-                    availableInvoicesForAlloc.length === 0
-                  }
-                  className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
-                >
-                  {allocateMutation.isPending
-                    ? "Allocating..."
-                    : "Post Allocation"}
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+      />
 
       {/* 6. Sub-Dialog: Append-Only Reversal with Required Reason */}
-      <Dialog
-        open={!!reversalTarget}
+      <LedgerReversalDialog
+        target={reversalTarget}
         onOpenChange={(open) => !open && setReversalTarget(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="size-5 text-rose-600" />
-              <DialogTitle className="text-base font-bold text-rose-600">
-                Authorized Ledger Reversal
-              </DialogTitle>
-            </div>
-            <DialogDescription className="text-xs">
-              Reversing is an append-only accounting action. It voids this
-              financial transaction and restores all linked ledger balances.
-            </DialogDescription>
-          </DialogHeader>
-
-          {reversalTarget && (
-            <form onSubmit={handleExecuteReversal} className="space-y-4 pt-2">
-              <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-xs">
-                <span className="font-semibold text-rose-700 dark:text-rose-400">
-                  Target:{" "}
-                </span>
-                <span className="font-mono font-bold">
-                  {reversalTarget.title}
-                </span>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">
-                  Reversal Justification Reason *
-                </Label>
-                <Textarea
-                  value={reversalReason}
-                  onChange={(e) => setReversalReason(e.target.value)}
-                  placeholder="e.g. Client bounce back, duplicate deposit entry, or bank dispute..."
-                  rows={3}
-                  className="text-xs"
-                  required
-                />
-              </div>
-
-              <DialogFooter className="pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setReversalTarget(null)}
-                  className="text-xs cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={
-                    !reversalReason.trim() ||
-                    reversePaymentMutation.isPending ||
-                    reverseAllocMutation.isPending
-                  }
-                  className="text-xs bg-rose-600 hover:bg-rose-700 text-white cursor-pointer"
-                >
-                  {reversePaymentMutation.isPending ||
-                  reverseAllocMutation.isPending
-                    ? "Reversing..."
-                    : "Confirm Reversal"}
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+      />
 
       {/* 7. Record Payment Modal */}
       <RecordPaymentModal
