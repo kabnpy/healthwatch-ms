@@ -446,6 +446,69 @@ def test_invoice_batch_reads(db: Session) -> None:
     assert ClientLedgerService.count_invoice_batches(session=db, client_id=client.id) == 1
 
 
+def _create_invoice(
+    db: Session,
+    client_id: uuid.UUID,
+    amount: Decimal,
+    date_issued: date,
+    balance_due: Decimal | None = None,
+) -> "Invoice":
+    from app.models import Invoice
+
+    inv = Invoice(
+        client_id=client_id,
+        invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
+        date_issued=date_issued,
+        total_amount=amount,
+        balance_due=amount if balance_due is None else balance_due,
+    )
+    db.add(inv)
+    db.flush()
+    return inv
+
+
+def test_generate_statement_computes_decimal_aging_buckets_with_as_of_date(
+    db: Session,
+) -> None:
+    from datetime import timedelta
+
+    client = _create_client(db, "aging")
+    as_of = date(2026, 6, 15)
+
+    # 0 days -> current_0_30
+    _create_invoice(db, client.id, Decimal("100.11"), as_of)
+    # 30 days -> current_0_30
+    _create_invoice(db, client.id, Decimal("200.22"), as_of - timedelta(days=30))
+    # 31 days -> days_31_60
+    _create_invoice(db, client.id, Decimal("300.33"), as_of - timedelta(days=31))
+    # 60 days -> days_31_60
+    _create_invoice(db, client.id, Decimal("400.44"), as_of - timedelta(days=60))
+    # 61 days -> days_61_90
+    _create_invoice(db, client.id, Decimal("500.55"), as_of - timedelta(days=61))
+    # 90 days -> days_61_90
+    _create_invoice(db, client.id, Decimal("600.66"), as_of - timedelta(days=90))
+    # 91 days -> over_90
+    _create_invoice(db, client.id, Decimal("700.77"), as_of - timedelta(days=91))
+    # Paid invoice (balance_due == 0) -> excluded
+    _create_invoice(
+        db,
+        client.id,
+        Decimal("999.99"),
+        as_of - timedelta(days=120),
+        balance_due=Decimal("0.00"),
+    )
+
+    db.commit()
+
+    statement = ClientLedgerService.generate_statement(
+        db, client.id, as_of_date=as_of
+    )
+
+    assert statement.aging_buckets.current_0_30 == "300.33"
+    assert statement.aging_buckets.days_31_60 == "700.77"
+    assert statement.aging_buckets.days_61_90 == "1101.21"
+    assert statement.aging_buckets.over_90 == "700.77"
+    assert statement.aging_buckets.total_overdue == "2803.08"
 def test_record_payment_with_initial_allocations_atomic_commit_and_rollback(
     db: Session,
 ) -> None:

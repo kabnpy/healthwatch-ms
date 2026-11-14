@@ -56,6 +56,14 @@ class ClientStatementEntry(BaseModel):
     running_balance: str = "0.00"
 
 
+class AgingBuckets(BaseModel):
+    current_0_30: str = "0.00"
+    days_31_60: str = "0.00"
+    days_61_90: str = "0.00"
+    over_90: str = "0.00"
+    total_overdue: str = "0.00"
+
+
 class ClientStatement(BaseModel):
     client_id: str
     client_name: str
@@ -67,6 +75,7 @@ class ClientStatement(BaseModel):
     invoice_count: int
     allocation_count: int
     ledger_entries: list[ClientStatementEntry]
+    aging_buckets: AgingBuckets = AgingBuckets()
 
 
 def _apply_invoice_allocation_delta(
@@ -561,11 +570,15 @@ class ClientLedgerService:
     def generate_statement(
         session: Session,
         client_id: uuid.UUID,
+        as_of_date: date | None = None,
     ) -> ClientStatement:
         """
         Reconciles issued invoices and ACTIVE cleared payment allocations into a typed ClientStatement.
         Excludes REVERSED allocations from balances, counts, and ledger_entries.
         """
+        if as_of_date is None:
+            as_of_date = date.today()
+
         client = session.get(Client, client_id)
         if not client:
             raise LedgerNotFoundError("Client not found")
@@ -640,6 +653,33 @@ class ClientLedgerService:
             running_bal += Decimal(entry.debit) - Decimal(entry.credit)
             entry.running_balance = str(running_bal)
 
+        current_0_30 = Decimal("0.00")
+        days_31_60 = Decimal("0.00")
+        days_61_90 = Decimal("0.00")
+        over_90 = Decimal("0.00")
+
+        for inv in invoices:
+            if inv.balance_due <= Decimal("0.00"):
+                continue
+            days = (as_of_date - inv.date_issued).days
+            if days <= 30:
+                current_0_30 += inv.balance_due
+            elif days <= 60:
+                days_31_60 += inv.balance_due
+            elif days <= 90:
+                days_61_90 += inv.balance_due
+            else:
+                over_90 += inv.balance_due
+
+        q = Decimal("0.01")
+        current_0_30 = current_0_30.quantize(q, rounding=ROUND_HALF_UP)
+        days_31_60 = days_31_60.quantize(q, rounding=ROUND_HALF_UP)
+        days_61_90 = days_61_90.quantize(q, rounding=ROUND_HALF_UP)
+        over_90 = over_90.quantize(q, rounding=ROUND_HALF_UP)
+        total_overdue = (
+            current_0_30 + days_31_60 + days_61_90 + over_90
+        ).quantize(q, rounding=ROUND_HALF_UP)
+
         return ClientStatement(
             client_id=str(client.id),
             client_name=client.name,
@@ -651,6 +691,13 @@ class ClientLedgerService:
             invoice_count=len(invoices),
             allocation_count=len(allocations),
             ledger_entries=entries,
+            aging_buckets=AgingBuckets(
+                current_0_30=str(current_0_30),
+                days_31_60=str(days_31_60),
+                days_61_90=str(days_61_90),
+                over_90=str(over_90),
+                total_overdue=str(total_overdue),
+            ),
         )
 
     @staticmethod
