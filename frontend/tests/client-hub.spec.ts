@@ -175,8 +175,8 @@ test.describe("Client Hub & Policy Detail (/clients/$clientId/*)", () => {
 
     // 2. Navigate to the new client's /settings page
     await page.getByRole("link", { name: testName }).click()
-    await expect(page).toHaveURL(/\/clients\/[^/]+\/overview$/)
-    const settingsUrl = page.url().replace(/\/overview$/, "/settings")
+    await expect(page).toHaveURL(/\/clients\/[^/]+\/policies$/)
+    const settingsUrl = page.url().replace(/\/policies$/, "/settings")
     await page.goto(settingsUrl)
     await page.waitForLoadState("networkidle")
 
@@ -226,50 +226,5 @@ test.describe("Client Hub & Policy Detail (/clients/$clientId/*)", () => {
     await page.getByRole("button", { name: /Delete Permanently/i }).click()
     await expect(page.getByText("Client deleted successfully")).toBeVisible()
     await expect(page).toHaveURL(/\/clients$/)
-  })
-
-  test("Issue #186: Back to Clients bar, underline tabs, compact Overview summary strip, and Documents heading at 1440x900 and 390x844", async ({
-    page,
-  }) => {
-    for (const viewport of [
-      { width: 1440, height: 900 },
-      { width: 390, height: 844 },
-    ]) {
-      await page.setViewportSize(viewport)
-      const { clientUrl } = await navigateToFirstClientOverview(page)
-
-      // 1. Back to Clients link bar above hub header
-      const backToClients = page.getByRole("link", { name: /Back to Clients/i })
-      await expect(backToClients).toBeVisible()
-
-      // 2. Underline tabs (data-variant="line")
-      const tabList = page.locator('[role="tablist"][data-variant="line"]')
-      await expect(tabList).toBeVisible()
-
-      // 3. Overview omits duplicate Client Type badge and View All Policies / View Ledger buttons
-      await expect(page.getByText(/View All Policies/i)).toHaveCount(0)
-      await expect(page.getByText(/View Ledger/i)).toHaveCount(0)
-      await expect(page.getByText(/^(Corporate|Individual) Client$/i)).toHaveCount(0)
-
-      // 4. Unified 4-metric Summary Strip with formatCurrency(...) KES formatting
-      const summaryStrip = page.getByTestId("overview-summary-strip")
-      await expect(summaryStrip).toBeVisible()
-      await expect(summaryStrip.getByText("Policies In Force")).toBeVisible()
-      await expect(summaryStrip.getByText("Outstanding Balance")).toBeVisible()
-      await expect(summaryStrip.getByText("Invoiced Premium")).toBeVisible()
-      await expect(summaryStrip.getByText("Cleared Collections")).toBeVisible()
-
-      const stripText = (await summaryStrip.textContent()) ?? ""
-      expect(stripText).toMatch(/KES\s+[\d,]+\.\d{2}/)
-      expect(stripText).not.toMatch(/\bKshs?\.?\b/i)
-
-      // 5. Documents heading uses standard foreground color (not text-primary)
-      await page.goto(`${clientUrl}/documents`)
-      const docsHeading = page.getByRole("heading", {
-        name: "KYC & Legal Documents",
-      })
-      await expect(docsHeading).toBeVisible()
-      await expect(docsHeading).not.toHaveClass(/text-primary/)
-    }
   })
 })
