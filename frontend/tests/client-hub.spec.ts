@@ -113,4 +113,88 @@ test.describe("Client Hub & Policy Detail (/clients/$clientId/*)", () => {
     await backLink.click()
     await expect(page).toHaveURL(new RegExp(`${clientUrl}/policies$`))
   })
+
+  test("/settings renders grouped sections, responsive Danger Zone, zero overflow, and supports update/delete", async ({
+    page,
+  }) => {
+    const uniqueSuffix = Date.now().toString().slice(-6)
+    const testName = `Settings Test Client ${uniqueSuffix}`
+    const updatedName = `Updated Settings Client ${uniqueSuffix}`
+    const kraPin = `A00${uniqueSuffix}Z`.slice(0, 11).padEnd(11, "1")
+
+    // 1. Create a client via AddClient modal (verifies AddClient modal compatibility)
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto("/clients")
+    await page.getByRole("button", { name: /Add Client/i }).click()
+
+    await expect(
+      page.getByRole("heading", { name: /Identity & Tax/i }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole("heading", { name: /Contact & Address/i }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole("heading", { name: /Key Contacts/i }),
+    ).toBeVisible()
+
+    await page.getByPlaceholder("A00...").fill(kraPin)
+    await page.getByPlaceholder("Full Name or Company Name").fill(testName)
+    await page.getByPlaceholder("07...").fill("0712345678")
+    await page.getByRole("button", { name: /Save Client/i }).click()
+    await expect(page.getByText("Client Created")).toBeVisible()
+
+    // 2. Navigate to the new client's /settings page
+    await page.getByRole("link", { name: testName }).click()
+    await expect(page).toHaveURL(/\/clients\/[^/]+\/overview$/)
+    const settingsUrl = page.url().replace(/\/overview$/, "/settings")
+    await page.goto(settingsUrl)
+    await page.waitForLoadState("networkidle")
+
+    // 3. Verify grouped sections & zero overflow on desktop (1440x900)
+    await expect(
+      page.getByRole("heading", { name: /Identity & Tax/i }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole("heading", { name: /Contact & Address/i }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole("heading", { name: /Key Contacts/i }),
+    ).toBeVisible()
+
+    const desktopOk = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    )
+    expect(desktopOk, "Desktop overflow on /settings").toBe(true)
+
+    // 4. Verify responsive Danger Zone & zero overflow on mobile (390x844)
+    await page.setViewportSize({ width: 390, height: 844 })
+    const mobileOk = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    )
+    expect(mobileOk, "Mobile overflow on /settings").toBe(true)
+
+    const dangerText = page.getByText("Delete Client Account")
+    const deleteBtn = page.getByRole("button", { name: /Delete Client/i })
+    const textBox = await dangerText.boundingBox()
+    const btnBox = await deleteBtn.boundingBox()
+    expect(textBox).not.toBeNull()
+    expect(btnBox).not.toBeNull()
+    expect(btnBox!.y).toBeGreaterThan(textBox!.y)
+
+    // 5. Update client details
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.getByPlaceholder("Full Name or Company Name").fill(updatedName)
+    await page.getByRole("button", { name: /Update Client Details/i }).click()
+    await expect(page.getByText("Client updated successfully")).toBeVisible()
+
+    // 6. Delete client via Danger Zone
+    await page.getByRole("button", { name: /Delete Client/i }).click()
+    await page.getByRole("button", { name: /Delete Permanently/i }).click()
+    await expect(page.getByText("Client deleted successfully")).toBeVisible()
+    await expect(page).toHaveURL(/\/clients$/)
+  })
 })

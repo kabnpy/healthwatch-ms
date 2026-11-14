@@ -101,7 +101,7 @@ function ClientSettings() {
             Irreversible actions related to this client record.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-between py-6">
+        <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-6">
           <div className="space-y-1">
             <p className="font-bold text-sm">Delete Client Account</p>
             <p className="text-xs text-muted-foreground">
