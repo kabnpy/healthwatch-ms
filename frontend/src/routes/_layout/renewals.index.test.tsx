@@ -15,8 +15,15 @@ let mockHorizonState: {
   refetch: mockRefetch,
 }
 
+let mockRenewalsState: {
+  data: { data: any[]; count: number } | undefined
+} = {
+  data: { data: [], count: 0 },
+}
+
 vi.mock("@/hooks/useRenewals", () => ({
   useRenewalsHorizon: () => mockHorizonState,
+  useRenewals: () => mockRenewalsState,
 }))
 
 vi.mock("@tanstack/react-router", async () => {
@@ -41,6 +48,9 @@ import { Route } from "./renewals.index"
 afterEach(() => {
   cleanup()
   mockRefetch.mockClear()
+  mockRenewalsState = {
+    data: { data: [], count: 0 },
+  }
 })
 
 describe("RenewalsDeskPage error handling", () => {
@@ -165,6 +175,54 @@ describe("RenewalsDeskPage data accuracy and terminology", () => {
 
     const expiringTab = screen.getByRole("tab", { name: /Expiring in ≤30 Days/i })
     expect(expiringTab.textContent).toContain("1")
+
+    const activeWorkflowsTab = screen.getByRole("tab", {
+      name: /Active Workflows/i,
+    })
+    expect(activeWorkflowsTab.textContent).toContain("2")
+  })
+
+  it("includes in-flight renewals outside the 90-day horizon buckets in Active Workflows", () => {
+    mockHorizonState = {
+      data: {
+        overdue: [],
+        "0_30": [
+          makeHorizonItem({
+            policy_id: "pol-1",
+            policy_number: "POL-001",
+            renewal: { id: "ren-1", policy_id: "pol-1", status: "initiated" },
+          }),
+        ],
+        "31_60": [],
+        "61_90": [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    }
+    mockRenewalsState = {
+      data: {
+        data: [
+          { id: "ren-1", policy_id: "pol-1", status: "initiated" },
+          {
+            id: "ren-outside",
+            policy_id: "pol-outside",
+            status: "awaiting_carrier",
+            renewal_date: "2026-12-31",
+          },
+          {
+            id: "ren-done",
+            policy_id: "pol-done",
+            status: "completed",
+            renewal_date: "2026-12-31",
+          },
+        ],
+        count: 3,
+      },
+    }
+
+    const Component = Route.options.component!
+    render(<Component />)
 
     const activeWorkflowsTab = screen.getByRole("tab", {
       name: /Active Workflows/i,
