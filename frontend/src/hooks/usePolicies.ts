@@ -2,12 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   ActivitiesService,
   type ActivityCreate,
+  type AdvisoryQuoteRequest,
+  CalculationsService,
   type EndorsementCreate,
   PoliciesService,
   type PolicyCreateExtended,
   type PolicyUpdate,
   ProductsService,
-  type QuoteRequest,
   type RiskNoteRevisionCreate,
   RiskNotesService,
 } from "../client"
@@ -187,19 +188,19 @@ export const usePolicyDashboard = (policyId: string) => {
 // RATING / QUOTES
 export const useQuote = () => {
   return useMutation({
-    mutationFn: async (data: QuoteRequest) =>
-      (await PoliciesService.getPolicyQuote({ body: data })).data,
+    mutationFn: async (data: AdvisoryQuoteRequest) =>
+      (await CalculationsService.quotePreview({ body: data })).data,
   })
 }
 
-export const useQuoteQuery = (data: QuoteRequest | null) => {
+export const useQuoteQuery = (data: AdvisoryQuoteRequest | null) => {
   return useQuery({
     queryKey: ["quote", data],
     queryFn: async () => {
       if (!data) return Promise.reject("No data")
-      return (await PoliciesService.getPolicyQuote({ body: data })).data
+      return (await CalculationsService.quotePreview({ body: data })).data
     },
-    enabled: !!data && !!data.product_id,
+    enabled: !!data && (!!data.product_id || !!data.rate_table_id),
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }

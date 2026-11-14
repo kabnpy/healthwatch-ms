@@ -2,13 +2,16 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { PoliciesService, ProductsService } from "@/client"
+import { CalculationsService, ProductsService } from "@/client"
 import { AdvisoryRatingCalculator } from "./AdvisoryRatingCalculator"
 
 vi.mock("@/client", async () => {
   const actual = await vi.importActual<typeof import("@/client")>("@/client")
   return {
     ...actual,
+    CalculationsService: {
+      quotePreview: vi.fn(),
+    },
     PoliciesService: {
       getPolicyQuote: vi.fn(),
     },
@@ -40,16 +43,16 @@ describe("AdvisoryRatingCalculator", () => {
   })
 
   it("calls the backend quote endpoint and displays authoritative totals, StatutoryLevy breakdown, and rule_provenance", async () => {
-    vi.mocked(PoliciesService.getPolicyQuote).mockResolvedValue({
+    vi.mocked(CalculationsService.quotePreview).mockResolvedValue({
       data: {
-        breakdown: {
-          basic_premium: "90000.00",
-          net_premium: "100000.00",
-          itl: "200.00",
-          phcf: "250.00",
-          stamp_duty: "40.00",
-          total_amount: "100490.00",
-        },
+        basic_premium: "90000.00",
+        net_premium: "100000.00",
+        training_levy: "200.00",
+        phcf: "250.00",
+        stamp_duty: "40.00",
+        total_taxes: "490.00",
+        total_premium: "100490.00",
+        total_amount: "100490.00",
         calculation_detail: {
           base_premium: "90000.00",
           applied_rate: "4.5",
@@ -77,9 +80,10 @@ describe("AdvisoryRatingCalculator", () => {
     )
 
     await waitFor(() => {
-      expect(PoliciesService.getPolicyQuote).toHaveBeenCalledWith({
+      expect(CalculationsService.quotePreview).toHaveBeenCalledWith({
         body: expect.objectContaining({
           product_id: "prod-motor-1",
+          inputs: expect.any(Object),
         }),
       })
     })
@@ -113,23 +117,23 @@ describe("AdvisoryRatingCalculator", () => {
     )
 
     expect(await screen.findByLabelText("Select Product")).toBeTruthy()
-    expect(PoliciesService.getPolicyQuote).not.toHaveBeenCalled()
+    expect(CalculationsService.quotePreview).not.toHaveBeenCalled()
   })
 
-  it("calls onApplyCalculation with the backend QuoteResponse when Apply to Workflow is clicked", async () => {
+  it("calls onApplyCalculation with the backend CalculationQuoteResponse when Apply to Workflow is clicked", async () => {
     const quotePayload = {
-      breakdown: {
-        basic_premium: "90000.00",
-        net_premium: "100000.00",
-        itl: "200.00",
-        phcf: "250.00",
-        stamp_duty: "40.00",
-        total_amount: "100490.00",
-      },
+      basic_premium: "90000.00",
+      net_premium: "100000.00",
+      training_levy: "200.00",
+      phcf: "250.00",
+      stamp_duty: "40.00",
+      total_taxes: "490.00",
+      total_premium: "100490.00",
+      total_amount: "100490.00",
       calculation_detail: { base_premium: "90000.00" },
       rule_provenance: { rate_table_version_id: "rtv-123" },
     }
-    vi.mocked(PoliciesService.getPolicyQuote).mockResolvedValue({
+    vi.mocked(CalculationsService.quotePreview).mockResolvedValue({
       data: quotePayload,
     } as never)
 

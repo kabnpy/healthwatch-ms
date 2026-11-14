@@ -45,7 +45,9 @@ describe("CanonicalDocumentViewer", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch")
     const getItemSpy = vi.spyOn(Storage.prototype, "getItem")
 
-    vi.mocked(DocumentJobsService.jobsPreviewDocumentHtml).mockResolvedValueOnce({
+    vi.mocked(
+      DocumentJobsService.jobsPreviewDocumentHtml,
+    ).mockResolvedValueOnce({
       data: "<html><body><h1>Risk Note Preview</h1></body></html>",
     } as any)
 

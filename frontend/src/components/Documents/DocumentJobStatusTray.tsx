@@ -137,7 +137,9 @@ export function DocumentJobStatusTray() {
                         </Badge>
                         <button
                           type="button"
-                          onClick={() => void downloadDocumentJobArtifact(job.id)}
+                          onClick={() =>
+                            void downloadDocumentJobArtifact(job.id)
+                          }
                           className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline ml-1"
                         >
                           <Download className="size-3" />

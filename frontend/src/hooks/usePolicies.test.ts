@@ -15,6 +15,7 @@ const mockReadPolicy = vi.fn()
 const mockCreatePolicy = vi.fn()
 const mockUpdatePolicy = vi.fn()
 const mockGetPolicyQuote = vi.fn()
+const mockQuotePreview = vi.fn()
 const mockCreateEndorsement = vi.fn()
 const mockReadRiskNotes = vi.fn()
 const mockReadRiskNote = vi.fn()
@@ -41,6 +42,9 @@ vi.mock("../client", () => ({
   ActivitiesService: {
     readActivities: (...args: unknown[]) => mockReadActivities(...args),
     createActivity: (...args: unknown[]) => mockCreateActivity(...args),
+  },
+  CalculationsService: {
+    quotePreview: (...args: unknown[]) => mockQuotePreview(...args),
   },
 }))
 
@@ -151,12 +155,15 @@ describe("usePolicies domain hooks", () => {
     ])
     await expect(prodOpts.queryFn()).resolves.toEqual({ data: [], count: 0 })
 
-    mockGetPolicyQuote.mockResolvedValueOnce({ data: { total: 100 } })
+    mockQuotePreview.mockResolvedValueOnce({ data: { total_amount: "100.00" } })
     const quoteOpts = useQuote() as unknown as {
       mutationFn: (d: unknown) => Promise<unknown>
     }
     await expect(quoteOpts.mutationFn({ product_id: "pr1" })).resolves.toEqual({
-      total: 100,
+      total_amount: "100.00",
+    })
+    expect(mockQuotePreview).toHaveBeenCalledWith({
+      body: { product_id: "pr1" },
     })
 
     const quoteQueryDisabled = useQuoteQuery(null) as unknown as {
