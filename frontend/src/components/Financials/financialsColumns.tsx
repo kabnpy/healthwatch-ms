@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
+import { MoreHorizontal } from "lucide-react"
 import type {
   InvoicePublic,
   PaymentAllocationPublic,
@@ -7,9 +8,42 @@ import type {
 } from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/utils"
 import type { LedgerReversalTarget } from "./LedgerReversalDialog"
+
+export function RowReverseMenu({ onReverse }: { onReverse: () => void }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            size="icon"
+            variant="ghost"
+            aria-label="Row actions"
+            className="h-7 w-7 cursor-pointer"
+          />
+        }
+      >
+        <MoreHorizontal className="size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          onClick={onReverse}
+          className="text-rose-600 focus:text-rose-700 cursor-pointer"
+        >
+          Reverse
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 const PAYMENT_CHANNEL_LABELS: Record<string, string> = {
   MPESA: "M-Pesa",
@@ -19,7 +53,9 @@ const PAYMENT_CHANNEL_LABELS: Record<string, string> = {
   CASH: "Cash",
 }
 
-function formatPaymentChannel(method: string | null | undefined): string {
+export function formatPaymentChannel(
+  method: string | null | undefined,
+): string {
   if (!method) return "—"
   const upper = method.toUpperCase()
   if (PAYMENT_CHANNEL_LABELS[upper]) return PAYMENT_CHANNEL_LABELS[upper]
@@ -29,7 +65,7 @@ function formatPaymentChannel(method: string | null | undefined): string {
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-function formatStatusLabel(status: string | null | undefined): string {
+export function formatStatusLabel(status: string | null | undefined): string {
   if (!status) return "Active"
   return status
     .replace(/_/g, " ")
@@ -45,28 +81,34 @@ export function getPaymentColumns(opts: {
   return [
     {
       accessorKey: "payment_date",
-      header: "Payment Date",
+      header: "Date",
       cell: ({ row }) => (
-        <span className="font-mono text-muted-foreground">
+        <span className="font-mono text-muted-foreground whitespace-nowrap">
           {row.original.payment_date}
         </span>
       ),
     },
     {
       accessorKey: "reference_number",
-      header: "Reference / Slip",
+      header: "Reference",
       cell: ({ row }) => (
-        <span className="font-mono font-bold">
+        <span className="font-mono font-bold whitespace-nowrap">
           {row.original.reference_number || "NO-REF"}
         </span>
       ),
     },
     {
       id: "client_name",
-      header: "Client Portfolio",
+      header: "Client",
       accessorFn: (row) => opts.clientMap.get(row.client_id) || "Client",
-      cell: ({ getValue }) => (
-        <span className="font-medium">{getValue<string>()}</span>
+      cell: ({ row, getValue }) => (
+        <Link
+          to="/clients/$clientId/overview"
+          params={{ clientId: row.original.client_id }}
+          className="font-medium text-primary hover:underline block max-w-[180px] truncate"
+        >
+          {getValue<string>()}
+        </Link>
       ),
     },
     {
@@ -80,9 +122,9 @@ export function getPaymentColumns(opts: {
     },
     {
       accessorKey: "amount",
-      header: () => <div className="text-right">Gross Amount</div>,
+      header: () => <div className="text-right">Amount</div>,
       cell: ({ row }) => (
-        <div className="text-right font-mono tabular-nums font-bold text-foreground">
+        <div className="text-right font-mono tabular-nums font-bold text-foreground whitespace-nowrap">
           {formatCurrency(row.original.amount)}
         </div>
       ),
@@ -147,20 +189,15 @@ export function getPaymentColumns(opts: {
               </Button>
             )}
             {!isReversed && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() =>
+              <RowReverseMenu
+                onReverse={() =>
                   opts.onReverse({
                     type: "payment",
                     id: p.id,
                     title: `Payment ${p.reference_number || p.id.substring(0, 8)}`,
                   })
                 }
-                className="h-7 text-[11px] px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer"
-              >
-                Reverse
-              </Button>
+              />
             )}
           </div>
         )
@@ -184,10 +221,16 @@ export function getInvoiceColumns(opts: {
     },
     {
       id: "client_name",
-      header: "Client Portfolio",
+      header: "Client",
       accessorFn: (row) => opts.clientMap.get(row.client_id) || "Client",
-      cell: ({ getValue }) => (
-        <span className="font-medium">{getValue<string>()}</span>
+      cell: ({ row, getValue }) => (
+        <Link
+          to="/clients/$clientId/overview"
+          params={{ clientId: row.original.client_id }}
+          className="font-medium text-primary hover:underline block max-w-[180px] truncate"
+        >
+          {getValue<string>()}
+        </Link>
       ),
     },
     {
@@ -363,22 +406,17 @@ export function getAllocationColumns(opts: {
         const a = row.original
         const isReversed = a.status?.toLowerCase() === "reversed"
         return (
-          <div className="text-right">
+          <div className="flex justify-end">
             {!isReversed && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() =>
+              <RowReverseMenu
+                onReverse={() =>
                   opts.onReverse({
                     type: "allocation",
                     id: a.id,
                     title: `Allocation ${a.id.substring(0, 8)} (${formatCurrency(a.amount)})`,
                   })
                 }
-                className="h-7 text-[11px] px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer"
-              >
-                Reverse
-              </Button>
+              />
             )}
           </div>
         )

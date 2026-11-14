@@ -40,11 +40,17 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-router")>()
   return {
     ...actual,
-    Link: ({ children, to, ...props }: any) => (
-      <a href={typeof to === "string" ? to : "#"} {...props}>
-        {children}
-      </a>
-    ),
+    Link: ({ children, to, params, ...props }: any) => {
+      let href = typeof to === "string" ? to : "#"
+      if (params?.clientId) {
+        href = href.replace("$clientId", params.clientId)
+      }
+      return (
+        <a href={href} {...props}>
+          {children}
+        </a>
+      )
+    },
   }
 })
 
@@ -212,21 +218,21 @@ describe("FinancialsHub UX & formatting (#168)", () => {
     expect(zeroKpis.length).toBeGreaterThanOrEqual(2)
 
     // Payment Records table
-    const payAmount = screen.getByText(/50,000\.00/)
-    expect(payAmount.className).toContain("tabular-nums")
+    const payAmounts = screen.getAllByText(/50,000\.00/)
+    expect(payAmounts[0].className).toContain("tabular-nums")
 
     // Invoices table
     fireEvent.click(screen.getByRole("tab", { name: /invoices/i }))
-    expect(screen.getByText(/100,000\.00/).className).toContain(
+    expect(screen.getAllByText(/100,000\.00/)[0].className).toContain(
       "tabular-nums",
     )
     expect(
-      screen.getByText(/25,000\.00/).closest("[class*='tabular-nums']"),
+      screen.getAllByText(/25,000\.00/)[0].closest("[class*='tabular-nums']"),
     ).not.toBeNull()
 
     // Allocations table
     fireEvent.click(screen.getByRole("tab", { name: /allocations/i }))
-    expect(screen.getByText(/^\+.*50,000\.00$/).className).toContain(
+    expect(screen.getAllByText(/^\+.*50,000\.00$/)[0].className).toContain(
       "tabular-nums",
     )
   })
@@ -264,11 +270,11 @@ describe("FinancialsHub UX & formatting (#168)", () => {
 
     renderWithQuery()
 
-    expect(screen.getByText("Bank Transfer")).toBeTruthy()
-    expect(screen.getByText("M-Pesa")).toBeTruthy()
+    expect(screen.getAllByText("Bank Transfer").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("M-Pesa").length).toBeGreaterThan(0)
     expect(screen.queryByText("BANK_TRANSFER")).toBeNull()
-    expect(screen.getByText("Active")).toBeTruthy()
-    expect(screen.getByText("Reversed")).toBeTruthy()
+    expect(screen.getAllByText("Active").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Reversed").length).toBeGreaterThan(0)
     expect(screen.queryByText("active")).toBeNull()
   })
 
@@ -293,5 +299,78 @@ describe("FinancialsHub UX & formatting (#168)", () => {
     // GLOSSARY.md copy
     expect(screen.getByText(/bank & M-Pesa/i)).toBeTruthy()
     expect(screen.queryByText(/agency accounts/i)).toBeNull()
+  })
+
+  it("links client names in Payment Records and Invoices to /clients/$clientId/overview", () => {
+    mockUseClients.mockReturnValue({
+      data: { data: [{ id: "c-1", name: "Acme Corp" }], count: 1 },
+    })
+    mockUsePaymentRecords.mockReturnValue({
+      data: {
+        data: [
+          {
+            id: "p-1",
+            client_id: "c-1",
+            amount: 50000,
+            unallocated_amount: 10000,
+            payment_method: "MPESA",
+            payment_date: "2026-04-01",
+            status: "active",
+            reference_number: "MP123",
+          },
+        ],
+        count: 1,
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetchPayments,
+    })
+
+    renderWithQuery()
+
+    const clientLinks = screen.getAllByRole("link", { name: "Acme Corp" })
+    expect(clientLinks.length).toBeGreaterThan(0)
+    for (const link of clientLinks) {
+      expect(link.getAttribute("href")).toBe("/clients/c-1/overview")
+    }
+  })
+
+  it("keeps Allocate directly accessible and moves Reverse into a ... row actions menu", () => {
+    mockUseClients.mockReturnValue({
+      data: { data: [{ id: "c-1", name: "Acme Corp" }], count: 1 },
+    })
+    mockUsePaymentRecords.mockReturnValue({
+      data: {
+        data: [
+          {
+            id: "p-1",
+            client_id: "c-1",
+            amount: 50000,
+            unallocated_amount: 10000,
+            payment_method: "MPESA",
+            payment_date: "2026-04-01",
+            status: "active",
+            reference_number: "MP123",
+          },
+        ],
+        count: 1,
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetchPayments,
+    })
+
+    renderWithQuery()
+
+    // Allocate is directly accessible
+    expect(
+      screen.getAllByRole("button", { name: /^allocate$/i }).length,
+    ).toBeGreaterThan(0)
+    // Reverse is NOT exposed as a bare button
+    expect(screen.queryByRole("button", { name: /^reverse$/i })).toBeNull()
+    // ... row actions menu trigger is present
+    expect(
+      screen.getAllByRole("button", { name: /row actions/i }).length,
+    ).toBeGreaterThan(0)
   })
 })
