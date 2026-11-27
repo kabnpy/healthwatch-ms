@@ -1,15 +1,20 @@
 import { describe, expect, it } from "vitest"
 import type { RenewalHorizonResponse, RenewalPublic } from "@/client"
 import {
+  buildRenewalFinancialUpdatePayload,
+  buildRenewalInitiationPayload,
+  buildRenewalTransitionPayload,
+  calculateRenewalPremiumDelta,
+  computeRenewalPeriodEnd,
+  formatAdvisoryRatingNote,
   getRenewalActionLabel,
   getRenewalStageMeta,
+  isOptimisticConcurrencyConflict,
   partitionRenewalHorizon,
   RENEWAL_WORKFLOW_STAGES,
 } from "./renewalWorkflow"
 
-const makeRenewal = (
-  overrides: Partial<RenewalPublic> = {},
-): RenewalPublic =>
+const makeRenewal = (overrides: Partial<RenewalPublic> = {}): RenewalPublic =>
   ({
     id: "ren-1",
     policy_id: "pol-1",
@@ -158,6 +163,136 @@ describe("renewalWorkflow", () => {
         "pol-30-active",
         "pol-extra",
       ])
+    })
+  })
+
+  describe("computeRenewalPeriodEnd", () => {
+    it("computes calendar-year minus one day including leap years", () => {
+      expect(computeRenewalPeriodEnd("2026-01-01")).toBe("2026-12-31")
+      expect(computeRenewalPeriodEnd("2023-03-01")).toBe("2024-02-29")
+      expect(computeRenewalPeriodEnd("2024-02-29")).toBe("2025-02-28")
+      expect(computeRenewalPeriodEnd("2024-03-01")).toBe("2025-02-28")
+    })
+  })
+
+  describe("payload builders", () => {
+    it("builds initiation payload with calendar-year minus one day end date", () => {
+      expect(
+        buildRenewalInitiationPayload({
+          policyId: "pol-1",
+          startDate: "2024-02-29",
+          previousPremium: 50000,
+          proposedPremium: 55000,
+          notes: "Initial quote",
+        }),
+      ).toEqual({
+        policy_id: "pol-1",
+        renewal_period_start: "2024-02-29",
+        renewal_period_end: "2025-02-28",
+        previous_premium: "50000",
+        proposed_premium: "55000",
+        notes: "Initial quote",
+      })
+
+      expect(
+        buildRenewalInitiationPayload({
+          policyId: "pol-1",
+          startDate: "2026-01-01",
+          previousPremium: 50000,
+          proposedPremium: 0,
+          notes: "",
+        }),
+      ).toEqual({
+        policy_id: "pol-1",
+        renewal_period_start: "2026-01-01",
+        renewal_period_end: "2026-12-31",
+        previous_premium: "50000",
+        proposed_premium: undefined,
+        notes: undefined,
+      })
+    })
+
+    it("builds transition payload with expected_version and optional fields", () => {
+      expect(
+        buildRenewalTransitionPayload({
+          targetStatus: "client_invited",
+          expectedVersion: 3,
+          agreedPremium: 52000,
+          notes: "Sent to client",
+        }),
+      ).toEqual({
+        target_status: "client_invited",
+        expected_version: 3,
+        agreed_premium: "52000",
+        notes: "Sent to client",
+      })
+
+      expect(
+        buildRenewalTransitionPayload({
+          targetStatus: "carrier_received",
+          expectedVersion: 1,
+          agreedPremium: 0,
+          notes: "",
+        }),
+      ).toEqual({
+        target_status: "carrier_received",
+        expected_version: 1,
+        agreed_premium: undefined,
+        notes: undefined,
+      })
+    })
+
+    it("builds financial update payload with expected_version and optional fields", () => {
+      expect(
+        buildRenewalFinancialUpdatePayload({
+          expectedVersion: 2,
+          proposedPremium: 54000,
+          agreedPremium: 52000,
+          carrierDocumentKey: "doc-123",
+          notes: "Updated terms",
+        }),
+      ).toEqual({
+        expected_version: 2,
+        proposed_premium: "54000",
+        agreed_premium: "52000",
+        carrier_document_key: "doc-123",
+        notes: "Updated terms",
+      })
+    })
+  })
+
+  describe("isOptimisticConcurrencyConflict", () => {
+    it("detects HTTP 409 from direct status or nested response.status", () => {
+      expect(isOptimisticConcurrencyConflict({ status: 409 })).toBe(true)
+      expect(
+        isOptimisticConcurrencyConflict({ response: { status: 409 } }),
+      ).toBe(true)
+      expect(isOptimisticConcurrencyConflict({ status: 400 })).toBe(false)
+      expect(
+        isOptimisticConcurrencyConflict({ response: { status: 500 } }),
+      ).toBe(false)
+      expect(isOptimisticConcurrencyConflict(null)).toBe(false)
+      expect(isOptimisticConcurrencyConflict(undefined)).toBe(false)
+    })
+  })
+
+  describe("formatAdvisoryRatingNote & calculateRenewalPremiumDelta", () => {
+    it("formats advisory rating note with trim and fallback", () => {
+      expect(formatAdvisoryRatingNote("  Loss ratio 42%  ")).toBe(
+        "Loss ratio 42%",
+      )
+      expect(formatAdvisoryRatingNote("   ")).toBe(
+        "No advisory rating note recorded.",
+      )
+      expect(formatAdvisoryRatingNote(null)).toBe(
+        "No advisory rating note recorded.",
+      )
+    })
+
+    it("calculates premium delta using agreedPremium when positive, else proposedPremium", () => {
+      expect(calculateRenewalPremiumDelta(50000, 55000, 52000)).toBe(2000)
+      expect(calculateRenewalPremiumDelta(50000, 55000, 0)).toBe(5000)
+      expect(calculateRenewalPremiumDelta(50000, 48000, 0)).toBe(-2000)
     })
   })
 })

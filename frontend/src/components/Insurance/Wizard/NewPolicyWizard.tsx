@@ -9,7 +9,8 @@ import useCustomToast from "@/hooks/useCustomToast"
 import { useCreatePolicy, useProducts } from "@/hooks/usePolicies"
 import { cn } from "@/lib/utils"
 import type { EnhancedProduct, WizardState } from "@/types/insurance"
-import { buildCoverSnapshot, extractSumInsured } from "@/utils/coverSnapshot"
+import { extractSumInsured } from "@/utils/coverSnapshot"
+import { buildPolicyIssuancePayload } from "./policyWizard"
 import { StepAsset } from "./StepAsset"
 import { StepBlueprint } from "./StepBlueprint"
 import { StepFinancials } from "./StepFinancials"
@@ -107,46 +108,14 @@ export function NewPolicyWizard({
     try {
       if (!selectedProduct) throw new Error("No product selected")
 
-      const startDate =
-        state.financials?.startDate || new Date().toISOString().split("T")[0]
-
-      const durationMonths = state.financials?.duration || 12
-      const endDateDate = new Date(startDate)
-
-      // For standard 12-month terms, we use setFullYear to maintain day consistency
-      // (e.g., Feb 29 logic). For other durations, we use the month-based offset.
-      if (durationMonths === 12) {
-        endDateDate.setFullYear(endDateDate.getFullYear() + 1)
-      } else {
-        const targetMonth = endDateDate.getMonth() + durationMonths
-        endDateDate.setMonth(targetMonth)
-        // If the day of month shifted (e.g. Jan 31 -> March 3), roll back to last day of previous month
-        if (endDateDate.getMonth() % 12 !== targetMonth % 12) {
-          endDateDate.setDate(0)
-        }
-      }
-
-      const endDate = endDateDate.toISOString().split("T")[0]
-
-      const coverSnapshot = buildCoverSnapshot({
-        blueprint: selectedProduct.product_details,
-        details: state.details,
-        sumInsured: state.sum_insured,
-        extensions: state.extensions,
-        terms: state.terms,
+      const payload = buildPolicyIssuancePayload({
+        clientId,
+        state,
+        selectedProduct,
       })
 
       // Create Policy atomically
-      await createPolicy.mutateAsync({
-        policy_number: state.policy_number,
-        client_id: clientId,
-        product_id: state.product_id,
-        status: "Active",
-        inception_date: startDate,
-        risk_details: coverSnapshot as any, // Pointing to the new structured object
-        coverage_start: startDate,
-        coverage_end: endDate,
-      } as any)
+      await createPolicy.mutateAsync(payload as any)
 
       showSuccessToast("Policy Issued")
       onSuccess?.()
