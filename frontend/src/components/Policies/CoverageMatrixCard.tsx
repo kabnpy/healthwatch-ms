@@ -2,6 +2,7 @@ import { FileText, Receipt, ShieldCheck } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import type { EnhancedPolicy, EnhancedRiskNote } from "@/types/insurance"
 import { formatCurrency } from "@/utils"
+import { derivePolicyDetailViewModel } from "@/utils/policyDetailViewModel"
 
 interface CoverageMatrixCardProps {
   policy: EnhancedPolicy
@@ -17,8 +18,7 @@ export function CoverageMatrixCard({
   if (!riskNote) return null
 
   const netPremium = Number(riskNote.net_premium || 0)
-  const breakdown = (riskNote.financial_breakdown as any) || {}
-  const taxes = (breakdown.taxes as Record<string, number>) || {}
+  const { taxes } = derivePolicyDetailViewModel(policy, riskNote)
   const snapshot = riskNote.cover_snapshot || {}
   const terms = (snapshot as any)?.terms || {}
   const extensions = (snapshot as any)?.extensions || {}
@@ -161,11 +161,9 @@ export function CoverageMatrixCard({
                 Insurance Training Levy (ITL 0.20%)
               </span>
               <span className="font-mono font-semibold tabular-nums">
-                {formatCurrency(
-                  taxes.insurance_training_levy ||
-                    taxes.training_levy ||
-                    Math.round(netPremium * 0.002),
-                )}
+                {taxes.trainingLevy !== null
+                  ? formatCurrency(taxes.trainingLevy)
+                  : "—"}
               </span>
             </div>
             <div className="flex justify-between items-center py-2 px-3">
@@ -173,11 +171,7 @@ export function CoverageMatrixCard({
                 Policyholders Compensation Fund (PCF 0.25%)
               </span>
               <span className="font-mono font-semibold tabular-nums">
-                {formatCurrency(
-                  taxes.policyholders_compensation_fund ||
-                    taxes.pcf_levy ||
-                    Math.round(netPremium * 0.0025),
-                )}
+                {taxes.phcf !== null ? formatCurrency(taxes.phcf) : "—"}
               </span>
             </div>
             <div className="flex justify-between items-center py-2 px-3">
@@ -185,7 +179,9 @@ export function CoverageMatrixCard({
                 Statutory Stamp Duty (Cap 480)
               </span>
               <span className="font-mono font-semibold tabular-nums">
-                {formatCurrency(taxes.stamp_duty || 40)}
+                {taxes.stampDuty !== null
+                  ? formatCurrency(taxes.stampDuty)
+                  : "—"}
               </span>
             </div>
             <div className="flex justify-between items-center py-2.5 px-3 bg-muted/30 font-bold">
