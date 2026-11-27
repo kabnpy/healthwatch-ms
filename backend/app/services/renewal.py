@@ -307,7 +307,10 @@ class RenewalService:
             renewal.invited_at = now
         elif target == RenewalStatus.PAID:
             renewal.paid_at = now
-        elif target == RenewalStatus.COMPLETED:
+        if transition_in.agreed_premium is not None:
+            renewal.agreed_premium = transition_in.agreed_premium
+
+        if target == RenewalStatus.COMPLETED:
             renewal.completed_at = now
             fallback_total = (
                 renewal.agreed_premium
@@ -322,9 +325,6 @@ class RenewalService:
                 created_by_id=current_user_id,
                 commit=False,
             )
-
-        if transition_in.agreed_premium is not None:
-            renewal.agreed_premium = transition_in.agreed_premium
 
         if transition_in.notes:
             renewal.notes = (
