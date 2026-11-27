@@ -55,10 +55,9 @@ def read_invoices(
         except ValueError:
             pass
 
-    invoices = ClientLedgerService.get_invoices(
+    invoices, count = ClientLedgerService.list_invoices(
         session=session, skip=skip, limit=limit, client_id=client_uuid
     )
-    count = ClientLedgerService.count_invoices(session=session, client_id=client_uuid)
     return InvoicesPublic(data=invoices, count=count)
 
 

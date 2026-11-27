@@ -1,6 +1,7 @@
 import calendar
 import logging
 import uuid
+from collections.abc import Sequence
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, cast
@@ -126,6 +127,106 @@ def _month_date_range(billing_month: str) -> tuple[date, date]:
     return start, end_exclusive
 
 
+def project_client_statement(
+    *,
+    client: Client,
+    invoices: Sequence[Invoice],
+    allocations: Sequence[PaymentAllocation],
+    active_unallocated_payments: Sequence[PaymentRecord],
+    as_of_date: date,
+) -> ClientStatement:
+    """Pure projection of fetched ledger rows into a chronological ClientStatement."""
+    total_invoiced = sum((inv.total_amount for inv in invoices), Decimal("0.00"))
+    total_allocated = sum((a.amount for a in allocations), Decimal("0.00"))
+    net_outstanding = total_invoiced - total_allocated
+
+    unallocated_credits = sum(
+        (p.unallocated_amount for p in active_unallocated_payments),
+        Decimal("0.00"),
+    ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    entries: list[ClientStatementEntry] = []
+    for inv in invoices:
+        entries.append(
+            ClientStatementEntry(
+                date=inv.date_issued.isoformat(),
+                type="INVOICE",
+                reference=inv.invoice_number,
+                description=f"Invoice {inv.invoice_number}",
+                debit=str(inv.total_amount),
+                credit="0.00",
+                status=inv.status.value,
+            )
+        )
+
+    for alloc in allocations:
+        entries.append(
+            ClientStatementEntry(
+                date=alloc.allocated_at.date().isoformat(),
+                type="PAYMENT_ALLOCATION",
+                reference=str(alloc.payment_record_id),
+                description=f"Payment allocated to Invoice {alloc.invoice_id}",
+                debit="0.00",
+                credit=str(alloc.amount),
+                status="CLEARED",
+            )
+        )
+
+    entries.sort(key=lambda x: x.date)
+
+    running_bal = Decimal("0.00")
+    for entry in entries:
+        running_bal += Decimal(entry.debit) - Decimal(entry.credit)
+        entry.running_balance = str(running_bal)
+
+    current_0_30 = Decimal("0.00")
+    days_31_60 = Decimal("0.00")
+    days_61_90 = Decimal("0.00")
+    over_90 = Decimal("0.00")
+
+    for inv in invoices:
+        if inv.balance_due <= Decimal("0.00"):
+            continue
+        days = (as_of_date - inv.date_issued).days
+        if days <= 30:
+            current_0_30 += inv.balance_due
+        elif days <= 60:
+            days_31_60 += inv.balance_due
+        elif days <= 90:
+            days_61_90 += inv.balance_due
+        else:
+            over_90 += inv.balance_due
+
+    q = Decimal("0.01")
+    current_0_30 = current_0_30.quantize(q, rounding=ROUND_HALF_UP)
+    days_31_60 = days_31_60.quantize(q, rounding=ROUND_HALF_UP)
+    days_61_90 = days_61_90.quantize(q, rounding=ROUND_HALF_UP)
+    over_90 = over_90.quantize(q, rounding=ROUND_HALF_UP)
+    total_overdue = (current_0_30 + days_31_60 + days_61_90 + over_90).quantize(
+        q, rounding=ROUND_HALF_UP
+    )
+
+    return ClientStatement(
+        client_id=str(client.id),
+        client_name=client.name,
+        kra_pin=client.kra_pin,
+        total_invoiced=str(total_invoiced),
+        total_allocated=str(total_allocated),
+        net_outstanding_balance=str(net_outstanding),
+        unallocated_credits=str(unallocated_credits),
+        invoice_count=len(invoices),
+        allocation_count=len(allocations),
+        ledger_entries=entries,
+        aging_buckets=AgingBuckets(
+            current_0_30=str(current_0_30),
+            days_31_60=str(days_31_60),
+            days_61_90=str(days_61_90),
+            over_90=str(over_90),
+            total_overdue=str(total_overdue),
+        ),
+    )
+
+
 class ClientLedgerService:
     @staticmethod
     def create_invoice(
@@ -185,37 +286,28 @@ class ClientLedgerService:
         return session.exec(statement).first()
 
     @staticmethod
-    def get_invoices(
+    def list_invoices(
         *,
         session: Session,
         skip: int = 0,
         limit: int = 100,
         client_id: uuid.UUID | None = None,
-    ) -> list[Invoice]:
-        statement = (
-            select(Invoice)
-            .where(col(Invoice.deleted_at).is_(None))
-            .options(
-                selectinload(cast(Any, Invoice.payment_allocations)),
-                selectinload(cast(Any, Invoice.line_items)),
-            )
+    ) -> tuple[list[Invoice], int]:
+        base = select(Invoice).where(col(Invoice.deleted_at).is_(None))
+        if client_id is not None:
+            base = base.where(Invoice.client_id == client_id)
+        count = session.exec(select(func.count()).select_from(base.subquery())).one()
+        items = list(
+            session.exec(
+                base.options(
+                    selectinload(cast(Any, Invoice.payment_allocations)),
+                    selectinload(cast(Any, Invoice.line_items)),
+                )
+                .offset(skip)
+                .limit(limit)
+            ).all()
         )
-        if client_id is not None:
-            statement = statement.where(Invoice.client_id == client_id)
-        statement = statement.offset(skip).limit(limit)
-        return list(session.exec(statement).all())
-
-    @staticmethod
-    def count_invoices(
-        *,
-        session: Session,
-        client_id: uuid.UUID | None = None,
-    ) -> int:
-        statement = select(Invoice).where(col(Invoice.deleted_at).is_(None))
-        if client_id is not None:
-            statement = statement.where(Invoice.client_id == client_id)
-        count_statement = select(func.count()).select_from(statement.subquery())
-        return session.exec(count_statement).one()
+        return items, count
 
     @staticmethod
     def create_invoice_line_item(
@@ -300,32 +392,25 @@ class ClientLedgerService:
         ).first()
 
     @staticmethod
-    def get_payment_records(
+    def list_payment_records(
         *,
         session: Session,
         skip: int = 0,
         limit: int = 100,
         client_id: uuid.UUID | None = None,
-    ) -> list[PaymentRecord]:
-        statement = select(PaymentRecord).where(col(PaymentRecord.deleted_at).is_(None))
+    ) -> tuple[list[PaymentRecord], int]:
+        base = select(PaymentRecord).where(col(PaymentRecord.deleted_at).is_(None))
         if client_id is not None:
-            statement = statement.where(PaymentRecord.client_id == client_id)
-        statement = (
-            statement.order_by(col(PaymentRecord.payment_date).desc())
-            .offset(skip)
-            .limit(limit)
+            base = base.where(PaymentRecord.client_id == client_id)
+        count = session.exec(select(func.count()).select_from(base.subquery())).one()
+        items = list(
+            session.exec(
+                base.order_by(col(PaymentRecord.payment_date).desc())
+                .offset(skip)
+                .limit(limit)
+            ).all()
         )
-        return list(session.exec(statement).all())
-
-    @staticmethod
-    def count_payment_records(
-        *, session: Session, client_id: uuid.UUID | None = None
-    ) -> int:
-        statement = select(PaymentRecord).where(col(PaymentRecord.deleted_at).is_(None))
-        if client_id is not None:
-            statement = statement.where(PaymentRecord.client_id == client_id)
-        count_statement = select(func.count()).select_from(statement.subquery())
-        return session.exec(count_statement).one()
+        return items, count
 
     @staticmethod
     def _allocate_payment_in_tx(
@@ -423,44 +508,30 @@ class ClientLedgerService:
         return session.get(PaymentAllocation, allocation_id)
 
     @staticmethod
-    def get_payment_allocations(
+    def list_payment_allocations(
         *,
         session: Session,
         skip: int = 0,
         limit: int = 100,
         payment_record_id: uuid.UUID | None = None,
         invoice_id: uuid.UUID | None = None,
-    ) -> list[PaymentAllocation]:
-        statement = select(PaymentAllocation)
+    ) -> tuple[list[PaymentAllocation], int]:
+        base = select(PaymentAllocation)
         if payment_record_id is not None:
-            statement = statement.where(
+            base = base.where(
                 PaymentAllocation.payment_record_id == payment_record_id
             )
         if invoice_id is not None:
-            statement = statement.where(PaymentAllocation.invoice_id == invoice_id)
-        statement = (
-            statement.order_by(col(PaymentAllocation.allocated_at).desc())
-            .offset(skip)
-            .limit(limit)
+            base = base.where(PaymentAllocation.invoice_id == invoice_id)
+        count = session.exec(select(func.count()).select_from(base.subquery())).one()
+        items = list(
+            session.exec(
+                base.order_by(col(PaymentAllocation.allocated_at).desc())
+                .offset(skip)
+                .limit(limit)
+            ).all()
         )
-        return list(session.exec(statement).all())
-
-    @staticmethod
-    def count_payment_allocations(
-        *,
-        session: Session,
-        payment_record_id: uuid.UUID | None = None,
-        invoice_id: uuid.UUID | None = None,
-    ) -> int:
-        statement = select(PaymentAllocation)
-        if payment_record_id is not None:
-            statement = statement.where(
-                PaymentAllocation.payment_record_id == payment_record_id
-            )
-        if invoice_id is not None:
-            statement = statement.where(PaymentAllocation.invoice_id == invoice_id)
-        count_statement = select(func.count()).select_from(statement.subquery())
-        return session.exec(count_statement).one()
+        return items, count
 
     @staticmethod
     def reverse_allocation(
@@ -593,9 +664,6 @@ class ClientLedgerService:
         else:
             allocations = []
 
-        total_allocated = sum((a.amount for a in allocations), Decimal("0.00"))
-        net_outstanding = total_invoiced - total_allocated
-
         active_unallocated_payments = session.exec(
             select(PaymentRecord).where(
                 PaymentRecord.client_id == client_id,
@@ -603,90 +671,13 @@ class ClientLedgerService:
                 PaymentRecord.unallocated_amount > Decimal("0.00"),
             )
         ).all()
-        unallocated_credits = sum(
-            (p.unallocated_amount for p in active_unallocated_payments),
-            Decimal("0.00"),
-        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-        entries: list[ClientStatementEntry] = []
-        for inv in invoices:
-            entries.append(
-                ClientStatementEntry(
-                    date=inv.date_issued.isoformat(),
-                    type="INVOICE",
-                    reference=inv.invoice_number,
-                    description=f"Invoice {inv.invoice_number}",
-                    debit=str(inv.total_amount),
-                    credit="0.00",
-                    status=inv.status.value,
-                )
-            )
-
-        for alloc in allocations:
-            entries.append(
-                ClientStatementEntry(
-                    date=alloc.allocated_at.date().isoformat(),
-                    type="PAYMENT_ALLOCATION",
-                    reference=str(alloc.payment_record_id),
-                    description=f"Payment allocated to Invoice {alloc.invoice_id}",
-                    debit="0.00",
-                    credit=str(alloc.amount),
-                    status="CLEARED",
-                )
-            )
-
-        entries.sort(key=lambda x: x.date)
-
-        running_bal = Decimal("0.00")
-        for entry in entries:
-            running_bal += Decimal(entry.debit) - Decimal(entry.credit)
-            entry.running_balance = str(running_bal)
-
-        current_0_30 = Decimal("0.00")
-        days_31_60 = Decimal("0.00")
-        days_61_90 = Decimal("0.00")
-        over_90 = Decimal("0.00")
-
-        for inv in invoices:
-            if inv.balance_due <= Decimal("0.00"):
-                continue
-            days = (as_of_date - inv.date_issued).days
-            if days <= 30:
-                current_0_30 += inv.balance_due
-            elif days <= 60:
-                days_31_60 += inv.balance_due
-            elif days <= 90:
-                days_61_90 += inv.balance_due
-            else:
-                over_90 += inv.balance_due
-
-        q = Decimal("0.01")
-        current_0_30 = current_0_30.quantize(q, rounding=ROUND_HALF_UP)
-        days_31_60 = days_31_60.quantize(q, rounding=ROUND_HALF_UP)
-        days_61_90 = days_61_90.quantize(q, rounding=ROUND_HALF_UP)
-        over_90 = over_90.quantize(q, rounding=ROUND_HALF_UP)
-        total_overdue = (current_0_30 + days_31_60 + days_61_90 + over_90).quantize(
-            q, rounding=ROUND_HALF_UP
-        )
-
-        return ClientStatement(
-            client_id=str(client.id),
-            client_name=client.name,
-            kra_pin=client.kra_pin,
-            total_invoiced=str(total_invoiced),
-            total_allocated=str(total_allocated),
-            net_outstanding_balance=str(net_outstanding),
-            unallocated_credits=str(unallocated_credits),
-            invoice_count=len(invoices),
-            allocation_count=len(allocations),
-            ledger_entries=entries,
-            aging_buckets=AgingBuckets(
-                current_0_30=str(current_0_30),
-                days_31_60=str(days_31_60),
-                days_61_90=str(days_61_90),
-                over_90=str(over_90),
-                total_overdue=str(total_overdue),
-            ),
+        return project_client_statement(
+            client=client,
+            invoices=invoices,
+            allocations=allocations,
+            active_unallocated_payments=active_unallocated_payments,
+            as_of_date=as_of_date,
         )
 
     @staticmethod
@@ -749,34 +740,25 @@ class ClientLedgerService:
         return session.get(InvoiceBatch, batch_id)
 
     @staticmethod
-    def get_invoice_batches(
+    def list_invoice_batches(
         *,
         session: Session,
         skip: int = 0,
         limit: int = 100,
         client_id: uuid.UUID | None = None,
-    ) -> list[InvoiceBatch]:
-        statement = select(InvoiceBatch)
+    ) -> tuple[list[InvoiceBatch], int]:
+        base = select(InvoiceBatch)
         if client_id is not None:
-            statement = statement.where(InvoiceBatch.client_id == client_id)
-        statement = (
-            statement.order_by(col(InvoiceBatch.generated_at).desc())
-            .offset(skip)
-            .limit(limit)
+            base = base.where(InvoiceBatch.client_id == client_id)
+        count = session.exec(select(func.count()).select_from(base.subquery())).one()
+        items = list(
+            session.exec(
+                base.order_by(col(InvoiceBatch.generated_at).desc())
+                .offset(skip)
+                .limit(limit)
+            ).all()
         )
-        return list(session.exec(statement).all())
-
-    @staticmethod
-    def count_invoice_batches(
-        *,
-        session: Session,
-        client_id: uuid.UUID | None = None,
-    ) -> int:
-        statement = select(InvoiceBatch)
-        if client_id is not None:
-            statement = statement.where(InvoiceBatch.client_id == client_id)
-        count_statement = select(func.count()).select_from(statement.subquery())
-        return session.exec(count_statement).one()
+        return items, count
 
     @staticmethod
     def create_bulk_invoice(

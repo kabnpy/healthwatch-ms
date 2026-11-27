@@ -7,20 +7,22 @@ import {
   RefreshCw,
   ShieldCheck,
 } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useState } from "react"
 
 import type { PolicyPublic, RenewalPublic } from "@/client"
 import { AddClient } from "@/components/Clients/AddClient"
 import { QueryErrorBanner } from "@/components/Common/QueryErrorBanner"
 import PendingItems from "@/components/Pending/PendingItems"
 import { RenewalTransitionSheet } from "@/components/Renewals/RenewalTransitionSheet"
+import {
+  getRenewalActionLabel,
+  getRenewalStageMeta,
+} from "@/components/Renewals/renewalWorkflow"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import useAuth from "@/hooks/useAuth"
-import { useClients } from "@/hooks/useClients"
+import { useDashboardSummary } from "@/hooks/useDashboard"
 import { useFinancialSummary } from "@/hooks/useFinancials"
-import { usePolicies } from "@/hooks/usePolicies"
-import { useRenewals } from "@/hooks/useRenewals"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 export const Route = createFileRoute("/_layout/")({
@@ -34,74 +36,14 @@ export const Route = createFileRoute("/_layout/")({
   }),
 })
 
-const RENEWAL_STAGE_META: Record<
-  string,
-  { label: string; actionLabel: string; badgeClass: string }
-> = {
-  awaiting_carrier: {
-    label: "Awaiting Insurer",
-    actionLabel: "Log Insurer Terms",
-    badgeClass:
-      "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-  },
-  carrier_received: {
-    label: "Insurer Terms Received",
-    actionLabel: "Prepare Invitation",
-    badgeClass:
-      "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
-  },
-  client_invited: {
-    label: "Client Invited",
-    actionLabel: "Follow Up",
-    badgeClass:
-      "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20",
-  },
-  changes_requested: {
-    label: "Changes Requested",
-    actionLabel: "Revise Terms",
-    badgeClass:
-      "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20",
-  },
-  paid: {
-    label: "Payment Recorded",
-    actionLabel: "Complete Renewal",
-    badgeClass:
-      "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-  },
-}
-
-function getRenewalStageMeta(status?: string | null) {
-  const key = (status || "").toLowerCase()
-  return (
-    RENEWAL_STAGE_META[key] || {
-      label: (status || "In Progress").replace(/_/g, " "),
-      actionLabel: "Update Renewal",
-      badgeClass:
-        "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
-    }
-  )
-}
-
 function AgencyDashboard() {
   const { user: currentUser } = useAuth()
   const {
-    data: policiesData,
-    isLoading: isPoliciesLoading,
-    isError: isPoliciesError,
-    refetch: refetchPolicies,
-  } = usePolicies(undefined, 0, 200)
-  const {
-    data: clientsData,
-    isLoading: isClientsLoading,
-    isError: isClientsError,
-    refetch: refetchClients,
-  } = useClients(0, 200)
-  const {
-    data: renewalsData,
-    isLoading: isRenewalsLoading,
-    isError: isRenewalsError,
-    refetch: refetchRenewals,
-  } = useRenewals(undefined, undefined, 0, 200)
+    data: dashboardSummary,
+    isLoading: isDashboardLoading,
+    isError: isDashboardError,
+    refetch: refetchDashboard,
+  } = useDashboardSummary()
   const {
     summary,
     isError: isSummaryError,
@@ -111,70 +53,10 @@ function AgencyDashboard() {
   const [selectedRenewalPolicy, setSelectedRenewalPolicy] = useState<{
     policy: PolicyPublic
     renewal: RenewalPublic | null
+    clientName: string
   } | null>(null)
 
-  const clientMap = useMemo(() => {
-    const map = new Map<string, string>()
-    clientsData?.data?.forEach((c) => {
-      map.set(c.id, c.name)
-    })
-    return map
-  }, [clientsData])
-
-  const policies = policiesData?.data || []
-  const renewals = renewalsData?.data || []
-
-  const inFlightRenewals = useMemo(() => {
-    return renewals.filter(
-      (r) =>
-        !["completed", "cancelled"].includes(r.status?.toLowerCase() || ""),
-    )
-  }, [renewals])
-
-  const activeRenewalPolicyIds = useMemo(() => {
-    return new Set(inFlightRenewals.map((r) => r.policy_id))
-  }, [inFlightRenewals])
-
-  const triage = useMemo(() => {
-    const now = Date.now()
-    const expiring30: Array<{ policy: PolicyPublic; daysLeft: number }> = []
-    let activeCount = 0
-
-    policies.forEach((policy) => {
-      if (policy.status?.toLowerCase() === "active") {
-        activeCount++
-      }
-
-      if (activeRenewalPolicyIds.has(policy.id)) return
-
-      const activeNote = policy.active_note
-      if (!activeNote?.coverage_end) return
-
-      const endDate = new Date(activeNote.coverage_end).getTime()
-      const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24))
-
-      if (daysLeft >= 0 && daysLeft <= 30) {
-        expiring30.push({ policy, daysLeft })
-      }
-    })
-
-    expiring30.sort((a, b) => a.daysLeft - b.daysLeft)
-
-    return {
-      activeCount,
-      expiring30,
-    }
-  }, [policies, activeRenewalPolicyIds])
-
-  const policyMap = useMemo(() => {
-    const map = new Map<string, PolicyPublic>()
-    policies.forEach((p) => {
-      map.set(p.id, p)
-    })
-    return map
-  }, [policies])
-
-  if (isPoliciesLoading || isClientsLoading || isRenewalsLoading) {
+  if (isDashboardLoading) {
     return <PendingItems />
   }
 
@@ -185,13 +67,15 @@ function AgencyDashboard() {
     day: "numeric",
   }).format(new Date())
 
-  const hasExpiringPolicies = triage.expiring30.length > 0
+  const activeCount = dashboardSummary?.active_count ?? 0
+  const expiring30 = dashboardSummary?.expiring_30 ?? []
+  const inFlightRenewalsCount = dashboardSummary?.in_flight_renewals_count ?? 0
+  const inFlightRenewals = dashboardSummary?.in_flight_renewals ?? []
+  const hasExpiringPolicies = expiring30.length > 0
 
-  if (isPoliciesError || isClientsError || isRenewalsError || isSummaryError) {
+  if (isDashboardError || isSummaryError) {
     const handleRetry = () => {
-      if (isPoliciesError) void refetchPolicies()
-      if (isClientsError) void refetchClients()
-      if (isRenewalsError) void refetchRenewals()
+      if (isDashboardError) void refetchDashboard()
       if (isSummaryError) void refetchSummary()
     }
     return (
@@ -240,7 +124,7 @@ function AgencyDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-mono tabular-nums tracking-tight">
-              {triage.activeCount}
+              {activeCount}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Across all clients &amp; insurers
@@ -277,7 +161,7 @@ function AgencyDashboard() {
                 hasExpiringPolicies ? "text-amber-700 dark:text-amber-400" : ""
               }`}
             >
-              {triage.expiring30.length}
+              {expiring30.length}
             </div>
             <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between gap-2">
               {hasExpiringPolicies ? (
@@ -308,7 +192,7 @@ function AgencyDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-mono tabular-nums tracking-tight text-blue-600 dark:text-blue-400">
-              {inFlightRenewals.length}
+              {inFlightRenewalsCount}
             </div>
             <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between gap-2">
               <span>Active 6-stage workflows</span>
@@ -372,8 +256,7 @@ function AgencyDashboard() {
               />
             </CardHeader>
             <CardContent className="p-0 divide-y">
-              {triage.expiring30.slice(0, 6).map(({ policy, daysLeft }) => {
-                const clientName = clientMap.get(policy.client_id) || "Client"
+              {expiring30.slice(0, 6).map(({ policy, days_left: daysLeft, client_name: clientName }) => {
                 const rawDisplay = getPolicyDisplayName(policy)
                 const title =
                   rawDisplay && rawDisplay !== policy.policy_number
@@ -458,7 +341,7 @@ function AgencyDashboard() {
                 Renewals in Progress
               </CardTitle>
               <span className="font-mono text-xs font-semibold text-muted-foreground tabular-nums">
-                ({inFlightRenewals.length})
+                ({inFlightRenewalsCount})
               </span>
             </div>
             <Button
@@ -485,17 +368,14 @@ function AgencyDashboard() {
                 </p>
               </div>
             ) : (
-              inFlightRenewals.slice(0, 8).map((ren) => {
-                const policy = policyMap.get(ren.policy_id)
-                const clientName = policy
-                  ? clientMap.get(policy.client_id) || "Client"
-                  : "Client"
+              inFlightRenewals.slice(0, 8).map(({ renewal: ren, policy, client_name: clientName }) => {
                 const rawDisplay = policy ? getPolicyDisplayName(policy) : ""
                 const title =
                   policy && rawDisplay && rawDisplay !== policy.policy_number
                     ? `${clientName} — ${rawDisplay}`
                     : `${clientName} — ${policy?.product?.name || "Insurance Policy"}`
                 const stage = getRenewalStageMeta(ren.status)
+                const actionLabel = getRenewalActionLabel(ren.status)
 
                 return (
                   <div
@@ -508,7 +388,7 @@ function AgencyDashboard() {
                           {policy?.policy_number || "POL"}
                         </span>
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border whitespace-nowrap ${stage.badgeClass}`}
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border whitespace-nowrap ${stage.color}`}
                         >
                           {stage.label}
                         </span>
@@ -529,11 +409,15 @@ function AgencyDashboard() {
                         size="sm"
                         variant="outline"
                         onClick={() =>
-                          setSelectedRenewalPolicy({ policy, renewal: ren })
+                          setSelectedRenewalPolicy({
+                            policy,
+                            renewal: ren,
+                            clientName,
+                          })
                         }
                         className="h-8 gap-1.5 shrink-0 text-xs cursor-pointer whitespace-nowrap self-start sm:self-center"
                       >
-                        {stage.actionLabel}
+                        {actionLabel}
                         <ArrowRight className="size-3" />
                       </Button>
                     )}
@@ -552,9 +436,7 @@ function AgencyDashboard() {
           onOpenChange={(open) => !open && setSelectedRenewalPolicy(null)}
           policy={selectedRenewalPolicy.policy}
           renewal={selectedRenewalPolicy.renewal}
-          clientName={
-            clientMap.get(selectedRenewalPolicy.policy.client_id) || "Client"
-          }
+          clientName={selectedRenewalPolicy.clientName}
         />
       )}
     </div>

@@ -5,45 +5,27 @@ import {
   Plus,
   Receipt,
   RotateCcw,
-  ShieldAlert,
 } from "lucide-react"
 import { useMemo, useState } from "react"
 import type { PaymentRecordPublic } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
 import { EmptyState } from "@/components/Common/EmptyState"
 import { DocumentPreviewDrawer } from "@/components/Documents/DocumentPreviewDrawer"
+import { AllocatePaymentDialog } from "@/components/Financials/AllocatePaymentDialog"
 import { ClientStatementView } from "@/components/Financials/ClientStatementView"
 import { InvoicesSkeleton } from "@/components/Financials/InvoicesSkeleton"
 import { InvoiceWizard } from "@/components/Financials/InvoiceWizard"
+import {
+  LedgerReversalDialog,
+  type LedgerReversalTarget,
+} from "@/components/Financials/LedgerReversalDialog"
 import { RecordPaymentModal } from "@/components/Financials/RecordPaymentModal"
 import { getColumns as getInvoiceColumns } from "@/components/Invoices/columns"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
 import { useInvoices } from "@/hooks/useFinancials"
-import {
-  useAllocatePayment,
-  usePaymentRecords,
-  useReversePaymentRecord,
-} from "@/hooks/usePayments"
+import { usePaymentRecords } from "@/hooks/usePayments"
 import { formatCurrency } from "@/utils"
 
 interface ClientInvoicesProps {
@@ -55,8 +37,6 @@ export function ClientInvoices({ clientId }: ClientInvoicesProps) {
     useInvoices(clientId)
   const { data: paymentsData, isLoading: isLoadingPayments } =
     usePaymentRecords(clientId)
-  const allocateMutation = useAllocatePayment()
-  const reversalMutation = useReversePaymentRecord()
 
   const invoices = invoicesData?.data || []
   const paymentRecords = paymentsData?.data || []
@@ -66,82 +46,10 @@ export function ClientInvoices({ clientId }: ClientInvoicesProps) {
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false)
   const [isInvoiceWizardOpen, setIsInvoiceWizardOpen] = useState(false)
-
-  // Allocation modal state
-  const [allocationModalOpen, setAllocationModalOpen] = useState(false)
-  const [selectedRecordForAllocation, setSelectedRecordForAllocation] =
+  const [allocatingRecord, setAllocatingRecord] =
     useState<PaymentRecordPublic | null>(null)
-  const [targetInvoiceId, setTargetInvoiceId] = useState<string>("")
-  const [allocationAmount, setAllocationAmount] = useState<string>("")
-
-  // Reversal modal state
-  const [reversalModalOpen, setReversalModalOpen] = useState(false)
-  const [selectedRecordForReversal, setSelectedRecordForReversal] =
-    useState<PaymentRecordPublic | null>(null)
-  const [reversalReason, setReversalReason] = useState<string>("")
-
-  const openInvoices = useMemo(
-    () => invoices.filter((inv) => Number(inv.balance_due || 0) > 0),
-    [invoices],
-  )
-
-  const handleOpenAllocation = (record: PaymentRecordPublic) => {
-    setSelectedRecordForAllocation(record)
-    const unallocated = Number(record.unallocated_amount || 0)
-    if (openInvoices.length > 0) {
-      const firstInv = openInvoices[0]
-      setTargetInvoiceId(firstInv.id)
-      const maxAllocatable = Math.min(
-        unallocated,
-        Number(firstInv.balance_due || 0),
-      )
-      setAllocationAmount(String(maxAllocatable))
-    } else {
-      setTargetInvoiceId("")
-      setAllocationAmount(String(unallocated))
-    }
-    setAllocationModalOpen(true)
-  }
-
-  const handleConfirmAllocation = async () => {
-    if (!selectedRecordForAllocation || !targetInvoiceId || !allocationAmount)
-      return
-    const amountNum = Number.parseFloat(allocationAmount)
-    if (Number.isNaN(amountNum) || amountNum <= 0) return
-
-    try {
-      await allocateMutation.mutateAsync({
-        id: selectedRecordForAllocation.id,
-        data: {
-          payment_record_id: selectedRecordForAllocation.id,
-          invoice_id: targetInvoiceId,
-          amount: amountNum,
-        },
-      })
-      setAllocationModalOpen(false)
-      setSelectedRecordForAllocation(null)
-    } catch (_err) {
-      // toast is handled in mutation
-    }
-  }
-
-  const handleConfirmReversal = async () => {
-    if (!selectedRecordForReversal || !reversalReason.trim()) return
-
-    try {
-      await reversalMutation.mutateAsync({
-        id: selectedRecordForReversal.id,
-        data: {
-          reversal_reason: reversalReason.trim(),
-        },
-      })
-      setReversalModalOpen(false)
-      setSelectedRecordForReversal(null)
-      setReversalReason("")
-    } catch (_err) {
-      // toast is handled in mutation
-    }
-  }
+  const [reversalTarget, setReversalTarget] =
+    useState<LedgerReversalTarget | null>(null)
 
   const invoiceColumns = useMemo(
     () =>
@@ -314,7 +222,7 @@ export function ClientInvoices({ clientId }: ClientInvoicesProps) {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleOpenAllocation(rec)}
+                                  onClick={() => setAllocatingRecord(rec)}
                                   className="h-7 text-xs border-primary/30 text-primary hover:bg-primary/5"
                                 >
                                   Allocate Funds
@@ -324,11 +232,13 @@ export function ClientInvoices({ clientId }: ClientInvoicesProps) {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => {
-                                    setSelectedRecordForReversal(rec)
-                                    setReversalReason("")
-                                    setReversalModalOpen(true)
-                                  }}
+                                  onClick={() =>
+                                    setReversalTarget({
+                                      type: "payment",
+                                      id: rec.id,
+                                      title: `Payment ${rec.reference_number || rec.id}`,
+                                    })
+                                  }
                                   className="h-7 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20"
                                 >
                                   <RotateCcw className="size-3 mr-1" />
@@ -360,170 +270,20 @@ export function ClientInvoices({ clientId }: ClientInvoicesProps) {
         initialClientId={clientId}
       />
 
-      {/* ALLOCATION DIALOG */}
-      <Dialog open={allocationModalOpen} onOpenChange={setAllocationModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Allocate Cleared Payment Funds</DialogTitle>
-            <DialogDescription className="text-xs">
-              Apply unallocated credit funds from reference{" "}
-              <span className="font-mono font-semibold text-foreground">
-                {selectedRecordForAllocation?.reference_number || "—"}
-              </span>{" "}
-              against open debtor invoices.
-            </DialogDescription>
-          </DialogHeader>
+      <AllocatePaymentDialog
+        record={allocatingRecord}
+        invoices={invoices}
+        onOpenChange={(open) => {
+          if (!open) setAllocatingRecord(null)
+        }}
+      />
 
-          <div className="space-y-4 py-2 text-xs">
-            <div className="p-3 rounded-lg border bg-muted/30 flex justify-between items-center">
-              <span className="text-muted-foreground">
-                Available Credit Pool
-              </span>
-              <span className="font-mono tabular-nums text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                {formatCurrency(
-                  selectedRecordForAllocation?.unallocated_amount,
-                )}
-              </span>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Target Debtor Invoice
-              </Label>
-              {openInvoices.length === 0 ? (
-                <p className="text-xs text-amber-600 font-medium">
-                  No open invoices with positive balances found for this client.
-                </p>
-              ) : (
-                <Select
-                  value={targetInvoiceId}
-                  onValueChange={(val) => {
-                    if (!val) return
-                    setTargetInvoiceId(val)
-                    const inv = openInvoices.find((i) => i.id === val)
-                    if (inv && selectedRecordForAllocation) {
-                      const maxPossible = Math.min(
-                        Number(
-                          selectedRecordForAllocation.unallocated_amount || 0,
-                        ),
-                        Number(inv.balance_due || 0),
-                      )
-                      setAllocationAmount(String(maxPossible))
-                    }
-                  }}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Select Invoice" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {openInvoices.map((inv) => (
-                      <SelectItem key={inv.id} value={inv.id}>
-                        {inv.invoice_number} • Due:{" "}
-                        {formatCurrency(inv.balance_due)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Allocation Amount (KES)
-              </Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0.01"
-                max={Number(
-                  selectedRecordForAllocation?.unallocated_amount || 0,
-                )}
-                value={allocationAmount}
-                onChange={(e) => setAllocationAmount(e.target.value)}
-                className="font-mono text-sm h-9"
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setAllocationModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleConfirmAllocation}
-              disabled={
-                allocateMutation.isPending ||
-                !targetInvoiceId ||
-                !allocationAmount ||
-                Number(allocationAmount) <= 0
-              }
-              className="bg-primary text-primary-foreground font-medium"
-            >
-              {allocateMutation.isPending
-                ? "Allocating..."
-                : "Apply Allocation"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* REVERSAL DIALOG */}
-      <Dialog open={reversalModalOpen} onOpenChange={setReversalModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="flex items-center gap-2 text-destructive">
-              <ShieldAlert className="size-5" />
-              <DialogTitle>Authorized Payment Reversal</DialogTitle>
-            </div>
-            <DialogDescription className="text-xs">
-              Reverse payment record{" "}
-              <span className="font-mono font-semibold text-foreground">
-                {selectedRecordForReversal?.reference_number || "—"}
-              </span>
-              . This creates an append-only audit reversal and reinstates
-              balances on all allocated invoices.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 py-2 text-xs">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Audit Justification / Reversal Reason *
-              </Label>
-              <Textarea
-                value={reversalReason}
-                onChange={(e) => setReversalReason(e.target.value)}
-                placeholder="e.g. Bank chargeback, cheque dishonor, or Paybill duplicate correction..."
-                rows={3}
-                className="text-xs"
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setReversalModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleConfirmReversal}
-              disabled={reversalMutation.isPending || !reversalReason.trim()}
-            >
-              {reversalMutation.isPending ? "Reversing..." : "Confirm Reversal"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <LedgerReversalDialog
+        target={reversalTarget}
+        onOpenChange={(open) => {
+          if (!open) setReversalTarget(null)
+        }}
+      />
 
       {/* INVOICE WIZARD */}
       <InvoiceWizard

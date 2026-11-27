@@ -37,11 +37,8 @@ def read_payment_records(
     client_id: uuid.UUID | None = None,
 ) -> Any:
     """List payment records with pagination and client filter."""
-    records = ClientLedgerService.get_payment_records(
+    records, count = ClientLedgerService.list_payment_records(
         session=session, skip=skip, limit=limit, client_id=client_id
-    )
-    count = ClientLedgerService.count_payment_records(
-        session=session, client_id=client_id
     )
     return PaymentRecordsPublic(data=records, count=count)
 
@@ -116,11 +113,8 @@ def read_payment_allocations_for_record(
     limit: int = 100,
 ) -> Any:
     """List all allocations funded by this payment record."""
-    allocations = ClientLedgerService.get_payment_allocations(
+    allocations, count = ClientLedgerService.list_payment_allocations(
         session=session, skip=skip, limit=limit, payment_record_id=id
-    )
-    count = ClientLedgerService.count_payment_allocations(
-        session=session, payment_record_id=id
     )
     return PaymentAllocationsPublic(data=allocations, count=count)
 
@@ -159,15 +153,10 @@ def read_payment_allocations(
     invoice_id: uuid.UUID | None = None,
 ) -> Any:
     """List payment allocations with optional filters."""
-    allocations = ClientLedgerService.get_payment_allocations(
+    allocations, count = ClientLedgerService.list_payment_allocations(
         session=session,
         skip=skip,
         limit=limit,
-        payment_record_id=payment_record_id,
-        invoice_id=invoice_id,
-    )
-    count = ClientLedgerService.count_payment_allocations(
-        session=session,
         payment_record_id=payment_record_id,
         invoice_id=invoice_id,
     )
