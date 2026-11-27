@@ -115,12 +115,12 @@ def test_document_service_lifecycle_and_filtering(db: Session) -> None:
     )
     assert updated.mime_type == "image/png"
 
-    deleted = DocumentService.delete_document(session=db, document_id=doc_b.id)
+    deleted = DocumentService.remove_document(session=db, document_id=doc_b.id)
     assert deleted.id == doc_b.id
     assert DocumentService.get_document(session=db, document_id=doc_b.id) is None
 
     with pytest.raises(DocumentNotFoundError):
-        DocumentService.delete_document(session=db, document_id=doc_b.id)
+        DocumentService.remove_document(session=db, document_id=doc_b.id)
 
 
 def test_document_job_service_reads_and_retry_guards(db: Session) -> None:
@@ -391,3 +391,27 @@ def test_remove_document_enforces_adr0006_and_deletes_file_after_commit(
         DocumentService.remove_document(
             session=db, document_id=uuid.uuid4(), storage_provider=provider
         )
+
+
+def test_document_renderer_preview_html_saved_and_draft_override(db: Session) -> None:
+    import uuid
+
+    from app.models import DocumentJobResourceType
+    from app.services.document_renderer import DocumentRenderer
+
+    resource_id = uuid.uuid4()
+    saved_preview = DocumentRenderer.preview_html(
+        session=db,
+        resource_type=DocumentJobResourceType.STATEMENT,
+        resource_id=resource_id,
+    )
+    assert saved_preview.html
+    assert "<html" in saved_preview.html.lower()
+
+    draft_preview = DocumentRenderer.preview_html(
+        session=db,
+        resource_type=DocumentJobResourceType.STATEMENT,
+        resource_id=resource_id,
+        snapshot_override={"client_name": "Draft Preview Client"},
+    )
+    assert "Draft Preview Client" in draft_preview.html
