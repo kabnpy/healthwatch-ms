@@ -229,4 +229,20 @@ describe("AllocatePaymentDialog", () => {
     fireEvent.submit(amountInput.closest("form")!)
     expect(mockMutateAsync).not.toHaveBeenCalled()
   })
+
+  it("uses default primary variant for the Post Allocation CTA", async () => {
+    render(
+      <AllocatePaymentDialog
+        record={baseRecord}
+        invoices={invoices}
+        onOpenChange={vi.fn()}
+      />,
+    )
+
+    const submitBtn = await screen.findByRole("button", {
+      name: "Post Allocation",
+    })
+    expect(submitBtn.className).toContain("bg-primary")
+    expect(submitBtn.className).not.toContain("bg-emerald-600")
+  })
 })

@@ -499,7 +499,7 @@ export function RenewalTransitionSheet({
                 <Button
                   onClick={() => handleTransition("carrier_received")}
                   disabled={isPending}
-                  className="w-full gap-2 bg-cyan-600 hover:bg-cyan-700 text-white"
+                  className="w-full gap-2"
                 >
                   <FileText className="size-4" />
                   Mark Insurer Terms Received
@@ -533,7 +533,7 @@ export function RenewalTransitionSheet({
                   <Button
                     onClick={() => handleTransition("paid")}
                     disabled={isPending}
-                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="gap-1.5"
                   >
                     <CreditCard className="size-3.5" />
                     Confirm Payment Received
@@ -557,7 +557,7 @@ export function RenewalTransitionSheet({
                 <Button
                   onClick={() => handleTransition("completed")}
                   disabled={isPending}
-                  className="w-full gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold"
+                  className="w-full gap-2 font-semibold"
                 >
                   <CheckCircle2 className="size-4" />
                   Complete Renewal & Bind New Risk Note

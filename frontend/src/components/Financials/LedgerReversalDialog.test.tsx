@@ -93,4 +93,17 @@ describe("LedgerReversalDialog", () => {
     expect(mockReversePayment).not.toHaveBeenCalled()
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
+
+  it("uses destructive variant for the Confirm Reversal CTA", () => {
+    render(
+      <LedgerReversalDialog
+        target={{ type: "payment", id: "pay-1", title: "Payment MPESA-XYZ" }}
+        onOpenChange={vi.fn()}
+      />,
+    )
+
+    const confirmBtn = screen.getByRole("button", { name: "Confirm Reversal" })
+    expect(confirmBtn.className).toContain("bg-destructive")
+    expect(confirmBtn.className).not.toContain("bg-rose-600")
+  })
 })

@@ -294,7 +294,7 @@ export function AllocatePaymentDialog({
                   availableInvoices.length === 0 ||
                   !!validationError
                 }
-                className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                className="text-xs cursor-pointer"
               >
                 {allocateMutation.isPending
                   ? "Allocating..."

@@ -509,7 +509,7 @@ export function RecordPaymentModal({
               type="submit"
               size="sm"
               disabled={isSubmitting}
-              className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+              className="gap-1.5 text-xs cursor-pointer"
             >
               <Check className="size-3.5" />
               {isSubmitting ? "Processing..." : "Record & Post Payment"}
