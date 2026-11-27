@@ -14,37 +14,39 @@ vi.mock("@/hooks/useCustomToast", () => ({
   }),
 }))
 
+const mockPolicyData = {
+  id: "policy-123",
+  policy_number: "POL-2026-001",
+  active_note: {
+    cover_snapshot: {
+      registration_number: "KCA 100A",
+      sum_insured: 2000000,
+    },
+  },
+  product: {
+    id: "prod-1",
+    class_of_insurance: "Motor Private",
+    product_details: [
+      {
+        key: "registration_number",
+        label: "Registration Number",
+        type: "text",
+        field_type: "input",
+      },
+      {
+        key: "sum_insured",
+        label: "Sum Insured",
+        type: "number",
+        field_type: "input",
+      },
+    ],
+  },
+}
+
 vi.mock("@/hooks/usePolicies", () => ({
   usePolicy: () => ({
     isLoading: false,
-    data: {
-      id: "policy-123",
-      policy_number: "POL-2026-001",
-      active_note: {
-        cover_snapshot: {
-          registration_number: "KCA 100A",
-          sum_insured: 2000000,
-        },
-      },
-      product: {
-        id: "prod-1",
-        class_of_insurance: "Motor Private",
-        product_details: [
-          {
-            key: "registration_number",
-            label: "Registration Number",
-            type: "text",
-            field_type: "input",
-          },
-          {
-            key: "sum_insured",
-            label: "Sum Insured",
-            type: "number",
-            field_type: "input",
-          },
-        ],
-      },
-    },
+    data: mockPolicyData,
   }),
   useCreateEndorsement: () => ({
     mutate: mockMutate,
@@ -61,10 +63,10 @@ describe("EndorsementForm", () => {
     const onSuccess = vi.fn()
     render(<EndorsementForm policyId="policy-123" onSuccess={onSuccess} />)
 
-    expect(screen.queryByText(/Transaction Type/i)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Coverage End/i)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Net Premium/i)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Commission/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Transaction Type/i)).toBeNull()
+    expect(screen.queryByText(/Coverage End/i)).toBeNull()
+    expect(screen.queryByText(/Net Premium/i)).toBeNull()
+    expect(screen.queryByText(/Commission/i)).toBeNull()
 
     const effectiveDateInput = screen.getByLabelText(/Effective Date/i)
     fireEvent.change(effectiveDateInput, { target: { value: "2026-12-15" } })
