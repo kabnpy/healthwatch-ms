@@ -181,17 +181,6 @@ class DocumentService:
         return db_document
 
     @staticmethod
-    def delete_document(*, session: Session, document_id: uuid.UUID) -> Document:
-        """Delete a Document by ID atomically and return the deleted instance."""
-        db_document = session.get(Document, document_id)
-        if not db_document:
-            raise DocumentNotFoundError("Document not found")
-
-        session.delete(db_document)
-        session.commit()
-        return db_document
-
-    @staticmethod
     def remove_document(
         *,
         session: Session,
