@@ -31,19 +31,24 @@ bun run logs
 
 ---
 
-## Testing, Typechecking & Client Generation
+## Workspace Commands
 
 ```bash
-bun run test          # Run backend pytest + frontend vitest suites (auto-starts DB if stopped)
-bun run test:backend  # Run backend pytest suite
-bun run test:frontend # Run frontend vitest suite
-bun run test:e2e      # Run Playwright E2E suite
-bun run typecheck     # Run TypeScript compiler check
-bun run lint          # Run Ruff and Biome linters
-bun run format        # Auto-format backend and frontend
-bun run client        # Export OpenAPI schema and regenerate TypeScript client
-bun run migrate       # Apply Alembic database migrations
-bun run seed          # Seed realistic underwriting and client portfolio
+bun run dev:backend       # Run FastAPI dev server natively
+bun run dev:frontend      # Run Vite dev server natively
+bun run test              # Run backend pytest + frontend vitest suites (auto-starts DB if stopped)
+bun run test:backend      # Run backend pytest suite
+bun run test:frontend     # Run frontend vitest suite
+bun run test:e2e          # Run Playwright E2E suite
+bun run typecheck         # Run frontend TypeScript compiler check
+bun run typecheck:backend # Run backend mypy type check
+bun run lint              # Run Ruff and Biome linters
+bun run format            # Auto-format backend and frontend
+bun run build             # Build frontend production bundle
+bun run client            # Export OpenAPI schema and regenerate TypeScript client
+bun run migrate           # Apply Alembic database migrations
+bun run seed              # Seed realistic underwriting and client portfolio
+bun run clean             # Remove Python caches and frontend build artifacts
 ```
 
 ---

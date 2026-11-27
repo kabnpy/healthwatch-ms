@@ -38,7 +38,6 @@ The system catalog seeds 8 major underwriters licensed by the IRA and their flag
 | **Old Mutual General Insurance Kenya Ltd.** | Commercial Own Goods Comprehensive | Motor Commercial | Percentage (4.50%, min KES 50,000). Speed governor warranty and carriage of own goods only. |
 | **Old Mutual General Insurance Kenya Ltd.** | Commercial Vehicle Third Party Only | Motor Commercial Third Party | FixedTiered flat statutory tariff: Own Goods (KES 12,500/year). Third-party property damage limit KES 5,000,000. |
 | **Old Mutual General Insurance Kenya Ltd.** | Domestic Package (Homeowners) | Domestic Package | Multi-component percentage: Buildings (0.12%), Contents (0.85%), All Risks (1.75%), Domestic Servants (KES 1,200/servant). |
-
 | **Old Mutual General Insurance Kenya Ltd.** | Afya Imara Family Health | Medical | FixedTiered demographic census: Inpatient limits KES 1M, 2M, 5M across family brackets (M, M+1, M+2, M+3, M+4). Direct carrier terms; **no Risk Notes**. |
 | **Jubilee General Insurance Ltd.** | Motor Private - Supreme Cover | Motor Private | FixedTiered (3.25%–5.00%, min KES 65,000). Complimentary AA rescue in Nairobi and Mombasa. |
 | **Jubilee General Insurance Ltd.** | Cover All - Homeowners & Tenants | Domestic Package | Multi-component percentage: Buildings (0.10%), Contents (0.75%), All Risks (1.50%), Servants (KES 1,000/servant). |
@@ -100,7 +99,7 @@ The seed dataset contains 28 realistic Kenyan client entities divided into five 
 
 ## 4. Operational Lifecycle & Renewal Pipeline Distribution
 
-To thoroughly validate the **Renewals Desk** and the **Broker Command Deck**, renewals are seeded across all 6 business workflow states:
+To thoroughly validate the **Renewals Desk** and the **Command Deck**, renewals are seeded across all 6 business workflow states:
 
 ```
 ┌────────────────────┐     ┌─────────────────────┐     ┌────────────────────┐
@@ -123,7 +122,7 @@ To thoroughly validate the **Renewals Desk** and the **Broker Command Deck**, re
 ```
 
 1. **`awaiting_carrier`:** Policy `JUB/POL/MOT/2024/09124` (Subaru Outback KDA 410M). Expires in 8 days; awaiting Jubilee renewal notice.
-2. **`carrier_received`:** Policy `OM/MED/2024/09841` (Afya Imara Health). Carrier terms schedule received and uploaded, pending broker invitation preparation.
+2. **`carrier_received`:** Policy `OM/MED/2024/09841` (Afya Imara Health). Carrier terms schedule received and uploaded, pending agent invitation preparation.
 3. **`client_invited`:** Policy `BRT/MOT/2024/004812` (Mercedes C200 KDB 892P). Renewal terms invitation generated and issued to client.
 4. **`changes_requested`:** Policy `ICEA/MOT/2024/00091` (Land Cruiser 300 KDF 001M). Client negotiating 5% portfolio discount and anti-theft deductible waiver.
 5. **`paid`:** Policy `APA/MOT/2024/007812` (VW Tiguan KDE 770B). Client payment verified via M-Pesa; awaiting underwriter receipt and cover confirmation.
@@ -187,18 +186,18 @@ Seeded `PaymentRecord` and `PaymentAllocation` fixtures exercise full settlement
 The seed dataset is fully idempotent and can be safely re-run without duplicate key violations:
 
 ```bash
-# Via master initial data workflow
-backend/.venv/bin/python -m app.initial_data
+# Via workspace script (auto-starts DB if stopped)
+bun run seed
 
-# Or directly via seed script
-backend/.venv/bin/python -m app.seed_mock_data
+# Or via master initial data workflow
+cd backend && uv run python -m app.initial_data
 ```
 
 ### 9.2 Automated Quality Verification
 The automated test suite verifies dataset integrity, relational consistency, and architectural invariants against an in-memory test database:
 
 ```bash
-backend/.venv/bin/pytest backend/tests/test_seed_data.py -v
+cd backend && uv run pytest tests/test_seed_data.py -v
 ```
 
 Verification assertions include:

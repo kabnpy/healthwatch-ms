@@ -72,6 +72,9 @@ _Avoid_: Renewal
 An immutable transaction overview slip (`cover_snapshot`) prepared for the carrier on slip-based lines (Motor, Domestic) for new business, renewals, or endorsements; never generated for Medical policies or cancellations.
 _Avoid_: Policy, invoice, receipt
 
+**SpecialConditions**:
+Editable markdown clauses attached to a `RiskNote` and included in its `RenderedDocument`.
+
 ### Financial Ledger & Evidence
 
 **Invoice**:
@@ -121,13 +124,9 @@ The immutable HTML or PDF output produced from a domain record and its frozen in
 _Avoid_: Template
 
 **Claim**:
-A loss advocacy record linked to a Policy and Client (`intimated`, `documents_pending`, `adjuster_appointed`, `discharge_voucher`, `settled`, `declined`), surfaced during renewal negotiations.
+A loss advocacy record linked to a Policy and Client (`intimated`, `documents_pending`, `adjuster_appointed`, `repairs_authorized`, `discharge_voucher`, `settled`, `declined`, `closed`), surfaced during renewal negotiations.
 _Avoid_: Incident ticket
 
 **Activity**:
 An append-only chronological log entry (call, email, meeting, reminder, or note) attached to a Client, Policy, or Renewal that never triggers workflow state transitions.
 _Avoid_: Correspondence, audit trigger
-
-## `SpecialConditions`
-
-Editable markdown clauses attached to a `RiskNote` and included in its `RenderedDocument`.

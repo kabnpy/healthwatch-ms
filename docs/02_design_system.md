@@ -1,6 +1,6 @@
 # Design System Specification: HealthWatch MS
 
-> **DOCUMENT PURPOSE:** This specification defines the concrete, enforceable UI/UX standards, `shadcn/ui` component architecture, OKLCH token contracts, typography hierarchies, and A4 print specifications for the HealthWatch MS insurance workspace. Machine-readable tokens and Stitch/Impeccable definitions live alongside this guide in [`frontend/DESIGN.md`](../frontend/DESIGN.md) and [`frontend/src/index.css`](../frontend/src/index.css).
+> **DOCUMENT PURPOSE:** This specification defines the concrete, enforceable UI/UX standards, `shadcn/ui` component architecture, OKLCH token contracts, typography hierarchies, and A4 print specifications for the HealthWatch MS insurance workspace. Machine-readable tokens live alongside this guide in [`frontend/src/index.css`](../frontend/src/index.css).
 
 ---
 
@@ -189,7 +189,7 @@ When building, reviewing, or refining any UI surface in HealthWatch MS, follow t
 
 | Stage | Tool / Skill | How to Use It |
 | :--- | :--- | :--- |
-| **1. Component & Token Lookup** | **`shadcn` MCP** (`npx -y shadcn@latest mcp`) + `frontend/DESIGN.md` | Inspect `@shadcn` registry items (`search_items_in_registries`, `view_items_in_registries`, `get_item_examples_from_registries`) and add primitives via `bunx shadcn@latest add <component>`. Always build with `@/components/ui/*` first. |
+| **1. Component & Token Lookup** | **`shadcn` MCP** (`npx -y shadcn@latest mcp`) + `frontend/src/index.css` | Inspect `@shadcn` registry items (`search_items_in_registries`, `view_items_in_registries`, `get_item_examples_from_registries`) and add primitives via `bunx shadcn@latest add <component>`. Always build with `@/components/ui/*` first. |
 | **2. Web Platform & UX Principles** | **`modern-web-guidance`** + **`better-design`** (`get-ui-principle`, `get-ux-principle`) | Query `npx -y modern-web-guidance@latest search "<pattern>"` for modern HTML/CSS/a11y rules and call `get-ui-principle` / `get-ux-principle` before styling or adding complex flows. |
 | **3. Implementation** | `frontend/src/index.css` + `@/components/ui/*` | Style exclusively with the `shadcn/ui` Blue preset tokens (`--primary`, `--card`, `--muted`, `--status-*`) and `font-mono tabular-nums` for `KES` figures. |
 | **4. Automated & Live Verification** | **`impeccable` CLI** + **`playwright` MCP** + **`better-design`** (`check-comprehension`, `inspect-spacing`) | Run `impeccable detect --json <target>` for static anti-pattern checks, and use Playwright MCP at `390px`, `1440px`, and `1728px` to capture live DOM evidence for `inspect-spacing` and `check-comprehension`. |

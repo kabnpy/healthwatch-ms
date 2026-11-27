@@ -97,27 +97,7 @@ bun run dev
 bun run status
 ```
 
-Service URLs:
-- Frontend UI: http://localhost:5173
-- Backend API Documentation: http://localhost:8000/docs
-- Local Email Viewer (Mailpit): http://localhost:1080
-
-Additional workspace commands (`package.json`):
-```bash
-bun run up            # Start backing containers (db, mailpit)
-bun run down          # Stop backing containers
-bun run logs          # Tail container logs
-bun run dev:backend   # Run FastAPI dev server natively
-bun run dev:frontend  # Run Vite dev server natively
-bun run test          # Run all backend pytest and frontend vitest suites
-bun run test:e2e      # Run Playwright E2E suite
-bun run typecheck     # Run TypeScript compiler check
-bun run lint          # Run Ruff and Biome linters
-bun run format        # Auto-format codebase
-bun run client        # Export OpenAPI schema and regenerate TypeScript client
-bun run migrate       # Apply Alembic database migrations
-bun run seed          # Seed realistic underwriting and client portfolio
-```
+See the **[Development Guide](development.md)** for the full list of workspace commands, local service URLs, container files, and pre-commit hooks.
 
 ---
 

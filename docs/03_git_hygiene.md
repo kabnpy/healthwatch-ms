@@ -63,8 +63,8 @@ Git hook shims are managed via `prek` (`.pre-commit-config.yaml`):
 
 ```bash
 # Reinstall git hooks
-backend/.venv/bin/prek install -t pre-commit -t commit-msg
+cd backend && uv run prek install -t pre-commit -t commit-msg
 
 # Run pre-commit checks manually across all files
-backend/.venv/bin/prek run -a
+cd backend && uv run prek run --all-files
 ```

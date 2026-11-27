@@ -33,8 +33,8 @@ All entity names, artifacts, and ledger concepts follow the canonical definition
 ## 3. Core Workflows
 
 ### 3.1 New Business Workflow
-1. **Acquisition & Proposal:** Agent captures customer KYC and vehicle details (registration, make, model, year, preliminary/purchase value) on the **Acquisition Form**. Crucially, the Acquisition Form captures operational instructions to the insurer (e.g., requesting a 1-month temporary cover note / binder while awaiting certified valuation, or requesting immediate annual cover for a new car).
-2. **Transfer / Takeover Placement:** For policies transferring to HealthWatch from another broker or directly from a client ("placed under HealthWatch"), a formal appointment/transfer letter is addressed to the carrier and filed under policy `Document` records.
+1. **Acquisition & Proposal:** Agent captures client KYC and vehicle details (registration, make, model, year, preliminary/purchase value) on the **Acquisition Form**. Crucially, the Acquisition Form captures operational instructions to the insurer (e.g., requesting a 1-month temporary cover note / binder while awaiting certified valuation, or requesting immediate annual cover for a new car).
+2. **Transfer / Takeover Placement:** For policies transferring to HealthWatch from another agency or directly from a client ("placed under HealthWatch"), a formal appointment/transfer letter is addressed to the carrier and filed under policy `Document` records.
 3. **Certified Valuation:** For motor policies, external certified valuation is completed (typically annual; biennial for Old Mutual), fixing the agreed sum insured.
 4. **Policy Inception & Rating:** Agent creates the `Policy` container, logs the vehicle asset(s), and executes the definitive `PremiumCalculation`.
 5. **Issuance:** Agent produces the Inception `RiskNote` (`new_business`) and transmits it to the insurer to bind the 12-month policy schedule. Invoices are generated post-renewal / when billing the client.
@@ -66,7 +66,7 @@ Renewals follow calendar-month periods (e.g. renewals expiring in November are i
 5. **Payment Evidence & Recording (`paid`):** Agent logs client proof of payment and creates a `PaymentRecord`. A renewal moves to `paid` once payment evidence/record is established.
 6. **Completion (`completed`):**
    - **Immediate Terms:** Completed once payment conditions are satisfied.
-   - **Deferred Payment:** In the initial release, deferred payments do not introduce a separate formal workflow state (§19.3). Exceptional instructions are recorded as an internal Activity with author, timestamp, and context.
+   - **Deferred Payment:** In the initial release, deferred payments do not introduce a separate formal workflow state. Exceptional instructions are recorded as an internal Activity with author, timestamp, and context.
    - **Post-Completion:** Updates policy current cover dates and generates completion artifacts: the Renewal `RiskNote` (populated from the settled agency invitation and sent to the carrier) and client `Invoice` (issued post-renewal when billing the client account).
 
 ### 3.2.1 Rating Paradigms: Asset-Based Valuation vs. Defined-Benefit Medical Tiers
@@ -130,8 +130,8 @@ Insurance rating in the agency divides into two distinct operational paradigms:
 Mandated by the Insurance Regulatory Authority (IRA) of Kenya:
 - **Insurance Training Levy:** 0.2% of net base premium.
 - **Policyholders Compensation Fund (PHCF):** 0.25% of net base premium.
-- **Stamp Duty:** Flat KES 40.00 per policy.
-*(Note: Medical insurance premiums are exempt from Value Added Tax).*
+- **Stamp Duty:** Flat KES 40.00 per policy (Medical policies are exempt from Stamp Duty).
+*(Note: Medical insurance premiums are also exempt from Value Added Tax).*
 
 #### 7. Unified Persisted Artifact: `PremiumCalculation`
 Regardless of whether pricing is driven by a vehicle's market value, a family's medical census, a declared payroll schedule, a professional indemnity limit, or a fixed golfers package, the rating engine produces the exact same deterministic, immutable `PremiumCalculation` snapshot (see [GLOSSARY.md](../GLOSSARY.md) and [ADR-0004](./adr/0004-versioned-deterministic-rating-engine.md)). Every line item is itemized, auditable, and rounded using fixed-point `Decimal` arithmetic (`ROUND_HALF_UP`).
@@ -168,7 +168,7 @@ To eliminate double-entry in external agency spreadsheets, the system computes t
 Client retention across renewal cycles is directly influenced by the agency's advocacy during loss events:
 - **Claims Registry:** Lean `Claim` entity linked to `Policy`, `Client`, and asset records.
 - **Operational Lifecycle:**
-  $$\text{intimated} \longrightarrow \text{documents_pending} \longrightarrow \text{adjuster_appointed} \longrightarrow \text{discharge_voucher} \longrightarrow \text{settled / declined}$$
+  $$\text{intimated} \longrightarrow \text{documents\_pending} \longrightarrow \text{adjuster\_appointed} \longrightarrow \text{repairs\_authorized} \longrightarrow \text{discharge\_voucher} \longrightarrow \text{settled / declined / closed}$$
 - **Renewal Desk Integration:** Active claims and historical loss ratios are surfaced directly on the Renewals Desk. Account managers review outstanding disputes or claim frequency to negotiate appropriate terms, claim-free discounts, or underwriter loadings before preparing client renewal invitations.
 
 ---
@@ -177,7 +177,7 @@ Client retention across renewal cycles is directly influenced by the agency's ad
 
 Adheres to the density and styling guidelines in [02_design_system.md](./02_design_system.md).
 
-### 4.1 Dashboard (Broker Command Deck)
+### 4.1 Dashboard (Command Deck)
 Default landing page after login, surfacing immediate operational queues:
 - Renewals awaiting carrier documents (`awaiting_carrier`).
 - Renewals awaiting client invitation/response (`carrier_received`, `client_invited`).
