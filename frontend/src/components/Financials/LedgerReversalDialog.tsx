@@ -128,9 +128,10 @@ export function LedgerReversalDialog({
               </Button>
               <Button
                 type="submit"
+                variant="destructive"
                 size="sm"
                 disabled={!reason.trim() || isPending}
-                className="text-xs bg-rose-600 hover:bg-rose-700 text-white cursor-pointer"
+                className="text-xs cursor-pointer"
               >
                 {isPending ? "Reversing..." : "Confirm Reversal"}
               </Button>
