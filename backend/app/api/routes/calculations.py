@@ -8,21 +8,15 @@ from pydantic import BaseModel, Field
 from app.api.deps import CurrentUser, SessionDep, StaffUser
 from app.models import (
     BusinessEvent,
-    PremiumCalculationCreate,
     PremiumCalculationPublic,
     PremiumCalculationsPublic,
 )
 from app.services.premium_calculation import (
+    PremiumCalculationNotFoundError,
     PremiumCalculationService,
     RatingValidationError,
-    calculate_premium,
-    count_premium_calculations,
-    create_premium_calculation,
-    get_premium_calculation,
-    get_premium_calculations,
-    select_premium_calculation,
 )
-from app.services.rate_table import RateTableNotFoundError, RateTableService
+from app.services.rate_table import RateTableNotFoundError
 
 router = APIRouter()
 
@@ -106,32 +100,20 @@ def create_calculation(
 ) -> Any:
     """Calculate and persist an immutable advisory PremiumCalculation snapshot."""
     try:
-        rate_table = RateTableService(session).get_version(request.rate_table_id)
+        return PremiumCalculationService.create_calculation(
+            session,
+            rate_table_id=request.rate_table_id,
+            inputs=request.inputs,
+            policy_id=request.policy_id,
+            business_event=request.business_event,
+            renewal_id=request.renewal_id,
+            is_selected=request.is_selected,
+            user_id=_current_user.id,
+        )
     except RateTableNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
-
-    try:
-        result = calculate_premium(
-            rate_table=rate_table,
-            inputs=request.inputs,
-        )
     except RatingValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-    calc_in = PremiumCalculationCreate(
-        policy_id=request.policy_id,
-        renewal_id=request.renewal_id,
-        business_event=request.business_event,
-        rate_table_version_id=request.rate_table_id,
-        input_snapshot=result.input_snapshot,
-        rule_provenance=result.rule_provenance,
-        calculation_detail=result.calculation_detail,
-        total_premium=result.total_premium,
-        is_selected=request.is_selected,
-    )
-    return create_premium_calculation(
-        session=session, calc_in=calc_in, user_id=_current_user.id
-    )
 
 
 @router.get("/", response_model=PremiumCalculationsPublic)
@@ -144,15 +126,12 @@ def read_calculations(
     renewal_id: uuid.UUID | None = None,
 ) -> Any:
     """Retrieve advisory premium calculations with policy or renewal filter."""
-    calcs = get_premium_calculations(
-        session=session,
+    calcs, count = PremiumCalculationService.list_calculations(
+        session,
         skip=skip,
         limit=limit,
         policy_id=policy_id,
         renewal_id=renewal_id,
-    )
-    count = count_premium_calculations(
-        session=session, policy_id=policy_id, renewal_id=renewal_id
     )
     return PremiumCalculationsPublic(data=calcs, count=count)
 
@@ -164,10 +143,10 @@ def read_calculation(
     _current_user: CurrentUser,
 ) -> Any:
     """Get single calculation by ID."""
-    calc = get_premium_calculation(session=session, calc_id=id)
-    if not calc:
-        raise HTTPException(status_code=404, detail="Premium calculation not found")
-    return calc
+    try:
+        return PremiumCalculationService.get_calculation(session, calc_id=id)
+    except PremiumCalculationNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
 
 @router.post("/{id}/select", response_model=PremiumCalculationPublic)
@@ -177,7 +156,7 @@ def select_calculation(
     _current_user: StaffUser,
 ) -> Any:
     """Select this calculation as agreed calculation for policy / renewal."""
-    calc = get_premium_calculation(session=session, calc_id=id)
-    if not calc:
-        raise HTTPException(status_code=404, detail="Premium calculation not found")
-    return select_premium_calculation(session=session, calc_id=id)
+    try:
+        return PremiumCalculationService.select_calculation(session, calc_id=id)
+    except PremiumCalculationNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))

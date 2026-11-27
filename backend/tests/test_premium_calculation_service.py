@@ -275,3 +275,118 @@ def test_policy_service_create_and_endorse_keep_single_selected_policy_calc(
     selected = [c for c in calcs if c.is_selected]
     assert len(selected) == 1
     assert selected[0].business_event == BusinessEvent.COVER_CHANGE
+
+
+def test_select_and_get_missing_calculation_raise_not_found(db: Session) -> None:
+    import pytest
+
+    from app.services.premium_calculation import PremiumCalculationNotFoundError
+
+    missing_id = uuid.uuid4()
+    with pytest.raises(PremiumCalculationNotFoundError):
+        PremiumCalculationService.select_calculation(db, calc_id=missing_id)
+
+    with pytest.raises(PremiumCalculationNotFoundError):
+        PremiumCalculationService.get_calculation(db, calc_id=missing_id)
+
+
+def test_list_calculations_returns_items_and_count(db: Session) -> None:
+    product, rt = _create_product_and_rate_table(db)
+    uid = uuid.uuid4().hex[:8]
+    client = Client(
+        name=f"ListClient {uid}",
+        kra_pin=f"L{uid}Z",
+        email=f"l_{uid}@example.com",
+        phone="0700000001",
+    )
+    db.add(client)
+    db.commit()
+    db.refresh(client)
+
+    policy = Policy(
+        policy_number=f"POL-LIST-{uid}",
+        client_id=client.id,
+        product_id=product.id,
+        class_of_insurance="Motor Private",
+        inception_date=date(2025, 1, 1),
+        expiry_date=date(2025, 12, 31),
+        sum_insured=Decimal("1000000.00"),
+    )
+    db.add(policy)
+    db.commit()
+    db.refresh(policy)
+
+    PremiumCalculationService.record_calculation(
+        db,
+        calc_in=PremiumCalculationCreate(
+            policy_id=policy.id,
+            business_event=BusinessEvent.NEW_BUSINESS,
+            rating_date=date(2025, 1, 1),
+            rate_table_version_id=rt.id,
+            total_premium=Decimal("50000.00"),
+            is_selected=True,
+        ),
+    )
+    PremiumCalculationService.record_calculation(
+        db,
+        calc_in=PremiumCalculationCreate(
+            policy_id=policy.id,
+            business_event=BusinessEvent.NEW_BUSINESS,
+            rating_date=date(2025, 1, 1),
+            rate_table_version_id=rt.id,
+            total_premium=Decimal("52000.00"),
+            is_selected=False,
+        ),
+    )
+
+    items, total = PremiumCalculationService.list_calculations(
+        db, policy_id=policy.id, skip=0, limit=1
+    )
+    assert total == 2
+    assert len(items) == 1
+
+
+def test_create_calculation_resolves_rates_persists_and_selects(db: Session) -> None:
+    product, rt = _create_product_and_rate_table(db)
+    uid = uuid.uuid4().hex[:8]
+    client = Client(
+        name=f"CreateClient {uid}",
+        kra_pin=f"C{uid}Z",
+        email=f"cr_{uid}@example.com",
+        phone="0700000002",
+    )
+    db.add(client)
+    db.commit()
+    db.refresh(client)
+
+    policy = Policy(
+        policy_number=f"POL-CR-{uid}",
+        client_id=client.id,
+        product_id=product.id,
+        class_of_insurance="Motor Private",
+        inception_date=date(2025, 1, 1),
+        expiry_date=date(2025, 12, 31),
+        sum_insured=Decimal("1000000.00"),
+    )
+    db.add(policy)
+    db.commit()
+    db.refresh(policy)
+
+    calc = PremiumCalculationService.create_calculation(
+        db,
+        rate_table_id=rt.id,
+        inputs={
+            "vehicle": {
+                "registration_number": "KAA 123A",
+                "make": "Toyota",
+                "sum_insured": 1_000_000,
+            }
+        },
+        policy_id=policy.id,
+        business_event=BusinessEvent.NEW_BUSINESS,
+        is_selected=True,
+    )
+    assert calc.id is not None
+    assert calc.is_selected is True
+    assert calc.total_premium > Decimal("0.00")
+    assert calc.rate_table_version_id == rt.id
