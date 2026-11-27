@@ -54,6 +54,25 @@ def generate_risk_note_number() -> str:
     return f"RN-{uuid.uuid4().hex[:12].upper()}"
 
 
+def calculate_annual_renewal_period(
+    prior_coverage_end: date | None,
+    *,
+    fallback_start: date | None = None,
+) -> tuple[date, date]:
+    """Derive the next annual (coverage_start, coverage_end) pair with leap-year Feb 28 handling."""
+    coverage_start = (
+        prior_coverage_end + timedelta(days=1)
+        if prior_coverage_end is not None
+        else (fallback_start or date.today())
+    )
+    try:
+        next_year_start = coverage_start.replace(year=coverage_start.year + 1)
+    except ValueError:
+        next_year_start = date(coverage_start.year + 1, 2, 28)
+    coverage_end = next_year_start - timedelta(days=1)
+    return coverage_start, coverage_end
+
+
 def calculate_endorsement_prorata(
     *,
     old_result: PremiumCalculationResult,
@@ -229,23 +248,13 @@ class PolicyService:
             commit=False,
         )
 
-        PremiumCalculationService.record_calculation(
-            session,
-            calc_in=PremiumCalculationCreate(
-                policy_id=policy.id,
-                business_event=BusinessEvent.NEW_BUSINESS,
-                rating_date=coverage_start,
-                rate_table_version_id=result.rate_table_version_id,
-                input_snapshot=PolicyService.to_numeric_dict(result.input_snapshot),
-                rule_provenance=PolicyService.to_numeric_dict(result.rule_provenance),
-                calculation_detail=PolicyService.to_numeric_dict(
-                    result.calculation_detail
-                ),
-                total_premium=result.total_premium,
-                is_selected=True,
-            ),
+        PolicyService._record_selected_calculation(
+            session=session,
+            policy_id=policy.id,
+            business_event=BusinessEvent.NEW_BUSINESS,
+            rating_date=coverage_start,
+            result=result,
             user_id=current_user_id,
-            commit=False,
         )
         session.commit()
         session.refresh(policy)
@@ -378,14 +387,10 @@ class PolicyService:
         # effective_date is already defaulted to date.today() in the controller/schema if null
         # but we re-verify here for service-layer safety.
         effective_date = effective_date or date.today()
-        current_rn = next(
-            (
-                rn
-                for rn in policy.risk_notes
-                if rn.status == RiskNoteStatus.ISSUED and rn.deleted_at is None
-            ),
-            None,
+        active_notes = PolicyService._get_active_risk_notes(
+            session=session, policy_id=policy.id
         )
+        current_rn = active_notes[0] if active_notes else None
         if not current_rn:
             raise PolicyValidationError("No active risk note found")
 
@@ -443,25 +448,13 @@ class PolicyService:
         )
         assert endorsement_rn is not None
 
-        PremiumCalculationService.record_calculation(
-            session,
-            calc_in=PremiumCalculationCreate(
-                policy_id=policy.id,
-                business_event=BusinessEvent.COVER_CHANGE,
-                rating_date=effective_date,
-                rate_table_version_id=new_result.rate_table_version_id,
-                input_snapshot=PolicyService.to_numeric_dict(new_result.input_snapshot),
-                rule_provenance=PolicyService.to_numeric_dict(
-                    new_result.rule_provenance
-                ),
-                calculation_detail=PolicyService.to_numeric_dict(
-                    new_result.calculation_detail
-                ),
-                total_premium=new_result.total_premium,
-                is_selected=True,
-            ),
+        PolicyService._record_selected_calculation(
+            session=session,
+            policy_id=policy.id,
+            business_event=BusinessEvent.COVER_CHANGE,
+            rating_date=effective_date,
+            result=new_result,
             user_id=current_user_id,
-            commit=False,
         )
         session.commit()
         session.refresh(endorsement_rn)
@@ -496,6 +489,53 @@ class PolicyService:
         return risk_note
 
     @staticmethod
+    def _get_active_risk_notes(
+        *, session: Session, policy_id: uuid.UUID
+    ) -> list[RiskNote]:
+        """Return non-deleted ISSUED RiskNotes for a policy, newest first."""
+        return list(
+            session.exec(
+                select(RiskNote)
+                .where(
+                    RiskNote.policy_id == policy_id,
+                    RiskNote.status == RiskNoteStatus.ISSUED,
+                    RiskNote.deleted_at == None,
+                )
+                .order_by(RiskNote.created_at.desc())  # type: ignore[attr-defined]
+            ).all()
+        )
+
+    @staticmethod
+    def _record_selected_calculation(
+        *,
+        session: Session,
+        policy_id: uuid.UUID,
+        business_event: BusinessEvent,
+        rating_date: date,
+        result: PremiumCalculationResult,
+        user_id: uuid.UUID | None,
+    ) -> None:
+        """Persist a selected PremiumCalculation from a RatingResult without committing."""
+        PremiumCalculationService.record_calculation(
+            session,
+            calc_in=PremiumCalculationCreate(
+                policy_id=policy_id,
+                business_event=business_event,
+                rating_date=rating_date,
+                rate_table_version_id=result.rate_table_version_id,
+                input_snapshot=PolicyService.to_numeric_dict(result.input_snapshot),
+                rule_provenance=PolicyService.to_numeric_dict(result.rule_provenance),
+                calculation_detail=PolicyService.to_numeric_dict(
+                    result.calculation_detail
+                ),
+                total_premium=result.total_premium,
+                is_selected=True,
+            ),
+            user_id=user_id,
+            commit=False,
+        )
+
+    @staticmethod
     def is_medical_product(product: Product | None) -> bool:
         """Return True if the product belongs to the Medical class (ADR-0001)."""
         return bool(
@@ -527,16 +567,8 @@ class PolicyService:
             return None
 
         if supersede:
-            prior_issued = list(
-                session.exec(
-                    select(RiskNote)
-                    .where(
-                        RiskNote.policy_id == policy.id,
-                        RiskNote.status == RiskNoteStatus.ISSUED,
-                        RiskNote.deleted_at == None,
-                    )
-                    .order_by(RiskNote.created_at.desc())  # type: ignore[attr-defined]
-                ).all()
+            prior_issued = PolicyService._get_active_risk_notes(
+                session=session, policy_id=policy.id
             )
             previous_id = (
                 target_risk_note.id
@@ -581,26 +613,14 @@ class PolicyService:
         if PolicyService.is_medical_product(product):
             return None
 
-        prior_note = session.exec(
-            select(RiskNote)
-            .where(
-                RiskNote.policy_id == policy.id,
-                RiskNote.status == RiskNoteStatus.ISSUED,
-                RiskNote.deleted_at == None,
-            )
-            .order_by(RiskNote.created_at.desc())  # type: ignore[attr-defined]
-        ).first()
-
-        coverage_start = (
-            prior_note.coverage_end + timedelta(days=1)
-            if prior_note and prior_note.coverage_end
-            else date.today()
+        active_notes = PolicyService._get_active_risk_notes(
+            session=session, policy_id=policy.id
         )
-        try:
-            next_year_start = coverage_start.replace(year=coverage_start.year + 1)
-        except ValueError:
-            next_year_start = date(coverage_start.year + 1, 2, 28)
-        coverage_end = next_year_start - timedelta(days=1)
+        prior_note = active_notes[0] if active_notes else None
+
+        coverage_start, coverage_end = calculate_annual_renewal_period(
+            prior_note.coverage_end if prior_note else None
+        )
 
         calc = (
             session.get(PremiumCalculation, calculation_id)
