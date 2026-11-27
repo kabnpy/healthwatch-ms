@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import uuid
 from dataclasses import dataclass
 from datetime import date
@@ -10,6 +11,7 @@ from sqlmodel import Session, func, select
 
 from app.models import (
     BenefitCalculationType,
+    BusinessEvent,
     PremiumCalculation,
     PremiumCalculationCreate,
     PricingMethod,
@@ -19,9 +21,8 @@ from app.models import (
     RateTableStatus,
     RateTableVersion,
     Renewal,
-    TaxRateRule,
-    TaxRateRuleCreate,
 )
+from app.services.rate_table import RateTableService
 from app.utils import parse_decimal
 
 CENT = Decimal("0.01")
@@ -33,6 +34,10 @@ STAMP_DUTY_AMOUNT = Decimal("40.00")
 
 class RatingValidationError(ValueError):
     """Raised when rating inputs or rate table configuration fail validation."""
+
+
+class PremiumCalculationNotFoundError(LookupError):
+    """Raised when a requested PremiumCalculation does not exist."""
 
 
 @dataclass(frozen=True)
@@ -677,6 +682,46 @@ class PremiumCalculationService:
         )
 
     @staticmethod
+    def create_calculation(
+        session: Session,
+        *,
+        rate_table_id: uuid.UUID,
+        inputs: dict[str, Any],
+        policy_id: uuid.UUID,
+        business_event: BusinessEvent = BusinessEvent.NEW_BUSINESS,
+        renewal_id: uuid.UUID | None = None,
+        is_selected: bool = False,
+        user_id: uuid.UUID | None = None,
+        as_of_date: date | None = None,
+        commit: bool = True,
+    ) -> PremiumCalculation:
+        """Resolve RateTableVersion, evaluate deterministic rating, persist, and apply selection."""
+        rate_table = RateTableService(session).get_version(rate_table_id)
+        result = calculate_premium(
+            rate_table=rate_table,
+            inputs=inputs,
+            session=session,
+            as_of_date=as_of_date,
+        )
+        calc_in = PremiumCalculationCreate(
+            policy_id=policy_id,
+            renewal_id=renewal_id,
+            business_event=business_event,
+            rate_table_version_id=rate_table_id,
+            input_snapshot=json.loads(json.dumps(result.input_snapshot, default=str)),
+            rule_provenance=result.rule_provenance,
+            calculation_detail=result.calculation_detail,
+            total_premium=result.total_premium,
+            is_selected=is_selected,
+        )
+        return PremiumCalculationService.record_calculation(
+            session,
+            calc_in=calc_in,
+            user_id=user_id,
+            commit=commit,
+        )
+
+    @staticmethod
     def record_calculation(
         session: Session,
         *,
@@ -696,6 +741,41 @@ class PremiumCalculationService:
         return db_calc
 
     @staticmethod
+    def get_calculation(
+        session: Session,
+        *,
+        calc_id: uuid.UUID,
+    ) -> PremiumCalculation:
+        """Fetch a persisted PremiumCalculation by ID or raise PremiumCalculationNotFoundError."""
+        calc = session.get(PremiumCalculation, calc_id)
+        if not calc:
+            raise PremiumCalculationNotFoundError("Premium calculation not found")
+        return calc
+
+    @staticmethod
+    def list_calculations(
+        session: Session,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        policy_id: uuid.UUID | None = None,
+        renewal_id: uuid.UUID | None = None,
+    ) -> tuple[list[PremiumCalculation], int]:
+        """List PremiumCalculations ordered newest-first and return total count."""
+        base = _premium_calculation_base_query(
+            policy_id=policy_id, renewal_id=renewal_id
+        )
+        items = list(
+            session.exec(
+                base.order_by(PremiumCalculation.created_at.desc())
+                .offset(skip)
+                .limit(limit)
+            ).all()
+        )
+        total = session.exec(select(func.count()).select_from(base.subquery())).one()
+        return items, total
+
+    @staticmethod
     def select_calculation(
         session: Session,
         *,
@@ -705,54 +785,12 @@ class PremiumCalculationService:
         """Select a persisted PremiumCalculation and sync its scope."""
         calc = session.get(PremiumCalculation, calc_id)
         if not calc:
-            raise ValueError("Calculation not found")
+            raise PremiumCalculationNotFoundError("Premium calculation not found")
         _apply_selection(session, calc)
         if commit:
             session.commit()
             session.refresh(calc)
         return calc
-
-
-def create_premium_calculation(
-    session: Session,
-    *,
-    calc_in: PremiumCalculationCreate,
-    user_id: uuid.UUID | None = None,
-) -> PremiumCalculation:
-    """Persist a PremiumCalculation and, if is_selected, select it in one transaction."""
-    return PremiumCalculationService.record_calculation(
-        session, calc_in=calc_in, user_id=user_id, commit=True
-    )
-
-
-def select_premium_calculation(
-    session: Session, *, calc_id: uuid.UUID
-) -> PremiumCalculation:
-    """Select a persisted PremiumCalculation and sync its scope in one transaction."""
-    return PremiumCalculationService.select_calculation(
-        session, calc_id=calc_id, commit=True
-    )
-
-
-def create_tax_rate_rule(
-    session: Session, *, rule_in: TaxRateRuleCreate
-) -> TaxRateRule:
-    """Persist a TaxRateRule atomically."""
-    db_obj = TaxRateRule.model_validate(rule_in)
-    session.add(db_obj)
-    session.commit()
-    session.refresh(db_obj)
-    return db_obj
-
-
-def get_tax_rate_rules(session: Session) -> list[TaxRateRule]:
-    """List active TaxRateRules ordered by sequence_order."""
-    statement = (
-        select(TaxRateRule)
-        .where(TaxRateRule.is_active.is_(True))
-        .order_by(TaxRateRule.sequence_order.asc())
-    )
-    return list(session.exec(statement).all())
 
 
 def _premium_calculation_base_query(
@@ -766,42 +804,3 @@ def _premium_calculation_base_query(
     if renewal_id is not None:
         statement = statement.where(PremiumCalculation.renewal_id == renewal_id)
     return statement
-
-
-def get_premium_calculation(
-    session: Session, *, calc_id: uuid.UUID
-) -> PremiumCalculation | None:
-    """Fetch a PremiumCalculation by ID."""
-    return session.get(PremiumCalculation, calc_id)
-
-
-def get_premium_calculations(
-    session: Session,
-    *,
-    skip: int = 0,
-    limit: int = 100,
-    policy_id: uuid.UUID | None = None,
-    renewal_id: uuid.UUID | None = None,
-) -> list[PremiumCalculation]:
-    """List PremiumCalculations ordered newest-first with optional policy/renewal filter."""
-    statement = (
-        _premium_calculation_base_query(policy_id=policy_id, renewal_id=renewal_id)
-        .order_by(PremiumCalculation.created_at.desc())
-        .offset(skip)
-        .limit(limit)
-    )
-    return list(session.exec(statement).all())
-
-
-def count_premium_calculations(
-    session: Session,
-    *,
-    policy_id: uuid.UUID | None = None,
-    renewal_id: uuid.UUID | None = None,
-) -> int:
-    """Count PremiumCalculations matching optional policy/renewal filter."""
-    statement = _premium_calculation_base_query(
-        policy_id=policy_id, renewal_id=renewal_id
-    )
-    count_statement = select(func.count()).select_from(statement.subquery())
-    return session.exec(count_statement).one()
