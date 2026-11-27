@@ -1,12 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
 import { Calculator } from "lucide-react"
 import { useState } from "react"
-import {
-  type RateBenefitPublic,
-  type RateBracketPublic,
-  RateTablesService,
-  type RateTableVersionPublic,
-} from "@/client"
 import { AdvisoryRatingCalculator } from "@/components/Insurance/AdvisoryRatingCalculator"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -25,25 +18,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  type MedicalTierItem,
+  type RateTableVersionDetail,
+  usePublishedRateTable,
+} from "@/hooks/useRateTables"
 import { formatCurrency } from "@/utils"
 
-export interface MedicalTierItem {
-  id: string
-  inpatient_limit: string | number
-  family_size?: string
-  m_premium?: string | number
-  m1_premium?: string | number
-  m2_premium?: string | number
-  m3_premium?: string | number
-  m4_premium?: string | number
-  annual_premium?: string | number
-}
-
-export type RateTableVersionDetail = RateTableVersionPublic & {
-  brackets?: RateBracketPublic[]
-  benefits?: RateBenefitPublic[]
-  medical_tiers?: MedicalTierItem[]
-}
+export type { MedicalTierItem, RateTableVersionDetail }
 
 interface PricingRulesInspectorProps {
   product: {
@@ -65,31 +47,10 @@ export function PricingRulesInspector({ product }: PricingRulesInspectorProps) {
     .includes("domestic")
   const isMedical = product.class_of_insurance.toLowerCase().includes("medical")
 
-  const { data: rateTable, isLoading } =
-    useQuery<RateTableVersionDetail | null>({
-      queryKey: [
-        "rate-tables",
-        "published",
-        product.insurer_id ?? null,
-        product.class_of_insurance,
-      ],
-      queryFn: async () => {
-        const listRes = await RateTablesService.tablesReadRateTables({
-          query: {
-            insurer_id: product.insurer_id ?? null,
-            class_of_insurance: product.class_of_insurance,
-            status: "published",
-            limit: 1,
-          },
-        })
-        const published = listRes.data?.data?.[0]
-        if (!published) return null
-        const detailRes = await RateTablesService.tablesReadRateTable({
-          path: { id: published.id },
-        })
-        return detailRes.data ?? published
-      },
-    })
+  const { data: rateTable, isLoading } = usePublishedRateTable({
+    insurerId: product.insurer_id,
+    classOfInsurance: product.class_of_insurance,
+  })
 
   const brackets = rateTable?.brackets ?? []
   const benefits = rateTable?.benefits ?? []
