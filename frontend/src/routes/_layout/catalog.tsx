@@ -5,6 +5,7 @@ import {
   useLocation,
   useMatches,
 } from "@tanstack/react-router"
+import { PageHeader } from "@/components/Common/PageHeader"
 import AddInsurer from "@/components/Insurers/AddInsurer"
 import { AddProduct } from "@/components/Products/AddProduct"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -33,20 +34,12 @@ function CatalogLayout() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Catalog
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {isProducts ? "Products" : "Insurers"}
-          </h1>
-          <p className="text-muted-foreground">
-            Manage insurers and their products.
-          </p>
-        </div>
-        {isProducts ? <AddProduct /> : <AddInsurer />}
-      </div>
+      <PageHeader
+        eyebrow="Catalog"
+        title={isProducts ? "Products" : "Insurers"}
+        subtitle="Manage insurers and their products."
+        actions={isProducts ? <AddProduct /> : <AddInsurer />}
+      />
 
       <Tabs value={activeTab} className="w-full">
         <TabsList

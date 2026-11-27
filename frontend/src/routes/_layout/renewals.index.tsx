@@ -15,6 +15,7 @@ import type { PolicyPublic, RenewalHorizonItem } from "@/client"
 
 import { DataTable } from "@/components/Common/DataTable"
 import { EmptyState } from "@/components/Common/EmptyState"
+import { PageHeader } from "@/components/Common/PageHeader"
 import { QueryErrorBanner } from "@/components/Common/QueryErrorBanner"
 import PendingItems from "@/components/Pending/PendingItems"
 import { RenewalStatusBadge } from "@/components/Renewals/RenewalStatusBadge"
@@ -346,15 +347,11 @@ function RenewalsDeskPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1 border-b pb-6">
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Renewals Desk
-        </span>
-        <h1 className="text-2xl font-bold tracking-tight">Policy Renewals</h1>
-        <p className="text-sm text-muted-foreground">
-          Track and manage upcoming policy expirations and renewals.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Renewals Desk"
+        title="Policy Renewals"
+        subtitle="Track and manage upcoming policy expirations and renewals."
+      />
 
       {/* Summary KPI Strip */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">

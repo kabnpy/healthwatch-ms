@@ -8,6 +8,7 @@ import {
   Wallet,
 } from "lucide-react"
 import { useMemo, useState } from "react"
+import { PageHeader } from "@/components/Common/PageHeader"
 import { QueryErrorBanner } from "@/components/Common/QueryErrorBanner"
 import { AllocationsTab } from "@/components/Financials/AllocationsTab"
 import { InvoicesTab } from "@/components/Financials/InvoicesTab"
@@ -80,24 +81,16 @@ function FinancialsHub() {
   return (
     <div className="flex flex-col gap-6 pb-12">
       {/* 1. Header with Accounting Context & Quick Action */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
-        <div>
+      <PageHeader
+        eyebrow={
           <div className="flex items-center gap-2">
             <span className="size-2 rounded-full bg-blue-500" />
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Agency Finances
-            </p>
+            <span>Agency Finances</span>
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight mt-1">
-            Finances & Invoicing
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Manage payments, invoices, receipt allocations, and client
-            statements
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
+        }
+        title="Finances & Invoicing"
+        subtitle="Manage payments, invoices, receipt allocations, and client statements"
+        actions={
           <Button
             onClick={() => setIsRecordPaymentOpen(true)}
             className="gap-2 cursor-pointer"
@@ -105,8 +98,8 @@ function FinancialsHub() {
             <Plus className="size-4" />
             Record Payment
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* 2. Operational Metrics Ribbon (Tabular Monospace Numerals) */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
