@@ -116,7 +116,7 @@ function ProductDetailContent({ productId }: { productId: string }) {
               <Shield className="h-6 w-6 text-primary" />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-2xl sm:text-3xl font-bold tracking-tight">
+              <h1 className="truncate text-3xl font-extrabold tracking-tight">
                 {product.name}
               </h1>
               <p className="truncate text-muted-foreground text-sm">

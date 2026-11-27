@@ -92,7 +92,7 @@ function InsurerDetailContent({ insurerId }: { insurerId: string }) {
           }
         />
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">{insurer.name}</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">{insurer.name}</h1>
         </div>
       </div>
 

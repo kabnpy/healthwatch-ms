@@ -11,6 +11,7 @@ import { useState } from "react"
 
 import type { PolicyPublic, RenewalPublic } from "@/client"
 import { AddClient } from "@/components/Clients/AddClient"
+import { PageHeader } from "@/components/Common/PageHeader"
 import { QueryErrorBanner } from "@/components/Common/QueryErrorBanner"
 import PendingItems from "@/components/Pending/PendingItems"
 import { RenewalTransitionSheet } from "@/components/Renewals/RenewalTransitionSheet"
@@ -91,27 +92,20 @@ function AgencyDashboard() {
   return (
     <div className="flex flex-col gap-6 pb-12">
       {/* 1. Header with Single Primary Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-5">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Agency Operations &bull; {today}
-          </p>
-          <h1 className="text-3xl font-extrabold tracking-tight mt-1">
-            Agency Dashboard
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+      <PageHeader
+        eyebrow={`Agency Operations \u2022 ${today}`}
+        title="Agency Dashboard"
+        subtitle={
+          <>
             Signed in as{" "}
             <span className="font-semibold text-foreground">
               {currentUser?.full_name || currentUser?.email}
             </span>{" "}
             &bull; Daily policy servicing and renewal triage
-          </p>
-        </div>
-
-        <div className="flex items-center shrink-0">
-          <AddClient />
-        </div>
-      </div>
+          </>
+        }
+        actions={<AddClient />}
+      />
 
       {/* 2. Operational Metrics Ribbon (Strict Invariant: Tabular Numerals) */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
