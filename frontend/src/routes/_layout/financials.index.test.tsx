@@ -374,3 +374,38 @@ describe("FinancialsHub UX & formatting (#168)", () => {
     ).toBeGreaterThan(0)
   })
 })
+
+describe("FinancialsHub lazy per-tab querying (#214)", () => {
+  it("fires only the active tab ledger query on mount and fetches other tabs lazily on switch", () => {
+    mockUseFinancialSummary.mockClear()
+    mockUseClients.mockClear()
+    mockUsePaymentRecords.mockClear()
+    mockUseInvoices.mockClear()
+    mockUsePaymentAllocations.mockClear()
+
+    const Component = Route.options.component!
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+    render(
+      <QueryClientProvider client={qc}>
+        <Component />
+      </QueryClientProvider>,
+    )
+
+    expect(mockUseFinancialSummary).toHaveBeenCalled()
+    expect(mockUseClients).toHaveBeenCalled()
+    expect(mockUsePaymentRecords).toHaveBeenCalled()
+    expect(mockUseInvoices).not.toHaveBeenCalled()
+    expect(mockUsePaymentAllocations).not.toHaveBeenCalled()
+
+    // Switch to Invoices tab
+    fireEvent.click(screen.getByRole("tab", { name: /invoices/i }))
+    expect(mockUseInvoices).toHaveBeenCalled()
+    expect(mockUsePaymentAllocations).not.toHaveBeenCalled()
+
+    // Switch to Allocations tab
+    fireEvent.click(screen.getByRole("tab", { name: /allocations/i }))
+    expect(mockUsePaymentAllocations).toHaveBeenCalled()
+  })
+})
