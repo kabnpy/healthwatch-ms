@@ -114,3 +114,47 @@ def test_retired_risk_note_mutation_routes_return_405(
         headers=superuser_token_headers,
     )
     assert delete_resp.status_code == 405
+
+
+def test_create_risk_note_revision_rejects_medical_policy_route(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    db_client = create_random_client(db)
+    product = create_random_product(db, class_of_insurance="Medical")
+    today = date.today()
+    policy = Policy(
+        policy_number=f"POL-MED-RT-{uuid.uuid4().hex[:6].upper()}",
+        client_id=db_client.id,
+        product_id=product.id,
+        status=PolicyStatus.ACTIVE,
+        inception_date=today,
+    )
+    db.add(policy)
+    db.flush()
+
+    risk_note = RiskNote(
+        policy_id=policy.id,
+        risk_note_number=f"RN-MED-{uuid.uuid4().hex[:8].upper()}",
+        transaction_type=TransactionType.NEW_BUSINESS,
+        status=RiskNoteStatus.ISSUED,
+        effective_date=today,
+        coverage_start=today,
+        coverage_end=today + timedelta(days=365),
+        net_premium=Decimal("50000.00"),
+        financial_breakdown={"total_amount": "50000.00"},
+        commission_amount=Decimal("5000.00"),
+        total_amount=Decimal("50000.00"),
+        cover_snapshot={},
+        special_clauses=[],
+    )
+    db.add(risk_note)
+    db.commit()
+    db.refresh(risk_note)
+
+    response = client.post(
+        f"{settings.API_V1_STR}/risk-notes/{risk_note.id}/revisions",
+        headers=superuser_token_headers,
+        json={"special_clauses": ["Updated clause"]},
+    )
+    assert response.status_code in (400, 422)
+    assert "Medical" in response.json()["detail"]

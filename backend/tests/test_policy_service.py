@@ -537,3 +537,258 @@ def test_issue_risk_note_supersedes_all_prior_issued_and_create_risk_note_stays_
     assert len(issued_after) == 1
     assert issued_after[0].id == successor_rn.id
     assert len(replaced_after) == 2
+
+
+def test_create_endorsement_rejects_medical_policy(db: Session) -> None:
+    insurer = Insurer(name=f"MedIns-{uuid.uuid4().hex[:6]}")
+    db.add(insurer)
+    db.flush()
+
+    medical_product = Product(
+        insurer_id=insurer.id,
+        name=f"MedProd-{uuid.uuid4().hex[:6]}",
+        class_of_insurance="Medical",
+        pricing_strategy=PricingStrategy.PERCENTAGE,
+        default_commission_rate=Decimal("10.00"),
+    )
+    db.add(medical_product)
+    db.flush()
+
+    client = Client(
+        name=f"MedClient-{uuid.uuid4().hex[:6]}",
+        kra_pin=f"A{uuid.uuid4().hex[:9].upper()}",
+        phone="0711000010",
+    )
+    db.add(client)
+    db.commit()
+
+    policy = Policy(
+        policy_number=f"POL-MED-END-{uuid.uuid4().hex[:6].upper()}",
+        client_id=client.id,
+        product_id=medical_product.id,
+        status=PolicyStatus.ACTIVE,
+        inception_date=date.today(),
+    )
+    db.add(policy)
+    db.commit()
+    db.refresh(policy)
+
+    with pytest.raises(PolicyValidationError, match="Medical"):
+        policy_service.create_endorsement(
+            session=db,
+            policy_id=policy.id,
+            updated_cover_snapshot={"sum_insured": "1500000"},
+            change_description="Add dependant",
+        )
+
+
+def test_create_endorsement_supersedes_all_issued_risk_notes_and_chains_previous(
+    db: Session,
+) -> None:
+    from app.models import RiskNoteCreate, RiskNoteStatus, TransactionType
+
+    client, product = _seed_rating_product(db)
+    policy = policy_service.create_policy(
+        session=db,
+        policy_in=PolicyCreate(
+            policy_number=f"POL-END-SUP-{uuid.uuid4().hex[:6].upper()}",
+            client_id=client.id,
+            product_id=product.id,
+            status=PolicyStatus.ACTIVE,
+            inception_date=date.today(),
+        ),
+        coverage_start=date.today(),
+        coverage_end=date.today() + timedelta(days=365),
+        risk_details={
+            "vehicle": {
+                "registration_number": "KCA 111A",
+                "make": "Toyota",
+                "sum_insured": "1000000",
+            }
+        },
+    )
+
+    first_rn = db.exec(
+        select(RiskNote).where(RiskNote.policy_id == policy.id)
+    ).one()
+
+    extra_rn = policy_service.create_risk_note(
+        session=db,
+        risk_note_in=RiskNoteCreate(
+            policy_id=policy.id,
+            transaction_type=TransactionType.NEW_BUSINESS,
+            status=RiskNoteStatus.ISSUED,
+            effective_date=date.today(),
+            coverage_start=date.today(),
+            coverage_end=date.today() + timedelta(days=365),
+            net_premium=Decimal("10000.00"),
+            financial_breakdown={"total_amount": "10000.00"},
+            commission_amount=Decimal("1000.00"),
+            total_amount=Decimal("10000.00"),
+            cover_snapshot={"sum_insured": "1000000"},
+        ),
+    )
+
+    endorsement_rn = policy_service.create_endorsement(
+        session=db,
+        policy_id=policy.id,
+        updated_cover_snapshot={
+            "vehicle": {
+                "registration_number": "KCA 111A",
+                "make": "Toyota",
+                "sum_insured": "2000000",
+            }
+        },
+        change_description="Increase sum insured",
+        effective_date=date.today(),
+    )
+
+    assert endorsement_rn.previous_risk_note_id in {first_rn.id, extra_rn.id}
+    all_rns = db.exec(select(RiskNote).where(RiskNote.policy_id == policy.id)).all()
+    issued_after = [rn for rn in all_rns if rn.status == RiskNoteStatus.ISSUED]
+    replaced_after = [rn for rn in all_rns if rn.status == RiskNoteStatus.REPLACED]
+    assert len(issued_after) == 1
+    assert issued_after[0].id == endorsement_rn.id
+    assert {rn.id for rn in replaced_after} == {first_rn.id, extra_rn.id}
+
+
+def test_create_risk_note_revision_rejects_medical_policy(db: Session) -> None:
+    from app.models import RiskNoteCreate, RiskNoteRevisionCreate, RiskNoteStatus, TransactionType
+
+    insurer = Insurer(name=f"MedRevIns-{uuid.uuid4().hex[:6]}")
+    db.add(insurer)
+    db.flush()
+
+    medical_product = Product(
+        insurer_id=insurer.id,
+        name=f"MedRevProd-{uuid.uuid4().hex[:6]}",
+        class_of_insurance="Medical",
+        pricing_strategy=PricingStrategy.PERCENTAGE,
+        default_commission_rate=Decimal("10.00"),
+    )
+    db.add(medical_product)
+    db.flush()
+
+    client = Client(
+        name=f"MedRevClient-{uuid.uuid4().hex[:6]}",
+        kra_pin=f"A{uuid.uuid4().hex[:9].upper()}",
+        phone="0711000011",
+    )
+    db.add(client)
+    db.commit()
+
+    policy = Policy(
+        policy_number=f"POL-MED-REV-{uuid.uuid4().hex[:6].upper()}",
+        client_id=client.id,
+        product_id=medical_product.id,
+        status=PolicyStatus.ACTIVE,
+        inception_date=date.today(),
+    )
+    db.add(policy)
+    db.commit()
+    db.refresh(policy)
+
+    # Even if a legacy/manual RiskNote exists on a Medical policy, revision must be rejected
+    rn = policy_service.create_risk_note(
+        session=db,
+        risk_note_in=RiskNoteCreate(
+            policy_id=policy.id,
+            transaction_type=TransactionType.NEW_BUSINESS,
+            status=RiskNoteStatus.ISSUED,
+            effective_date=date.today(),
+            coverage_start=date.today(),
+            coverage_end=date.today() + timedelta(days=365),
+            net_premium=Decimal("10000.00"),
+            financial_breakdown={"total_amount": "10000.00"},
+            commission_amount=Decimal("1000.00"),
+            total_amount=Decimal("10000.00"),
+            cover_snapshot={},
+        ),
+    )
+
+    from app.models import RiskNoteCreate, RiskNoteRevisionCreate, RiskNoteStatus, TransactionType, User
+    user = db.exec(select(User)).first()
+    assert user is not None
+
+    with pytest.raises(PolicyValidationError, match="Medical"):
+        policy_service.create_risk_note_revision(
+            session=db,
+            risk_note_id=rn.id,
+            revision_in=RiskNoteRevisionCreate(special_clauses=["Updated"]),
+            created_by_id=user.id,
+        )
+
+
+def test_create_risk_note_revision_supersedes_all_issued_notes_and_guards_replaced(
+    db: Session,
+) -> None:
+    from app.models import RiskNoteCreate, RiskNoteRevisionCreate, RiskNoteStatus, TransactionType
+
+    client, product = _seed_rating_product(db)
+    policy = policy_service.create_policy(
+        session=db,
+        policy_in=PolicyCreate(
+            policy_number=f"POL-REV-SUP-{uuid.uuid4().hex[:6].upper()}",
+            client_id=client.id,
+            product_id=product.id,
+            status=PolicyStatus.ACTIVE,
+            inception_date=date.today(),
+        ),
+        coverage_start=date.today(),
+        coverage_end=date.today() + timedelta(days=365),
+        risk_details={
+            "vehicle": {
+                "registration_number": "KCA 111A",
+                "make": "Toyota",
+                "sum_insured": "1000000",
+            }
+        },
+    )
+
+    first_rn = db.exec(
+        select(RiskNote).where(RiskNote.policy_id == policy.id)
+    ).one()
+
+    extra_rn = policy_service.create_risk_note(
+        session=db,
+        risk_note_in=RiskNoteCreate(
+            policy_id=policy.id,
+            transaction_type=TransactionType.NEW_BUSINESS,
+            status=RiskNoteStatus.ISSUED,
+            effective_date=date.today(),
+            coverage_start=date.today(),
+            coverage_end=date.today() + timedelta(days=365),
+            net_premium=Decimal("10000.00"),
+            financial_breakdown={"total_amount": "10000.00"},
+            commission_amount=Decimal("1000.00"),
+            total_amount=Decimal("10000.00"),
+            cover_snapshot={"sum_insured": "1000000"},
+        ),
+    )
+
+    from app.models import RiskNoteCreate, RiskNoteRevisionCreate, RiskNoteStatus, TransactionType, User
+    user = db.exec(select(User)).first()
+    assert user is not None
+
+    revised_rn = policy_service.create_risk_note_revision(
+        session=db,
+        risk_note_id=first_rn.id,
+        revision_in=RiskNoteRevisionCreate(special_clauses=["Revised clause"]),
+        created_by_id=user.id,
+    )
+
+    assert revised_rn.previous_risk_note_id == first_rn.id
+    all_rns = db.exec(select(RiskNote).where(RiskNote.policy_id == policy.id)).all()
+    issued_after = [rn for rn in all_rns if rn.status == RiskNoteStatus.ISSUED]
+    replaced_after = [rn for rn in all_rns if rn.status == RiskNoteStatus.REPLACED]
+    assert len(issued_after) == 1
+    assert issued_after[0].id == revised_rn.id
+    assert {rn.id for rn in replaced_after} == {first_rn.id, extra_rn.id}
+
+    with pytest.raises(PolicyValidationError, match="already been replaced"):
+        policy_service.create_risk_note_revision(
+            session=db,
+            risk_note_id=first_rn.id,
+            revision_in=RiskNoteRevisionCreate(special_clauses=["Second attempt"]),
+            created_by_id=user.id,
+        )
