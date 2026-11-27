@@ -22,6 +22,25 @@ function escapeCsvField(value: string): string {
   return `"${value.replace(/"/g, '""')}"`
 }
 
+function formatFixedPointMoney(
+  value: string | number | null | undefined,
+): string {
+  if (value === null || value === undefined) {
+    return "0.00"
+  }
+  const raw = String(value).trim()
+  if (!raw) {
+    return "0.00"
+  }
+
+  const sign = raw.startsWith("-") ? "-" : ""
+  const unsigned = sign ? raw.slice(1) : raw
+  const [intPartRaw, fracPartRaw = ""] = unsigned.split(".")
+  const intPart = intPartRaw || "0"
+  const fracPart = `${fracPartRaw}00`.slice(0, 2)
+  return `${sign}${intPart}.${fracPart}`
+}
+
 export function serializeStatementLedgerToCsv(
   ledgerEntries: readonly StatementLedgerCsvRow[],
 ): string {
@@ -34,9 +53,9 @@ export function serializeStatementLedgerToCsv(
     escapeCsvField(row.type),
     escapeCsvField(row.reference),
     escapeCsvField(row.description),
-    Number(row.debit || 0).toFixed(2),
-    Number(row.credit || 0).toFixed(2),
-    Number(row.running_balance || 0).toFixed(2),
+    formatFixedPointMoney(row.debit),
+    formatFixedPointMoney(row.credit),
+    formatFixedPointMoney(row.running_balance),
   ])
 
   return [
