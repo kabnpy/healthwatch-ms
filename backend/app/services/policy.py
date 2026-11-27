@@ -1,6 +1,7 @@
 import logging
 import uuid
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, cast
@@ -10,8 +11,10 @@ from sqlmodel import Session, func, select
 
 from app.models import (
     BusinessEvent,
+    Client,
     Policy,
     PolicyCreate,
+    PolicyStatus,
     PolicyUpdate,
     PremiumCalculationCreate,
     Product,
@@ -759,6 +762,50 @@ class PolicyService:
         )
         assert revised_rn is not None
         return revised_rn
+
+    @staticmethod
+    def get_active_policy_expirations(
+        *, session: Session, as_of: date | None = None
+    ) -> list["ActivePolicyExpiration"]:  # noqa: UP037
+        """Project active policies with their latest RiskNote coverage_end and days_left in one query."""
+        effective_as_of = as_of or get_datetime_utc().date()
+        latest_rn = (
+            select(
+                RiskNote.policy_id.label("policy_id"),
+                RiskNote.coverage_end.label("coverage_end"),
+            )
+            .where(RiskNote.deleted_at.is_(None))  # type: ignore[union-attr]
+            .where(RiskNote.coverage_end.is_not(None))  # type: ignore[union-attr]
+            .distinct(RiskNote.policy_id)
+            .order_by(RiskNote.policy_id, RiskNote.created_at.desc())  # type: ignore[attr-defined]
+            .subquery()
+        )
+        rows = session.exec(
+            select(Policy, Client.name, latest_rn.c.coverage_end)
+            .join(Client, Policy.client_id == Client.id)  # type: ignore[arg-type]
+            .join(latest_rn, latest_rn.c.policy_id == Policy.id)  # type: ignore[arg-type]
+            .where(Policy.deleted_at.is_(None))  # type: ignore[union-attr]
+            .where(Policy.status == PolicyStatus.ACTIVE)
+        ).all()
+        return [
+            ActivePolicyExpiration(
+                policy=policy,
+                client_name=client_name,
+                coverage_end=coverage_end,
+                days_left=(coverage_end - effective_as_of).days,
+            )
+            for policy, client_name, coverage_end in rows
+        ]
+
+
+@dataclass(frozen=True)
+class ActivePolicyExpiration:
+    """Single-query projection of an active policy's latest RiskNote expiration."""
+
+    policy: Policy
+    client_name: str
+    coverage_end: date
+    days_left: int
 
 
 policy_service = PolicyService()

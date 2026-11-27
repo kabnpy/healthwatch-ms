@@ -1,28 +1,20 @@
-import uuid
 from datetime import date
 
 from sqlmodel import Session, SQLModel, func, select
 
 from app.models import (
-    Client,
     Policy,
     PolicyPublic,
     PolicyStatus,
-    Renewal,
     RenewalPublic,
-    RenewalStatus,
-    RiskNote,
-    get_datetime_utc,
 )
+from app.services.policy import policy_service
+from app.services.renewal import RenewalService
 
 LAPSED_STATUSES = (
     PolicyStatus.EXPIRED,
     PolicyStatus.LAPSED,
     PolicyStatus.CANCELLED,
-)
-TERMINAL_RENEWAL_STATUSES = (
-    RenewalStatus.COMPLETED,
-    RenewalStatus.CANCELLED,
 )
 
 
@@ -46,7 +38,9 @@ class DashboardSummaryResponse(SQLModel):
     in_flight_renewals: list[DashboardInFlightRenewalItem]
 
 
-def get_dashboard_summary(session: Session) -> DashboardSummaryResponse:
+def get_dashboard_summary(
+    session: Session, *, as_of: date | None = None
+) -> DashboardSummaryResponse:
     """Compute portfolio-wide dashboard triage counts, 30-day expiring policies, and in-flight renewals."""
     active_count = session.exec(
         select(func.count(Policy.id))
@@ -60,55 +54,20 @@ def get_dashboard_summary(session: Session) -> DashboardSummaryResponse:
         .where(Policy.status.in_(LAPSED_STATUSES))
     ).one()
 
-    today = get_datetime_utc().date()
-    active_rows = session.exec(
-        select(Policy, Client.name)
-        .join(Client, Policy.client_id == Client.id)
-        .where(Policy.deleted_at.is_(None))
-        .where(Policy.status == PolicyStatus.ACTIVE)
-    ).all()
-
-    active_policy_ids = [policy.id for policy, _ in active_rows]
-    latest_coverage_end_by_policy: dict[uuid.UUID, date] = {}
-    if active_policy_ids:
-        notes = session.exec(
-            select(RiskNote.policy_id, RiskNote.coverage_end)
-            .where(RiskNote.policy_id.in_(active_policy_ids))
-            .where(RiskNote.deleted_at.is_(None))
-            .where(RiskNote.coverage_end.is_not(None))
-            .order_by(RiskNote.created_at.desc())
-        ).all()
-        for policy_id, coverage_end in notes:
-            if (
-                policy_id not in latest_coverage_end_by_policy
-                and coverage_end is not None
-            ):
-                latest_coverage_end_by_policy[policy_id] = coverage_end
-
-    expiring_30: list[DashboardExpiringPolicyItem] = []
-    for policy, client_name in active_rows:
-        coverage_end = latest_coverage_end_by_policy.get(policy.id)
-        if coverage_end is None:
-            continue
-        days_left = (coverage_end - today).days
-        if 0 <= days_left <= 30:
-            expiring_30.append(
-                DashboardExpiringPolicyItem(
-                    policy=PolicyPublic.model_validate(policy),
-                    days_left=days_left,
-                    client_name=client_name,
-                )
-            )
+    expiring_30 = [
+        DashboardExpiringPolicyItem(
+            policy=PolicyPublic.model_validate(proj.policy),
+            days_left=proj.days_left,
+            client_name=proj.client_name,
+        )
+        for proj in policy_service.get_active_policy_expirations(
+            session=session, as_of=as_of
+        )
+        if 0 <= proj.days_left <= 30
+    ]
     expiring_30.sort(key=lambda item: item.days_left)
 
-    in_flight_rows = session.exec(
-        select(Renewal, Policy, Client.name)
-        .join(Policy, Renewal.policy_id == Policy.id, isouter=True)
-        .join(Client, Policy.client_id == Client.id, isouter=True)
-        .where(Renewal.deleted_at.is_(None))
-        .where(Renewal.status.not_in(TERMINAL_RENEWAL_STATUSES))
-        .order_by(Renewal.renewal_period_start.asc())
-    ).all()
+    in_flight_rows = RenewalService.get_in_flight_renewals(session=session)
 
     in_flight_renewals = [
         DashboardInFlightRenewalItem(
