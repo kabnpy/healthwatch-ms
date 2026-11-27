@@ -119,4 +119,68 @@ describe("derivePolicyDetailViewModel", () => {
     expect(vm.invoice).toBeUndefined()
     expect(vm.isSettled).toBe(false)
   })
+
+  it("projects authoritative tax fields and preserves 0 stamp_duty for medical policies", () => {
+    const policy = {
+      id: "pol-med-tax",
+      policy_number: "MED-TAX-001",
+      inception_date: "2026-01-01",
+      product: {
+        id: "prod-med",
+        name: "Medical Family Plan",
+        class_of_insurance: "Medical",
+      },
+    } as unknown as EnhancedPolicy
+
+    const latestRiskNote = {
+      id: "rn-med-tax",
+      net_premium: "100000.00",
+      total_amount: "100450.00",
+      financial_breakdown: {
+        taxes: {
+          training_levy: 200,
+          phcf: 250,
+          stamp_duty: 0,
+        },
+      },
+    } as unknown as EnhancedRiskNote
+
+    const vm = derivePolicyDetailViewModel(policy, latestRiskNote, NOW)
+
+    expect(vm.coverageStart).toBe("2026-01-01")
+    expect(vm.coverageEnd).toBe("2026-12-31")
+    expect(vm.taxes).toEqual({
+      netPremium: 100_000,
+      trainingLevy: 200,
+      phcf: 250,
+      stampDuty: 0,
+      totalAmount: 100_450,
+      hasAuthoritativeCalculation: true,
+    })
+  })
+
+  it("returns null tax fields and hasAuthoritativeCalculation=false when calculation data is absent", () => {
+    const policy = {
+      id: "pol-empty",
+      policy_number: "MED-EMPTY-001",
+      product: {
+        id: "prod-med",
+        name: "Medical Family Plan",
+        class_of_insurance: "Medical",
+      },
+    } as unknown as EnhancedPolicy
+
+    const vm = derivePolicyDetailViewModel(policy, null, NOW)
+
+    expect(vm.coverageStart).toBeUndefined()
+    expect(vm.coverageEnd).toBeUndefined()
+    expect(vm.taxes).toEqual({
+      netPremium: null,
+      trainingLevy: null,
+      phcf: null,
+      stampDuty: null,
+      totalAmount: null,
+      hasAuthoritativeCalculation: false,
+    })
+  })
 })

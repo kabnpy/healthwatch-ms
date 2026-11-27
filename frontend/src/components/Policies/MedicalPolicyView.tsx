@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import type { EnhancedPolicy, EnhancedRiskNote } from "@/types/insurance"
 import { formatCurrency } from "@/utils"
+import { derivePolicyDetailViewModel } from "@/utils/policyDetailViewModel"
 
 interface MedicalPolicyViewProps {
   policy: EnhancedPolicy
@@ -20,25 +21,14 @@ export function MedicalPolicyView({
   onEndorseCensus,
 }: MedicalPolicyViewProps) {
   const snapshot = latestRiskNote?.cover_snapshot || {}
-  const rawAdvisory = (snapshot as any)?.advisory_calculation
-  const productRules = (policy.product as any)?.pricing_rules?.inpatient_rates
-  const fallbackNet =
-    productRules?.["2000000"]?.["M+2"] ||
-    productRules?.["1000000"]?.["M+2"] ||
-    productRules?.["2000000"]?.M ||
-    94000
-
-  const netPremium = Number(
-    latestRiskNote?.net_premium ||
-      rawAdvisory?.net_premium ||
-      latestRiskNote?.total_amount ||
-      fallbackNet,
-  )
-
-  const trainingLevy = Math.round(netPremium * 0.002 * 100) / 100
-  const phcfLevy = Math.round(netPremium * 0.0025 * 100) / 100
-  const grossTotal =
-    Math.round((netPremium + trainingLevy + phcfLevy) * 100) / 100
+  const vm = derivePolicyDetailViewModel(policy, latestRiskNote)
+  const {
+    netPremium,
+    trainingLevy,
+    phcf: phcfLevy,
+    stampDuty,
+    totalAmount: grossTotal,
+  } = vm.taxes
 
   const familySize =
     (snapshot as any)?.family_size || (snapshot as any)?.census || "M+2"
@@ -47,15 +37,8 @@ export function MedicalPolicyView({
     (snapshot as any)?.tier_limit ||
     2000000
 
-  const coverageStart =
-    latestRiskNote?.coverage_start || policy.inception_date || "—"
-  let coverageEnd = latestRiskNote?.coverage_end
-  if (!coverageEnd && policy.inception_date) {
-    const end = new Date(policy.inception_date)
-    end.setFullYear(end.getFullYear() + 1)
-    end.setDate(end.getDate() - 1)
-    coverageEnd = end.toISOString().split("T")[0]
-  }
+  const coverageStart = vm.coverageStart || "—"
+  const coverageEnd = vm.coverageEnd
 
   return (
     <div className="space-y-6">
@@ -249,21 +232,21 @@ export function MedicalPolicyView({
                   Net Carrier Healthcare Premium
                 </span>
                 <span className="font-mono tabular-nums font-semibold text-right">
-                  {formatCurrency(netPremium)}
+                  {netPremium !== null ? formatCurrency(netPremium) : "—"}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-muted-foreground pl-2 border-l-2 border-border">
                 <span>Insurance Training Levy (0.20%)</span>
                 <span className="font-mono tabular-nums text-right text-foreground">
-                  {formatCurrency(trainingLevy)}
+                  {trainingLevy !== null ? formatCurrency(trainingLevy) : "—"}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-muted-foreground pl-2 border-l-2 border-border">
                 <span>Policyholders Compensation Fund (0.25%)</span>
                 <span className="font-mono tabular-nums text-right text-foreground">
-                  {formatCurrency(phcfLevy)}
+                  {phcfLevy !== null ? formatCurrency(phcfLevy) : "—"}
                 </span>
               </div>
 
@@ -278,14 +261,14 @@ export function MedicalPolicyView({
                   </Badge>
                 </div>
                 <span className="font-mono tabular-nums text-right text-foreground">
-                  KES 0.00
+                  {stampDuty !== null ? formatCurrency(stampDuty) : "—"}
                 </span>
               </div>
 
               <div className="flex items-center justify-between pt-2.5 border-t text-sm font-bold">
                 <span className="text-foreground">Total Invoiced Premium</span>
                 <span className="font-mono tabular-nums text-right text-base text-primary">
-                  {formatCurrency(grossTotal)}
+                  {grossTotal !== null ? formatCurrency(grossTotal) : "—"}
                 </span>
               </div>
             </div>
