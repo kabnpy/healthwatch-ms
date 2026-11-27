@@ -792,3 +792,32 @@ def test_create_risk_note_revision_supersedes_all_issued_notes_and_guards_replac
             revision_in=RiskNoteRevisionCreate(special_clauses=["Second attempt"]),
             created_by_id=user.id,
         )
+
+
+def test_calculate_annual_renewal_period_handles_standard_and_leap_year_boundaries() -> None:
+    from app.services.policy import calculate_annual_renewal_period
+
+    # Standard year: 2025-12-31 -> 2026-01-01 to 2026-12-31
+    assert calculate_annual_renewal_period(date(2025, 12, 31)) == (
+        date(2026, 1, 1),
+        date(2026, 12, 31),
+    )
+
+    # Leap day start: prior_coverage_end = 2024-02-28 -> start 2024-02-29,
+    # next year 2025 has no Feb 29 -> falls back to 2025-02-28 - 1 day = 2025-02-27
+    assert calculate_annual_renewal_period(date(2024, 2, 28)) == (
+        date(2024, 2, 29),
+        date(2025, 2, 27),
+    )
+
+    # Non-leap into leap year: 2023-02-28 -> start 2023-03-01 to 2024-02-29
+    assert calculate_annual_renewal_period(date(2023, 2, 28)) == (
+        date(2023, 3, 1),
+        date(2024, 2, 29),
+    )
+
+    # None prior_coverage_end uses fallback_start
+    assert calculate_annual_renewal_period(None, fallback_start=date(2026, 6, 15)) == (
+        date(2026, 6, 15),
+        date(2027, 6, 14),
+    )
