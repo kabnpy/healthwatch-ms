@@ -219,7 +219,7 @@ function FinancialsHub() {
             <div
               className={cn(
                 "text-2xl font-bold font-mono tabular-nums tracking-tight",
-                totalUnallocated > 0 && "text-amber-600 dark:text-amber-400",
+                totalUnallocated > 0 && "text-status-pending-foreground",
               )}
             >
               {formatCurrency(totalUnallocated)}
