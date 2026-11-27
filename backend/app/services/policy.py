@@ -361,6 +361,10 @@ class PolicyService:
         ).first()
         if not policy or not policy.product:
             raise PolicyNotFoundError("Policy or Product not found")
+        if PolicyService.is_medical_product(policy.product):
+            raise PolicyValidationError(
+                "Medical policies do not support Risk Note endorsements"
+            )
 
         effective_snapshot = (
             updated_cover_snapshot
@@ -424,12 +428,17 @@ class PolicyService:
             created_by_id=current_user_id,
         )
 
-        current_rn.status = RiskNoteStatus.REPLACED
-        session.add(current_rn)
-
-        endorsement_rn = PolicyService._add_risk_note(
-            session=session, risk_note_in=risk_note_in
+        endorsement_rn = PolicyService.issue_risk_note(
+            session=session,
+            policy=policy,
+            risk_note_in=risk_note_in,
+            product=policy.product,
+            supersede=True,
+            target_risk_note=current_rn,
+            created_by_id=current_user_id,
+            commit=False,
         )
+        assert endorsement_rn is not None
 
         PremiumCalculationService.record_calculation(
             session,
@@ -612,6 +621,15 @@ class PolicyService:
         if current_rn.status == RiskNoteStatus.REPLACED:
             raise PolicyValidationError("Risk note has already been replaced")
 
+        policy = session.get(Policy, current_rn.policy_id)
+        if not policy or policy.deleted_at is not None:
+            raise PolicyNotFoundError("Policy not found")
+        product = session.get(Product, policy.product_id)
+        if PolicyService.is_medical_product(product):
+            raise PolicyValidationError(
+                "Medical policies do not support Risk Note revisions"
+            )
+
         risk_note_in = RiskNoteCreate(
             policy_id=current_rn.policy_id,
             transaction_type=current_rn.transaction_type,
@@ -633,14 +651,17 @@ class PolicyService:
             created_by_id=created_by_id,
         )
 
-        current_rn.status = RiskNoteStatus.REPLACED
-        session.add(current_rn)
-
-        revised_rn = PolicyService._add_risk_note(
-            session=session, risk_note_in=risk_note_in
+        revised_rn = PolicyService.issue_risk_note(
+            session=session,
+            policy=policy,
+            risk_note_in=risk_note_in,
+            product=product,
+            supersede=True,
+            target_risk_note=current_rn,
+            created_by_id=created_by_id,
+            commit=True,
         )
-        session.commit()
-        session.refresh(revised_rn)
+        assert revised_rn is not None
         return revised_rn
 
 
