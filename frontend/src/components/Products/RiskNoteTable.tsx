@@ -100,7 +100,7 @@ export const RiskNoteTable = ({
       return (
         <ul className="list-disc list-inside space-y-1">
           {value.map((item, idx) => (
-            <li key={idx} className="text-[11px] text-black leading-tight">
+            <li key={idx} className="text-[11px] text-foreground leading-tight">
               {renderValue(item)}
             </li>
           ))}
@@ -134,10 +134,10 @@ export const RiskNoteTable = ({
                           onChange={(e) =>
                             handleValueChange(section.name, k, e.target.value)
                           }
-                          className="w-full bg-slate-50 border-none text-[11px] focus:ring-1 focus:ring-primary rounded px-2 h-7 font-medium"
+                          className="w-full bg-muted border-none text-[11px] focus:ring-1 focus:ring-primary rounded px-2 h-7 font-medium"
                         />
                       ) : (
-                        <div className="text-[11px] text-black leading-tight font-bold tracking-tight">
+                        <div className="text-[11px] text-foreground leading-tight font-bold tracking-tight">
                           {renderValue(v)}
                         </div>
                       )}
@@ -178,7 +178,7 @@ export const RiskNoteTable = ({
 
     // 4. Handle Primitives (String/Number)
     return (
-      <span className="text-[11px] text-black leading-relaxed">
+      <span className="text-[11px] text-foreground leading-relaxed">
         {String(value)}
       </span>
     )

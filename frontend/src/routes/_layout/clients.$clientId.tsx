@@ -95,7 +95,7 @@ function ClientHubContent({ clientId }: { clientId: string }) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-bold tracking-tight">{client.name}</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">{client.name}</h1>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
           <span className="uppercase tracking-widest font-bold">
             {client.client_type}

@@ -122,4 +122,20 @@ describe("RecordPaymentModal", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false)
     expect(onSuccess).toHaveBeenCalled()
   })
+
+  it("uses default primary variant for the Record & Post Payment CTA", () => {
+    render(
+      <RecordPaymentModal
+        open={true}
+        onOpenChange={vi.fn()}
+        onSuccess={vi.fn()}
+      />,
+    )
+
+    const submitBtn = screen.getByRole("button", {
+      name: "Record & Post Payment",
+    })
+    expect(submitBtn.className).toContain("bg-primary")
+    expect(submitBtn.className).not.toContain("bg-emerald-600")
+  })
 })

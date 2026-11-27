@@ -6,6 +6,7 @@ import { type UserPublic, UsersService } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
 import { columns, type UserTableData } from "@/components/Admin/columns"
 import { DataTable } from "@/components/Common/DataTable"
+import { PageHeader } from "@/components/Common/PageHeader"
 import PendingUsers from "@/components/Pending/PendingUsers"
 import useAuth from "@/hooks/useAuth"
 
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/_layout/admin")({
   head: () => ({
     meta: [
       {
-        title: "Admin - FastAPI Cloud",
+        title: "Admin - HealthWatch MS",
       },
     ],
   }),
@@ -51,15 +52,12 @@ function UsersTable() {
 function Admin() {
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Users</h1>
-          <p className="text-muted-foreground">
-            Manage user accounts and permissions
-          </p>
-        </div>
-        <AddUser />
-      </div>
+      <PageHeader
+        eyebrow="Administration"
+        title="Users"
+        subtitle="Manage user accounts and permissions"
+        actions={<AddUser />}
+      />
       <UsersTable />
     </div>
   )

@@ -341,7 +341,7 @@ function PolicyDashboardContent({
                     </div>
                     <Button
                       size="sm"
-                      className="bg-amber-600 hover:bg-amber-700 text-white gap-2 font-medium cursor-pointer"
+                      className="gap-2 font-medium cursor-pointer"
                       onClick={handleEndorse}
                     >
                       Populate & Issue

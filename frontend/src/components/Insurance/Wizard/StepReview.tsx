@@ -253,7 +253,7 @@ export function StepReview({
         <LoadingButton
           onClick={onIssue}
           loading={isSubmitting}
-          className="bg-zinc-900 hover:bg-zinc-800 text-white h-11 px-10 font-black uppercase tracking-widest text-xs"
+          className="h-11 px-10 font-black uppercase tracking-widest text-xs"
         >
           Issue Policy
         </LoadingButton>

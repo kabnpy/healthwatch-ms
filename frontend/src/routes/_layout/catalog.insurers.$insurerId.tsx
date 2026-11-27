@@ -5,6 +5,7 @@ import { Suspense } from "react"
 
 import { InsurersService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
+import { EmptyState } from "@/components/Common/EmptyState"
 import PendingItems from "@/components/Pending/PendingItems"
 import { AddProduct } from "@/components/Products/AddProduct"
 import { columns as productColumns } from "@/components/Products/columns"
@@ -59,15 +60,11 @@ function InsurerProducts({ insurerId }: { insurerId: string }) {
       </div>
 
       {products.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-10 text-center">
-            <Shield className="h-10 w-10 text-muted-foreground mb-2" />
-            <p className="font-medium">No products for this insurer</p>
-            <p className="text-sm text-muted-foreground">
-              Add products to start issuing policies for this insurer.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          title="No products for this insurer"
+          description="Add products to start issuing policies for this insurer."
+          icon={Shield}
+        />
       ) : (
         <DataTable columns={insurerProductColumns} data={products} />
       )}
@@ -92,7 +89,7 @@ function InsurerDetailContent({ insurerId }: { insurerId: string }) {
           }
         />
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">{insurer.name}</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">{insurer.name}</h1>
         </div>
       </div>
 

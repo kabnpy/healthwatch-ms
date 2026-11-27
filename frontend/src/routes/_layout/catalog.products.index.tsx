@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { Search } from "lucide-react"
 
 import { DataTable } from "@/components/Common/DataTable"
+import { EmptyState } from "@/components/Common/EmptyState"
 import PendingItems from "@/components/Pending/PendingItems"
 import { columns, type ProductRow } from "@/components/Products/columns"
 import { ProductActionsMenu } from "@/components/Products/ProductActionsMenu"
@@ -29,15 +30,11 @@ function ProductsTableContent() {
 
   if (products.data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center text-center py-12">
-        <div className="rounded-full bg-muted p-4 mb-4">
-          <Search className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-semibold">No products found</h3>
-        <p className="text-muted-foreground">
-          Define a new insurance product to get started
-        </p>
-      </div>
+      <EmptyState
+        title="No products found"
+        description="Define a new insurance product to get started"
+        icon={Search}
+      />
     )
   }
 
