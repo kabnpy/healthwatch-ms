@@ -28,8 +28,7 @@ import { usePolicyDashboard } from "@/hooks/usePolicies"
 import { queryClient } from "@/queryClient"
 import type { EnhancedPolicy, EnhancedRiskNote } from "@/types/insurance"
 import { formatCurrency } from "@/utils"
-import { extractCoverSummary } from "@/utils/coverSnapshot"
-import { getPolicyDisplayName } from "@/utils/insurance"
+import { derivePolicyDetailViewModel } from "@/utils/policyDetailViewModel"
 
 // --- Route Definition ---
 
@@ -112,47 +111,18 @@ function PolicyDashboardContent({
     return <PendingItems />
   }
 
-  let expiryDateStr = latestRiskNote?.coverage_end
-  if (!expiryDateStr && policy.inception_date) {
-    const d = new Date(policy.inception_date)
-    d.setFullYear(d.getFullYear() + 1)
-    d.setDate(d.getDate() - 1)
-    expiryDateStr = d.toISOString().split("T")[0]
-  }
-
-  const daysToExpiry = expiryDateStr
-    ? Math.ceil(
-        (new Date(expiryDateStr).getTime() - Date.now()) /
-          (1000 * 60 * 60 * 24),
-      )
-    : 0
-
-  const isMedical =
-    policy.product?.class_of_insurance?.toLowerCase().includes("medical") ||
-    policy.product?.name?.toLowerCase().includes("medical") ||
-    policy.product?.name?.toLowerCase().includes("health") ||
-    false
-
-  const isMotor =
-    policy.product?.class_of_insurance?.toLowerCase().includes("motor") || false
-
-  const vehicle =
-    (policy as any).vehicles?.[0] ||
-    (latestRiskNote?.cover_snapshot as any)?.vehicle ||
-    (policy as any).vehicle
-
-  const displayName = getPolicyDisplayName(policy)
-
-  const summary = extractCoverSummary(latestRiskNote?.cover_snapshot)
-  const rawSum =
-    summary.sumInsured ||
-    (vehicle as any)?.insured_value ||
-    (vehicle as any)?.sum_insured ||
-    (isMedical ? 2000000 : Number(latestRiskNote?.net_premium || 0) * 20)
-
-  const invoice = (latestRiskNote?.invoice_line_items?.[0] as any)?.invoice
-  const balanceDue = Number(invoice?.balance_due ?? 0)
-  const isSettled = invoice ? balanceDue === 0 : false
+  const {
+    expiryDateStr,
+    daysToExpiry,
+    isMedical,
+    isMotor,
+    vehicle,
+    displayName,
+    rawSum,
+    invoice,
+    balanceDue,
+    isSettled,
+  } = derivePolicyDetailViewModel(policy, latestRiskNote)
 
   return (
     <div className="flex flex-col gap-6">
