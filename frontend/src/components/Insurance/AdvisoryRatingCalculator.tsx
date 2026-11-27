@@ -25,6 +25,11 @@ import {
 } from "@/components/ui/sheet"
 import { useProducts, useQuoteQuery } from "@/hooks/usePolicies"
 import { formatCurrency } from "@/utils"
+import {
+  buildAdvisoryQuoteInputs,
+  formatQuoteBreakdownText,
+  parseQuoteBreakdown,
+} from "@/utils/ratingCalculator"
 
 interface AdvisoryRatingCalculatorProps {
   isOpen: boolean
@@ -94,60 +99,55 @@ export function AdvisoryRatingCalculator({
   const [hasCopied, setHasCopied] = useState(false)
 
   // Build risk_details payload for backend quote seam
-  const riskDetails = useMemo<Record<string, unknown>>(() => {
-    if (selectedClass === "Motor Private") {
-      return {
-        sum_insured: motorSumInsured,
-        extensions: {
+  const riskDetails = useMemo<Record<string, unknown>>(
+    () =>
+      buildAdvisoryQuoteInputs({
+        selectedClass,
+        motor: {
+          sumInsured: motorSumInsured,
           pvt: motorPvt,
-          excess_protector: motorExcessProtector,
-          passenger_liability: motorPassengerLiability,
-          road_rescue: motorRoadRescue,
-          courtesy_car: motorCourtesyCar,
+          excessProtector: motorExcessProtector,
+          passengerLiability: motorPassengerLiability,
+          roadRescue: motorRoadRescue,
+          courtesyCar: motorCourtesyCar,
         },
-      }
-    }
-
-    if (selectedClass === "Domestic Package") {
-      return {
-        buildings_sum_insured: domesticBuildings,
-        contents_sum_insured: domesticContents,
-        all_risks_sum_insured: domesticAllRisks,
-        number_of_servants: domesticServants,
-        include_owners_liability: domesticOwnersLiability,
-      }
-    }
-
-    return {
-      tier_limit: medicalTierLimit,
-      family_size: medicalFamilySize,
-      riders: {
-        outpatient: medOutpatient,
-        dental: medDental,
-        optical: medOptical,
-        maternity: medMaternity,
-      },
-    }
-  }, [
-    selectedClass,
-    motorSumInsured,
-    motorPvt,
-    motorExcessProtector,
-    motorPassengerLiability,
-    motorRoadRescue,
-    motorCourtesyCar,
-    domesticBuildings,
-    domesticContents,
-    domesticAllRisks,
-    domesticServants,
-    domesticOwnersLiability,
-    medicalTierLimit,
-    medicalFamilySize,
-    medOutpatient,
-    medDental,
-    medOptical,
-    medMaternity,
-  ])
+        domestic: {
+          buildings: domesticBuildings,
+          contents: domesticContents,
+          allRisks: domesticAllRisks,
+          servants: domesticServants,
+          ownersLiability: domesticOwnersLiability,
+        },
+        medical: {
+          tierLimit: medicalTierLimit,
+          familySize: medicalFamilySize,
+          outpatient: medOutpatient,
+          dental: medDental,
+          optical: medOptical,
+          maternity: medMaternity,
+        },
+      }),
+    [
+      selectedClass,
+      motorSumInsured,
+      motorPvt,
+      motorExcessProtector,
+      motorPassengerLiability,
+      motorRoadRescue,
+      motorCourtesyCar,
+      domesticBuildings,
+      domesticContents,
+      domesticAllRisks,
+      domesticServants,
+      domesticOwnersLiability,
+      medicalTierLimit,
+      medicalFamilySize,
+      medOutpatient,
+      medDental,
+      medOptical,
+      medMaternity,
+    ],
+  )
 
   const { data: quoteResponse, isLoading: isQuoteLoading } = useQuoteQuery(
     effectiveProductId
@@ -155,60 +155,28 @@ export function AdvisoryRatingCalculator({
       : null,
   )
 
-  const calcDetail = quoteResponse?.calculation_detail ?? {}
-  const provenance = quoteResponse?.rule_provenance ?? {}
-
-  const basePremium = Number(
-    calcDetail.base_premium ?? quoteResponse?.basic_premium ?? 0,
+  const breakdown = useMemo(
+    () => parseQuoteBreakdown(quoteResponse, selectedClass),
+    [quoteResponse, selectedClass],
   )
-  const netPremium = Number(quoteResponse?.net_premium ?? 0)
-  const itl = Number(quoteResponse?.training_levy ?? 0)
-  const phcf = Number(quoteResponse?.phcf ?? 0)
-  const stampDuty = Number(quoteResponse?.stamp_duty ?? 0)
-  const totalAmount = Number(quoteResponse?.total_amount ?? 0)
-  const appliedRate =
-    calcDetail.applied_rate !== undefined
-      ? Number(calcDetail.applied_rate)
-      : null
-  const minimumFloor =
-    calcDetail.minimum_premium_floor !== undefined
-      ? Number(calcDetail.minimum_premium_floor)
-      : null
-  const benefitLines = Array.isArray(calcDetail.benefits)
-    ? (calcDetail.benefits as Array<{
-        name?: string
-        label?: string
-        amount?: number | string
-        is_complimentary?: boolean
-        rate_description?: string
-      }>)
-    : []
-  const provenanceLabel = String(
-    provenance.version_label ||
-      provenance.engine_version ||
-      provenance.rate_table_version_id ||
-      "backend-decimal",
-  )
-  const isStampDutyExempt = selectedClass === "Medical" || stampDuty === 0
+  const {
+    basePremium,
+    netPremium,
+    itl,
+    phcf,
+    stampDuty,
+    totalAmount,
+    appliedRate,
+    minimumFloor,
+    benefitLines,
+    provenanceLabel,
+    isStampDutyExempt,
+  } = breakdown
 
   const handleCopyBreakdown = () => {
-    const textLines = [
-      `HEALTHWATCH ADVISORY RATING BREAKDOWN`,
-      `Class of Insurance: ${selectedClass}`,
-      `Base Premium: ${formatCurrency(basePremium)}`,
-      ...benefitLines.map(
-        (b) =>
-          `  - ${b.name || b.label}: ${b.is_complimentary ? "COMPLIMENTARY" : formatCurrency(Number(b.amount ?? 0))} (${b.rate_description || ""})`,
-      ),
-      `Net Premium: ${formatCurrency(netPremium)}`,
-      `Statutory Levies:`,
-      `  - Training Levy (0.20%): ${formatCurrency(itl)}`,
-      `  - PHCF Levy (0.25%): ${formatCurrency(phcf)}`,
-      `  - Stamp Duty: ${isStampDutyExempt ? "EXEMPT (KES 0.00)" : formatCurrency(stampDuty)}`,
-      `Total Premium: ${formatCurrency(totalAmount)}`,
-      `Provenance: ${provenanceLabel}`,
-    ]
-    navigator.clipboard.writeText(textLines.join("\n"))
+    navigator.clipboard.writeText(
+      formatQuoteBreakdownText(selectedClass, breakdown),
+    )
     setHasCopied(true)
     toast.success("Rating breakdown copied to clipboard")
     setTimeout(() => setHasCopied(false), 2000)
