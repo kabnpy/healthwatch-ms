@@ -70,7 +70,7 @@ Documentation is organized for both engineers and coding agents:
 - **[Architecture Decision Records](docs/adr/):** Atomic architectural decisions (`0001`–`0006`).
 - **[Product Specifications](docs/01_product_specs.md):** Core workflows, renewal state machine, and rating math.
 - **[Design System](docs/02_design_system.md):** UI patterns, OKLCH color tokens, financial numeral rules, and A4 print specifications.
-- **[Git Hygiene](docs/03_git_hygiene.md):** Branching conventions, Conventional Commits, and pre-commit hooks.
+- **[Git Workflow](docs/03_git_workflow.md):** Branching conventions, Conventional Commits, and pre-commit hooks.
 - **[Reference Catalog & Seeding](docs/04_reference_catalog_and_seeding.md):** Kenyan underwriter catalog, statutory levy benchmarks, and realistic test portfolio.
 - **[Development Guide](development.md):** Local Podman/Docker workflow, service URLs, and pre-commit hooks.
 

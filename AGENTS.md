@@ -28,5 +28,5 @@ When a skill instructs `"Call the Skill tool with <name>"`, read `/home/kabnpy/.
 - **Coding & review standards:** `CODING_STANDARDS.md` — read during `/code-review` or when touching money, timestamps, policies, risk notes, payments, or API contracts.
 - **Product workflows & rating math:** `docs/01_product_specs.md` — reach when working on new business, renewal state transitions, rating paradigms, IPF, commissions, or claims.
 - **UI, typography & print layouts:** `docs/02_design_system.md` — reach when building or modifying React UI components, tables, wizards, or A4 print/PDF templates.
-- **Git & branch hygiene:** `docs/03_git_hygiene.md` — Conventional Commits and branch discipline.
+- **Git & branch workflow:** `docs/03_git_workflow.md` — Conventional Commits and branch discipline.
 - **Kenyan market catalog & seed fixtures:** `docs/04_reference_catalog_and_seeding.md` — reach when working on underwriters, product seed data, or acceptance fixtures.
