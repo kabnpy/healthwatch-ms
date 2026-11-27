@@ -19,8 +19,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
 import { getPolicyDisplayName } from "@/utils/insurance"
-import { StatusIndicator } from "../Common/StatusIndicator"
 
 export const columns: ColumnDef<PolicyPublic>[] = [
   {
@@ -46,12 +46,24 @@ export const columns: ColumnDef<PolicyPublic>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => (
-      <StatusIndicator
-        isActive={row.original.status?.toLowerCase() === "active"}
-        label={row.original.status}
-      />
-    ),
+    cell: ({ row }) => {
+      const s = row.original.status?.toLowerCase()
+      return (
+        <Badge
+          variant={
+            s === "active"
+              ? "active"
+              : s === "lapsed"
+                ? "lapsed"
+                : s === "pending"
+                  ? "pending"
+                  : "draft"
+          }
+        >
+          {row.original.status}
+        </Badge>
+      )
+    },
   },
   {
     id: "actions",

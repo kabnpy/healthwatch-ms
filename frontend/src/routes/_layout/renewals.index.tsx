@@ -74,14 +74,11 @@ function RenewalHorizonPill({
   if (!coverageEnd) return <span>—</span>
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span
-        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-          daysLeft <= 7
-            ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
-            : daysLeft <= 30
-              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
-              : "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
-        }`}
+      <Badge
+        variant={
+          daysLeft <= 7 ? "lapsed" : daysLeft <= 30 ? "pending" : "invoiced"
+        }
+        className="gap-1"
       >
         <Clock className="size-3" />
         {daysLeft > 0
@@ -89,7 +86,7 @@ function RenewalHorizonPill({
           : daysLeft === 0
             ? "Expires today"
             : `Expired ${Math.abs(daysLeft)}d ago`}
-      </span>
+      </Badge>
       <span className="text-xs font-mono text-muted-foreground">
         ({coverageEnd})
       </span>
@@ -358,7 +355,7 @@ function RenewalsDeskPage() {
         <Card
           className={cn(
             categorized.expiring30.length > 0 &&
-              "border-amber-500/30 bg-amber-500/5",
+              "border-status-pending-border bg-status-pending",
           )}
         >
           <CardHeader className="pb-2">
@@ -366,7 +363,7 @@ function RenewalsDeskPage() {
               className={cn(
                 "text-xs font-semibold uppercase tracking-wider flex items-center justify-between",
                 categorized.expiring30.length > 0
-                  ? "text-amber-700 dark:text-amber-400"
+                  ? "text-status-pending-foreground"
                   : "text-muted-foreground",
               )}
             >
@@ -375,7 +372,7 @@ function RenewalsDeskPage() {
                 className={cn(
                   "size-4",
                   categorized.expiring30.length > 0
-                    ? "text-amber-600"
+                    ? "text-status-pending-foreground"
                     : "text-muted-foreground",
                 )}
               />
@@ -384,9 +381,9 @@ function RenewalsDeskPage() {
           <CardContent>
             <div
               className={cn(
-                "text-3xl font-bold font-mono",
+                "text-3xl font-bold font-mono tabular-nums",
                 categorized.expiring30.length > 0 &&
-                  "text-amber-700 dark:text-amber-400",
+                  "text-status-pending-foreground",
               )}
             >
               {categorized.expiring30.length}
@@ -397,40 +394,15 @@ function RenewalsDeskPage() {
           </CardContent>
         </Card>
 
-        <Card
-          className={cn(
-            categorized.inWorkflow.length > 0 &&
-              "border-blue-500/30 bg-blue-500/5",
-          )}
-        >
+        <Card>
           <CardHeader className="pb-2">
-            <CardTitle
-              className={cn(
-                "text-xs font-semibold uppercase tracking-wider flex items-center justify-between",
-                categorized.inWorkflow.length > 0
-                  ? "text-blue-700 dark:text-blue-400"
-                  : "text-muted-foreground",
-              )}
-            >
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
               Active In-Flight Renewals
-              <RefreshCw
-                className={cn(
-                  "size-4",
-                  categorized.inWorkflow.length > 0
-                    ? "text-blue-600"
-                    : "text-muted-foreground",
-                )}
-              />
+              <RefreshCw className="size-4 text-muted-foreground" />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div
-              className={cn(
-                "text-3xl font-bold font-mono",
-                categorized.inWorkflow.length > 0 &&
-                  "text-blue-700 dark:text-blue-400",
-              )}
-            >
+            <div className="text-3xl font-bold font-mono tabular-nums text-foreground">
               {categorized.inWorkflow.length}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -447,7 +419,7 @@ function RenewalsDeskPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono">
+            <div className="text-3xl font-bold font-mono tabular-nums">
               {categorized.expiring60.length}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -459,7 +431,7 @@ function RenewalsDeskPage() {
         <Card
           className={cn(
             categorized.expired.length > 0 &&
-              "border-rose-500/30 bg-rose-500/5",
+              "border-status-lapsed-border bg-status-lapsed",
           )}
         >
           <CardHeader className="pb-2">
@@ -467,7 +439,7 @@ function RenewalsDeskPage() {
               className={cn(
                 "text-xs font-semibold uppercase tracking-wider flex items-center justify-between",
                 categorized.expired.length > 0
-                  ? "text-rose-700 dark:text-rose-400"
+                  ? "text-status-lapsed-foreground"
                   : "text-muted-foreground",
               )}
             >
@@ -476,7 +448,7 @@ function RenewalsDeskPage() {
                 className={cn(
                   "size-4",
                   categorized.expired.length > 0
-                    ? "text-rose-600"
+                    ? "text-status-lapsed-foreground"
                     : "text-muted-foreground",
                 )}
               />
@@ -485,9 +457,9 @@ function RenewalsDeskPage() {
           <CardContent>
             <div
               className={cn(
-                "text-3xl font-bold font-mono",
+                "text-3xl font-bold font-mono tabular-nums",
                 categorized.expired.length > 0 &&
-                  "text-rose-700 dark:text-rose-400",
+                  "text-status-lapsed-foreground",
               )}
             >
               {categorized.expired.length}

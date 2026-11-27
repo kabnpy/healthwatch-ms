@@ -3,6 +3,7 @@ import { Copy, Eye, MoreHorizontal, ReceiptText } from "lucide-react"
 import { toast } from "sonner"
 
 import type { ReceiptPublic } from "@/client"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -12,7 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { StatusIndicator } from "../Common/StatusIndicator"
 
 export const getReceiptColumns = (
   onAllocate: (receipt: ReceiptPublic) => void,
@@ -32,10 +32,9 @@ export const getReceiptColumns = (
         <span className="font-mono font-medium">
           {row.original.receipt_number}
         </span>
-        <StatusIndicator
-          isActive={row.original.status === "Active"}
-          label={row.original.status}
-        />
+        <Badge variant={row.original.status === "Active" ? "active" : "draft"}>
+          {row.original.status}
+        </Badge>
       </button>
     ),
   },
