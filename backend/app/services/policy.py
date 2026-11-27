@@ -1,7 +1,7 @@
 import logging
 import uuid
 from collections.abc import Sequence
-from datetime import date
+from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, cast
 
@@ -216,7 +216,15 @@ class PolicyService:
             created_by_id=current_user_id,
         )
 
-        PolicyService._add_risk_note(session=session, risk_note_in=risk_note_in)
+        PolicyService.issue_risk_note(
+            session=session,
+            policy=policy,
+            product=product,
+            risk_note_in=risk_note_in,
+            supersede=False,
+            created_by_id=current_user_id,
+            commit=False,
+        )
 
         PremiumCalculationService.record_calculation(
             session,
@@ -353,6 +361,10 @@ class PolicyService:
         ).first()
         if not policy or not policy.product:
             raise PolicyNotFoundError("Policy or Product not found")
+        if PolicyService.is_medical_product(policy.product):
+            raise PolicyValidationError(
+                "Medical policies do not support Risk Note endorsements"
+            )
 
         effective_snapshot = (
             updated_cover_snapshot
@@ -416,12 +428,17 @@ class PolicyService:
             created_by_id=current_user_id,
         )
 
-        current_rn.status = RiskNoteStatus.REPLACED
-        session.add(current_rn)
-
-        endorsement_rn = PolicyService._add_risk_note(
-            session=session, risk_note_in=risk_note_in
+        endorsement_rn = PolicyService.issue_risk_note(
+            session=session,
+            policy=policy,
+            risk_note_in=risk_note_in,
+            product=policy.product,
+            supersede=True,
+            target_risk_note=current_rn,
+            created_by_id=current_user_id,
+            commit=False,
         )
+        assert endorsement_rn is not None
 
         PremiumCalculationService.record_calculation(
             session,
@@ -474,6 +491,165 @@ class PolicyService:
         risk_note = RiskNote.model_validate(risk_note_in)
         session.add(risk_note)
         return risk_note
+
+    @staticmethod
+    def is_medical_product(product: Product | None) -> bool:
+        """Return True if the product belongs to the Medical class (ADR-0001)."""
+        return bool(
+            product and product.class_of_insurance.strip().lower() == "medical"
+        )
+
+    @staticmethod
+    def issue_risk_note(
+        *,
+        session: Session,
+        policy: Policy,
+        risk_note_in: RiskNoteCreate,
+        product: Product | None = None,
+        supersede: bool = False,
+        target_risk_note: RiskNote | None = None,
+        created_by_id: uuid.UUID | None = None,
+        commit: bool = True,
+    ) -> RiskNote | None:
+        """
+        Consolidated RiskNote issuance and superseding seam on Policy.
+
+        Enforces ADR-0001 Medical exemption (returns None without persisting a RiskNote)
+        and, when supersede=True, marks all non-deleted ISSUED RiskNotes on the Policy
+        as REPLACED while linking previous_risk_note_id to the targeted or latest prior
+        ISSUED RiskNote.
+        """
+        resolved_product = product or session.get(Product, policy.product_id)
+        if PolicyService.is_medical_product(resolved_product):
+            return None
+
+        if supersede:
+            prior_issued = list(
+                session.exec(
+                    select(RiskNote)
+                    .where(
+                        RiskNote.policy_id == policy.id,
+                        RiskNote.status == RiskNoteStatus.ISSUED,
+                        RiskNote.deleted_at == None,
+                    )
+                    .order_by(RiskNote.created_at.desc())  # type: ignore[attr-defined]
+                ).all()
+            )
+            previous_id = (
+                target_risk_note.id
+                if target_risk_note is not None
+                else (prior_issued[0].id if prior_issued else None)
+            )
+            if risk_note_in.previous_risk_note_id is None and previous_id is not None:
+                risk_note_in.previous_risk_note_id = previous_id
+
+            for prior_rn in prior_issued:
+                prior_rn.status = RiskNoteStatus.REPLACED
+                session.add(prior_rn)
+
+        risk_note = PolicyService._add_risk_note(
+            session=session, risk_note_in=risk_note_in, created_by_id=created_by_id
+        )
+        if commit:
+            session.commit()
+            session.refresh(risk_note)
+        return risk_note
+
+    @staticmethod
+    def issue_renewal_risk_note(
+        *,
+        session: Session,
+        policy_id: uuid.UUID,
+        calculation_id: uuid.UUID | None = None,
+        fallback_total: Decimal | None = None,
+        created_by_id: uuid.UUID | None = None,
+        commit: bool = False,
+    ) -> RiskNote | None:
+        """
+        Bind a successor RiskNote on Renewal completion for non-Medical policies.
+
+        Resolves the prior ISSUED RiskNote, derives the next annual coverage period
+        (with leap-year Feb 28 handling), loads PremiumCalculation when present,
+        skips Medical policies (ADR-0001), and serializes fallback financial_breakdown
+        as Decimal strings via to_numeric_dict.
+        """
+        policy = PolicyService.get_policy(session=session, policy_id=policy_id)
+        product = session.get(Product, policy.product_id)
+        if PolicyService.is_medical_product(product):
+            return None
+
+        prior_note = session.exec(
+            select(RiskNote)
+            .where(
+                RiskNote.policy_id == policy.id,
+                RiskNote.status == RiskNoteStatus.ISSUED,
+                RiskNote.deleted_at == None,
+            )
+            .order_by(RiskNote.created_at.desc())  # type: ignore[attr-defined]
+        ).first()
+
+        coverage_start = (
+            prior_note.coverage_end + timedelta(days=1)
+            if prior_note and prior_note.coverage_end
+            else date.today()
+        )
+        try:
+            next_year_start = coverage_start.replace(year=coverage_start.year + 1)
+        except ValueError:
+            next_year_start = date(coverage_start.year + 1, 2, 28)
+        coverage_end = next_year_start - timedelta(days=1)
+
+        calc = (
+            session.get(PremiumCalculation, calculation_id)
+            if calculation_id is not None
+            else None
+        )
+        if calc is not None:
+            detail = calc.calculation_detail or {}
+            total_amount = calc.total_premium
+            net_premium = Decimal(str(detail.get("net_premium", total_amount)))
+            commission_amount = Decimal(str(detail.get("commission_amount", "0.00")))
+            financial_breakdown = PolicyService.to_numeric_dict(dict(detail))
+            cover_snapshot = PolicyService.to_numeric_dict(
+                dict(calc.input_snapshot or {})
+            )
+        else:
+            resolved_total = (
+                fallback_total if fallback_total is not None else Decimal("0.00")
+            )
+            total_amount = resolved_total
+            net_premium = resolved_total
+            commission_amount = Decimal("0.00")
+            financial_breakdown = PolicyService.to_numeric_dict(
+                {"total_amount": resolved_total}
+            )
+            cover_snapshot = dict(prior_note.cover_snapshot) if prior_note else {}
+
+        risk_note_in = RiskNoteCreate(
+            policy_id=policy.id,
+            transaction_type=TransactionType.RENEWAL,
+            previous_risk_note_id=prior_note.id if prior_note else None,
+            status=RiskNoteStatus.ISSUED,
+            effective_date=coverage_start,
+            coverage_start=coverage_start,
+            coverage_end=coverage_end,
+            net_premium=net_premium,
+            financial_breakdown=financial_breakdown,
+            commission_amount=commission_amount,
+            total_amount=total_amount,
+            cover_snapshot=cover_snapshot,
+            created_by_id=created_by_id,
+        )
+        return PolicyService.issue_risk_note(
+            session=session,
+            policy=policy,
+            risk_note_in=risk_note_in,
+            product=product,
+            supersede=True,
+            target_risk_note=prior_note,
+            created_by_id=created_by_id,
+            commit=commit,
+        )
 
     @staticmethod
     def create_risk_note(
@@ -541,6 +717,15 @@ class PolicyService:
         if current_rn.status == RiskNoteStatus.REPLACED:
             raise PolicyValidationError("Risk note has already been replaced")
 
+        policy = session.get(Policy, current_rn.policy_id)
+        if not policy or policy.deleted_at is not None:
+            raise PolicyNotFoundError("Policy not found")
+        product = session.get(Product, policy.product_id)
+        if PolicyService.is_medical_product(product):
+            raise PolicyValidationError(
+                "Medical policies do not support Risk Note revisions"
+            )
+
         risk_note_in = RiskNoteCreate(
             policy_id=current_rn.policy_id,
             transaction_type=current_rn.transaction_type,
@@ -562,14 +747,17 @@ class PolicyService:
             created_by_id=created_by_id,
         )
 
-        current_rn.status = RiskNoteStatus.REPLACED
-        session.add(current_rn)
-
-        revised_rn = PolicyService._add_risk_note(
-            session=session, risk_note_in=risk_note_in
+        revised_rn = PolicyService.issue_risk_note(
+            session=session,
+            policy=policy,
+            risk_note_in=risk_note_in,
+            product=product,
+            supersede=True,
+            target_risk_note=current_rn,
+            created_by_id=created_by_id,
+            commit=True,
         )
-        session.commit()
-        session.refresh(revised_rn)
+        assert revised_rn is not None
         return revised_rn
 
 

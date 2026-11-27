@@ -213,3 +213,35 @@ def test_policy_routes_lifecycle_and_domain_exception_mapping(
         ).status_code
         == 404
     )
+
+
+def test_create_endorsement_rejects_medical_policy_route(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    from app.models import Policy, PolicyStatus
+    from tests.utils.client import create_random_client
+    from tests.utils.insurance import create_random_product
+
+    db_client = create_random_client(db)
+    product = create_random_product(db, class_of_insurance="Medical")
+    policy = Policy(
+        policy_number=f"POL-MED-END-RT-{uuid.uuid4().hex[:6].upper()}",
+        client_id=db_client.id,
+        product_id=product.id,
+        status=PolicyStatus.ACTIVE,
+        inception_date=date.today(),
+    )
+    db.add(policy)
+    db.commit()
+    db.refresh(policy)
+
+    resp = client.post(
+        f"{settings.API_V1_STR}/policies/{policy.id}/endorsements",
+        headers=superuser_token_headers,
+        json={
+            "updated_risk_details": {"sum_insured": "1500000"},
+            "change_description": "Add dependant",
+        },
+    )
+    assert resp.status_code in (400, 422)
+    assert "Medical" in resp.json()["detail"]

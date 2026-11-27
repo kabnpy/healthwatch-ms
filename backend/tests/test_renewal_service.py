@@ -483,3 +483,122 @@ def test_transition_renewal_completed_skips_risk_note_for_medical(
     assert renewal.status == RenewalStatus.COMPLETED
     notes = db.exec(select(RiskNote).where(RiskNote.policy_id == policy.id)).all()
     assert notes == []
+
+
+def test_transition_renewal_completed_fallback_uses_decimal_strings_and_leap_year(
+    db: Session,
+) -> None:
+    policy, _ = _create_policy_fixture(db)
+    prior_note = RiskNote(
+        policy_id=policy.id,
+        risk_note_number="RN-LEAP-001",
+        transaction_type=TransactionType.NEW_BUSINESS,
+        status=RiskNoteStatus.ISSUED,
+        effective_date=date(2023, 3, 1),
+        coverage_start=date(2023, 3, 1),
+        coverage_end=date(2024, 2, 28),
+        net_premium=Decimal("15000.00"),
+        financial_breakdown={"total_amount": "15000.00"},
+        commission_amount=Decimal("0.00"),
+        total_amount=Decimal("15000.00"),
+        cover_snapshot={"sum_insured": "500000"},
+    )
+    db.add(prior_note)
+    db.commit()
+
+    renewal = RenewalService.create_renewal(
+        session=db,
+        renewal_in=RenewalCreate(
+            policy_id=policy.id,
+            renewal_period_start=date(2024, 2, 29),
+            renewal_period_end=date(2025, 2, 27),
+            proposed_premium=Decimal("16500.50"),
+        ),
+    )
+    for target in (
+        RenewalStatus.CARRIER_RECEIVED,
+        RenewalStatus.CLIENT_INVITED,
+        RenewalStatus.PAID,
+    ):
+        renewal = RenewalService.transition_renewal(
+            session=db,
+            renewal_id=renewal.id,
+            transition_in=RenewalTransition(
+                target_status=target,
+                version=renewal.version,
+            ),
+        )
+
+    completed = RenewalService.transition_renewal(
+        session=db,
+        renewal_id=renewal.id,
+        transition_in=RenewalTransition(
+            target_status=RenewalStatus.COMPLETED,
+            version=renewal.version,
+        ),
+        current_user_id=None,
+    )
+    assert completed.status == RenewalStatus.COMPLETED
+
+    successor = db.exec(
+        select(RiskNote)
+        .where(RiskNote.policy_id == policy.id)
+        .where(RiskNote.status == RiskNoteStatus.ISSUED)
+    ).one()
+    assert successor.coverage_start == date(2024, 2, 29)
+    assert successor.coverage_end == date(2025, 2, 27)
+    assert successor.total_amount == Decimal("16500.50")
+    assert successor.financial_breakdown == {"total_amount": "16500.50"}
+    assert isinstance(successor.financial_breakdown["total_amount"], str)
+
+
+def test_transition_renewal_completed_rolls_back_atomically_on_risk_note_failure(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.services.policy import PolicyService
+
+    policy, _ = _create_policy_fixture(db)
+    renewal = RenewalService.create_renewal(
+        session=db,
+        renewal_in=RenewalCreate(
+            policy_id=policy.id,
+            renewal_period_start=date(2026, 1, 1),
+            renewal_period_end=date(2026, 12, 31),
+            proposed_premium=Decimal("12000.00"),
+        ),
+    )
+    for target in (
+        RenewalStatus.CARRIER_RECEIVED,
+        RenewalStatus.CLIENT_INVITED,
+        RenewalStatus.PAID,
+    ):
+        renewal = RenewalService.transition_renewal(
+            session=db,
+            renewal_id=renewal.id,
+            transition_in=RenewalTransition(
+                target_status=target,
+                version=renewal.version,
+            ),
+        )
+
+    def _fail_issue(**kwargs):  # type: ignore[no-untyped-def]
+        raise RuntimeError("simulated risk note failure")
+
+    monkeypatch.setattr(PolicyService, "issue_risk_note", _fail_issue)
+
+    with pytest.raises(RuntimeError, match="simulated risk note failure"):
+        RenewalService.transition_renewal(
+            session=db,
+            renewal_id=renewal.id,
+            transition_in=RenewalTransition(
+                target_status=RenewalStatus.COMPLETED,
+                version=renewal.version,
+            ),
+            current_user_id=None,
+        )
+
+    db.rollback()
+    persisted = RenewalService.get_renewal(session=db, renewal_id=renewal.id)
+    assert persisted.status == RenewalStatus.PAID
+    assert persisted.completed_at is None
