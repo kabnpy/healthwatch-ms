@@ -3,7 +3,6 @@ import type { ColumnDef } from "@tanstack/react-table"
 import type { UserPublic } from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { StatusIndicator } from "../Common/StatusIndicator"
 import { UserActionsMenu } from "./UserActionsMenu"
 
 export type UserTableData = UserPublic & {
@@ -51,7 +50,11 @@ export const columns: ColumnDef<UserTableData>[] = [
   {
     accessorKey: "is_active",
     header: "Status",
-    cell: ({ row }) => <StatusIndicator isActive={!!row.original.is_active} />,
+    cell: ({ row }) => (
+      <Badge variant={row.original.is_active ? "active" : "draft"}>
+        {row.original.is_active ? "Active" : "Inactive"}
+      </Badge>
+    ),
   },
   {
     id: "actions",

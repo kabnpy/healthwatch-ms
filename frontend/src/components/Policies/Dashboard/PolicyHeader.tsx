@@ -1,6 +1,6 @@
 import { PlusCircle, RefreshCw } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { StatusIndicator } from "../../Common/StatusIndicator"
 
 interface PolicyHeaderProps {
   clientName: string
@@ -27,10 +27,19 @@ export function PolicyHeader({
           <h1 className="text-4xl font-bold tracking-tight">
             {displayName || policyNumber}
           </h1>
-          <StatusIndicator
-            isActive={status?.toLowerCase() === "active"}
-            label={status}
-          />
+          <Badge
+            variant={
+              status?.toLowerCase() === "active"
+                ? "active"
+                : status?.toLowerCase() === "lapsed"
+                  ? "lapsed"
+                  : status?.toLowerCase() === "pending"
+                    ? "pending"
+                    : "draft"
+            }
+          >
+            {status}
+          </Badge>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
           <span>{clientName}</span>

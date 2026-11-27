@@ -83,7 +83,7 @@ function FinancialsHub() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
         <div>
           <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-blue-500" />
+            <span className="size-2 rounded-full bg-primary" />
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               Agency Finances
             </p>
@@ -132,10 +132,10 @@ function FinancialsHub() {
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Cleared Collections
             </CardTitle>
-            <CheckCircle2 className="size-4 text-emerald-600" />
+            <CheckCircle2 className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
+            <div className="text-2xl font-bold font-mono tabular-nums tracking-tight text-foreground">
               {formatCurrency(summary.totalPaid)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -148,7 +148,7 @@ function FinancialsHub() {
           className={cn(
             "transition-colors",
             summary.totalDue > 0
-              ? "border-rose-500/40 bg-rose-500/5 hover:border-rose-500/60"
+              ? "border-status-lapsed-border bg-status-lapsed"
               : "hover:border-primary/50",
           )}
         >
@@ -157,7 +157,7 @@ function FinancialsHub() {
               className={cn(
                 "text-xs font-bold uppercase tracking-wider",
                 summary.totalDue > 0
-                  ? "text-rose-700 dark:text-rose-400"
+                  ? "text-status-lapsed-foreground"
                   : "text-muted-foreground",
               )}
             >
@@ -167,7 +167,7 @@ function FinancialsHub() {
               className={cn(
                 "size-4",
                 summary.totalDue > 0
-                  ? "text-rose-600"
+                  ? "text-status-lapsed-foreground"
                   : "text-muted-foreground",
               )}
             />
@@ -176,7 +176,7 @@ function FinancialsHub() {
             <div
               className={cn(
                 "text-2xl font-bold font-mono tabular-nums tracking-tight",
-                summary.totalDue > 0 && "text-rose-600 dark:text-rose-400",
+                summary.totalDue > 0 && "text-status-lapsed-foreground",
               )}
             >
               {formatCurrency(summary.totalDue)}
@@ -185,7 +185,7 @@ function FinancialsHub() {
               className={cn(
                 "text-xs mt-1",
                 summary.totalDue > 0
-                  ? "text-rose-700/80 dark:text-rose-400/80"
+                  ? "text-status-lapsed-foreground"
                   : "text-muted-foreground",
               )}
             >
@@ -198,7 +198,7 @@ function FinancialsHub() {
           className={cn(
             "transition-colors",
             totalUnallocated > 0
-              ? "border-amber-500/40 bg-amber-500/5 hover:border-amber-500/60"
+              ? "border-status-pending-border bg-status-pending"
               : "hover:border-primary/50",
           )}
         >
@@ -207,7 +207,7 @@ function FinancialsHub() {
               className={cn(
                 "text-xs font-bold uppercase tracking-wider",
                 totalUnallocated > 0
-                  ? "text-amber-700 dark:text-amber-400"
+                  ? "text-status-pending-foreground"
                   : "text-muted-foreground",
               )}
             >
@@ -217,7 +217,7 @@ function FinancialsHub() {
               className={cn(
                 "size-4",
                 totalUnallocated > 0
-                  ? "text-amber-600"
+                  ? "text-status-pending-foreground"
                   : "text-muted-foreground",
               )}
             />

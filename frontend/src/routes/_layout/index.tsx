@@ -18,11 +18,13 @@ import {
   getRenewalActionLabel,
   getRenewalStageMeta,
 } from "@/components/Renewals/renewalWorkflow"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import useAuth from "@/hooks/useAuth"
 import { useDashboardSummary } from "@/hooks/useDashboard"
 import { useFinancialSummary } from "@/hooks/useFinancials"
+import { formatCurrency } from "@/utils"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 export const Route = createFileRoute("/_layout/")({
@@ -120,7 +122,7 @@ function AgencyDashboard() {
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Policies in Force
             </CardTitle>
-            <ShieldCheck className="size-4 text-emerald-600" />
+            <ShieldCheck className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-mono tabular-nums tracking-tight">
@@ -135,7 +137,7 @@ function AgencyDashboard() {
         <Card
           className={
             hasExpiringPolicies
-              ? "border-amber-500/40 bg-amber-500/5"
+              ? "border-status-pending-border bg-status-pending"
               : undefined
           }
         >
@@ -143,7 +145,7 @@ function AgencyDashboard() {
             <CardTitle
               className={`text-xs font-bold uppercase tracking-wider ${
                 hasExpiringPolicies
-                  ? "text-amber-700 dark:text-amber-400"
+                  ? "text-status-pending-foreground"
                   : "text-muted-foreground"
               }`}
             >
@@ -151,14 +153,16 @@ function AgencyDashboard() {
             </CardTitle>
             <Clock
               className={`size-4 ${
-                hasExpiringPolicies ? "text-amber-600" : "text-muted-foreground"
+                hasExpiringPolicies
+                  ? "text-status-pending-foreground"
+                  : "text-muted-foreground"
               }`}
             />
           </CardHeader>
           <CardContent>
             <div
               className={`text-3xl font-bold font-mono tabular-nums tracking-tight ${
-                hasExpiringPolicies ? "text-amber-700 dark:text-amber-400" : ""
+                hasExpiringPolicies ? "text-status-pending-foreground" : ""
               }`}
             >
               {expiring30.length}
@@ -166,12 +170,12 @@ function AgencyDashboard() {
             <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between gap-2">
               {hasExpiringPolicies ? (
                 <>
-                  <span className="text-amber-700/80 dark:text-amber-400/80">
+                  <span className="text-status-pending-foreground">
                     Needs renewal start
                   </span>
                   <Link
                     to="/renewals"
-                    className="font-semibold underline whitespace-nowrap shrink-0 text-amber-800 dark:text-amber-300"
+                    className="font-semibold underline whitespace-nowrap shrink-0 text-status-pending-foreground"
                   >
                     Review &rarr;
                   </Link>
@@ -188,10 +192,10 @@ function AgencyDashboard() {
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Renewals Pipeline
             </CardTitle>
-            <RefreshCw className="size-4 text-blue-600" />
+            <RefreshCw className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-mono tabular-nums tracking-tight text-blue-600 dark:text-blue-400">
+            <div className="text-3xl font-bold font-mono tabular-nums tracking-tight text-foreground">
               {inFlightRenewalsCount}
             </div>
             <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between gap-2">
@@ -215,11 +219,11 @@ function AgencyDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-xl xl:text-2xl font-bold font-mono tabular-nums tracking-tight whitespace-nowrap">
-              KES {summary.totalInvoiced.toLocaleString()}
+              {formatCurrency(summary.totalInvoiced)}
             </div>
             <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between gap-2">
-              <span className="tabular-nums">
-                KES {summary.totalPaid.toLocaleString()} collected
+              <span className="font-mono tabular-nums">
+                {formatCurrency(summary.totalPaid)} collected
               </span>
               <Link
                 to="/financials"
@@ -238,7 +242,7 @@ function AgencyDashboard() {
           <Card>
             <CardHeader className="pb-3 border-b flex flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2">
-                <Clock className="size-4 text-amber-600" />
+                <Clock className="size-4 text-status-pending-foreground" />
                 <CardTitle className="text-base font-bold tracking-tight">
                   Expiring Policies Without Active Renewal
                 </CardTitle>
@@ -280,12 +284,9 @@ function AgencyDashboard() {
                         >
                           {policy.policy_number}
                         </Link>
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border whitespace-nowrap ${
-                            daysLeft <= 7
-                              ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
-                              : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
-                          }`}
+                        <Badge
+                          variant={daysLeft <= 7 ? "lapsed" : "pending"}
+                          className="gap-1"
                         >
                           <Clock className="size-2.5" />
                           {daysLeft > 0
@@ -293,7 +294,7 @@ function AgencyDashboard() {
                             : daysLeft === 0
                               ? "Expires today"
                               : "Expired"}
-                        </span>
+                        </Badge>
                       </div>
                       <p className="text-sm font-medium truncate mt-1">
                         {title}
@@ -324,7 +325,7 @@ function AgencyDashboard() {
           </Card>
         ) : (
           <div className="flex items-center gap-2.5 rounded-lg border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-            <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
+            <CheckCircle2 className="size-4 text-status-active-foreground shrink-0" />
             <span>
               All policies expiring within 30 days are already in renewal or
               current.
@@ -336,7 +337,7 @@ function AgencyDashboard() {
         <Card>
           <CardHeader className="pb-3 border-b flex flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <RefreshCw className="size-4 text-blue-600" />
+              <RefreshCw className="size-4 text-primary" />
               <CardTitle className="text-base font-bold tracking-tight">
                 Renewals in Progress
               </CardTitle>

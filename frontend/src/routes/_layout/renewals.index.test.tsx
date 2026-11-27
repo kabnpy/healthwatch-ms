@@ -314,6 +314,8 @@ describe("RenewalsDeskPage layout, calm zero-states, and responsive triage", () 
     const Component = Route.options.component!
     const { container, rerender } = render(<Component />)
 
+    expect(container.innerHTML).not.toContain("border-status-pending-border")
+    expect(container.innerHTML).not.toContain("border-status-lapsed-border")
     expect(container.innerHTML).not.toContain("border-amber-500/30")
     expect(container.innerHTML).not.toContain("border-rose-500/30")
     expect(container.innerHTML).not.toContain("border-blue-500/30")
@@ -331,8 +333,14 @@ describe("RenewalsDeskPage layout, calm zero-states, and responsive triage", () 
     }
     rerender(<Component />)
 
-    expect(container.innerHTML).toContain("border-amber-500/30")
-    expect(container.innerHTML).toContain("border-rose-500/30")
+    expect(container.innerHTML).toContain("border-status-pending-border")
+    expect(container.innerHTML).toContain("border-status-lapsed-border")
+    expect(container.innerHTML).not.toContain("border-amber-500/30")
+    expect(container.innerHTML).not.toContain("border-rose-500/30")
+    expect(container.innerHTML).not.toContain("text-blue-600")
+    expect(container.innerHTML).not.toContain("bg-rose-500/10")
+    expect(container.innerHTML).not.toContain("bg-amber-500/10")
+    expect(container.innerHTML).not.toContain("bg-blue-500/10")
   })
 
   it("consolidates Policy No and Cover / Asset and removes Sum Insured from the table", () => {

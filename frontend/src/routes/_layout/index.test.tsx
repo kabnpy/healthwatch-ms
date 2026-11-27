@@ -182,4 +182,46 @@ describe("AgencyDashboard summary seam & shared renewal workflow", () => {
     const sheet = screen.getByTestId("renewal-transition-sheet")
     expect(sheet.textContent).toContain("POL-251 - Beta Ltd")
   })
+
+  it("formats currency with fixed two-decimal KES precision, uses tabular numerals, and avoids hardcoded color classes", () => {
+    mockDashboardState = {
+      data: {
+        active_policies_count: 10,
+        expiring_within_30_days: [
+          {
+            id: "pol-1",
+            policy_number: "POL-1",
+            client_id: "c-1",
+            display_name: "Acme Corp",
+            status: "Active",
+            inception_date: "2026-01-01",
+            expiry_date: "2026-12-01",
+            days_left: 5,
+          },
+        ],
+        in_flight_renewals_count: 2,
+        in_flight_renewals: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetchDashboard,
+    }
+    mockFinancialSummaryState = {
+      summary: { totalInvoiced: 125000, totalPaid: 80000 },
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetchSummary,
+    }
+
+    const Component = Route.options.component!
+    const { container } = render(<Component />)
+
+    expect(screen.getByText("KES 125,000.00")).toBeTruthy()
+    expect(screen.getByText("KES 80,000.00 collected")).toBeTruthy()
+    expect(container.innerHTML).not.toContain("text-blue-600")
+    expect(container.innerHTML).not.toContain("text-emerald-600")
+    expect(container.innerHTML).not.toContain("border-amber-500/40")
+    expect(container.innerHTML).not.toContain("bg-rose-500/10")
+    expect(container.innerHTML).not.toContain("bg-amber-500/10")
+  })
 })
