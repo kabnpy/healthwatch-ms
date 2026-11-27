@@ -1,16 +1,56 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ClientStatementView } from "./ClientStatementView"
 
 const mockUseClientStatement = vi.fn()
+const mockExportPdf = vi.fn()
 
 vi.mock("@/hooks/useStatements", () => ({
   useClientStatement: (clientId: string) => mockUseClientStatement(clientId),
 }))
 
+vi.mock("@/hooks/useDocumentJobs", () => ({
+  useDocumentPdfExport: () => ({
+    exportPdf: mockExportPdf,
+    isExporting: false,
+  }),
+}))
+
+vi.mock("@/components/Documents/CanonicalDocumentViewer", () => ({
+  CanonicalDocumentViewer: ({
+    resourceType,
+    resourceId,
+    title,
+    onDownloadPdf,
+  }: {
+    resourceType: string
+    resourceId?: string
+    title?: string
+    onDownloadPdf?: () => void
+  }) => (
+    <div
+      data-testid="canonical-document-viewer"
+      data-resource-type={resourceType}
+      data-resource-id={resourceId}
+    >
+      <span>{title}</span>
+      {onDownloadPdf && (
+        <button type="button" onClick={onDownloadPdf}>
+          Download PDF
+        </button>
+      )}
+    </div>
+  ),
+}))
+
 describe("ClientStatementView", () => {
-  it("renders server-computed aging_buckets and running_balance without client-side math", () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
     mockUseClientStatement.mockReturnValue({
       isLoading: false,
       error: null,
@@ -18,19 +58,6 @@ describe("ClientStatementView", () => {
         client_id: "client-1",
         client_name: "Acme Health Ltd",
         kra_pin: "P051111111A",
-        total_invoiced: "1000.00",
-        total_allocated: "250.00",
-        net_outstanding_balance: "750.00",
-        unallocated_credits: "0.00",
-        invoice_count: 1,
-        allocation_count: 1,
-        aging_buckets: {
-          current_0_30: "100.00",
-          days_31_60: "200.00",
-          days_61_90: "300.00",
-          over_90: "150.00",
-          total_overdue: "750.00",
-        },
         ledger_entries: [
           {
             date: "2026-05-01",
@@ -42,28 +69,31 @@ describe("ClientStatementView", () => {
             status: "PARTIAL",
             running_balance: "1000.00",
           },
-          {
-            date: "2026-05-10",
-            type: "PAYMENT_ALLOCATION",
-            reference: "PAY-001",
-            description: "Payment allocated to Invoice INV-001",
-            debit: "0.00",
-            credit: "250.00",
-            status: "CLEARED",
-            running_balance: "750.00",
-          },
         ],
       },
     })
+  })
 
+  it("delegates HTML preview and PDF export to CanonicalDocumentViewer with resourceType='statement'", async () => {
+    render(
+      <ClientStatementView clientId="client-1" clientName="Acme Health Ltd" />,
+    )
+
+    const viewer = screen.getByTestId("canonical-document-viewer")
+    expect(viewer.getAttribute("data-resource-type")).toBe("statement")
+    expect(viewer.getAttribute("data-resource-id")).toBe("client-1")
+
+    fireEvent.click(screen.getByRole("button", { name: "Download PDF" }))
+    expect(mockExportPdf).toHaveBeenCalledWith({
+      resource_type: "statement",
+      resource_id: "client-1",
+    })
+  })
+
+  it("renders Export CSV button when ledger entries exist", () => {
     render(<ClientStatementView clientId="client-1" />)
-
-    expect(screen.getByText(/Total Overdue:.*750\.00/)).toBeTruthy()
-    expect(screen.getByText(/100\.00/)).toBeTruthy()
-    expect(screen.getByText(/200\.00/)).toBeTruthy()
-    expect(screen.getByText(/300\.00/)).toBeTruthy()
-    expect(screen.getByText(/150\.00/)).toBeTruthy()
-    expect(screen.getByText("INV-001")).toBeTruthy()
-    expect(screen.getByText("PAY-001")).toBeTruthy()
+    const csvButton = screen.getByRole("button", { name: /Export CSV/i })
+    expect(csvButton).toBeTruthy()
+    expect((csvButton as HTMLButtonElement).disabled).toBe(false)
   })
 })
