@@ -1,9 +1,8 @@
 import logging
 import uuid
-from datetime import date, timedelta
-from decimal import Decimal
+from collections.abc import Sequence
+from datetime import date
 
-from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, func, select
 
 from app.models import (
@@ -12,9 +11,7 @@ from app.models import (
     InvitationCreate,
     Policy,
     PolicyPublic,
-    PolicyStatus,
     PremiumCalculation,
-    Product,
     Renewal,
     RenewalCreate,
     RenewalHorizonItem,
@@ -23,10 +20,6 @@ from app.models import (
     RenewalStatus,
     RenewalTransition,
     RenewalUpdate,
-    RiskNote,
-    RiskNoteCreate,
-    RiskNoteStatus,
-    TransactionType,
     get_datetime_utc,
 )
 from app.services.policy import PolicyService
@@ -88,7 +81,7 @@ ALLOWED_TRANSITIONS: dict[RenewalStatus, set[RenewalStatus]] = {
     RenewalStatus.CANCELLED: set(),  # Terminal
 }
 
-TERMINAL_STATUSES = [RenewalStatus.COMPLETED, RenewalStatus.CANCELLED]
+TERMINAL_STATUSES = (RenewalStatus.COMPLETED, RenewalStatus.CANCELLED)
 
 
 class RenewalService:
@@ -124,37 +117,53 @@ class RenewalService:
         return session.exec(statement).first()
 
     @staticmethod
-    def get_horizon(*, session: Session) -> RenewalHorizonResponse:
-        """Compute overdue, 0_30, 31_60, and 61_90 expiration buckets across all active policies."""
-        today = date.today()
+    def get_in_flight_renewals(
+        *, session: Session
+    ) -> Sequence[tuple[Renewal, Policy | None, str | None]]:
+        """Return all non-terminal, non-deleted renewals with their policy and client name."""
         statement = (
-            select(Policy, Client.name)
-            .join(Client, Policy.client_id == Client.id)
-            .where(Policy.deleted_at.is_(None))
-            .where(Policy.status == PolicyStatus.ACTIVE)
-            .options(selectinload(Policy.risk_notes), selectinload(Policy.renewals))  # type: ignore[arg-type]
+            select(Renewal, Policy, Client.name)
+            .join(Policy, Renewal.policy_id == Policy.id, isouter=True)  # type: ignore[arg-type]
+            .join(Client, Policy.client_id == Client.id, isouter=True)  # type: ignore[arg-type]
+            .where(Renewal.deleted_at.is_(None))  # type: ignore[union-attr]
+            .where(col(Renewal.status).notin_(TERMINAL_STATUSES))
+            .order_by(Renewal.renewal_period_start.asc())  # type: ignore[attr-defined]
         )
-        rows = session.exec(statement).all()
+        return session.exec(statement).all()
+
+    @staticmethod
+    def get_horizon(
+        *, session: Session, as_of: date | None = None
+    ) -> RenewalHorizonResponse:
+        """Compute overdue, 0_30, 31_60, and 61_90 expiration buckets across all active policies."""
+        from app.services.policy import policy_service
+
+        expirations = [
+            proj
+            for proj in policy_service.get_active_policy_expirations(
+                session=session, as_of=as_of
+            )
+            if proj.days_left <= 90
+        ]
+
+        policy_ids = [proj.policy.id for proj in expirations]
+        renewals_by_policy: dict[uuid.UUID, list[Renewal]] = {}
+        if policy_ids:
+            renewal_rows = session.exec(
+                select(Renewal)
+                .where(col(Renewal.policy_id).in_(policy_ids))
+                .where(Renewal.deleted_at.is_(None))  # type: ignore[union-attr]
+            ).all()
+            for renewal in renewal_rows:
+                renewals_by_policy.setdefault(renewal.policy_id, []).append(renewal)
 
         overdue: list[RenewalHorizonItem] = []
         bucket_0_30: list[RenewalHorizonItem] = []
         bucket_31_60: list[RenewalHorizonItem] = []
         bucket_61_90: list[RenewalHorizonItem] = []
 
-        for policy, client_name in rows:
-            active_notes = [
-                n for n in policy.risk_notes if n.deleted_at is None and n.coverage_end
-            ]
-            if not active_notes:
-                continue
-            active_notes.sort(key=lambda n: n.created_at, reverse=True)
-            active_note = active_notes[0]
-
-            days_left = (active_note.coverage_end - today).days
-            if days_left > 90:
-                continue
-
-            active_renewals = [r for r in policy.renewals if r.deleted_at is None]
+        for proj in expirations:
+            active_renewals = renewals_by_policy.get(proj.policy.id, [])
             non_terminal = [
                 r for r in active_renewals if r.status not in TERMINAL_STATUSES
             ]
@@ -165,13 +174,13 @@ class RenewalService:
             )
 
             item = RenewalHorizonItem(
-                policy_id=policy.id,
-                policy_number=policy.policy_number,
-                client_id=policy.client_id,
-                client_name=client_name,
-                coverage_end=active_note.coverage_end,
-                days_left=days_left,
-                policy=PolicyPublic.model_validate(policy),
+                policy_id=proj.policy.id,
+                policy_number=proj.policy.policy_number,
+                client_id=proj.policy.client_id,
+                client_name=proj.client_name,
+                coverage_end=proj.coverage_end,
+                days_left=proj.days_left,
+                policy=PolicyPublic.model_validate(proj.policy),
                 renewal=(
                     RenewalPublic.model_validate(chosen_renewal)
                     if chosen_renewal
@@ -179,11 +188,11 @@ class RenewalService:
                 ),
             )
 
-            if days_left < 0:
+            if proj.days_left < 0:
                 overdue.append(item)
-            elif days_left <= 30:
+            elif proj.days_left <= 30:
                 bucket_0_30.append(item)
-            elif days_left <= 60:
+            elif proj.days_left <= 60:
                 bucket_31_60.append(item)
             else:
                 bucket_61_90.append(item)
