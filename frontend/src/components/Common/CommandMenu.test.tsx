@@ -16,20 +16,16 @@ vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
 }))
 
-vi.mock("@/hooks/useClients", () => ({
-  useClients: () => ({ data: { data: [] } }),
+const useCommandMenuDataMock = vi.fn((_open: boolean) => ({
+  clients: [],
+  policies: [],
+  invoices: [],
+  payments: [],
+  expiringPolicies: [],
 }))
 
-vi.mock("@/hooks/usePolicies", () => ({
-  usePolicies: () => ({ data: { data: [] } }),
-}))
-
-vi.mock("@/hooks/useFinancials", () => ({
-  useInvoices: () => ({ data: { data: [] } }),
-}))
-
-vi.mock("@/hooks/usePayments", () => ({
-  usePaymentRecords: () => ({ data: { data: [] } }),
+vi.mock("@/hooks/useCommandMenuData", () => ({
+  useCommandMenuData: (open: boolean) => useCommandMenuDataMock(open),
 }))
 
 vi.mock("@/components/Insurance/AdvisoryRatingCalculator", () => ({
