@@ -297,11 +297,15 @@ def test_invoice_reads_and_soft_delete_exclusion(db: Session) -> None:
         ClientLedgerService.get_invoice(session=db, invoice_id=inv_deleted.id) is None
     )
 
-    a_invoices = ClientLedgerService.get_invoices(session=db, client_id=client_a.id)
+    a_invoices, a_count = ClientLedgerService.list_invoices(
+        session=db, client_id=client_a.id
+    )
     assert [i.id for i in a_invoices] == [inv1.id]
-    assert ClientLedgerService.count_invoices(session=db, client_id=client_a.id) == 1
-    assert ClientLedgerService.count_invoices(session=db, client_id=client_b.id) == 1
-    assert inv_b.id in [i.id for i in ClientLedgerService.get_invoices(session=db)]
+    assert a_count == 1
+    _, b_count = ClientLedgerService.list_invoices(session=db, client_id=client_b.id)
+    assert b_count == 1
+    all_invoices, _ = ClientLedgerService.list_invoices(session=db)
+    assert inv_b.id in [i.id for i in all_invoices]
 
 
 def test_create_invoice_line_item_validates_parents(db: Session) -> None:
@@ -404,11 +408,11 @@ def test_payment_and_allocation_reads_and_soft_delete(db: Session) -> None:
         ClientLedgerService.get_payment_record(session=db, payment_id=pmt_deleted.id)
         is None
     )
-    records = ClientLedgerService.get_payment_records(session=db, client_id=client.id)
-    assert [r.id for r in records] == [pmt1.id]
-    assert (
-        ClientLedgerService.count_payment_records(session=db, client_id=client.id) == 1
+    records, records_count = ClientLedgerService.list_payment_records(
+        session=db, client_id=client.id
     )
+    assert [r.id for r in records] == [pmt1.id]
+    assert records_count == 1
 
     alloc = ClientLedgerService.allocate_payment(
         session=db,
@@ -424,16 +428,11 @@ def test_payment_and_allocation_reads_and_soft_delete(db: Session) -> None:
     assert fetched_alloc is not None
     assert fetched_alloc.id == alloc.id
 
-    allocs_by_pmt = ClientLedgerService.get_payment_allocations(
-        session=db, payment_record_id=pmt1.id
+    allocs_by_pmt, allocs_count = ClientLedgerService.list_payment_allocations(
+        session=db, payment_record_id=pmt1.id, invoice_id=inv.id
     )
     assert [a.id for a in allocs_by_pmt] == [alloc.id]
-    assert (
-        ClientLedgerService.count_payment_allocations(
-            session=db, payment_record_id=pmt1.id, invoice_id=inv.id
-        )
-        == 1
-    )
+    assert allocs_count == 1
 
 
 def test_invoice_batch_reads(db: Session) -> None:
@@ -449,11 +448,11 @@ def test_invoice_batch_reads(db: Session) -> None:
     assert fetched is not None
     assert fetched.id == batch.id
 
-    batches = ClientLedgerService.get_invoice_batches(session=db, client_id=client.id)
-    assert [b.id for b in batches] == [batch.id]
-    assert (
-        ClientLedgerService.count_invoice_batches(session=db, client_id=client.id) == 1
+    batches, batches_count = ClientLedgerService.list_invoice_batches(
+        session=db, client_id=client.id
     )
+    assert [b.id for b in batches] == [batch.id]
+    assert batches_count == 1
 
 
 def _create_invoice(
@@ -585,9 +584,10 @@ def test_record_payment_with_initial_allocations_atomic_commit_and_rollback(
             ),
         )
 
-    assert (
-        ClientLedgerService.count_payment_records(session=db, client_id=client.id) == 1
+    _, pmt_count = ClientLedgerService.list_payment_records(
+        session=db, client_id=client.id
     )
+    assert pmt_count == 1
     db.refresh(inv2)
     assert inv2.balance_due == Decimal("1000.00")
     assert inv2.status == InvoiceStatus.UNPAID
