@@ -14,6 +14,7 @@ import type {
   WizardFinancials,
 } from "@/types/insurance"
 import { buildQuoteRiskDetails } from "@/utils/coverSnapshot"
+import { classifyProduct, deriveQuoteFinancials } from "./policyWizard"
 
 const financialsSchema = z.object({
   financials: z.object({
@@ -92,19 +93,8 @@ export function StepFinancials({
   const financials = watchedValues.financials || {}
   const extensions = watchedValues.extensions || {}
 
-  const isPA = selectedProduct?.class_of_insurance
-    ?.toLowerCase()
-    .includes("personal accident")
-
-  const isMotor = selectedProduct?.class_of_insurance
-    ?.toLowerCase()
-    .includes("motor")
-
-  const isMotorPrivate = selectedProduct?.class_of_insurance
-    ?.toLowerCase()
-    .includes("motor private")
-
-  const isManual = selectedProduct?.pricing_strategy === "Manual"
+  const { isPA, isMotor, isMotorPrivate, isManual } =
+    classifyProduct(selectedProduct)
 
   // 1. Debounced Backend Quote
   useEffect(() => {
@@ -146,36 +136,24 @@ export function StepFinancials({
 
   // Auto-set rate for Motor Private
   useEffect(() => {
-    if (breakdown) {
-      if (isMotorPrivate && Number(breakdown.net_premium) > 0) {
-        // Reverse calculate effective rate for display (inclusive of non-tax extensions)
-        const siNum = Number(sum_insured) || 1
-        const effectiveRate = (Number(breakdown.net_premium) / siNum) * 100
-        if (Math.abs(effectiveRate - financials.rate) > 0.001) {
-          form.setValue("financials.rate", Number(effectiveRate.toFixed(3)))
-        }
-      }
+    if (!breakdown) return
+    const derived = deriveQuoteFinancials({
+      breakdown,
+      sumInsured: sum_insured,
+      currentRate: financials.rate,
+      isMotorPrivate,
+    })
 
-      if (calcDetail.basic_rate !== undefined) {
-        form.setValue(
-          "financials.basicRate",
-          Number(calcDetail.basic_rate) * 100,
-        )
-      }
-      if (calcDetail.is_high_end !== undefined) {
-        form.setValue("financials.isHighEnd", Boolean(calcDetail.is_high_end))
-      }
+    if (derived.effectiveRate !== undefined) {
+      form.setValue("financials.rate", derived.effectiveRate)
     }
-  }, [
-    isMotorPrivate,
-    breakdown?.net_premium,
-    calcDetail.basic_rate,
-    calcDetail.is_high_end,
-    sum_insured,
-    financials.rate,
-    form.setValue,
-    breakdown,
-  ])
+    if (derived.basicRate !== undefined) {
+      form.setValue("financials.basicRate", derived.basicRate)
+    }
+    if (derived.isHighEnd !== undefined) {
+      form.setValue("financials.isHighEnd", derived.isHighEnd)
+    }
+  }, [isMotorPrivate, sum_insured, financials.rate, form.setValue, breakdown])
 
   const isHighEnd = Boolean(calcDetail.is_high_end)
 

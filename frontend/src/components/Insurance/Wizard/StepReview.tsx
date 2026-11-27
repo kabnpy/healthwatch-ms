@@ -1,5 +1,4 @@
 import { ArrowLeft } from "lucide-react"
-import type React from "react"
 import { useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,6 +6,7 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import { useProducts, useQuoteQuery } from "@/hooks/usePolicies"
 import type { EnhancedProduct, WizardState } from "@/types/insurance"
 import { buildQuoteRiskDetails } from "@/utils/coverSnapshot"
+import { classifyProduct, filterReviewAssetEntries } from "./policyWizard"
 
 interface StepReviewProps {
   state: WizardState
@@ -31,9 +31,7 @@ export function StepReview({
       | undefined
   }, [state.product_id, productsData])
 
-  const isMotorPrivate = selectedProduct?.class_of_insurance
-    ?.toLowerCase()
-    .includes("motor private")
+  const { isMotorPrivate, isPA } = classifyProduct(selectedProduct)
 
   const quoteRequest = useMemo(() => {
     if (!state.product_id || !isMotorPrivate) return null
@@ -55,10 +53,6 @@ export function StepReview({
         amount: number | string
       }>)
     : []
-
-  const isPA = selectedProduct?.class_of_insurance
-    ?.toLowerCase()
-    .includes("personal accident")
 
   return (
     <div className="space-y-8">
@@ -110,45 +104,23 @@ export function StepReview({
               </span>
             </div>
             <div className="border-t pt-3 mt-3 space-y-2">
-              {(() => {
-                const renderEntries = (
-                  obj: any,
-                  prefix = "",
-                ): React.ReactNode => {
-                  return Object.entries(obj || {}).map(([key, value]) => {
-                    const label = prefix ? `${prefix} > ${key}` : key
-                    // Filter for only the essential keys we show in the wizard
-                    const essentialKeys = [
-                      "registration_number",
-                      "make",
-                      "year_of_manufacture",
-                    ]
-                    const lastKey = key.toLowerCase()
-
-                    if (!essentialKeys.includes(lastKey)) return null
-
-                    return (
-                      <div
-                        key={label}
-                        className="flex justify-between text-[11px]"
-                      >
-                        <span className="text-muted-foreground font-semibold uppercase tracking-tighter">
-                          {key.replace(/_/g, " ")}:
-                        </span>
-                        <span className="font-mono">{String(value)}</span>
-                      </div>
-                    )
-                  })
-                }
-                const entries = renderEntries(state.details)
-                return Object.keys(state.details || {}).length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic">
-                    No manual inputs required.
-                  </p>
-                ) : (
-                  entries
-                )
-              })()}
+              {Object.keys(state.details || {}).length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">
+                  No manual inputs required.
+                </p>
+              ) : (
+                filterReviewAssetEntries(state.details).map((entry) => (
+                  <div
+                    key={entry.key}
+                    className="flex justify-between text-[11px]"
+                  >
+                    <span className="text-muted-foreground font-semibold uppercase tracking-tighter">
+                      {entry.label}:
+                    </span>
+                    <span className="font-mono">{entry.value}</span>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
