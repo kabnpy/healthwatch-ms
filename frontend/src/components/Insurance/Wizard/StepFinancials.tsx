@@ -370,12 +370,12 @@ export function StepFinancials({
         </div>
 
         {/* Preview Section */}
-        <div className="bg-slate-900 text-white rounded-lg p-6 shadow-xl border border-slate-800">
-          <div className="flex items-center justify-between border-b border-slate-700 pb-4 mb-4">
-            <h3 className="font-bold text-sm uppercase tracking-widest text-slate-400">
+        <div className="bg-card text-card-foreground rounded-lg p-6 shadow-xl border border-border">
+          <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
+            <h3 className="font-bold text-sm uppercase tracking-widest text-muted-foreground">
               Premium Preview
             </h3>
-            <div className="text-right text-[10px] font-mono text-slate-500 flex items-center gap-2">
+            <div className="text-right text-[10px] font-mono text-muted-foreground flex items-center gap-2">
               {quoteMutation.isPending && (
                 <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
               )}

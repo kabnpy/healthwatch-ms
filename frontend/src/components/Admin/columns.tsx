@@ -21,7 +21,9 @@ export const columns: ColumnDef<UserTableData>[] = [
           <span
             className={cn("font-medium", !fullName && "text-muted-foreground")}
           >
-            {fullName || "N/A"}
+            {fullName || (
+              <span className="text-muted-foreground italic text-xs">N/A</span>
+            )}
           </span>
           {row.original.isCurrentUser && (
             <Badge variant="outline" className="text-xs">

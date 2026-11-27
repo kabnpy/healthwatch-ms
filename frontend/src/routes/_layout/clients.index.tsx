@@ -7,6 +7,7 @@ import { AddClient } from "@/components/Clients/AddClient"
 import { ClientsTableSkeleton } from "@/components/Clients/ClientsTableSkeleton"
 import { type ClientRow, columns } from "@/components/Clients/columns"
 import { DataTable } from "@/components/Common/DataTable"
+import { EmptyState } from "@/components/Common/EmptyState"
 import { QueryErrorBanner } from "@/components/Common/QueryErrorBanner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -115,16 +116,11 @@ function ClientsTable() {
 
   if (clients.data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center text-center py-12">
-        <div className="rounded-full bg-muted p-4 mb-4">
-          <Users className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-semibold">No clients found</h3>
-        <p className="text-muted-foreground mb-4">
-          Add a new client to get started
-        </p>
-        <AddClient />
-      </div>
+      <EmptyState
+        title="No clients found"
+        description="Add a new client to get started"
+        icon={Users}
+      />
     )
   }
 
@@ -205,7 +201,13 @@ function ClientsTable() {
                   <div className="flex flex-col gap-1 text-xs text-muted-foreground">
                     <div className="flex items-center gap-2 min-w-0">
                       <Mail className="size-3.5 shrink-0" />
-                      <span className="truncate">{client.email || "N/A"}</span>
+                      <span className="truncate">
+                        {client.email || (
+                          <span className="text-muted-foreground italic text-xs">
+                            N/A
+                          </span>
+                        )}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Phone className="size-3.5 shrink-0" />
