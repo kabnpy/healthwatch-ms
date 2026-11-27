@@ -7,7 +7,7 @@ import { DataTable } from "@/components/Common/DataTable"
 import { DocumentManager } from "@/components/Common/DocumentManager"
 import ErrorComponent from "@/components/Common/ErrorComponent"
 import { DocumentPreviewDrawer } from "@/components/Documents/DocumentPreviewDrawer"
-import { RiskNoteForm } from "@/components/Insurance/RiskNoteForm"
+import { EndorsementForm } from "@/components/Insurance/EndorsementForm"
 import PendingItems from "@/components/Pending/PendingItems"
 import { PolicyDashboardSkeleton } from "@/components/Policies/Dashboard/PolicyDashboardSkeleton"
 import { PolicyHeader } from "@/components/Policies/Dashboard/PolicyHeader"
@@ -412,9 +412,8 @@ function PolicyDashboardContent({
               Create a new financial transaction for this policy.
             </DialogDescription>
           </DialogHeader>
-          <RiskNoteForm
+          <EndorsementForm
             policyId={policyId}
-            initialTransactionType={transactionType}
             onSuccess={() => setRiskNoteFormOpen(false)}
             onCancel={() => setRiskNoteFormOpen(false)}
           />
