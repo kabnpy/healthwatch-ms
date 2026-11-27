@@ -27,6 +27,12 @@ import { useUploadDocument } from "@/hooks/useDocuments"
 import { useInvoices } from "@/hooks/useFinancials"
 import { useCreatePaymentRecord } from "@/hooks/usePayments"
 import { parsePaymentConfirmation } from "@/utils/paymentParser"
+import {
+  buildInitialAllocations,
+  findExactMatchingUnpaidInvoice,
+  formatCentsAsDecimal,
+  validatePaymentSubmission,
+} from "@/utils/paymentRecording"
 
 interface RecordPaymentModalProps {
   open: boolean
@@ -125,10 +131,9 @@ export function RecordPaymentModal({
 
       // Check for exact matching unpaid invoice
       if (parsed.amount && unpaidInvoices.length > 0) {
-        const exactMatch = unpaidInvoices.find(
-          (inv) =>
-            Math.abs(Number(inv.balance_due || 0) - (parsed.amount || 0)) <
-            0.01,
+        const exactMatch = findExactMatchingUnpaidInvoice(
+          unpaidInvoices,
+          parsed.amount,
         )
         if (exactMatch) {
           setTargetInvoiceId(exactMatch.id)
@@ -175,17 +180,13 @@ export function RecordPaymentModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const parsedAmount = parseFloat(amount)
-    if (!clientId) {
-      showErrorToast("Please select a client.")
-      return
-    }
-    if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
-      showErrorToast("Please enter a valid positive payment amount.")
-      return
-    }
-    if (!referenceNumber.trim()) {
-      showErrorToast("Payment reference number is required.")
+    const validation = validatePaymentSubmission({
+      clientId,
+      amount,
+      referenceNumber,
+    })
+    if (!validation.ok) {
+      showErrorToast(validation.error)
       return
     }
 
@@ -200,36 +201,27 @@ export function RecordPaymentModal({
           document_type: "Proof of Payment",
           metadata: {
             method: paymentMethod,
-            reference: referenceNumber.trim(),
+            reference: validation.referenceNumber,
           },
         })
         proofDocumentId = uploadedDoc?.id
       }
 
       // 2. Build optional initial allocations
-      const initialAllocations =
-        allocateToInvoice && targetInvoiceId
-          ? [
-              {
-                invoice_id: targetInvoiceId,
-                amount: Math.min(
-                  parsedAmount,
-                  Number(
-                    unpaidInvoices.find((i) => i.id === targetInvoiceId)
-                      ?.balance_due || parsedAmount,
-                  ),
-                ).toFixed(2),
-              },
-            ]
-          : undefined
+      const initialAllocations = buildInitialAllocations({
+        allocateToInvoice,
+        targetInvoiceId,
+        amountCents: validation.amountCents,
+        unpaidInvoices,
+      })
 
       // 3. Record PaymentRecord + initial_allocations atomically in one mutation
       await createPaymentMutation.mutateAsync({
         client_id: clientId,
-        amount: parsedAmount.toFixed(2),
+        amount: formatCentsAsDecimal(validation.amountCents),
         payment_date: paymentDate,
         payment_method: paymentMethod,
-        reference_number: referenceNumber.trim(),
+        reference_number: validation.referenceNumber,
         payer_name: payerName.trim() || undefined,
         proof_document_id: proofDocumentId,
         initial_allocations: initialAllocations,
