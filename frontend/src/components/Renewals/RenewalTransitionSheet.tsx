@@ -4,13 +4,10 @@ import {
   ArrowRight,
   Calculator,
   CheckCircle2,
-  type Clock,
   Copy,
   CreditCard,
   ExternalLink,
-  FileQuestion,
   FileText,
-  Mail,
   Printer,
   Receipt,
   RefreshCw,
@@ -51,6 +48,7 @@ import {
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/utils"
 import { extractCoverSummary } from "@/utils/coverSnapshot"
+import { RENEWAL_WORKFLOW_STAGES } from "./renewalWorkflow"
 
 interface RenewalTransitionSheetProps {
   isOpen: boolean
@@ -60,61 +58,6 @@ interface RenewalTransitionSheetProps {
   renewal: RenewalPublic | null
   coverageEnd?: string | null
 }
-
-const STAGES: {
-  status: RenewalStatus
-  label: string
-  shortLabel: string
-  icon: typeof Clock
-  color: string
-}[] = [
-  {
-    status: "awaiting_carrier",
-    label: "Awaiting Insurer Terms",
-    shortLabel: "Insurer Quoting",
-    icon: FileQuestion,
-    color:
-      "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
-  },
-  {
-    status: "carrier_received",
-    label: "Insurer Terms Received",
-    shortLabel: "Terms In Hand",
-    icon: FileText,
-    color: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 border-cyan-500/30",
-  },
-  {
-    status: "client_invited",
-    label: "Client Invited / Quoted",
-    shortLabel: "Client Invited",
-    icon: Mail,
-    color: "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30",
-  },
-  {
-    status: "changes_requested",
-    label: "Changes Requested",
-    shortLabel: "Negotiation",
-    icon: AlertCircle,
-    color:
-      "bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/30",
-  },
-  {
-    status: "paid",
-    label: "Premium Payment Settled",
-    shortLabel: "Paid",
-    icon: CreditCard,
-    color:
-      "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
-  },
-  {
-    status: "completed",
-    label: "Renewal Bound & Completed",
-    shortLabel: "Completed",
-    icon: CheckCircle2,
-    color:
-      "bg-emerald-600/20 text-emerald-800 dark:text-emerald-300 border-emerald-600/40",
-  },
-]
 
 export function RenewalTransitionSheet({
   isOpen,
@@ -165,7 +108,9 @@ export function RenewalTransitionSheet({
   if (!policy) return null
 
   const currentStatus = renewal?.status || "awaiting_carrier"
-  const currentStageIndex = STAGES.findIndex((s) => s.status === currentStatus)
+  const currentStageIndex = RENEWAL_WORKFLOW_STAGES.findIndex(
+    (s) => s.status === currentStatus,
+  )
   const activeNote = policy.active_note
   const prevPremium = Number(
     renewal?.previous_premium || activeNote?.total_amount || 0,
@@ -296,7 +241,7 @@ export function RenewalTransitionSheet({
             Workflow Progress
           </Label>
           <div className="grid grid-cols-3 gap-2">
-            {STAGES.map((s, idx) => {
+            {RENEWAL_WORKFLOW_STAGES.map((s, idx) => {
               const isCurrent = s.status === currentStatus && !!renewal
               const isPast =
                 renewal &&

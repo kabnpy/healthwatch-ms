@@ -407,6 +407,24 @@ class DocumentRenderer:
         return snapshot
 
     @classmethod
+    def preview_html(
+        cls,
+        *,
+        session: Session,
+        resource_type: DocumentJobResourceType,
+        resource_id: uuid.UUID | None = None,
+        snapshot_override: dict[str, Any] | None = None,
+    ) -> RenderedDocument:
+        """Build a snapshot (with optional draft overrides) and render HTML for preview."""
+        snapshot = cls.build_snapshot(
+            session=session,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            snapshot_override=snapshot_override,
+        )
+        return cls.render_html(snapshot, resource_type=resource_type)
+
+    @classmethod
     def render_html(
         cls,
         snapshot: dict[str, Any],

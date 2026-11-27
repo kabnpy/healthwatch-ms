@@ -1,28 +1,28 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
 import {
-  AlertCircle,
   ArrowRight,
   CheckCircle2,
   Clock,
-  CreditCard,
   FileCheck2,
-  FileQuestion,
-  FileText,
-  Mail,
   RefreshCw,
   Shield,
   ShieldAlert,
   User,
 } from "lucide-react"
 import { useCallback, useMemo, useState } from "react"
-import type { PolicyPublic, RenewalHorizonItem, RenewalStatus } from "@/client"
+import type { PolicyPublic, RenewalHorizonItem } from "@/client"
 
 import { DataTable } from "@/components/Common/DataTable"
 import { EmptyState } from "@/components/Common/EmptyState"
 import { QueryErrorBanner } from "@/components/Common/QueryErrorBanner"
 import PendingItems from "@/components/Pending/PendingItems"
+import { RenewalStatusBadge } from "@/components/Renewals/RenewalStatusBadge"
 import { RenewalTransitionSheet } from "@/components/Renewals/RenewalTransitionSheet"
+import {
+  getRenewalActionLabel,
+  partitionRenewalHorizon,
+} from "@/components/Renewals/renewalWorkflow"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -63,64 +63,6 @@ export const Route = createFileRoute("/_layout/renewals/")({
   }),
 })
 
-const STAGE_META: Record<
-  RenewalStatus,
-  { label: string; color: string; icon: typeof Clock }
-> = {
-  awaiting_carrier: {
-    label: "Awaiting Insurer",
-    color:
-      "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
-    icon: FileQuestion,
-  },
-  carrier_received: {
-    label: "Terms Received",
-    color: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 border-cyan-500/30",
-    icon: FileText,
-  },
-  client_invited: {
-    label: "Client Invited",
-    color: "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30",
-    icon: Mail,
-  },
-  changes_requested: {
-    label: "Changes Requested",
-    color:
-      "bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/30",
-    icon: AlertCircle,
-  },
-  paid: {
-    label: "Payment Settled",
-    color:
-      "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
-    icon: CreditCard,
-  },
-  completed: {
-    label: "Completed",
-    color:
-      "bg-emerald-600/20 text-emerald-800 dark:text-emerald-300 border-emerald-600/40",
-    icon: CheckCircle2,
-  },
-  cancelled: {
-    label: "Cancelled",
-    color: "bg-muted text-muted-foreground border-border",
-    icon: Clock,
-  },
-}
-
-const NEXT_STAGE_ACTION: Partial<Record<RenewalStatus, string>> = {
-  awaiting_carrier: "Log Insurer Terms",
-  carrier_received: "Prepare Invitation",
-  client_invited: "Follow Up",
-  changes_requested: "Revise Terms",
-  paid: "Complete Renewal",
-}
-
-function getRenewalActionLabel(status?: RenewalStatus | null): string {
-  if (!status) return "Start Renewal"
-  return NEXT_STAGE_ACTION[status] ?? "Start Renewal"
-}
-
 function RenewalHorizonPill({
   coverageEnd,
   daysLeft,
@@ -151,42 +93,6 @@ function RenewalHorizonPill({
         ({coverageEnd})
       </span>
     </div>
-  )
-}
-
-function WorkflowStageBadge({
-  renewal,
-}: {
-  renewal?: RenewalHorizonItem["renewal"]
-}) {
-  if (!renewal) {
-    return (
-      <Badge
-        variant="outline"
-        className="text-[11px] text-muted-foreground font-normal"
-      >
-        Not Initiated
-      </Badge>
-    )
-  }
-
-  const meta = (renewal.status ? STAGE_META[renewal.status] : null) || {
-    label: renewal.status || "Unknown",
-    color: "bg-muted text-muted-foreground",
-    icon: Clock,
-  }
-  const Icon = meta.icon
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border",
-        meta.color,
-      )}
-    >
-      <Icon className="size-3" />
-      {meta.label}
-    </span>
   )
 }
 
@@ -237,7 +143,7 @@ function RenewalTriageList({
                   </Link>
                 </div>
               </div>
-              <WorkflowStageBadge renewal={item.renewal} />
+              <RenewalStatusBadge status={item.renewal?.status} />
             </div>
 
             <RenewalHorizonPill
@@ -294,63 +200,10 @@ function RenewalsDeskPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   // Categorize policies into horizons & stages from server-side horizon
-  const categorized = useMemo(() => {
-    const isTerminalStatus = (status?: string | null) =>
-      ["completed", "cancelled"].includes(status?.toLowerCase() || "")
-
-    const expiring30 = (horizonData?.["0_30"] ?? []).filter(
-      (item) => !item.renewal || isTerminalStatus(item.renewal.status),
-    )
-    const expiring60 = horizonData?.["31_60"] ?? []
-    const expired = horizonData?.overdue ?? []
-    const allItems = [
-      ...expired,
-      ...(horizonData?.["0_30"] ?? []),
-      ...expiring60,
-      ...(horizonData?.["61_90"] ?? []),
-    ]
-    const inWorkflow: RenewalHorizonItem[] = []
-    const completedRenewals: RenewalHorizonItem[] = []
-
-    for (const item of allItems) {
-      if (item.renewal) {
-        if (item.renewal.status === "completed") {
-          completedRenewals.push(item)
-        } else if (!isTerminalStatus(item.renewal.status)) {
-          inWorkflow.push(item)
-        }
-      }
-    }
-
-    const inWorkflowPolicyIds = new Set(
-      inWorkflow.map((item) => item.policy_id),
-    )
-    for (const renewal of renewalsData?.data ?? []) {
-      if (
-        !isTerminalStatus(renewal.status) &&
-        !inWorkflowPolicyIds.has(renewal.policy_id)
-      ) {
-        inWorkflowPolicyIds.add(renewal.policy_id)
-        inWorkflow.push({
-          policy_id: renewal.policy_id,
-          policy_number: renewal.policy_id,
-          client_id: "",
-          client_name: "—",
-          coverage_end: "",
-          days_left: 0,
-          renewal,
-        })
-      }
-    }
-
-    return {
-      expiring30,
-      expiring60,
-      expired,
-      inWorkflow,
-      completedRenewals,
-    }
-  }, [horizonData, renewalsData])
+  const categorized = useMemo(
+    () => partitionRenewalHorizon(horizonData, renewalsData?.data),
+    [horizonData, renewalsData],
+  )
 
   const openTriage = useCallback((policy: PolicyPublic) => {
     setSelectedPolicy(policy)
@@ -436,7 +289,7 @@ function RenewalsDeskPage() {
         id: "workflow_stage",
         header: "Workflow Stage",
         cell: ({ row }) => (
-          <WorkflowStageBadge renewal={row.original.renewal} />
+          <RenewalStatusBadge status={row.original.renewal?.status} />
         ),
       },
       {
