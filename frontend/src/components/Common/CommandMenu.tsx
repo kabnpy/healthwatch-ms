@@ -26,10 +26,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command"
-import { useClients } from "@/hooks/useClients"
-import { useInvoices } from "@/hooks/useFinancials"
-import { usePaymentRecords } from "@/hooks/usePayments"
-import { usePolicies } from "@/hooks/usePolicies"
+import { useCommandMenuData } from "@/hooks/useCommandMenuData"
 import { getPolicyDisplayName } from "@/utils/insurance"
 
 export function CommandMenu() {
@@ -37,23 +34,8 @@ export function CommandMenu() {
   const [ratingCalcOpen, setRatingCalcOpen] = React.useState(false)
   const navigate = useNavigate()
 
-  const { data: clientsData } = useClients(0, 50)
-  const { data: policiesData } = usePolicies(undefined, 0, 100)
-  const { data: invoicesData } = useInvoices(undefined, 0, 50)
-  const { data: paymentsData } = usePaymentRecords(undefined, 0, 50)
-
-  // Expiring policies within 30 days
-  const expiringPolicies = React.useMemo(() => {
-    const now = Date.now()
-    return (
-      policiesData?.data?.filter((p) => {
-        if (!p.active_note?.coverage_end) return false
-        const end = new Date(p.active_note.coverage_end).getTime()
-        const days = Math.ceil((end - now) / (1000 * 60 * 60 * 24))
-        return days >= 0 && days <= 30
-      }) || []
-    )
-  }, [policiesData])
+  const { clients, policies, invoices, payments, expiringPolicies } =
+    useCommandMenuData(open)
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -133,13 +115,8 @@ export function CommandMenu() {
             <>
               <CommandSeparator />
               <CommandGroup heading="Renewals Due (≤30 Days)">
-                {expiringPolicies.map((policy) => {
+                {expiringPolicies.map(({ policy, days_left: daysLeft }) => {
                   const displayName = getPolicyDisplayName(policy)
-                  const daysLeft = Math.ceil(
-                    (new Date(policy.active_note!.coverage_end).getTime() -
-                      Date.now()) /
-                      (1000 * 60 * 60 * 24),
-                  )
                   return (
                     <CommandItem
                       key={policy.id}
@@ -176,7 +153,7 @@ export function CommandMenu() {
           <CommandSeparator />
 
           <CommandGroup heading="Clients">
-            {clientsData?.data.map((client) => (
+            {clients.map((client) => (
               <CommandItem
                 key={client.id}
                 value={`${client.name} ${client.kra_pin || ""} ${client.phone || ""} ${client.email || ""}`}
@@ -201,7 +178,7 @@ export function CommandMenu() {
           <CommandSeparator />
 
           <CommandGroup heading="Policies">
-            {policiesData?.data.map((policy) => {
+            {policies.map((policy) => {
               const displayName = getPolicyDisplayName(policy)
               return (
                 <CommandItem
@@ -235,7 +212,7 @@ export function CommandMenu() {
           <CommandSeparator />
 
           <CommandGroup heading="Invoices">
-            {invoicesData?.data.map((invoice) => (
+            {invoices.map((invoice) => (
               <CommandItem
                 key={invoice.id}
                 value={invoice.invoice_number}
@@ -260,7 +237,7 @@ export function CommandMenu() {
           <CommandSeparator />
 
           <CommandGroup heading="Payment Records (Cleared Funds)">
-            {paymentsData?.data.map((record) => (
+            {payments.map((record) => (
               <CommandItem
                 key={record.id}
                 value={`${record.reference_number || ""} ${record.payment_method}`}
