@@ -10,10 +10,13 @@ import {
 } from "lucide-react"
 import type {
   PolicyPublic,
+  RenewalCreate,
   RenewalHorizonItem,
   RenewalHorizonResponse,
   RenewalPublic,
   RenewalStatus,
+  RenewalTransition,
+  RenewalUpdate,
 } from "@/client"
 
 export interface RenewalStageMeta {
@@ -192,4 +195,99 @@ export function partitionRenewalHorizon(
     inWorkflow,
     completedRenewals,
   }
+}
+
+/**
+ * Computes the renewal period end date as one calendar year minus one day
+ * from the given ISO date string (YYYY-MM-DD).
+ */
+export function computeRenewalPeriodEnd(startDate: string): string {
+  const [year, month, day] = startDate.split("-").map(Number)
+  const end = new Date(Date.UTC(year + 1, month - 1, day))
+  end.setUTCDate(end.getUTCDate() - 1)
+  return end.toISOString().split("T")[0]
+}
+
+export interface RenewalInitiationInput {
+  policyId: string
+  startDate: string
+  previousPremium: number
+  proposedPremium: number
+  notes: string
+}
+
+export function buildRenewalInitiationPayload(
+  input: RenewalInitiationInput,
+): RenewalCreate {
+  return {
+    policy_id: input.policyId,
+    renewal_period_start: input.startDate,
+    renewal_period_end: computeRenewalPeriodEnd(input.startDate),
+    previous_premium: String(input.previousPremium),
+    proposed_premium:
+      input.proposedPremium > 0 ? String(input.proposedPremium) : undefined,
+    notes: input.notes || undefined,
+  }
+}
+
+export interface RenewalTransitionInput {
+  targetStatus: RenewalStatus
+  expectedVersion?: number
+  agreedPremium: number
+  notes: string
+}
+
+export function buildRenewalTransitionPayload(
+  input: RenewalTransitionInput,
+): RenewalTransition {
+  return {
+    target_status: input.targetStatus,
+    expected_version: input.expectedVersion,
+    agreed_premium:
+      input.agreedPremium > 0 ? String(input.agreedPremium) : undefined,
+    notes: input.notes || undefined,
+  }
+}
+
+export interface RenewalFinancialUpdateInput {
+  expectedVersion?: number
+  proposedPremium: number
+  agreedPremium: number
+  carrierDocumentKey: string
+  notes: string
+}
+
+export function buildRenewalFinancialUpdatePayload(
+  input: RenewalFinancialUpdateInput,
+): RenewalUpdate {
+  return {
+    expected_version: input.expectedVersion,
+    proposed_premium:
+      input.proposedPremium > 0 ? String(input.proposedPremium) : undefined,
+    agreed_premium:
+      input.agreedPremium > 0 ? String(input.agreedPremium) : undefined,
+    carrier_document_key: input.carrierDocumentKey || undefined,
+    notes: input.notes || undefined,
+  }
+}
+
+export function isOptimisticConcurrencyConflict(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false
+  const e = err as { status?: unknown; response?: { status?: unknown } }
+  return e.status === 409 || e.response?.status === 409
+}
+
+export function formatAdvisoryRatingNote(note?: string | null): string {
+  const trimmed = note?.trim()
+  return trimmed ? trimmed : "No advisory rating note recorded."
+}
+
+export function calculateRenewalPremiumDelta(
+  prevPremium: number,
+  proposedPremium: number,
+  agreedPremium: number,
+): number {
+  return agreedPremium > 0
+    ? agreedPremium - prevPremium
+    : proposedPremium - prevPremium
 }

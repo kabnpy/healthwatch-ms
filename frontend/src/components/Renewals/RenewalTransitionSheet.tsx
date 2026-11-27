@@ -24,6 +24,14 @@ import type {
   RenewalStatus,
 } from "@/client"
 import { AdvisoryRatingCalculator } from "@/components/Insurance/AdvisoryRatingCalculator"
+import {
+  buildRenewalFinancialUpdatePayload,
+  buildRenewalInitiationPayload,
+  buildRenewalTransitionPayload,
+  calculateRenewalPremiumDelta,
+  formatAdvisoryRatingNote,
+  isOptimisticConcurrencyConflict,
+} from "@/components/Renewals/renewalWorkflow"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CurrencyInput } from "@/components/ui/currency-input"
@@ -119,26 +127,21 @@ export function RenewalTransitionSheet({
   // Handle Initiating Renewal if not yet started
   const handleInitiate = async () => {
     if (!activeNote?.coverage_end) return
-    const startDate = activeNote.coverage_end
-    const endDate = new Date(
-      new Date(startDate).getTime() + 365 * 24 * 60 * 60 * 1000,
-    )
-      .toISOString()
-      .split("T")[0]
-
     try {
-      await createRenewalMutation.mutateAsync({
-        policy_id: policy.id,
-        renewal_period_start: startDate,
-        renewal_period_end: endDate,
-        previous_premium: String(prevPremium),
-        proposed_premium:
-          proposedPremium > 0 ? String(proposedPremium) : undefined,
-        notes: notes || undefined,
-      })
+      await createRenewalMutation.mutateAsync(
+        buildRenewalInitiationPayload({
+          policyId: policy.id,
+          startDate: activeNote.coverage_end,
+          previousPremium: prevPremium,
+          proposedPremium,
+          notes,
+        }),
+      )
       showSuccessToast("Renewal workflow initiated successfully.")
-    } catch (err: any) {
-      showErrorToast(err?.message || "Failed to initiate renewal.")
+    } catch (err: unknown) {
+      showErrorToast(
+        err instanceof Error ? err.message : "Failed to initiate renewal.",
+      )
     }
   }
 
@@ -148,23 +151,25 @@ export function RenewalTransitionSheet({
     try {
       await transitionMutation.mutateAsync({
         id: renewal.id,
-        data: {
-          target_status: targetStatus,
-          expected_version: renewal.version,
-          agreed_premium: agreedPremium > 0 ? String(agreedPremium) : undefined,
-          notes: notes || undefined,
-        },
+        data: buildRenewalTransitionPayload({
+          targetStatus,
+          expectedVersion: renewal.version,
+          agreedPremium,
+          notes,
+        }),
       })
       showSuccessToast(
         `Renewal transitioned to ${targetStatus.replace(/_/g, " ")}.`,
       )
-    } catch (err: any) {
-      if (err?.status === 409 || err?.response?.status === 409) {
+    } catch (err: unknown) {
+      if (isOptimisticConcurrencyConflict(err)) {
         showErrorToast(
           "Version conflict (OCC): This renewal was updated by another user. The latest state has been refreshed.",
         )
       } else {
-        showErrorToast(err?.message || "Transition failed.")
+        showErrorToast(
+          err instanceof Error ? err.message : "Transition failed.",
+        )
       }
     }
   }
@@ -175,21 +180,22 @@ export function RenewalTransitionSheet({
     try {
       await updateMutation.mutateAsync({
         id: renewal.id,
-        data: {
-          expected_version: renewal.version,
-          proposed_premium:
-            proposedPremium > 0 ? String(proposedPremium) : undefined,
-          agreed_premium: agreedPremium > 0 ? String(agreedPremium) : undefined,
-          carrier_document_key: carrierDocKey || undefined,
-          notes: notes || undefined,
-        },
+        data: buildRenewalFinancialUpdatePayload({
+          expectedVersion: renewal.version,
+          proposedPremium,
+          agreedPremium,
+          carrierDocumentKey: carrierDocKey,
+          notes,
+        }),
       })
       showSuccessToast("Renewal financials & terms updated.")
-    } catch (err: any) {
-      if (err?.status === 409 || err?.response?.status === 409) {
+    } catch (err: unknown) {
+      if (isOptimisticConcurrencyConflict(err)) {
         showErrorToast("Version conflict: Refreshed latest renewal state.")
       } else {
-        showErrorToast(err?.message || "Failed to update financials.")
+        showErrorToast(
+          err instanceof Error ? err.message : "Failed to update financials.",
+        )
       }
     }
   }
@@ -199,10 +205,11 @@ export function RenewalTransitionSheet({
     transitionMutation.isPending ||
     updateMutation.isPending
 
-  const delta =
-    agreedPremium > 0
-      ? agreedPremium - prevPremium
-      : proposedPremium - prevPremium
+  const delta = calculateRenewalPremiumDelta(
+    prevPremium,
+    proposedPremium,
+    agreedPremium,
+  )
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -347,7 +354,7 @@ export function RenewalTransitionSheet({
             </div>
 
             <p className="text-[11px] text-muted-foreground italic">
-              {claimsSummary.advocacy_note}
+              {formatAdvisoryRatingNote(claimsSummary.advocacy_note)}
             </p>
           </div>
         )}
