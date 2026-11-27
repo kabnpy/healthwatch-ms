@@ -45,17 +45,17 @@ export const SchemaBuilder = () => {
       </Alert>
 
       {/* THE "PAPER" */}
-      <div className="bg-white shadow-2xl border border-slate-200 min-h-[800px] rounded-sm flex flex-col overflow-hidden">
+      <div className="bg-card shadow-2xl border border-border min-h-[800px] rounded-sm flex flex-col overflow-hidden">
         {/* Paper Header Decoration */}
-        <div className="p-10 border-b-2 border-black/5 bg-slate-50/30">
-          <div className="flex justify-between items-start text-black">
+        <div className="p-10 border-b-2 border-border bg-muted/30">
+          <div className="flex justify-between items-start text-foreground">
             <div>
-              <div className="h-4 w-32 bg-slate-200 rounded mb-3" />
-              <div className="h-8 w-64 bg-slate-100 rounded" />
+              <div className="h-4 w-32 bg-muted rounded mb-3" />
+              <div className="h-8 w-64 bg-muted/60 rounded" />
             </div>
             <div className="text-right flex flex-col items-end gap-2">
-              <div className="h-3 w-24 bg-slate-200 rounded" />
-              <div className="h-5 w-40 bg-slate-100 rounded" />
+              <div className="h-3 w-24 bg-muted rounded" />
+              <div className="h-5 w-40 bg-muted/60 rounded" />
             </div>
           </div>
         </div>
@@ -71,13 +71,13 @@ export const SchemaBuilder = () => {
 
           {Object.keys(productDetails).length === 0 && (
             <div className="p-20 text-center flex flex-col items-center">
-              <div className="bg-slate-50 w-24 h-24 rounded-full flex items-center justify-center mb-6 border-2 border-dashed border-slate-200">
-                <FileText className="h-10 w-10 text-slate-300" />
+              <div className="bg-muted w-24 h-24 rounded-full flex items-center justify-center mb-6 border-2 border-dashed border-border">
+                <FileText className="h-10 w-10 text-muted-foreground/50" />
               </div>
-              <h4 className="text-xl font-bold text-slate-900 tracking-tight">
+              <h4 className="text-xl font-bold text-foreground tracking-tight">
                 Empty Template
               </h4>
-              <p className="text-slate-500 mt-2 max-w-xs mx-auto text-sm">
+              <p className="text-muted-foreground mt-2 max-w-xs mx-auto text-sm">
                 Start by creating your first section.
               </p>
             </div>
@@ -86,8 +86,8 @@ export const SchemaBuilder = () => {
 
         {/* Paper Footer Decoration */}
         <div className="p-12 mt-auto border-t-4 border-black/5 opacity-30 grayscale">
-          <div className="h-4 w-full bg-slate-100 rounded mb-2" />
-          <div className="h-4 w-3/4 bg-slate-100 rounded" />
+          <div className="h-4 w-full bg-muted/60 rounded mb-2" />
+          <div className="h-4 w-3/4 bg-muted/60 rounded" />
         </div>
       </div>
     </div>

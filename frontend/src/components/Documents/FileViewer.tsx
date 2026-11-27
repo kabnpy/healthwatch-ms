@@ -27,9 +27,9 @@ export function FileViewer({ id, receiptId, onClose }: FileViewerProps) {
 
   if (isError || !document) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center bg-slate-50 rounded-lg border border-dashed m-4">
+      <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/30 rounded-lg border border-dashed m-4">
         <AlertCircle className="size-10 text-destructive mb-3" />
-        <h3 className="font-bold text-slate-900">Unable to load document</h3>
+        <h3 className="font-bold text-foreground">Unable to load document</h3>
         <p className="text-sm text-muted-foreground mt-1 max-w-xs">
           The requested document ({id || receiptId || "N/A"}) could not be found
           or is unavailable.
@@ -45,10 +45,10 @@ export function FileViewer({ id, receiptId, onClose }: FileViewerProps) {
   const downloadUrl = `${baseUrl.replace(/\/$/, "")}/api/v1/documents/${document.id}/download`
 
   return (
-    <div className="flex flex-col h-full bg-slate-100 rounded-lg overflow-hidden border">
-      <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b text-xs">
+    <div className="flex flex-col h-full bg-muted/40 rounded-lg overflow-hidden border">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-card border-b text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-slate-900">
+          <span className="font-bold text-foreground">
             {document.document_type || "External File"}
           </span>
           <span className="text-muted-foreground">

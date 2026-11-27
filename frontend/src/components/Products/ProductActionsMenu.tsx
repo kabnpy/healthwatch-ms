@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { EllipsisVertical, Eye, Trash2 } from "lucide-react"
+import { Eye, MoreHorizontal, Trash2 } from "lucide-react"
 import { useState } from "react"
 import type { ProductPublic } from "@/client"
 import { ProductsService } from "@/client"
@@ -39,7 +39,7 @@ export const ProductActionsMenu = ({ product }: ProductActionsMenuProps) => {
       <DropdownMenuTrigger
         render={
           <Button variant="ghost" size="icon" aria-label="Product actions">
-            <EllipsisVertical className="h-4 w-4" />
+            <MoreHorizontal className="h-4 w-4" />
           </Button>
         }
       />

@@ -5,6 +5,7 @@ import { Suspense } from "react"
 
 import { InsurersService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
+import { EmptyState } from "@/components/Common/EmptyState"
 import { columns } from "@/components/Insurers/columns"
 import { InsurerActionsMenu } from "@/components/Insurers/InsurerActionsMenu"
 import PendingItems from "@/components/Pending/PendingItems"
@@ -35,15 +36,11 @@ function InsurersTableContent() {
 
   if (insurers.data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center text-center py-12">
-        <div className="rounded-full bg-muted p-4 mb-4">
-          <Search className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-semibold">No insurers found</h3>
-        <p className="text-muted-foreground">
-          Add a new insurer to get started
-        </p>
-      </div>
+      <EmptyState
+        title="No insurers found"
+        description="Add a new insurer to get started"
+        icon={Search}
+      />
     )
   }
 
@@ -68,8 +65,20 @@ function InsurersTableContent() {
               <InsurerActionsMenu insurer={insurer} />
             </CardHeader>
             <CardContent className="grid gap-1 text-sm text-muted-foreground">
-              <div className="truncate">{insurer.email || "N/A"}</div>
-              <div>{insurer.phone || "N/A"}</div>
+              <div className="truncate">
+                {insurer.email || (
+                  <span className="text-muted-foreground italic text-xs">
+                    N/A
+                  </span>
+                )}
+              </div>
+              <div>
+                {insurer.phone || (
+                  <span className="text-muted-foreground italic text-xs">
+                    N/A
+                  </span>
+                )}
+              </div>
             </CardContent>
           </Card>
         ))}

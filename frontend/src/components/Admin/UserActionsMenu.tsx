@@ -1,4 +1,4 @@
-import { EllipsisVertical } from "lucide-react"
+import { MoreHorizontal } from "lucide-react"
 import { useState } from "react"
 
 import type { UserPublic } from "@/client"
@@ -29,7 +29,7 @@ export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {
       <DropdownMenuTrigger
         render={
           <Button variant="ghost" size="icon" aria-label="User actions">
-            <EllipsisVertical />
+            <MoreHorizontal className="h-4 w-4" />
           </Button>
         }
       />

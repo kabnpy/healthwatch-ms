@@ -32,7 +32,7 @@ export function PolicyDashboardSkeleton() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start pt-6">
         <div className="lg:col-span-3 space-y-6">
           {/* Template Skeleton */}
-          <div className="border rounded-lg shadow-xl overflow-hidden bg-white">
+          <div className="border rounded-lg shadow-xl overflow-hidden bg-card">
             <div className="p-1 border-b">
               <Skeleton className="h-3 w-32 mx-auto" />
             </div>

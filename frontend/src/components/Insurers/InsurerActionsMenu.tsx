@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import { EllipsisVertical, Eye } from "lucide-react"
+import { Eye, MoreHorizontal } from "lucide-react"
 import { useState } from "react"
 
 import type { InsurerPublic } from "@/client"
@@ -26,7 +26,7 @@ export const InsurerActionsMenu = ({ insurer }: InsurerActionsMenuProps) => {
       <DropdownMenuTrigger
         render={
           <Button variant="ghost" size="icon" aria-label="Insurer actions">
-            <EllipsisVertical className="h-4 w-4" />
+            <MoreHorizontal className="h-4 w-4" />
           </Button>
         }
       />
