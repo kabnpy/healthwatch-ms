@@ -216,7 +216,15 @@ class PolicyService:
             created_by_id=current_user_id,
         )
 
-        PolicyService._add_risk_note(session=session, risk_note_in=risk_note_in)
+        PolicyService.issue_risk_note(
+            session=session,
+            policy=policy,
+            product=product,
+            risk_note_in=risk_note_in,
+            supersede=False,
+            created_by_id=current_user_id,
+            commit=False,
+        )
 
         PremiumCalculationService.record_calculation(
             session,
@@ -473,6 +481,69 @@ class PolicyService:
 
         risk_note = RiskNote.model_validate(risk_note_in)
         session.add(risk_note)
+        return risk_note
+
+    @staticmethod
+    def is_medical_product(product: Product | None) -> bool:
+        """Return True if the product belongs to the Medical class (ADR-0001)."""
+        return bool(
+            product and product.class_of_insurance.strip().lower() == "medical"
+        )
+
+    @staticmethod
+    def issue_risk_note(
+        *,
+        session: Session,
+        policy: Policy,
+        risk_note_in: RiskNoteCreate,
+        product: Product | None = None,
+        supersede: bool = False,
+        target_risk_note: RiskNote | None = None,
+        created_by_id: uuid.UUID | None = None,
+        commit: bool = True,
+    ) -> RiskNote | None:
+        """
+        Consolidated RiskNote issuance and superseding seam on Policy.
+
+        Enforces ADR-0001 Medical exemption (returns None without persisting a RiskNote)
+        and, when supersede=True, marks all non-deleted ISSUED RiskNotes on the Policy
+        as REPLACED while linking previous_risk_note_id to the targeted or latest prior
+        ISSUED RiskNote.
+        """
+        resolved_product = product or session.get(Product, policy.product_id)
+        if PolicyService.is_medical_product(resolved_product):
+            return None
+
+        if supersede:
+            prior_issued = list(
+                session.exec(
+                    select(RiskNote)
+                    .where(
+                        RiskNote.policy_id == policy.id,
+                        RiskNote.status == RiskNoteStatus.ISSUED,
+                        RiskNote.deleted_at == None,
+                    )
+                    .order_by(RiskNote.created_at.desc())  # type: ignore[attr-defined]
+                ).all()
+            )
+            previous_id = (
+                target_risk_note.id
+                if target_risk_note is not None
+                else (prior_issued[0].id if prior_issued else None)
+            )
+            if risk_note_in.previous_risk_note_id is None and previous_id is not None:
+                risk_note_in.previous_risk_note_id = previous_id
+
+            for prior_rn in prior_issued:
+                prior_rn.status = RiskNoteStatus.REPLACED
+                session.add(prior_rn)
+
+        risk_note = PolicyService._add_risk_note(
+            session=session, risk_note_in=risk_note_in, created_by_id=created_by_id
+        )
+        if commit:
+            session.commit()
+            session.refresh(risk_note)
         return risk_note
 
     @staticmethod
