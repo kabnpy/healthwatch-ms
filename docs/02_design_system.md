@@ -24,9 +24,9 @@ HealthWatch MS is an **insurance agency workspace**. Its primary users (salaried
 
 ---
 
-## 2. Color & Surface Architecture (`shadcn/ui` Blue Preset)
+## 2. Color & Surface Architecture (`shadcn/ui` `bImMcDp` / `base-vega` Preset)
 
-HealthWatch MS uses **OKLCH color tokens** in Tailwind CSS v4 (`frontend/src/index.css`), adopting the official `shadcn/ui` **Blue** preset (`baseColor: "neutral"`, `theme: "blue"`, `radius: "0.625rem"`) paired with `color-scheme: light` / `color-scheme: dark` so native browser scrollbars, date pickers, and form controls adapt automatically.
+HealthWatch MS uses **OKLCH color tokens** in Tailwind CSS v4 (`frontend/src/index.css`), adopting the `shadcn/ui` **`bImMcDp`** (`base-vega`) preset (`style: "base-vega"`, teal/cyan `--primary`, `menuColor: "inverted"`, `radius: "0.625rem"`) paired with `color-scheme: light` / `color-scheme: dark` so native browser scrollbars, date pickers, and form controls adapt automatically.
 
 ### 2.1 Surface & Interactive Tokens
 
@@ -67,7 +67,7 @@ Insurance and ledger states must be instantly recognizable and never rely on col
 ### 3.1 Font Stacks & Typographic Scale
 
 Declared in `@theme inline` inside `frontend/src/index.css`:
-- **`--font-sans` / `--font-heading`:** `"Inter", ui-sans-serif, system-ui, -apple-system, sans-serif`
+- **`--font-sans` / `--font-heading`:** `"Geist Variable", ui-sans-serif, system-ui, -apple-system, sans-serif`
 - **`--font-mono`:** `"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`
 
 | Role | Class | Tracking | Weight | Example Usage |
